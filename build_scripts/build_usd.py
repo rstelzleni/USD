@@ -21,6 +21,10 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from distutils.spawn import find_executable
 
 import argparse
@@ -39,27 +43,34 @@ import shutil
 import subprocess
 import sys
 import tarfile
-import urllib2
+try:
+    # python 2
+    from urllib2 import urlopen
+except:
+    # python 3
+    from urllib.request import urlopen
 import zipfile
+import sysconfig
+import codecs
 
 # Helpers for printing output
 verbosity = 1
 
 def Print(msg):
     if verbosity > 0:
-        print msg
+        print(msg)
 
 def PrintWarning(warning):
     if verbosity > 0:
-        print "WARNING:", warning
+        print("WARNING:", warning)
 
 def PrintStatus(status):
     if verbosity >= 1:
-        print "STATUS:", status
+        print("STATUS:", status)
 
 def PrintInfo(info):
     if verbosity >= 2:
-        print "INFO:", info
+        print("INFO:", info)
 
 def PrintCommandOutput(output):
     if verbosity >= 3:
@@ -69,7 +80,7 @@ def PrintError(error):
     if verbosity >= 3 and sys.exc_info()[1] is not None:
         import traceback
         traceback.print_exc()
-    print "ERROR:", error
+    print ("ERROR:", error)
 
 # Helpers for determining platform
 def Windows():
@@ -139,52 +150,44 @@ def IsVisualStudio2017OrGreater():
 def GetPythonInfo():
     """Returns a tuple containing the path to the Python executable, shared
     library, and include directory corresponding to the version of Python
-    currently running. Returns None if any path could not be determined. This
-    function always returns None on Windows or Linux.
+    currently running. Returns None if any path could not be determined.
 
-    This function is primarily used to determine which version of
-    Python USD should link against when multiple versions are installed.
+    This function is used to extract build information from the Python 
+    interpreter used to launch this script. This information is used
+    in the Boost and USD builds. By taking this approach we can support
+    the use case where multiple Python versions of USD are built on the same
+    machine. This is very useful, especially when developers have multiple
+    versions installed on their machine, which is quite common now with 
+    Python2 and Python3 co-existing.
     """
-    # We just skip all this on Windows. Users on Windows are unlikely to have
-    # multiple copies of the same version of Python, so the problem this
-    # function is intended to solve doesn't arise on that platform.
+    # First we extract the information that can be uniformly dealt with across
+    # the platforms:
+    pythonExecPath = sys.executable
+    pythonVersion = sysconfig.get_config_var('py_version_short') 
+    pythonIncludeDir = sysconfig.get_config_var('INCLUDEPY')
+
+    # Lib path is unfortunately special for each platform and there is no
+    # config_var for it. But we can deduce it for each platform, and this
+    # logic works for any Python version.
     if Windows():
-        return None
+        pythonBaseDir = sysconfig.get_config_var('base')
+        pythonVersionNoDot = sysconfig.get_config_var('py_version_nodot')
+        pythonLibPath = os.path.join(pythonBaseDir, 'libs', 'python' + pythonVersionNoDot + '.lib' )
+    elif Linux():
+        pythonLibDir = sysconfig.get_config_var('LIBDIR')
+        pythonLibName = sysconfig.get_config_var('LDLIBRARY')
+        pythonMultiarchSubdir = sysconfig.get_config_var('multiarchsubdir')
+        if pythonMultiarchSubdir:
+            pythonLibDir = pythonLibDir + pythonMultiarchSubdir
+        pythonLibPath = os.path.join(pythonLibDir, pythonLibName)
+    elif MacOS():
+        pythonBaseDir = sysconfig.get_config_var('base')
+        pythonLibPath = os.path.join(pythonBaseDir, 'lib', 'libpython' + pythonVersion + '.dylib')
+    else:
+        raise RuntimeError("Platform not supported")
 
-    # We also skip all this on Linux. The below code gets the wrong answer on
-    # certain distributions like Ubuntu, which organizes libraries based on
-    # multiarch. The below code yields /usr/lib/libpython2.7.so, but
-    # the library is actually in /usr/lib/x86_64-linux-gnu. Since the problem
-    # this function is intended to solve primarily occurs on macOS, so it's
-    # simpler to just skip this for now.
-    if Linux():
-        return None
+    return (pythonExecPath, pythonLibPath, pythonIncludeDir, pythonVersion)
 
-    try:
-        import distutils.sysconfig
-
-        pythonExecPath = None
-        pythonLibPath = None
-
-        pythonPrefix = distutils.sysconfig.PREFIX
-        if pythonPrefix:
-            pythonExecPath = os.path.join(pythonPrefix, 'bin', 'python')
-            pythonLibPath = os.path.join(pythonPrefix, 'lib', 'libpython2.7.dylib')
-
-        pythonIncludeDir = distutils.sysconfig.get_python_inc()
-    except:
-        return None
-
-    if pythonExecPath and pythonIncludeDir and pythonLibPath:
-        # Ensure that the paths are absolute, since depending on the version of
-        # Python being run and the path used to invoke it, we may have gotten a
-        # relative path from distutils.sysconfig.PREFIX.
-        return (
-            os.path.abspath(pythonExecPath),
-            os.path.abspath(pythonLibPath),
-            os.path.abspath(pythonIncludeDir))
-
-    return None
 
 def GetCPUCount():
     try:
@@ -196,7 +199,7 @@ def Run(cmd, logCommandOutput = True):
     """Run the specified command in a subprocess."""
     PrintInfo('Running "{cmd}"'.format(cmd=cmd))
 
-    with open("log.txt", "a") as logfile:
+    with codecs.open("log.txt", "a", "utf-8") as logfile:
         logfile.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
         logfile.write("\n")
         logfile.write(cmd)
@@ -207,9 +210,12 @@ def Run(cmd, logCommandOutput = True):
         if logCommandOutput:
             p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, 
                                  stderr=subprocess.STDOUT)
+            encoding = sys.stdout.encoding
+            if not encoding:
+                encoding = 'UTF-8'
             while True:
-                l = p.stdout.readline()
-                if l != "":
+                l = p.stdout.readline().decode(encoding)
+                if l:
                     logfile.write(l)
                     PrintCommandOutput(l)
                 elif p.poll() is not None:
@@ -233,8 +239,12 @@ def CurrentWorkingDirectory(dir):
     directory and resets it to the original directory when closed."""
     curdir = os.getcwd()
     os.chdir(dir)
-    try: yield
-    finally: os.chdir(curdir)
+    PrintInfo("Changed current working directory to '%s'" % dir)
+    try: 
+        yield
+    finally: 
+        os.chdir(curdir)
+        PrintInfo("Changed current working directory to '%s'" % curdir)
 
 def CopyFiles(context, src, dest):
     """Copy files like shutil.copy, but src may be a glob pattern."""
@@ -393,7 +403,7 @@ def DownloadFileWithPowershell(url, outputFilename):
     Run(cmd,logCommandOutput=False)
 
 def DownloadFileWithUrllib(url, outputFilename):
-    r = urllib2.urlopen(url)
+    r = urlopen(url)
     with open(outputFilename, "wb") as outfile:
         outfile.write(r.read())
 
@@ -432,7 +442,7 @@ def DownloadURL(url, context, force, dontExtract = None):
             if os.path.exists(tmpFilename):
                 os.remove(tmpFilename)
 
-            for i in xrange(maxRetries):
+            for i in range(maxRetries):
                 try:
                     context.downloader(url, tmpFilename)
                     break
@@ -623,6 +633,29 @@ def InstallBoost(context, force, buildArgs):
 
         if context.buildPython:
             b2_settings.append("--with-python")
+            pythonInfo = GetPythonInfo()
+            if Windows():
+                # Unfortunately Boost build scripts require the Python folder 
+                # that contains the executable on Windows
+                pythonPath = os.path.dirname(pythonInfo[0])
+            else:
+                # While other platforms want the complete executable path
+                pythonPath = pythonInfo[0]
+            # This is the only platform-independent way to configure these
+            # settings correctly and robustly for the Boost jam build system.
+            # There are Python config arguments that can be passed to bootstrap 
+            # but those are not available in boostrap.bat (Windows) so we must 
+            # take the following
+            # approach:
+            projectPath = 'python-config.jam'
+            with open(projectPath, 'w') as projectFile:
+                # Note that we must escape any special characters, like backslashes for jam, hence
+                # the mods below for the path arguments
+                line = 'using python : %s : %s : %s ;\n' % (pythonInfo[3], 
+                       pythonPath.replace('\\', '\\\\'), 
+                       pythonInfo[2].replace('\\', '\\\\'))
+                projectFile.write(line)
+            b2_settings.append("--user-config=python-config.jam")
 
         if context.buildKatana or context.buildOIIO:
             b2_settings.append("--with-date_time")
@@ -1193,6 +1226,8 @@ def InstallUSD(context, force, buildArgs):
 
         if context.buildPython:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=ON')
+            if sys.version[0] == '3':
+                extraArgs.append('-DPXR_PYTHON_MAJOR_3=ON')
 
             # CMake has trouble finding the executable, library, and include
             # directories when there are multiple versions of Python installed.
@@ -1212,6 +1247,8 @@ def InstallUSD(context, force, buildArgs):
                                  .format(pyLibPath=pythonInfo[1]))
                 extraArgs.append('-DPYTHON_INCLUDE_DIR="{pyIncPath}"'
                                  .format(pyIncPath=pythonInfo[2]))
+                extraArgs.append('-DPYTHON_VERSION_NODOT={pyVersion}'
+                                 .format(pyVersion=pythonInfo[3].replace('.','')))
         else:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=OFF')
 
@@ -1669,6 +1706,7 @@ class InstallContext:
         # - usdview
         self.buildUsdview = (self.buildUsdImaging and 
                              self.buildPython and 
+                             sys.version[0] == '2' and
                              args.build_usdview)
 
         # - Imaging plugins

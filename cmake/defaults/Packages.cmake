@@ -38,17 +38,27 @@ find_package(Threads REQUIRED)
 set(PXR_THREAD_LIBS "${CMAKE_THREAD_LIBS_INIT}")
 
 if(PXR_ENABLE_PYTHON_SUPPORT)
-    # --Python.  We are generally but not completely 2.6 compliant.
-    find_package(PythonInterp 2.7 REQUIRED)
-    find_package(PythonLibs 2.7 REQUIRED)
+    # --Python.
+    if(PXR_PYTHON_MAJOR_3)
+        find_package(PythonInterp 3.0 REQUIRED)
+        find_package(PythonLibs 3.0 REQUIRED)
+    else()
+        # We are generally but not completely 2.6 compliant.
+        find_package(PythonInterp 2.7 REQUIRED)
+        find_package(PythonLibs 2.7 REQUIRED)
+    endif()
+
+    set(BOOST_PYTHON_COMPONENT_NAME "python${PYTHON_VERSION_NODOT}")
 
     # --Boost
     find_package(Boost
         COMPONENTS
             program_options
-            python
+            ${BOOST_PYTHON_COMPONENT_NAME}
         REQUIRED
     )
+
+    set(Boost_PYTHON_LIBRARY "${Boost_PYTHON${PYTHON_VERSION_NODOT}_LIBRARY}")
 
     # --Jinja2
     find_package(Jinja2)
