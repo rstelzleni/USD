@@ -278,7 +278,7 @@ def FormatMultiProcs(numJobs, generator):
 
     return "{tag}{procs}".format(tag=tag, procs=numJobs)
 
-def RunCMake(context, force, extraArgs = None):
+def RunCMake(context, force, extraArgs = None, build=True):
     """Invoke CMake to configure, build, and install a library whose 
     source code is located in the current working directory."""
     # Create a directory for out-of-source builds in the build directory
@@ -339,9 +339,10 @@ def RunCMake(context, force, extraArgs = None):
                     osx_rpath=(osx_rpath or ""),
                     generator=(generator or ""),
                     extraArgs=(" ".join(extraArgs) if extraArgs else "")))
-        Run("cmake --build . --config {config} --target install -- {multiproc}"
-            .format(config=config,
-                    multiproc=FormatMultiProcs(context.numJobs, generator)))
+        if build:
+            Run("cmake --build . --config {config} --target install -- {multiproc}"
+                .format(config=config,
+                        multiproc=FormatMultiProcs(context.numJobs, generator)))
 
 def GetCMakeVersion():
     """
@@ -1247,8 +1248,9 @@ def InstallUSD(context, force, buildArgs):
                                  .format(pyLibPath=pythonInfo[1]))
                 extraArgs.append('-DPYTHON_INCLUDE_DIR="{pyIncPath}"'
                                  .format(pyIncPath=pythonInfo[2]))
-                extraArgs.append('-DPYTHON_VERSION_NODOT={pyVersion}'
-                                 .format(pyVersion=pythonInfo[3].replace('.','')))
+                # if boost >= 1.67
+                #extraArgs.append('-DPYTHON_VERSION_NODOT={pyVersion}'
+                #                 .format(pyVersion=pythonInfo[3].replace('.','')))
         else:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=OFF')
 
@@ -1372,7 +1374,7 @@ def InstallUSD(context, force, buildArgs):
 
         extraArgs += buildArgs
 
-        RunCMake(context, force, extraArgs)
+        RunCMake(context, force, extraArgs, build=False)
 
 USD = Dependency("USD", InstallUSD, "include/pxr/pxr.h")
 
@@ -1992,7 +1994,7 @@ if context.buildArgs:
 
 def FormatBuildArguments(buildArgs):
     s = ""
-    for depName in sorted(buildArgs.iterkeys()):
+    for depName in sorted(iter(buildArgs)):
         args = buildArgs[depName]
         s += """
                                 {name}: {args}""".format(

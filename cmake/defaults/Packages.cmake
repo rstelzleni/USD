@@ -48,7 +48,8 @@ if(PXR_ENABLE_PYTHON_SUPPORT)
         find_package(PythonLibs 2.7 REQUIRED)
     endif()
 
-    set(BOOST_PYTHON_COMPONENT_NAME "python${PYTHON_VERSION_NODOT}")
+    # if boost >= 1.67
+    set(BOOST_PYTHON_COMPONENT_NAME "python") #${PYTHON_VERSION_NODOT}")
 
     # --Boost
     find_package(Boost
@@ -58,7 +59,8 @@ if(PXR_ENABLE_PYTHON_SUPPORT)
         REQUIRED
     )
 
-    set(Boost_PYTHON_LIBRARY "${Boost_PYTHON${PYTHON_VERSION_NODOT}_LIBRARY}")
+#   XXX RYANS where is this used?
+#    set(Boost_PYTHON_LIBRARY "${Boost_PYTHON${PYTHON_VERSION_NODOT}_LIBRARY}")
 
     # --Jinja2
     find_package(Jinja2)
