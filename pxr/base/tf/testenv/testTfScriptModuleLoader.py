@@ -23,6 +23,7 @@
 # language governing permissions and limitations under the Apache License.
 #
 from pxr import Tf
+import sys
 
 # On Windows if this script is run with stdout redirected then the C++
 # stdout buffer is different from Python's stdout buffer.  As a result
@@ -31,7 +32,7 @@ from pxr import Tf
 # in Python here.
 import platform
 if platform.system() == 'Windows':
-    import os, sys
+    import os
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'a+', 0)
 
 sml = Tf.ScriptModuleLoader()
@@ -56,6 +57,7 @@ def Register(libs):
 print ("# Test case: loading one library generates a request to load all\n"
        "# libraries, one of which attemps to import the library we're\n"
        "# currently loading.")
+sys.stdout.flush()
 Register([
         ('LoadsAll', []),
         ('DepLoadsAll', ['LoadsAll']),
@@ -64,12 +66,14 @@ Register([
 print ("# This should attempt to (forwardly) load Other, which in turn tries\n"
        "# to import LoadsAll, which would fail, but we defer loading Other\n"
        "# until after LoadsAll is finished loading.")
+sys.stdout.flush()
 sml._LoadModulesForLibrary('DepLoadsAll')
 
 print ("# Registering a library that is totally independent, and raises an\n"
        "# error when loaded, but whose name comes first in dependency order.\n"
        "# Since there is no real dependency, the SML should not try to load\n"
        "# this module, which would cause an exception.")
+sys.stdout.flush()
 Register([
         ('AAA_RaisesError', [])
         ])
@@ -77,6 +81,7 @@ Register([
 print ("# Test case: loading one library dynamically imports a new,\n"
        "# previously unknown dependent library, which registers further\n"
        "# dependencies, and expects them to load.")
+sys.stdout.flush()
 Register([
         ('LoadsUnknown', []),
         ('Test', ['LoadsUnknown'])
@@ -87,5 +92,6 @@ Register([
 print ("# This should load LoadsUnknown, which loads Unknown dynamically,\n"
        "# which should request for Unknown's dependencies (NewDependency) to\n"
        "# load, which should work.")
+sys.stdout.flush()
 sml._LoadModulesForLibrary('Test')
 
