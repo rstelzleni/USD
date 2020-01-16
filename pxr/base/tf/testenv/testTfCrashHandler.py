@@ -25,6 +25,8 @@
 import os
 import sys
 
+from subprocess import Popen, PIPE, STDOUT
+
 """
 This script tests SIGSEGV and SIGFPE crash handling 
 """
@@ -34,7 +36,9 @@ if len(sys.argv) != 3:
 
 print("=== BEGIN EXPECTED ERROR ===")
 cmd = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), sys.argv[1])
-sin, sout = os.popen4(cmd)
+proc = Popen(cmd, shell=True, universal_newlines=True,
+             stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+sin, sout = (proc.stdin, proc.stdout)
 output = " ".join(sout.readlines())
 print(output)
 print("=== END EXPECTED ERROR ===")
