@@ -128,7 +128,7 @@ class TestPython(unittest.TestCase):
 
         with self.assertRaises(Tf.ErrorException) as cm:
             Tf._mightRaise(True)
-        for x in cm.exception:
+        for x in cm.exception.args:
             self.assertTrue(len(repr(x)))
 
         with self.assertRaises(Tf.ErrorException):
