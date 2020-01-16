@@ -67,8 +67,8 @@ testInterpreter(bool verbose)
         printf("TfPyRunString, seems good.\n");
     }
     
-    std::string modPath = TfPyGetModulePath("__main__");
-    if (modPath != "__main__") {
+    std::string modPath = TfPyGetModulePath("os");
+    if (modPath.empty()) {
         printf("ERROR: TfPyGetModulePath, no path returned.\n");
         numErrors++;
     } else if (verbose) {
