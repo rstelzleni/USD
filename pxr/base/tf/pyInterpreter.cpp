@@ -77,9 +77,14 @@ TfPyInitialize()
 
         const std::string s = ArchGetExecutablePath();
 
+#if PY_MAJOR_VERSION == 2
+        // In Python 2 it is safe to call this before Py_Initialize(), but this
+        // is no longer true in python 3.
+        //
         // Initialize Python threading.  This grabs the GIL.  We'll release it
         // at the end of this function.
         PyEval_InitThreads();
+#endif
 
         // Setting the program name is necessary in order for python to 
         // find the correct built-in modules. 
@@ -106,6 +111,19 @@ TfPyInitialize()
 #if !defined(ARCH_OS_WINDOWS)
         // Restore original sigint handler.
         sigaction(SIGINT, &origSigintHandler, NULL);
+#endif
+
+#if PY_MAJOR_VERSION > 2
+        // In CPython 3.6 this must be called after Py_Initialize(), or later
+        // on when we call PyGILState_Ensure()  we'll see fatal errors like: 
+        // Fatal Python error: take_gil: NULL tstate
+        // This should be fixed with this bug fix, but that fix won't make it
+        // back to Python 3.6.
+        // https://bugs.python.org/issue20891
+        //
+        // Initialize Python threading.  This grabs the GIL.  We'll release it
+        // at the end of this function.
+        PyEval_InitThreads();
 #endif
 
 #if PY_MAJOR_VERSION == 2
