@@ -389,7 +389,13 @@ TfPyUnsetenv(const std::string & name)
 
     try {
         object environObj(_GetOsEnviron());
-        object has_key(environObj.attr("has_key"));
+        // has_key is on the os.environ interface in python 2, but not
+        // in python 3.
+#if PY_MAJOR_VERSION == 2
+        object has_key = environObj.attr("has_key");
+#else
+        object has_key = environObj.attr("__contains__");
+#endif
         if (has_key(name)) {
             environObj[name].del();
         }
