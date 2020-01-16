@@ -57,8 +57,22 @@ _SetOutputFile(object const &file)
 
     TfDebug::SetOutputFile(fp);
 #else 
-    // XXX RYANS can we make it work?
-    TfPyThrowTypeError("_SetOutputFile is unsupported on python3");
+    // In Python 3 there is no PyFile_AsFile function, because the python
+    // io library has been rewritten to have more layers on top of the
+    // underlying system's file pointers. Since this api only works for
+    // stdout and stderr, we can avoid this issue by checking for those
+    // explicitly.
+    object sys(handle<>(PyImport_ImportModule("sys")));
+    if (file == object(sys.attr("stdout"))) {
+        TfDebug::SetOutputFile(stdout);
+    }
+    else if (file == object(sys.attr("stderr"))) {
+        TfDebug::SetOutputFile(stderr);
+    }
+    else {
+        // reports an error indicating correct usage, either stdout or stderr
+        TfDebug::SetOutputFile(NULL);
+    }
 #endif
 }
 

@@ -413,7 +413,9 @@ class TestPython(unittest.TestCase):
                 Tf.Debug.SetOutputFile(f.file)
 
         # argument checking.
-        with self.assertRaises(TypeError):
+        # Will raise TypeError in python2, and Tf.ErrorException in
+        # python3.
+        with self.assertRaises((TypeError, Tf.ErrorException)):
             Tf.Debug.SetOutputFile(1234)
 
 
