@@ -185,7 +185,11 @@ TfPyEvaluate(std::string const &expr, dict const& extraGlobals)
             TfScriptModuleLoader::GetInstance().GetModulesDict();
 
         // Make sure the builtins are available
+#if PY_MAJOR_VERSION == 2
         handle<> modHandle(PyImport_ImportModule("__builtin__"));
+#else
+        handle<> modHandle(PyImport_ImportModule("builtins"));
+#endif
         modulesDict["__builtins__"] = object(modHandle);
         modulesDict.update(extraGlobals);
 

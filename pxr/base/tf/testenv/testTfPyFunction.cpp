@@ -42,7 +42,7 @@ PXR_NAMESPACE_USING_DIRECTIVE
 static const char VoidFuncSource[] = "def VoidFunc(): pass\n";
 static const char BoolFuncSource[] = "def BoolFunc(): return True\n";
 static const char IntFuncSource[] = "def IntFunc(): return 13\n";
-static const char LongFuncSource[] = "def LongFunc(): return 17L\n";
+static const char LongFuncSource[] = "def LongFunc(): return 17\n";
 static const char DoubleFuncSource[] = "def DoubleFunc(): return 19.0\n";
 static const char StringFuncSource[] = "def StringFunc(): return 'a string'\n";
 static const char ObjectFuncSource[] = "def ObjectFunc(): return testObject\n";
@@ -95,7 +95,11 @@ main(int argc, char **argv)
 
     // Store our test functions in this dictionary rather than the main module.
     dict testEnv;
+#if PY_MAJOR_VERSION == 2
     testEnv.update(import("__builtin__").attr("__dict__"));
+#else
+    testEnv.update(import("builtins").attr("__dict__"));
+#endif
 
     // Expected results of calling functions
     const bool expectedBool = true;
@@ -137,7 +141,7 @@ main(int argc, char **argv)
     TF_AXIOM(!boolLambda.is_none());
     object intLambda = TfPyEvaluate("lambda: 13");
     TF_AXIOM(!intLambda.is_none());
-    object longLambda = TfPyEvaluate("lambda: 17L");
+    object longLambda = TfPyEvaluate("lambda: 17");
     TF_AXIOM(!longLambda.is_none());
     object doubleLambda = TfPyEvaluate("lambda: 19.0");
     TF_AXIOM(!doubleLambda.is_none());
