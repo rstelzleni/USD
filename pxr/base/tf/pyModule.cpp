@@ -113,14 +113,18 @@ private:
     void _WalkModule(object const &obj, WalkCallbackFn callback,
                      TfHashSet<PyObject *, TfHash> *visitedObjs)
     {
+        if (PyObject_HasAttrString(obj.ptr(), "__dict__")) {
 #if PY_MAJOR_VERSION == 3
-        if (PyObject_HasAttrString(obj.ptr(), "__dict__")) {
-
-            object itemsObject = obj.attr("__dict__").attr("items")();
-            handle<> listDebug(PyObject_CallFunction((PyObject*)&PyList_Type, "O", itemsObject.ptr()));
-            list items = list(listDebug);
+            // In python 3 dict.items() returns a proxy view object, not a list.
+            // boost::python::extract<list> fails on these views, and raises:
+            // 
+            // TypeError: Expecting an object of type list; got an object of type
+            // dict_items instead
+            //
+            // A workaround is to use the boost::python::list constructor
+            object items_view = obj.attr("__dict__").attr("items")();
+            list items(items_view);
 #else
-        if (PyObject_HasAttrString(obj.ptr(), "__dict__")) {
             list items = extract<list>(obj.attr("__dict__").attr("items")());
 #endif
             size_t lenItems = len(items);
