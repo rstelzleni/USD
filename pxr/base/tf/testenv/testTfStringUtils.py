@@ -62,16 +62,15 @@ class TestStringUtils(unittest.TestCase):
         """Testing that we can pass python unicode objects to wrapped
         functions expecting std::string"""
         self.log.info("Testing unicode calls")
-        # XXX RYANS clean up redundant tests
         self.assertEqual(Tf.StringSplit('123', '2'), ['1', '3'])
-        self.assertEqual(Tf.StringSplit('123', '2'), ['1', '3'])
-        self.assertEqual(Tf.StringSplit('123', '2'), ['1', '3'])
-        self.assertEqual(Tf.StringSplit('123', '2'), ['1', '3'])
+        self.assertEqual(Tf.StringSplit('123', u'2'), ['1', '3'])
+        self.assertEqual(Tf.StringSplit(u'123', '2'), ['1', '3'])
+        self.assertEqual(Tf.StringSplit(u'123', u'2'), ['1', '3'])
 
         self.assertEqual(Tf.DictionaryStrcmp('apple', 'banana'), -1)
-        self.assertEqual(Tf.DictionaryStrcmp('apple', 'banana'), -1)
-        self.assertEqual(Tf.DictionaryStrcmp('apple', 'banana'), -1)
-        self.assertEqual(Tf.DictionaryStrcmp('apple', 'banana'), -1)
+        self.assertEqual(Tf.DictionaryStrcmp('apple', u'banana'), -1)
+        self.assertEqual(Tf.DictionaryStrcmp(u'apple', 'banana'), -1)
+        self.assertEqual(Tf.DictionaryStrcmp(u'apple', u'banana'), -1)
 
     def test_StringToLong(self):
 
