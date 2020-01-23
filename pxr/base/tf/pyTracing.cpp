@@ -109,13 +109,13 @@ static int _TracePythonFn(PyObject *, PyFrameObject *frame,
 {
     // Build up a trace info struct.
 
-    const std::string funcName = PyString_AsStdString(frame->f_code->co_name);
-    const std::string fileName = PyString_AsStdString(frame->f_code->co_filename);
+    const char * funcName = TfPyString_AsString(frame->f_code->co_name);
+    const char * fileName = TfPyString_AsString(frame->f_code->co_filename);
 
     TfPyTraceInfo info;
     info.arg = arg;
-    info.funcName = funcName.c_str();
-    info.fileName = fileName.c_str();
+    info.funcName = funcName;
+    info.fileName = fileName;
     info.funcLine = frame->f_code->co_firstlineno;
     info.what = what;
 

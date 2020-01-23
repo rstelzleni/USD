@@ -50,16 +50,16 @@ testInterpreter(bool verbose)
     TfPyRunSimpleString("2+2");
     
     handle<> result = TfPyRunString("'hello'\n", Py_eval_input);
-    if (!result || !PyString_Check(result.get()) ||
-        (strcmp(PyString_AsStdString(result.get()).c_str(), "hello") != 0)) {
+    if (!result || !TfPyString_Check(result.get()) ||
+        (strcmp(TfPyString_AsString(result.get()), "hello") != 0)) {
         if (!result) {
             printf("ERROR: TfPyRunString, no result.\n");
         } else if (result.get() == Py_None) {
             printf("ERROR: TfPyRunString, result is None.\n");
-        } else if (!PyString_Check(result.get())) {
+        } else if (!TfPyString_Check(result.get())) {
             printf("ERROR: TfPyRunString, result not a string.\n");
-        } else if (strcmp(PyString_AsStdString(result.get()).c_str(), "hello") != 0) {
-            printf("ERROR: TfPyRunString, string not expected (%s).\n", PyString_AsStdString(result.get()).c_str());
+        } else if (strcmp(TfPyString_AsString(result.get()), "hello") != 0) {
+            printf("ERROR: TfPyRunString, string not expected (%s).\n", TfPyString_AsString(result.get()));
         }
         //PyObject_Print(result, fdopen(STDOUT_FILENO, "w"), 0);
         numErrors++;
