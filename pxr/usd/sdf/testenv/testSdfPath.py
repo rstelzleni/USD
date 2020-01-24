@@ -66,7 +66,7 @@ class TestSdfPath(unittest.TestCase):
             self.assertTrue(Sdf.Path(badPath).isEmpty)
             self.assertEqual(Sdf.Path(badPath), Sdf.Path())
             self.assertEqual(Sdf.Path(badPath), Sdf.Path.emptyPath)
-            self.assertFalse(Sdf.Path.IsValidPathString(badPath)[0])
+            self.assertFalse(Sdf.Path.IsValidPathString(badPath))
         print('\tPassed')
         
         # Test lessthan
