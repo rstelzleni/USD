@@ -296,7 +296,7 @@ class TestSdfPath(unittest.TestCase):
         # ========================================================================
         # Test GetPrimOrPrimVariantSelectionPath
         # ========================================================================
-        print "Test GetPrimOrPrimVariantSelectionPath"
+        print("Test GetPrimOrPrimVariantSelectionPath")
         
         primPath = Sdf.Path("/A/B/C{set=sel}").GetPrimOrPrimVariantSelectionPath()
         self.assertEqual(primPath, Sdf.Path("/A/B/C{set=sel}"))
@@ -321,7 +321,7 @@ class TestSdfPath(unittest.TestCase):
         primPath = Sdf.Path("../C{set=sel}.foo:bar:baz").GetPrimOrPrimVariantSelectionPath()
         self.assertEqual(primPath, Sdf.Path("../C{set=sel}"))
         
-        print '\tPassed'
+        print('\tPassed')
 
         # ========================================================================
         # Test HasPrefix and ReplacePrefix
