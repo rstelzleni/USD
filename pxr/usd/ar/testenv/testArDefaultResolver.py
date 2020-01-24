@@ -22,7 +22,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
-
+from __future__ import print_function
 import os
 from pxr import Ar
 
@@ -30,7 +30,16 @@ import unittest
 import shutil
 
 class TestArDefaultResolver(unittest.TestCase):
+    def lower_drive_letter(self, path):
+        d, p = os.path.splitdrive(path)
+        return os.path.join(d.lower(), p)
+
     def assertPathsEqual(self, path1, path2):
+        # On windows on python3 drive letter is upper case, while ArDefaultResolver
+        # makes it lowercase 
+        path1 = self.lower_drive_letter(path1)
+        path2 = self.lower_drive_letter(path2)
+
         # Flip backslashes to forward slashes to accommodate platform
         # differences. We don't use os.path.normpath since that might
         # fix up other differences we'd want to catch in these tests.
@@ -75,7 +84,7 @@ class TestArDefaultResolver(unittest.TestCase):
         testFileName = 'test_Resolve.txt'
         testFilePath = os.path.abspath(testFileName)
         with open(testFilePath, 'w') as ofp:
-            print >>ofp, 'Garbage'
+            print('Garbage', file=ofp)
         
         resolvedPath = Ar.GetResolver().Resolve(testFileName)
 
@@ -92,7 +101,7 @@ class TestArDefaultResolver(unittest.TestCase):
         testFileName = 'test_ResolveWithContext.txt'
         testFilePath = os.path.join(testDir, testFileName) 
         with open(testFilePath, 'w') as ofp:
-            print >>ofp, 'Garbage'
+            print('Garbage', file=ofp)
         
         resolver = Ar.GetResolver()
 
@@ -113,7 +122,7 @@ class TestArDefaultResolver(unittest.TestCase):
         testFileName = 'test_ResolveWithContext.txt'
         testFilePath = os.path.join(testDir, testFileName) 
         with open(testFilePath, 'w') as ofp:
-            print >>ofp, 'Garbage'
+            print('Garbage', file=ofp)
         
         resolver = Ar.GetResolver()
         context = Ar.DefaultResolverContext([
@@ -141,12 +150,12 @@ class TestArDefaultResolver(unittest.TestCase):
         assetFileName = 'test_Asset.txt'
         assetFilePath = os.path.abspath(assetFileName)
         with open(assetFilePath, 'w') as ofp:
-            print >>ofp, 'Garbage'
+            print('Garbage', file=ofp)
 
         testFileName = 'test_SiblingOfAsset.txt'
         testFilePath = os.path.abspath(testFileName)
         with open(testFilePath, 'w') as ofp:
-            print >>ofp, 'Garbage'
+            print('Garbage', file=ofp)
         
         # We use the non-absolute assetFileName to test the
         # cwd-anchoring behavior of CreateDefaultContextForAsset()
