@@ -93,9 +93,9 @@ class PayloadedScene(object):
             os.unlink(fname)
 
     def PrintPaths(self, msg=""):
-        print("    Paths: "+msg)
+        print(("    Paths: "+msg))
         for p in self.stage.Traverse():
-            print "    ", p
+            print("    ", p)
         print("")
 
 
@@ -429,7 +429,7 @@ class TestUsdLoadUnload(unittest.TestCase):
         """Test Stage::LoadUnload thoroughly, as all other requests funnel into it.
         """
 
-        print sys._getframe().f_code.co_name
+        print(sys._getframe().f_code.co_name)
 
         for fmt in allFormats:
             p = PayloadedScene(fmt)
@@ -586,7 +586,7 @@ class TestUsdLoadUnload(unittest.TestCase):
     def test_Load(self):
         """Tests UsdStage::Load/Unload.
         """
-        print sys._getframe().f_code.co_name
+        print(sys._getframe().f_code.co_name)
         for fmt in allFormats:
             p = PayloadedScene(fmt)
             p.PrintPaths()
@@ -661,7 +661,7 @@ class TestUsdLoadUnload(unittest.TestCase):
 
     def test_Create(self):
         """Test the behavior of UsdStage::Create WRT load behavior"""
-        print sys._getframe().f_code.co_name
+        print(sys._getframe().f_code.co_name)
 
         # Exercise creating an in memory stage
         for fmt in allFormats:
@@ -714,7 +714,7 @@ class TestUsdLoadUnload(unittest.TestCase):
     def test_Open(self):
         """Test the behavior of UsdStage::Open WRT load behavior.
         """
-        print sys._getframe().f_code.co_name
+        print(sys._getframe().f_code.co_name)
         
         for fmt in allFormats:
             p = PayloadedScene(fmt)
@@ -750,7 +750,7 @@ class TestUsdLoadUnload(unittest.TestCase):
         # TODO: assert that inactive paths do not show up in loaded or
         # loadable sets.
 
-        print sys._getframe().f_code.co_name
+        print(sys._getframe().f_code.co_name)
         for fmt in allFormats:
             p = PayloadedScene(fmt)
             p.PrintPaths()
@@ -789,7 +789,7 @@ class TestUsdLoadUnload(unittest.TestCase):
     def test_RedundantLoads(self):
         """Ensure that calling load or unload redundantly is not an error
         """
-        print sys._getframe().f_code.co_name
+        print(sys._getframe().f_code.co_name)
         for fmt in allFormats:
             p = PayloadedScene(fmt)
             p.PrintPaths()
