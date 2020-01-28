@@ -565,7 +565,7 @@ class TestUsdInstancing(unittest.TestCase):
         ValidateExpectedChanges(nl, ['/ModelGroup_2'])
 
         print("-" * 60)
-        print "Unloading instance /ModelGroup_1"
+        print("Unloading instance /ModelGroup_1")
         group_1.Unload()
 
         ValidateExpectedInstances(s, 
