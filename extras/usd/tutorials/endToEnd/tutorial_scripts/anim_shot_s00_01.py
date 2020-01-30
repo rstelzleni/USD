@@ -48,9 +48,9 @@ def main():
 
     stage.GetEditTarget().GetLayer().Save()
 
-    print '==='
-    print 'usdview %s' % shotFilePath
-    print 'usdcat %s' % animLayerFilePath
+    print('===')
+    print('usdview %s' % shotFilePath)
+    print('usdcat %s' % animLayerFilePath)
 
 def _AnimateBilliards(stage):
     _MoveBall(stage.GetPrimAtPath('/World/anim/CueBall'), (1, 0), 40)

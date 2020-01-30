@@ -53,9 +53,9 @@ def main():
 
     stage.GetEditTarget().GetLayer().Save()
 
-    print '==='
-    print 'usdview %s' % sequenceFilePath
-    print 'usdcat %s' % setsLayoutLayerFilePath
+    print('===')
+    print('usdview %s' % sequenceFilePath)
+    print('usdcat %s' % setsLayoutLayerFilePath)
 
 if __name__ == '__main__':
     main()

@@ -52,9 +52,9 @@ def main():
 
     stage.GetEditTarget().GetLayer().Save()
 
-    print '==='
-    print 'usdview %s' % shotFilePath
-    print 'usdcat %s' % layoutLayerFilePath
+    print('===')
+    print('usdview %s' % shotFilePath)
+    print('usdcat %s' % layoutLayerFilePath)
 
 def _SetupBilliards(stage):
     from pxr import Kind, Sdf, Usd, UsdGeom
