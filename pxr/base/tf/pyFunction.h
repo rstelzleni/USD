@@ -81,7 +81,9 @@ struct TfPyFunctionFromPython<Ret (Args...)>
     {
         TfPyObjWrapper func;
         TfPyObjWrapper weakSelf;
+#if PY_MAJOR_VERSION == 2
         TfPyObjWrapper cls;
+#endif
 
         Ret operator()(Args... args) {
             using namespace boost::python;

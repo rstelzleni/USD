@@ -96,8 +96,11 @@ class TestStringUtils(unittest.TestCase):
             Tf._GetULongMax(), Tf._GetLongMax(), Tf._GetLongMin())
 
         # Check the extrema and one before to ensure they work.
-        list(map(checku, [ulmax-1, ulmax]))
-        list(map(checks, [lmin, lmin+1, lmax-1, lmax]))
+        for n in [ulmax-1, ulmax]:
+            checku(n)
+
+        for n in [lmin, lmin+1, lmax-1, lmax]:
+            checks(n)
 
         # Check that some beyond the extrema over/underflow.
         #

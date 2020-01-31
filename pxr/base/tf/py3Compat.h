@@ -49,10 +49,11 @@ PXR_NAMESPACE_OPEN_SCOPE
 // Note: Slightly different semantics, the macro does not do any error checking
 #define TfPyInt_AS_LONG PyLong_AsLong
 
-// Methods that are renamed in python 3
+// Method and module names that are changed in python 3
 #define TfPyIteratorNextMethodName "__next__"
 #define TfPyClassMethodFuncName "__func__"
 #define TfPyBoolBuiltinFuncName "__bool__"
+#define TfPyBuiltinModuleName "builtins"
 
 #else // Python 2
 
@@ -65,6 +66,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 #define TfPyIteratorNextMethodName "next"
 #define TfPyClassMethodFuncName "im_func"
 #define TfPyBoolBuiltinFuncName "__nonzero__"
+#define TfPyBuiltinModuleName "__builtin__"
 
 #define TfPyString_AsString PyString_AsString
 #define TfPyString_Check PyString_Check

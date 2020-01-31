@@ -114,7 +114,7 @@ private:
                      TfHashSet<PyObject *, TfHash> *visitedObjs)
     {
         if (PyObject_HasAttrString(obj.ptr(), "__dict__")) {
-#if PY_MAJOR_VERSION == 3
+#if PY_MAJOR_VERSION >= 3
             // In python 3 dict.items() returns a proxy view object, not a list.
             // boost::python::extract<list> fails on these views, and raises:
             // 
