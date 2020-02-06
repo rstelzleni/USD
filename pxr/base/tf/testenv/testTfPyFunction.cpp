@@ -103,7 +103,9 @@ main(int argc, char **argv)
     // Expected results of calling functions
     const bool expectedBool = true;
     const int expectedInt = 13;
+#if PY_MAJOR_VERSION < 3
     const long expectedLong = 17;
+#endif
     const double expectedDouble = 19;
     const std::string expectedString = "a string";
     object expectedObject = TfPyEvaluate("object()");

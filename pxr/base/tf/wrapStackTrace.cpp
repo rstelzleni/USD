@@ -24,6 +24,7 @@
 
 #include "pxr/pxr.h"
 
+#include "pxr/base/arch/fileSystem.h"
 #include "pxr/base/tf/stackTrace.h"
 #include "pxr/base/tf/pyUtils.h"
 
@@ -48,7 +49,7 @@ _PrintStackTrace(object &obj, const std::string &reason)
     int fd = PyObject_AsFileDescriptor(obj.ptr());
     if (fd >= 0)
     {
-        FILE * file = expect_non_null(fdopen(fd, "w"));
+        FILE * file = expect_non_null(ArchFdOpen(fd, "w"));
         if (file)
         {
             TfPrintStackTrace(file, reason);

@@ -29,7 +29,7 @@
 
 #include "pxr/pxr.h"
 
-#include <Python.h>
+#include "pxr/base/tf/pySafePython.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 

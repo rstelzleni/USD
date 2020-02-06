@@ -220,12 +220,12 @@ public:
             string *fullNamePrefix = &_newModuleName;
             string localPrefix;
             if (PyObject_HasAttrString(owner.ptr(), "__module__")) {
-                const std::string ownerName =
+                char const *ownerName =
                     TfPyString_AsString(PyObject_GetAttrString
                                        (owner.ptr(), "__name__"));
                 localPrefix.append(_newModuleName);
                 localPrefix.push_back('.');
-                localPrefix.append(ownerName.c_str());
+                localPrefix.append(ownerName);
                 fullNamePrefix = &localPrefix;
             }
 

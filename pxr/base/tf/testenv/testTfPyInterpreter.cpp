@@ -24,8 +24,8 @@
 // testTfPyInterpreter.mm
 
 #include "pxr/pxr.h"
+#include "pxr/base/tf/py3Compat.h"
 #include "pxr/base/tf/pyInterpreter.h"
-#include "pxr/base/tf/pyUtils.h"
 
 #include <boost/python/handle.hpp>
 

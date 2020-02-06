@@ -231,7 +231,7 @@ namespace TfPyContainerConversions {
             || PyRange_Check(obj_ptr)
             || (   !PyBytes_Check(obj_ptr)
                 && !PyUnicode_Check(obj_ptr)
-                && (   obj_ptr->ob_type == 0
+                && (   Py_TYPE(obj_ptr) == 0
                     || Py_TYPE(Py_TYPE(obj_ptr)) == 0
                     || Py_TYPE(Py_TYPE(obj_ptr))->tp_name == 0
                     || std::strcmp(

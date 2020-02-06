@@ -34,7 +34,7 @@ def PrepareModule(module, result):
                         '__doc__', '__file__', '__path__'])
     newModuleName = result.get('__name__')
 
-    for key, value in list(module.__dict__.items()):
+    for key, value in module.__dict__.items():
         if not key in ignore:
             result[key] = value
 

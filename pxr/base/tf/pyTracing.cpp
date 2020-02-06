@@ -108,14 +108,10 @@ static int _TracePythonFn(PyObject *, PyFrameObject *frame,
                           int what, PyObject *arg)
 {
     // Build up a trace info struct.
-
-    const char * funcName = TfPyString_AsString(frame->f_code->co_name);
-    const char * fileName = TfPyString_AsString(frame->f_code->co_filename);
-
     TfPyTraceInfo info;
     info.arg = arg;
-    info.funcName = funcName;
-    info.fileName = fileName;
+    info.funcName = TfPyString_AsString(frame->f_code->co_name);
+    info.fileName = TfPyString_AsString(frame->f_code->co_filename);
     info.funcLine = frame->f_code->co_firstlineno;
     info.what = what;
 

@@ -112,59 +112,56 @@ void BOOST_PP_CAT(initlib, MFB_PACKAGE_NAME)() {
 
 #else // Python 3:
 
+// These functions serve the same purpose as the python 2 implementations
+// above, but are updated for the overhauled approach to module initialization
+// in python 3. In python 3 init<name> is replaced by PyInit_<name>, and
+// initlib<name> becomes PyInit_lib<name>. The init_module function still
+// exists, but now takes a struct of input values instead of a list of
+// parameters. Also, these functions now return a PyObject* instead of void.
+//
+// See https://docs.python.org/3/c-api/module.html#initializing-c-modules_
+//
 extern "C"
 ARCH_EXPORT
 PyObject* BOOST_PP_CAT(PyInit__, MFB_PACKAGE_NAME)() {
 
-    static PyModuleDef_Base initial_m_base = {
-        PyObject_HEAD_INIT(NULL)
-        0, /* m_init */
-        0, /* m_index */
-        0 /* m_copy */ };
-    static PyMethodDef initial_methods[] = { { 0, 0, 0, 0 } };
-
     static struct PyModuleDef moduledef = {
-        initial_m_base,
-        BOOST_PP_STRINGIZE(BOOST_PP_CAT(_, MFB_PACKAGE_NAME)),
-        0, /* m_doc */
-        -1, /* m_size */
-        initial_methods,
-        0,  /* m_reload */
-        0, /* m_traverse */
-        0, /* m_clear */
-        0,  /* m_free */
+        PyModuleDef_HEAD_INIT,
+        BOOST_PP_STRINGIZE(BOOST_PP_CAT(_, MFB_PACKAGE_NAME)), // m_name
+        0,                                                     // m_doc
+        -1,                                                    // m_size
+        NULL,                                                  // m_methods
+        0,                                                     // m_reload
+        0,                                                     // m_traverse
+        0,                                                     // m_clear
+        0,                                                     // m_free
     };
 
     PXR_NAMESPACE_USING_DIRECTIVE
-    return boost::python::detail::init_module(moduledef, BOOST_PP_CAT(init_module_, MFB_PACKAGE_NAME));
+    return boost::python::detail::init_module(moduledef,
+                BOOST_PP_CAT(init_module_, MFB_PACKAGE_NAME));
 }
 
 extern "C"
 ARCH_EXPORT
 PyObject* BOOST_PP_CAT(PyInit_lib, MFB_PACKAGE_NAME)() {
-    static PyModuleDef_Base initial_m_base = {
-        PyObject_HEAD_INIT(NULL)
-        0, /* m_init */
-        0, /* m_index */
-        0 /* m_copy */ };
-    static PyMethodDef initial_methods[] = { { 0, 0, 0, 0 } };
 
     static struct PyModuleDef moduledef = {
-        initial_m_base,
-        BOOST_PP_STRINGIZE(BOOST_PP_CAT(lib, MFB_PACKAGE_NAME)),
-        0, /* m_doc */
-        -1, /* m_size */
-        initial_methods,
-        0,  /* m_reload */
-        0, /* m_traverse */
-        0, /* m_clear */
-        0,  /* m_free */
+        PyModuleDef_HEAD_INIT,
+        BOOST_PP_STRINGIZE(BOOST_PP_CAT(lib, MFB_PACKAGE_NAME)), // m_name
+        0,                                                       // m_doc
+        -1,                                                      // m_size
+        NULL,                                                    // m_methods
+        0,                                                       // m_reload
+        0,                                                       // m_traverse
+        0,                                                       // m_clear
+        0,                                                       // m_free
     };
 
     PXR_NAMESPACE_USING_DIRECTIVE
-        return boost::python::detail::init_module(moduledef, BOOST_PP_CAT(init_module_, MFB_PACKAGE_NAME));
+    return boost::python::detail::init_module(moduledef, 
+                BOOST_PP_CAT(init_module_, MFB_PACKAGE_NAME));
 }
-
 
 #endif
 
