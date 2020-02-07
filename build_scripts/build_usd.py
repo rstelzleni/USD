@@ -591,7 +591,10 @@ elif Windows():
     # subdirectory, which we have to account for here. In theory, specifying 
     # "layout=system" would make the Windows install match Linux/MacOS, but that 
     # causes problems for other dependencies that look for boost.
-    if IsVisualStudio2017OrGreater():
+    if IsVisualStudio2019OrGreater():
+        BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.70.0/boost_1_70_0.tar.gz"
+        BOOST_VERSION_FILE = "include/boost-1_70_0/boost/version.hpp"
+    elif IsVisualStudio2017OrGreater():
         BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.65.1/boost_1_65_1.tar.gz"
         BOOST_VERSION_FILE = "include/boost-1_65_1/boost/version.hpp"
     else:
@@ -689,8 +692,8 @@ def InstallBoost(context, force, buildArgs):
 
         if Windows():
             if IsVisualStudio2019OrGreater():
-                pass
-            if IsVisualStudio2017OrGreater():
+                b2_settings.append("toolset=msvc-14.2")
+            elif IsVisualStudio2017OrGreater():
                 b2_settings.append("toolset=msvc-14.1")
             else:
                 b2_settings.append("toolset=msvc-14.0")
