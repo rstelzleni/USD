@@ -660,8 +660,9 @@ def InstallBoost(context, force, buildArgs):
             projectPath = 'python-config.jam'
             with open(projectPath, 'w') as projectFile:
                 # Note that we must escape any special characters, like backslashes for jam, hence
-                # the mods below for the path arguments
-                line = 'using python : %s : %s : %s ;\n' % (pythonInfo[3], 
+                # the mods below for the path arguments. Also, if the path contains spaces jam will
+                # not handle them well. Surround the path parameters in quotes.
+                line = 'using python : %s : "%s" : "%s" ;\n' % (pythonInfo[3], 
                        pythonPath.replace('\\', '\\\\'), 
                        pythonInfo[2].replace('\\', '\\\\'))
                 projectFile.write(line)
