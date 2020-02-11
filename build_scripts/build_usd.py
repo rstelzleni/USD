@@ -583,18 +583,24 @@ if Linux():
     BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.61.0/boost_1_61_0.tar.gz"
     BOOST_VERSION_FILE = "include/boost/version.hpp"
 elif MacOS():
-    BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.61.0/boost_1_61_0.tar.gz"
+    if sys.version_info.major >= 3:
+        BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.70.0/boost_1_70_0.tar.gz"
+    else:
+        BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.61.0/boost_1_61_0.tar.gz"
     BOOST_VERSION_FILE = "include/boost/version.hpp"
 elif Windows():
-    # On Visual Studio 2017 we need at least boost 1.65.1
     # The default installation of boost on Windows puts headers in a versioned 
     # subdirectory, which we have to account for here. In theory, specifying 
     # "layout=system" would make the Windows install match Linux/MacOS, but that 
     # causes problems for other dependencies that look for boost.
-    if IsVisualStudio2019OrGreater():
+    #
+    # We need boost 1.70 if we're building on Visual Studio 2019, or if we're
+    # supporting python 3.
+    if IsVisualStudio2019OrGreater() or sys.version_info.major >= 3:
         BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.70.0/boost_1_70_0.tar.gz"
         BOOST_VERSION_FILE = "include/boost-1_70_0/boost/version.hpp"
     elif IsVisualStudio2017OrGreater():
+        # On Visual Studio 2017 we need at least boost 1.65.1
         BOOST_URL = "https://downloads.sourceforge.net/project/boost/boost/1.65.1/boost_1_65_1.tar.gz"
         BOOST_VERSION_FILE = "include/boost-1_65_1/boost/version.hpp"
     else:
