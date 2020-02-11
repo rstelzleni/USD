@@ -114,12 +114,8 @@ TfPyInitialize()
 #endif
 
 #if PY_MAJOR_VERSION > 2
-        // In CPython 3.6 this must be called after Py_Initialize(), or later
-        // on when we call PyGILState_Ensure()  we'll see fatal errors like: 
-        // Fatal Python error: take_gil: NULL tstate
-        // This should be fixed with this bug fix, but that fix won't make it
-        // back to Python 3.6.
-        // https://bugs.python.org/issue20891
+        // In python 3 PyEval_InitThreads must be called after Py_Initialize()
+        // see https://docs.python.org/3/c-api/init.html
         //
         // Initialize Python threading.  This grabs the GIL.  We'll release it
         // at the end of this function.
