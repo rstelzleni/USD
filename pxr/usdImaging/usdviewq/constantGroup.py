@@ -26,6 +26,7 @@
 module, but enum is not available in Python 2's standard library.
 """
 
+import sys
 import types
 
 class _MetaConstantGroup(type):
@@ -84,11 +85,21 @@ class _MetaConstantGroup(type):
         """Iterate over each constant in the group."""
         return iter(self._all)
 
-class ConstantGroup(object):
-    """The base constant group class, intended to be inherited by actual groups
-    of constants.
-    """
-    __metaclass__ = _MetaConstantGroup
+# six has a utility that makes this easy, looks like
+# @six.add_metaclass(_MetaConstantGroup)
+if sys.version_info.major >= 3:
+    class ConstantGroup(object, metaclass=_MetaConstantGroup):
+        """The base constant group class, intended to be inherited by actual groups
+        of constants.
+        """
+        def __new__(cls, *args, **kwargs):
+            raise TypeError("ConstantGroup objects cannot be created.")
+else:
+    class ConstantGroup(object):
+        """The base constant group class, intended to be inherited by actual groups
+        of constants.
+        """
+        __metaclass__ = _MetaConstantGroup
 
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("ConstantGroup objects cannot be created.")
+        def __new__(cls, *args, **kwargs):
+            raise TypeError("ConstantGroup objects cannot be created.")

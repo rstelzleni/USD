@@ -136,12 +136,12 @@ if (${PXR_BUILD_USDVIEW})
             "Setting PXR_BUILD_USDVIEW=OFF because "
             "PXR_ENABLE_GL_SUPPORT=OFF")
         set(PXR_BUILD_USDVIEW "OFF" CACHE BOOL "" FORCE)
-    elseif (${PXR_PYTHON_MAJOR_3})
-        # XXX RYANS remove this check once we have Qt support	
-        message(STATUS
-            "Setting PXR_BUILD_USDVIEW=OFF because "
-            "PXR_PYTHON_MAJOR_3=ON")
-        set(PXR_BUILD_USDVIEW "OFF" CACHE BOOL "" FORCE)
+#    elseif (${PXR_PYTHON_MAJOR_3})
+#        # XXX RYANS remove this check once we have Qt support	
+#        message(STATUS
+#            "Setting PXR_BUILD_USDVIEW=OFF because "
+#            "PXR_PYTHON_MAJOR_3=ON")
+#        set(PXR_BUILD_USDVIEW "OFF" CACHE BOOL "" FORCE)
     endif()
 endif()
 

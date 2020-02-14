@@ -77,14 +77,14 @@ def _testBasic(appController):
     # chain, so it takes two "move right" actions to select each level of
     # path hierarchy
     path = Sdf.Path("/World/sets/setModel")
-    for i in xrange(2 * path.pathElementCount):
+    for i in range(2 * path.pathElementCount):
         _postAndProcessKeyEvent(QtCore.Qt.Key_Right, appObj)
 
     assert len(selectionDataModel.getPrims()) == 1
     assert selectionDataModel.getFocusPrim().GetPrimPath() == path
 
     # Now roll it all back up
-    for i in xrange(1, 2 * path.pathElementCount):
+    for i in range(1, 2 * path.pathElementCount):
         # Send the event to mainWindow to ensure our app filter reroutes it
         # to the focusWidget.
         _postAndProcessKeyEvent(QtCore.Qt.Key_Left, appObj)

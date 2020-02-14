@@ -1718,7 +1718,7 @@ class InstallContext:
         # - usdview
         self.buildUsdview = (self.buildUsdImaging and 
                              self.buildPython and 
-                             sys.version[0] == '2' and
+                             #sys.version[0] == '2' and
                              args.build_usdview)
 
         # - Imaging plugins

@@ -25,10 +25,10 @@
 from collections import OrderedDict
 
 from pxr import Sdf, Gf
-from qt import QtCore
+from .qt import QtCore
 
-from customAttributes import (ComputedPropertyNames, BoundingBoxAttribute,
-    LocalToWorldXformAttribute, ComputedPropertyFactory)
+from .customAttributes import (ComputedPropertyNames, BoundingBoxAttribute,
+                               LocalToWorldXformAttribute, ComputedPropertyFactory)
 
 
 # Indicates that all instances of a prim are selected.
@@ -132,7 +132,7 @@ class _PrimSelection(object):
     def clear(self):
         """Clear the path selection."""
 
-        for path in self._selection.keys():
+        for path in list(self._selection.keys()):
             self._clearPrimPath(path)
     
     def removeMatchingPaths(self, matches):
