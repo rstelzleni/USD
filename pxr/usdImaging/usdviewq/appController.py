@@ -32,6 +32,7 @@ import re, sys, os, cProfile, pstats, traceback
 from itertools import groupby
 from time import time, sleep
 from collections import deque, OrderedDict
+from functools import cmp_to_key
 
 # Usd Library Components
 from pxr import Usd, UsdGeom, UsdShade, UsdUtils, UsdImagingGL, Glf, Sdf, Tf, Ar
