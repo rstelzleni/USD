@@ -29,13 +29,11 @@
 #include "pxr/pxr.h"
 #include "pxr/imaging/glf/glContext.h"
 #include "pxr/base/tf/singleton.h"
-#include <boost/noncopyable.hpp>
-#include <boost/optional.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
+
 #include <boost/shared_ptr.hpp>
 
-PXR_NAMESPACE_OPEN_SCOPE
+#include <memory>
+#include <vector>
 
 
 struct GlfGLContextRegistry_Data;
@@ -79,9 +77,10 @@ private:
     friend class TfSingleton<GlfGLContextRegistry>;
 
 private:
-    boost::ptr_vector<GlfGLContextRegistrationInterface> _interfaces;
-    boost::optional<GlfGLContextSharedPtr> _shared;
-    boost::scoped_ptr<GlfGLContextRegistry_Data> _data;
+    std::vector<std::unique_ptr<GlfGLContextRegistrationInterface>> _interfaces;
+    bool _sharedContextInitialized;
+    GlfGLContextSharedPtr _shared;
+    std::unique_ptr<GlfGLContextRegistry_Data> _data;
 };
 
 
