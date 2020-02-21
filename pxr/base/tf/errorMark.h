@@ -31,8 +31,6 @@
 #include "pxr/base/tf/errorTransport.h"
 #include "pxr/base/tf/api.h"
 
-#include <boost/noncopyable.hpp>
-
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// \class TfErrorMark
@@ -63,7 +61,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 ///      }
 /// \endcode
 ///
-class TfErrorMark : boost::noncopyable
+class TfErrorMark
 {
   public:
 
@@ -81,6 +79,10 @@ class TfErrorMark : boost::noncopyable
     /// are pending errors, this will report them via the diagnostic delegate
     /// (if one is installed) otherwise by printing to stderr.
     TF_API ~TfErrorMark();
+
+    // Disallow copies
+    TF_API TfErrorMark(const TfErrorMark&) = delete;
+    TF_API TfErrorMark& operator=(const TfErrorMark&) = delete;
 
     /// Record future errors.
     ///

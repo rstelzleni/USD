@@ -33,7 +33,6 @@
 #include "pxr/base/tf/hashmap.h"
 #include "pxr/base/tf/weakBase.h"
 #include "pxr/base/tf/singleton.h"
-#include <boost/noncopyable.hpp>
 #include <iosfwd>
 #include <mutex>
 #include <vector>
@@ -94,7 +93,7 @@ template <class T> class TfRefPtr;
 /// \c TfRefPtrTracker::WatchNone() when tracking \c B if you're not
 /// interested in instances of \c B.
 ///
-class TfRefPtrTracker : public TfWeakBase, boost::noncopyable {
+class TfRefPtrTracker : public TfWeakBase {
 public:
     enum TraceType { Add, Assign };
 
@@ -174,6 +173,10 @@ public:
 private:
     TfRefPtrTracker();
     ~TfRefPtrTracker();
+
+    // Disallow copies
+    TfRefPtrTracker(const TfRefPtrTracker&) = delete;
+    TfRefPtrTracker& operator=(const TfRefPtrTracker&) = delete;
 
     /// Start watching \p obj.  Only watched objects are traced.
     void _Watch(const TfRefBase* obj);

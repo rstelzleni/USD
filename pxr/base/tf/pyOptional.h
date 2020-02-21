@@ -29,7 +29,6 @@
 #include "pxr/pxr.h"
 
 #include "pxr/base/tf/pyUtils.h"
-#include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
 #include <boost/python/converter/from_python.hpp>
 #include <boost/python/extract.hpp>
@@ -63,7 +62,7 @@ struct register_python_conversion
 };
 
 template <typename T>
-struct python_optional : public boost::noncopyable
+struct python_optional
 {
     struct optional_to_python
     {
@@ -112,6 +111,10 @@ struct python_optional : public boost::noncopyable
         register_python_conversion<boost::optional<T>,
                                    optional_to_python, optional_from_python>();
     }
+
+    // Disallow copies
+    python_optional(const python_optional&) = delete;
+    python_optional& operator=(const python_optional&) = delete;
 };
 
 } // namespace TfPyOptional
