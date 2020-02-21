@@ -84,8 +84,8 @@ public:
     TF_API ~TfAtomicOfstreamWrapper();
 
     // Disallow copies
-    TF_API TfAtomicOfstreamWrapper(const TfAtomicOfstreamWrapper&) = delete;
-    TF_API TfAtomicOfstreamWrapper& operator=(
+    TfAtomicOfstreamWrapper(const TfAtomicOfstreamWrapper&) = delete;
+    TfAtomicOfstreamWrapper& operator=(
             const TfAtomicOfstreamWrapper&) = delete;
 
     /// Opens the temporary file for writing. If the destination directory

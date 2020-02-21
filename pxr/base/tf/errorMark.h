@@ -81,8 +81,8 @@ class TfErrorMark
     TF_API ~TfErrorMark();
 
     // Disallow copies
-    TF_API TfErrorMark(const TfErrorMark&) = delete;
-    TF_API TfErrorMark& operator=(const TfErrorMark&) = delete;
+    TfErrorMark(const TfErrorMark&) = delete;
+    TfErrorMark& operator=(const TfErrorMark&) = delete;
 
     /// Record future errors.
     ///

@@ -114,8 +114,8 @@ private:
     TF_API ~TfRegistryManager();
 
     // Disallow copies
-    TF_API TfRegistryManager(const TfRegistryManager&) = delete;
-    TF_API TfRegistryManager& operator=(const TfRegistryManager&) = delete;
+    TfRegistryManager(const TfRegistryManager&) = delete;
+    TfRegistryManager& operator=(const TfRegistryManager&) = delete;
 
     TF_API void _SubscribeTo(const std::type_info&);
     TF_API void _UnsubscribeFrom(const std::type_info&);
