@@ -33,7 +33,6 @@
 #include "pxr/base/tf/hash.h"
 #include "pxr/base/tf/iterator.h"
 
-#include <boost/noncopyable.hpp>
 #include "pxr/base/tf/hashmap.h"
 
 #include <typeinfo>
@@ -60,12 +59,16 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// given entry.
 ///
 template <class VALUE>
-class TfTypeInfoMap : public boost::noncopyable {
+class TfTypeInfoMap {
 public:
 
     // Default constructor passes 0 to TfHashMap constructors to keep size
     // small. This is good since each defined TfType has one of these maps in it.
     TfTypeInfoMap() : _nameMap(0), _stringCache(0) {}
+
+    // Disallow copies
+    TfTypeInfoMap(const TfTypeInfoMap&) = delete;
+    TfTypeInfoMap& operator=(const TfTypeInfoMap&) = delete;
 
     /// Return true if the given key is present in the map.
     bool Exists(const std::type_info& key) const {

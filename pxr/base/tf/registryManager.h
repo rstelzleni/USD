@@ -46,9 +46,6 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// See \ref page_tf_RegistryManager for a detailed description.
 ///
 class TfRegistryManager {
-    TfRegistryManager(const TfRegistryManager&) = delete;
-    TfRegistryManager& operator=(const TfRegistryManager&) = delete;
-
 public:
     // The type of a registration function.  The arguments are not used.
     typedef void (*RegistrationFunctionType)(void*, void*);
@@ -115,6 +112,10 @@ public:
 private:
     TF_API TfRegistryManager();
     TF_API ~TfRegistryManager();
+
+    // Disallow copies
+    TF_API TfRegistryManager(const TfRegistryManager&) = delete;
+    TF_API TfRegistryManager& operator=(const TfRegistryManager&) = delete;
 
     TF_API void _SubscribeTo(const std::type_info&);
     TF_API void _UnsubscribeFrom(const std::type_info&);

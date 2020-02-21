@@ -28,8 +28,6 @@
 
 #include "pxr/base/tf/singleton.h"
 
-#include <boost/noncopyable.hpp>
-
 #include <string>
 #include <vector>
 
@@ -37,7 +35,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 // This is used internally by the Tf python wrapping infrastructure.
 
-class Tf_PyWrapContextManager : public boost::noncopyable {
+class Tf_PyWrapContextManager {
 
   public:
 
@@ -64,6 +62,10 @@ class Tf_PyWrapContextManager : public boost::noncopyable {
     Tf_PyWrapContextManager();
 
     friend class TfSingleton<This>;
+
+    // Disallow copies
+    Tf_PyWrapContextManager(const Tf_PyWrapContextManager&) = delete;
+    Tf_PyWrapContextManager& operator=(const Tf_PyWrapContextManager&) = delete;
 
     std::vector<std::string> _contextStack;
 };

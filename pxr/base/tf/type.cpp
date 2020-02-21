@@ -50,7 +50,6 @@
 #include "pxr/base/tf/pyUtils.h"
 #endif // PXR_PYTHON_SUPPORT_ENABLED
 
-#include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
@@ -90,7 +89,7 @@ TfType::PyPolymorphicBase::~PyPolymorphicBase()
 // Stored data for a TfType.
 // A unique instance of _TypeInfo is allocated for every type declared.
 //
-struct TfType::_TypeInfo : boost::noncopyable
+struct TfType::_TypeInfo
 {
     typedef TfHashMap<string, TfType::_TypeInfo*, TfHash> NameToTypeMap;
     typedef TfHashMap<
@@ -206,6 +205,10 @@ struct TfType::_TypeInfo : boost::noncopyable
         hasSentNotice(false)
     {
     }
+
+    // Disallow copies
+    _TypeInfo(const _TypeInfo&) = delete;
+    _TypeInfo& operator=(const _TypeInfo&) = delete;
 };
 
 #ifdef PXR_PYTHON_SUPPORT_ENABLED
@@ -221,7 +224,7 @@ struct Tf_PyHandleLess
 
 // Registry for _TypeInfos.
 //
-class Tf_TypeRegistry : boost::noncopyable
+class Tf_TypeRegistry
 {
 public:
     static Tf_TypeRegistry& GetInstance() {
@@ -351,6 +354,10 @@ public:
 private:
     Tf_TypeRegistry();
 
+    // Disallow copies
+    Tf_TypeRegistry(const Tf_TypeRegistry&) = delete;
+    Tf_TypeRegistry& operator=(const Tf_TypeRegistry&) = delete;
+    
     mutable RWMutex _mutex;
 
     // The thread that is currently performing initialization.  This is set to a

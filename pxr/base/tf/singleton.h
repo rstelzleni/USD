@@ -57,9 +57,8 @@
 /// \code
 ///     // file: registry.h
 ///     #include "pxr/base/tf/singleton.h"
-///     #include <boost/noncopyable.hpp>
 ///
-///     class Registry : boost::noncopyable {
+///     class Registry {
 ///     public:
 ///         static Registry& GetInstance() {
 ///              return TfSingleton<Registry>::GetInstance();
@@ -70,6 +69,9 @@
 ///     private:
 ///         Registry();
 ///         ~Registry();
+///
+///         Registry(const Registry&) = delete;
+///         Registry& operator=(const Registry&) = delete;
 ///
 ///         friend class TfSingleton<Registry>;
 ///      };
@@ -92,8 +94,8 @@
 /// \endcode
 ///
 /// The constructor and destructor are declared private, and the singleton
-/// object will typically derive off of \c boost::noncopyable to prevent
-/// copying. Note that singleton objects quite commonly also make use of \c
+/// object will typically delete the copy and assignment operators to prevent
+/// copies. Note that singleton objects quite commonly also make use of \c
 /// TfRegistryManager to acquire the data they need throughout a program.
 ///
 /// The friend class \c TfSingleton<Registry> is the only class allowed to
