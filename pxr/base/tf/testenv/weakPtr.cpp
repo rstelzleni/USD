@@ -195,6 +195,8 @@ public:
         return _registry.size();
     }
 private:
+    ProtectedBase_Registry() = default;
+
     // Disallow copies
     ProtectedBase_Registry(const ProtectedBase_Registry&) = delete;
     ProtectedBase_Registry& operator=(const ProtectedBase_Registry&) = delete;
