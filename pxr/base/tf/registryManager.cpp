@@ -175,9 +175,6 @@ GetLibraryPath(const char* libraryName,
 }
 
 class Tf_RegistryManagerImpl {
-    Tf_RegistryManagerImpl(const Tf_RegistryManagerImpl&) = delete;
-    Tf_RegistryManagerImpl& operator=(const Tf_RegistryManagerImpl&) = delete;
-
 public:
     typedef size_t LibraryIdentifier;
     typedef TfRegistryManager::RegistrationFunctionType RegistrationFunction;
@@ -234,6 +231,10 @@ private:
 
     Tf_RegistryManagerImpl();
     ~Tf_RegistryManagerImpl();
+
+    // Disallow copies
+    Tf_RegistryManagerImpl(const Tf_RegistryManagerImpl&) = delete;
+    Tf_RegistryManagerImpl& operator=(const Tf_RegistryManagerImpl&) = delete;
 
     LibraryIdentifier _RegisterLibraryNoLock(const char* libraryName);
     void _ProcessLibraryNoLock();
