@@ -26,6 +26,8 @@
 # This takes the flex and bison sources in Sdf and generates C++
 # source files using flex and bison. 
 
+from __future__ import print_function
+
 from distutils.spawn import find_executable
 from tempfile import mkdtemp
 from argparse import ArgumentParser
@@ -82,14 +84,14 @@ def _copyGeneratedFiles(installedFiles, generatedFiles, diffs):
                                                       generatedFiles, 
                                                       installedFiles):
         if baseName in diffs:
-            print(('Changed: ' + baseName))
-            print((diffs[baseName]))
+            print('Changed: ' + baseName)
+            print(diffs[baseName])
             if not access(installedFile, W_OK):
-                print(('Cannot author ' + installedFile + ', (no write access).'))
+                print('Cannot author ' + installedFile + ', (no write access).')
             else:
                 copyfile(generatedFile, installedFile) 
         else:
-            print(('Unchanged: ' + baseName))
+            print('Unchanged: ' + baseName)
 
 # -----------------------------------------------------------------------------
 # Code generation functions.

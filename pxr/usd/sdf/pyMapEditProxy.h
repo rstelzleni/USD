@@ -126,16 +126,22 @@ private:
             .def("__delitem__", &This::_DelItem)
             .def("__contains__", &This::_HasKey)
             .def("__iter__",   &This::_GetKeyIterator)
+#if PY_MAJOR_VERSION < 3
             .def("itervalues", &This::_GetValueIterator)
             .def("iterkeys",   &This::_GetKeyIterator)
             .def("iteritems",  &This::_GetItemIterator)
+            .def("values", &This::_GetValues)
+            .def("keys", &This::_GetKeys)
+            .def("items", &This::_GetItems)
+            .def("has_key", &This::_HasKey)
+#else
+            .def("values", &This::_GetValueIterator)
+            .def("keys",   &This::_GetKeyIterator)
+            .def("items",  &This::_GetItemIterator)
+#endif
             .def("clear", &Type::clear)
             .def("get", &This::_PyGet)
             .def("get", &This::_PyGetDefault)
-            .def("has_key", &This::_HasKey)
-            .def("items", &This::_GetItems)
-            .def("keys", &This::_GetKeys)
-            .def("values", &This::_GetValues)
             .def("pop", &This::_Pop)
             .def("popitem", &This::_PopItem)
             .def("setdefault", &This::_SetDefault)
@@ -278,6 +284,7 @@ private:
         return result;
     }
 
+#if PY_MAJOR_VERSION < 3
     static boost::python::list _GetItems(const Type& x)
     {
         return _Get<_ExtractItem>(x);
@@ -292,6 +299,7 @@ private:
     {
         return _Get<_ExtractValue>(x);
     }
+#endif
 
     static mapped_type _Pop(Type& x, const key_type& key)
     {

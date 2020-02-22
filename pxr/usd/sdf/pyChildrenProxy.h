@@ -152,18 +152,24 @@ private:
             .def("__contains__", &This::_HasKey, TfPyRaiseOnError<>())
             .def("__contains__", &This::_HasValue, TfPyRaiseOnError<>())
             .def("__iter__",   &This::_GetValueIterator, TfPyRaiseOnError<>())
-            .def("itervalues", &This::_GetValueIterator, TfPyRaiseOnError<>())
-            .def("iterkeys",   &This::_GetKeyIterator, TfPyRaiseOnError<>())
-            .def("iteritems",  &This::_GetItemIterator, TfPyRaiseOnError<>())
             .def("clear", &This::_Clear, TfPyRaiseOnError<>())
             .def("append", &This::_AppendItem, TfPyRaiseOnError<>())
             .def("insert", &This::_InsertItemByIndex, TfPyRaiseOnError<>())
             .def("get", &This::_PyGet, TfPyRaiseOnError<>())
             .def("get", &This::_PyGetDefault, TfPyRaiseOnError<>())
+#if PY_MAJOR_VERSION < 3
             .def("has_key", &This::_HasKey, TfPyRaiseOnError<>())
+            .def("itervalues", &This::_GetValueIterator, TfPyRaiseOnError<>())
+            .def("iterkeys",   &This::_GetKeyIterator, TfPyRaiseOnError<>())
+            .def("iteritems",  &This::_GetItemIterator, TfPyRaiseOnError<>())
             .def("items", &This::_GetItems, TfPyRaiseOnError<>())
             .def("keys", &This::_GetKeys, TfPyRaiseOnError<>())
             .def("values", &This::_GetValues, TfPyRaiseOnError<>())
+#else
+            .def("items", &This::_GetItemIterator, TfPyRaiseOnError<>())
+            .def("keys", &This::_GetKeyIterator, TfPyRaiseOnError<>())
+            .def("values", &This::_GetValueIterator, TfPyRaiseOnError<>())
+#endif
             .def("index", &This::_FindIndexByKey, TfPyRaiseOnError<>())
             .def("index", &This::_FindIndexByValue, TfPyRaiseOnError<>())
             .def("__eq__", &This::operator==, TfPyRaiseOnError<>())
@@ -354,6 +360,7 @@ private:
         return result;
     }
 
+#if PY_MAJOR_VERSION < 3
     boost::python::list _GetItems() const
     {
         return _Get<_ExtractItem>();
@@ -368,6 +375,7 @@ private:
     {
         return _Get<_ExtractValue>();
     }
+#endif
 
     int _FindIndexByKey(const key_type& key) const
     {

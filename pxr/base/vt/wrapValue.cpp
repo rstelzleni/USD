@@ -187,10 +187,12 @@ struct Vt_ValueFromPython {
             data->convertible = storage;
             return;
         }
-        if (TfPyInt_Check(obj_ptr)) {
+#if PY_MAJOR_VERSION == 2
+        if (PyInt_Check(obj_ptr)) {
             // Python int -> either c++ int or long depending on range.
-            // In Python 3 it will always be a long.
-            long val = TfPyInt_AS_LONG(obj_ptr);
+            // In Python 3 it will always be a long, so we want to be sure
+            // we fall into the "long" clause below
+            long val = PyInt_AS_LONG(obj_ptr);
             if (std::numeric_limits<int>::min() <= val && 
                 val <= std::numeric_limits<int>::max()) {
                 new (storage) VtValue(boost::numeric_cast<int>(val));
@@ -200,6 +202,7 @@ struct Vt_ValueFromPython {
             data->convertible = storage;
             return;
         }
+#endif
         if (PyLong_Check(obj_ptr)) {
             // Python long -> either c++ int or long or unsigned long or long
             // long or unsigned long long or fail, depending on range.

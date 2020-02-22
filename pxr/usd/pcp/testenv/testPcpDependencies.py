@@ -29,6 +29,7 @@ that represent interesting cases that it needs to handle.
 It cherry picks particular examples from the Pcp museum
 to exercise.
 '''
+from __future__ import print_function
 
 from pxr import Sdf, Pcp, Tf
 import functools, os, unittest

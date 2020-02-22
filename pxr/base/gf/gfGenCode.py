@@ -110,9 +110,11 @@ def GenerateFromTemplates(env, templates, suffix, outputPath, verbose=True):
             _WriteFile(os.path.join(outputPath, tmpl % suffix),
                 env.get_template(tmplName).render(), verbose)
         except TemplateSyntaxError as err:
-            print('Syntax Error: {0.name}:{0.lineno}: {0.message}'.format(err), file=sys.stderr)
+            print('Syntax Error: {0.name}:{0.lineno}: {0.message}'.format(err),
+                  file=sys.stderr)
         except TemplateError as err:
-            print('Template Error: {}: {}'.format(err, tmplName), file=sys.stderr)
+            print('Template Error: {}: {}'.format(err, tmplName),
+                  file=sys.stderr)
 
 def ScalarSuffix(scl):
     if scl == 'GfHalf':
