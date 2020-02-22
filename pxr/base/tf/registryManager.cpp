@@ -174,7 +174,7 @@ GetLibraryPath(const char* libraryName,
     return result;
 }
 
-class Tf_RegistryManagerImpl : boost::noncopyable {
+class Tf_RegistryManagerImpl {
 public:
     typedef size_t LibraryIdentifier;
     typedef TfRegistryManager::RegistrationFunctionType RegistrationFunction;
@@ -231,6 +231,10 @@ private:
 
     Tf_RegistryManagerImpl();
     ~Tf_RegistryManagerImpl();
+
+    // Disallow copies
+    Tf_RegistryManagerImpl(const Tf_RegistryManagerImpl&) = delete;
+    Tf_RegistryManagerImpl& operator=(const Tf_RegistryManagerImpl&) = delete;
 
     LibraryIdentifier _RegisterLibraryNoLock(const char* libraryName);
     void _ProcessLibraryNoLock();
