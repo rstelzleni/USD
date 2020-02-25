@@ -27,7 +27,8 @@ import unittest
 
 class TestUsdRiUtilities(unittest.TestCase):
   def test_RmanConversions(self):
-      from pxr.UsdRi import *
+      from pxr.UsdRi import (ConvertToRManFaceVaryingLinearInterpolation,
+                             ConvertFromRManFaceVaryingLinearInterpolation)
 
       # Note that we have the old names as the first elements in
       # the list, our conversion test relies on this fact. This is only

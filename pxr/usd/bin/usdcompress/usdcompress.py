@@ -57,7 +57,7 @@ class UsdDracoEncoder(object):
 
     # Compress all meshes in the scene with Draco.
     if self.options.verbose:
-      print 'Meshes:'
+      print('Meshes:')
     self.usedFileNames.clear()
     for prim in stage.TraverseAll():
       mesh = UsdGeom.Mesh(prim)
@@ -68,7 +68,7 @@ class UsdDracoEncoder(object):
         # Compress mesh and write to file.
         self.encodeMesh(stage, mesh, fileName)
         if self.options.verbose:
-          print '  saved ' + fileName
+          print('  saved ' + fileName)
 
   def fromBool(self, option, invert):
     """Returns a numeric value for a possibly unspecified boolean 0|1 option."""
@@ -153,7 +153,7 @@ class UsdDracoEncoder(object):
 
     # Print message and possibly exit.
     if self.options.ignore_opinion_errors:
-      print message
+      print(message)
     else:
       sys.exit(message)
 
@@ -203,27 +203,27 @@ def ParseOptions():
 
   # Perform additional option checks.
   if not os.path.isfile(options.input):
-    print 'Input file is missing.'
+    print('Input file is missing.'
     parser.print_usage()
     exit(1)
 
   # Print options in verbose mode.
   if options.verbose:
-    print 'Options:'
-    print '  input  : ' + options.input
-    print '  output : ' + options.output
-    print '  quantization bits for positions : ' + str(options.qp)
-    print '  quantization bits for textures  : ' + str(options.qt)
-    print '  quantization bits for normals   : ' + str(options.qn)
-    print '  compression level : ' + str(options.cl)
+    print('Options:')
+    print('  input  : ' + options.input)
+    print('  output : ' + options.output)
+    print('  quantization bits for positions : ' + str(options.qp))
+    print('  quantization bits for textures  : ' + str(options.qt))
+    print('  quantization bits for normals   : ' + str(options.qn))
+    print('  compression level : ' + str(options.cl))
     if options.preserve_polygons is not None:
-      print '  preserve polygons : ' + \
-          ('yes' if options.preserve_polygons == 1 else 'no')
+      print('  preserve polygons : ' +
+          ('yes' if options.preserve_polygons == 1 else 'no'))
     if options.discard_subdivision is not None:
-      print '  discard subdivision : ' + \
-          ('yes' if options.discard_subdivision == 1 else 'no')
+      print('  discard subdivision : ' +
+          ('yes' if options.discard_subdivision == 1 else 'no'))
     if options.ignore_opinion_errors:
-      print '  ignore opinion errors'
+      print('  ignore opinion errors')
   return options
 
 

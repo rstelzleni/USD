@@ -53,7 +53,7 @@ def _compareFiles(installedFiles, generatedFiles, configuration):
         exit('*** Missing files:\n' + '\n'.join(installedNames - generatedNames))
 
     diffs = {}
-    for i in xrange(0, len(installedFiles)):
+    for i in range(0, len(installedFiles)):
         installedExists = isfile(installedFiles[i])
         generatedExists = isfile(generatedFiles[i])
 
@@ -139,10 +139,10 @@ def _runBisonAndFlexCommands(configuration):
                                   + [flexFiles[index]])
     
     for index, base in enumerate(bases):
-        print 'Running bison on %s' % (base + '.yy')
+        print('Running bison on %s' % (base + '.yy'))
         call(bisonCommand(index))
 
-        print 'Running flex on %s' % (base + '.ll')
+        print('Running flex on %s' % (base + '.ll'))
         with open(flexGenSources[index], 'w') as outputFile:
             call(flexCommand(index), stdout=outputFile)
 
@@ -221,7 +221,7 @@ def _canonicalizeFiles(sourceFiles, generatedFiles):
         replacements.append((oldFileName, newFileName))
 
     for renamedFile in renamed:
-        print 'Fixing line directives in ' + basename(renamedFile)
+        print('Fixing line directives in ' + basename(renamedFile))
 
         with open(renamedFile, 'r+') as inputFile:
             data = inputFile.read()
@@ -374,9 +374,9 @@ def _getBison(configuration):
 # -----------------------------------------------------------------------------
 
 def _printSection(sectionInfo):
-    print '+-------------------------------------------------+'
-    print sectionInfo
-    print '+-------------------------------------------------+'
+    print('+-------------------------------------------------+')
+    print(sectionInfo)
+    print('+-------------------------------------------------+')
 
 if __name__ == '__main__':
     configuration = _getConfiguration()
