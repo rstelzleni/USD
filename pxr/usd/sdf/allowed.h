@@ -30,10 +30,9 @@
 #include "pxr/usd/sdf/api.h"
 #include "pxr/base/tf/diagnostic.h"
 
+#include <memory>
 #include <string>
 #include <utility>
-#include <boost/operators.hpp>
-#include <boost/optional.hpp>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -44,9 +43,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// A \c SdfAllowed either evaluates to \c true in a boolean context
 /// or evaluates to \c false and has a string annotation.
 ///
-class SdfAllowed : private boost::equality_comparable<SdfAllowed> {
+class SdfAllowed {
 private:
-    typedef boost::optional<std::string> _State;
+    typedef std::unique_ptr<std::string> _State;
 
 public:
     typedef std::pair<bool, std::string> Pair;
@@ -56,18 +55,26 @@ public:
     /// Construct \c true.
     SdfAllowed(bool x) { TF_AXIOM(x); }
     /// Construct \c false with annotation \p whyNot.
-    SdfAllowed(const char* whyNot) : _state(std::string(whyNot)) { }
+    SdfAllowed(const char* whyNot) : _state(new std::string(whyNot)) { }
     /// Construct \c false with annotation \p whyNot.
-    SdfAllowed(const std::string& whyNot) : _state(whyNot) { }
+    SdfAllowed(const std::string& whyNot) : 
+        _state(new std::string(whyNot)) { }
     /// Construct in \p condition with annotation \p whyNot if \c false.
     SdfAllowed(bool condition, const char* whyNot) :
-        _state(!condition, std::string(whyNot)) { }
+        _state(!condition ? new std::string(whyNot) : nullptr) { }
     /// Construct in \p condition with annotation \p whyNot if \c false.
     SdfAllowed(bool condition, const std::string& whyNot) :
-        _state(!condition, whyNot) { }
+        _state(!condition ? new std::string(whyNot) : nullptr) { }
     /// Construct from bool,string pair \p x.
-    SdfAllowed(const Pair& x) : _state(!x.first, x.second) { }
+    SdfAllowed(const Pair& x) :
+        _state(!x.first ? new std::string(x.second) : nullptr) { }
     ~SdfAllowed() { }
+
+    /// Allow moves but not copies
+    SdfAllowed(SdfAllowed&&) = default;
+    SdfAllowed& operator=(SdfAllowed&&) = default;
+    SdfAllowed(const SdfAllowed&) = delete;
+    SdfAllowed& operator=(const SdfAllowed&) = delete;
 
 #if !defined(doxygen)
     typedef _State SdfAllowed::*UnspecifiedBoolType;

@@ -67,6 +67,11 @@ SdfTupleDimensions::operator==(const SdfTupleDimensions& rhs) const
     return true;
 }
 
+bool
+SdfTupleDimensions::operator!=(const SdfTupleDimensions& rhs) const
+{
+    return !(*this == rhs);
+}
 
 //
 // SdfValueTypeName
@@ -192,6 +197,41 @@ std::vector<TfToken>
 SdfValueTypeName::GetAliasesAsTokens() const
 {
     return _impl->type->aliases;
+}
+
+bool operator!=(const SdfValueTypeName& a, const SdfValueTypeName& b)
+{
+    return !(a == b);
+}
+
+bool operator==(const std::string& a, const SdfValueTypeName& b)
+{
+    return b == a;
+}
+
+bool operator!=(const std::string& a, const SdfValueTypeName& b)
+{
+    return !(a == b);
+}
+
+bool operator!=(const SdfValueTypeName& a, const std::string& b)
+{
+    return !(a == b);
+}
+
+bool operator==(const TfToken& a, const SdfValueTypeName& b)
+{
+    return b == a;
+}
+
+bool operator!=(const TfToken& a, const SdfValueTypeName& b)
+{
+    return !(a == b);
+}
+
+bool operator!=(const SdfValueTypeName& a, const TfToken& b)
+{
+    return !(a == b);
 }
 
 std::ostream&

@@ -400,6 +400,11 @@ bool SdfUnregisteredValue::operator==(const SdfUnregisteredValue &other) const
     return _value == other._value;
 }
 
+bool SdfUnregisteredValue::operator!=(const SdfUnregisteredValue &other) const
+{
+    return _value != other._value;
+}
+
 std::ostream &operator << (std::ostream &out, const SdfUnregisteredValue &value)
 {
     return out << value.GetValue();
