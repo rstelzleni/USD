@@ -662,6 +662,12 @@ SdfNamespaceEdit::operator==(const SdfNamespaceEdit& rhs) const
            index       == rhs.index;
 }
 
+bool
+SdfNamespaceEdit::operator!=(const This& rhs) const
+{
+    return !(*this == rhs);
+}
+
 std::ostream&
 operator<<(std::ostream& s, const SdfNamespaceEdit& x)
 {
@@ -710,6 +716,12 @@ SdfNamespaceEditDetail::operator==(const SdfNamespaceEditDetail& rhs) const
     return result == rhs.result  && 
            edit   == rhs.edit    &&
            reason == rhs.reason;
+}
+
+bool
+SdfNamespaceEditDetail::operator!=(const SdfNamespaceEditDetail& rhs) const
+{
+    return !(*this == rhs);
 }
 
 std::ostream&

@@ -27,7 +27,6 @@
 #include "pxr/pxr.h"
 #include "pxr/usd/sdf/api.h"
 #include "pxr/base/tf/token.h"
-#include <boost/operators.hpp>
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -43,8 +42,7 @@ class Sdf_ValueTypeImpl;
 ///
 /// Represents the shape of a value type (or that of an element in an array).
 ///
-struct SdfTupleDimensions 
-    : boost::equality_comparable<SdfTupleDimensions> {
+struct SdfTupleDimensions {
 public:
     SdfTupleDimensions() : size(0) {}
     SdfTupleDimensions(size_t m) : size(1) { d[0] = m; }
@@ -53,6 +51,7 @@ public:
         : size(2) { d[0] = s[0]; d[1] = s[1]; }
 
     bool operator==(const SdfTupleDimensions& rhs) const;
+    bool operator!=(const SdfTupleDimensions& rhs) const;
 
 public:
     size_t d[2];
@@ -80,11 +79,7 @@ public:
 /// \c SdfSchemaBase::FindType() and shouldn't otherwise need the string.
 /// Aliases compare equal, even if registered by different schemas.
 /// 
-class SdfValueTypeName
-    : boost::equality_comparable<SdfValueTypeName, std::string
-    , boost::equality_comparable<SdfValueTypeName, TfToken
-    , boost::equality_comparable<SdfValueTypeName
-    > > > {
+class SdfValueTypeName {
 public:
     /// Constructs an invalid type name.
     SDF_API
@@ -202,6 +197,17 @@ hash_value(const SdfValueTypeName& typeName)
 {
     return typeName.GetHash();
 }
+
+/// Operators for equality comparisons
+/// @{
+SDF_API bool operator!=(const SdfValueTypeName& a, const SdfValueTypeName& b);
+SDF_API bool operator==(const std::string& a, const SdfValueTypeName& b);
+SDF_API bool operator!=(const std::string& a, const SdfValueTypeName& b);
+SDF_API bool operator!=(const SdfValueTypeName& a, const std::string& b);
+SDF_API bool operator==(const TfToken& a, const SdfValueTypeName& b);
+SDF_API bool operator!=(const TfToken& a, const SdfValueTypeName& b);
+SDF_API bool operator!=(const SdfValueTypeName& a, const TfToken& b);
+/// @}
 
 SDF_API std::ostream& operator<<(std::ostream&, const SdfValueTypeName& typeName);
 
