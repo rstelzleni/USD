@@ -28,6 +28,8 @@
 # output from run to run. However, the assertions made
 # by this test should always be valid.
 
+from __future__ import print_function
+
 from pxr import Usd, Sdf, Tf
 import unittest
 
@@ -37,7 +39,7 @@ def ValidateExpectedInstances(stage, expectedInstances):
     expectedInstances is a mapping from:
         master prim path -> list of expected instance prim paths
     """
-    for (masterPath, instancePaths) in list(expectedInstances.items()):
+    for (masterPath, instancePaths) in expectedInstances.items():
         # Validate that all prims expected to be instances of the same master
         # are associated with the same master prim.
         master = stage.GetPrimAtPath(masterPath)

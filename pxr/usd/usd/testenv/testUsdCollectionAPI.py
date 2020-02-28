@@ -22,6 +22,8 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
+from __future__ import print_function
+
 from pxr import Usd, Vt, Sdf, Tf
 import unittest
 
@@ -463,7 +465,7 @@ class TestUsdCollectionAPI(unittest.TestCase):
         mqueryToPath = {}
         for (coll,mquery) in zip(collections, mqueries):
             mqueryToPath[mquery] = coll.GetCollectionPath()
-        self.assertEqual(len(list(mqueryToPath.keys())), len(mqueries))
+        self.assertEqual(len(mqueryToPath.keys()), len(mqueries))
 
     def test_SchemaPropertyBaseNames(self):
         self.assertTrue(Usd.CollectionAPI.IsSchemaPropertyBaseName(

@@ -237,7 +237,7 @@ class TestUsdBugs(unittest.TestCase):
         self.assertEqual(a.Get(), Vt.Vec3fArray(3, [(1,2,3), (2,3,4), (3,4,5)]))
         a.Set(((3,2,1), (4,3,2), (5,4,3)))
         self.assertEqual(a.Get(), Vt.Vec3fArray(3, [(3,2,1), (4,3,2), (5,4,3)]))
-        a.Set(list(zip(list(range(3)), list(range(3)), list(range(3)))))
+        a.Set(zip(range(3), range(3), range(3)))
         self.assertEqual(a.Get(), Vt.Vec3fArray(3, [(0,0,0), (1,1,1), (2,2,2)]))
 
 

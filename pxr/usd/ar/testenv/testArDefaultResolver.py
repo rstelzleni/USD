@@ -31,8 +31,9 @@ import shutil
 
 class TestArDefaultResolver(unittest.TestCase):
     def lower_drive_letter(self, path):
-        d, p = os.path.splitdrive(path)
-        return os.path.join(d.lower(), p)
+        return path
+        #d, p = os.path.splitdrive(path)
+        #return os.path.join(d.lower(), p)
 
     def assertPathsEqual(self, path1, path2):
         # On windows on python3 drive letter is upper case, while ArDefaultResolver

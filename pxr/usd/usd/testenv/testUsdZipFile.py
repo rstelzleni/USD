@@ -34,7 +34,8 @@ class TestUsdZipFile(unittest.TestCase):
         with open(srcFile, "rb") as f:
             srcData = bytearray(f.read())
             if fixLineEndings:
-                srcData = srcData.replace("\r\n", "\n")
+                srcData = srcData.replace("\r\n".encode("utf-8"),
+                                          "\n".encode("utf-8"))
 
         if isinstance(zipFile, Usd.ZipFile):
             self.assertEqual(
@@ -164,14 +165,14 @@ class TestUsdZipFile(unittest.TestCase):
         """Test that Usd.ZipFileWriter writes files so that they're aligned
         according to the .usdz specification"""
         with open("test_align_2.txt", "wb") as f:
-            f.write("This is a test file")
+            f.write("This is a test file".encode("utf-8"))
 
         # Create .usdz files with two files, where the size of the first file 
         # varies from 1 byte to 64 bytes, then verify that the second file's 
         # data is aligned to 64 bytes.
         for i in range(1, 65):
             with open("test_align_1.txt", "wb") as f:
-                f.write("a" * i)
+                f.write(("a" * i).encode("utf-8"))
 
             with Usd.ZipFileWriter.CreateNew("test_align.usdz") as zfw:
                 zfw.AddFile("test_align_1.txt")

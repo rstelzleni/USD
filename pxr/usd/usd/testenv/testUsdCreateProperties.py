@@ -431,9 +431,9 @@ class TestUsdCreateProperties(unittest.TestCase):
             a = p.CreateAttribute('a', Sdf.ValueTypeNames.Float)
             r = p.CreateRelationship('r')
             self.assertEqual(len(p.GetProperties()), 2)
-            self.assertTrue(Usd.Property not in list(map(type, p.GetProperties())))
-            self.assertTrue(Usd.Attribute in list(map(type, p.GetProperties())))
-            self.assertTrue(Usd.Relationship in list(map(type, p.GetProperties())))
+            self.assertTrue(Usd.Property not in map(type, p.GetProperties()))
+            self.assertTrue(Usd.Attribute in map(type, p.GetProperties()))
+            self.assertTrue(Usd.Relationship in map(type, p.GetProperties()))
 
     def test_ResolvedAssetPaths(self):
         print('Testing that asset-path-valued attributes give resolved values')
@@ -477,11 +477,13 @@ class TestUsdCreateProperties(unittest.TestCase):
                 self.assertEqual([ap.path for ap in arrayAssetValue],
                             [ap.path for ap in arrayAssetQueryValue])
 
-                # NOTE: We use os.path.abspath() to ensure the paths can be
+                # NOTE: We use os.path.normcase() to ensure the paths can be
                 #       accurately compared.  On Windows this will change
                 #       forward slash directory separators to backslashes.
-                self.assertEqual(os.path.abspath(singleAssetValue.resolvedPath), targetFile.name)
-                self.assertTrue(all([os.path.abspath(ap.resolvedPath) == targetFile.name
+                self.assertEqual(os.path.normcase(singleAssetValue.resolvedPath), 
+                                 os.path.normcase(targetFile.name))
+                self.assertTrue(all([os.path.normcase(ap.resolvedPath) == 
+                                     os.path.normcase(targetFile.name)
                                 for ap in arrayAssetValue]))
                 self.assertEqual(singleAssetValue.resolvedPath, 
                             singleAssetQueryValue.resolvedPath)

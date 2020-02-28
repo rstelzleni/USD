@@ -272,6 +272,22 @@ boost::python::tuple TfPyCopySequenceToTuple(Seq const &seq) {
     return boost::python::tuple(TfPyCopySequenceToList(seq));
 }
 
+/// Create a python bytearray from an input vector.
+///
+/// An invalid object handle is returned on failure.
+template<class T>
+boost::python::object TfPyCopyVectorToByteArray(std::vector<T> const &seq) {
+    TfPyLock lock;
+    // boost python doesn't include a bytearray object, but we can return
+    // one through the C api directly. The c api takes an array of char
+    // and a size, so uses the name FromString, but this is really just
+    // a buffer.
+    PyObject* buf = PyByteArray_FromStringAndSize(
+            reinterpret_cast<const char*>(seq.data()), seq.size() * sizeof(T));
+    boost::python::handle<> hbuf(buf);
+    return boost::python::object(hbuf); 
+}
+
 /// Return a vector of strings containing the current python traceback.
 ///
 /// The vector contains the same strings that python's traceback.format_stack()

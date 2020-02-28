@@ -56,7 +56,7 @@ def _CompareMetadata(composed, flat, indent):
 
     cdata = composed.GetAllMetadata()
     fdata = flat.GetAllMetadata()
-    for cKey in list(cdata.keys()):
+    for cKey in cdata.keys():
         if cKey in exclude:
             continue
 
@@ -156,16 +156,16 @@ class TestUsdFlatten(unittest.TestCase):
         # verify that flattening a valid clip range works
         assert _CompareFlattened("clips/root.usd", 
                                  "/World/fx/Particles_Splash/points",
-                                 list(range(101, 105)))
+                                 range(101, 105))
 
         assert _CompareFlattened("hole_clips/root.usd", 
                                 "/World/fx/Particles_Splash/points",
-                                list(range(101, 105)))
+                                range(101, 105))
 
         # verify that flattening with a sparse topology works
         assert _CompareFlattened("sparse_topology_clips/root.usda",
                                 "/World/fx/Particles_Splash/points",
-                                list(range(101, 105)))
+                                range(101, 105))
 
     def test_FlattenBadMetadata(self):
         # Shouldn't fail with unknown fields.
