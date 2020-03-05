@@ -40,8 +40,12 @@ class TestUsdPrim(unittest.TestCase):
             assert hash(p) == hash(q)
 
             # Check that unicode objects convert to sdfpaths.
-            p = s.GetPrimAtPath('/')
-            q = s.GetPrimAtPath('/')
+            #
+            # In python 3 all strings are unicode, but we want to keep these
+            # explicit unicode strings so we don't lose coverage in python 2
+            # tests.
+            p = s.GetPrimAtPath(u'/')
+            q = s.GetPrimAtPath(u'/')
             assert p is not q
             assert p == q
             assert hash(p) == hash(q)
@@ -66,28 +70,28 @@ class TestUsdPrim(unittest.TestCase):
             assert hash(a) == hash(b)
 
             # check for prims/props that exist
-            p = s.GetObjectAtPath('/foo')
+            p = s.GetObjectAtPath(u'/foo')
             assert p
             assert type(p) is Usd.Prim
 
-            a = s.GetObjectAtPath('/foo.attr')
+            a = s.GetObjectAtPath(u'/foo.attr')
             assert a
             assert type(a) is Usd.Attribute
 
-            r = s.GetObjectAtPath('/foo.relationship')
+            r = s.GetObjectAtPath(u'/foo.relationship')
             assert r 
             assert type(r) is Usd.Relationship
 
             # check for prims/props that dont exist
-            p = s.GetObjectAtPath('/nonexistent')
+            p = s.GetObjectAtPath(u'/nonexistent')
             assert not p
             assert type(p) is Usd.Prim
 
-            a = s.GetObjectAtPath('/foo.nonexistentattr')
+            a = s.GetObjectAtPath(u'/foo.nonexistentattr')
             assert not a
             assert type(a) is Usd.Property
 
-            r = s.GetObjectAtPath('/foo.nonexistentrelationship')
+            r = s.GetObjectAtPath(u'/foo.nonexistentrelationship')
             assert not r 
             assert type(r) is Usd.Property
 

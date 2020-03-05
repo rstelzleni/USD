@@ -126,7 +126,7 @@ class PayloadedScene(object):
         self.stage.Unload()
 
     def PrintPaths(self, msg=""):
-        print(("    Paths: "+msg))
+        print("    Paths: "+msg)
         for p in self.stage.Traverse():
             print("    ", p)
         print("")
