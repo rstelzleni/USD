@@ -182,6 +182,7 @@ else()
 endif()
 
 pxr_test_scripts(
+    testenv/testSdfAttribute.py
     testenv/testSdfAttributeBlocking.py
     testenv/testSdfBatchNamespaceEdit.py
     testenv/testSdfCopyUtils.py

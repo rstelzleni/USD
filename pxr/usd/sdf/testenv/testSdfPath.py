@@ -960,7 +960,7 @@ class TestSdfPath(unittest.TestCase):
                 testFindLongestStrictPrefix(testp, paths)
         
             # Do a few simple cases directly.
-            paths = list(map(Sdf.Path, ['/a', '/a/b/c/d', '/b/a', '/b/c/d/e']))
+            paths = [Sdf.Path(path) for path in ['/a', '/a/b/c/d', '/b/a', '/b/c/d/e']]
             flp = Sdf.Path.FindLongestPrefix
             self.assertEqual(flp(paths, '/x'), None)
             self.assertEqual(flp(paths, '/a'), Sdf.Path('/a'))
@@ -982,6 +982,69 @@ class TestSdfPath(unittest.TestCase):
         print('\tPassed')
         
         print('Test SUCCEEDED')
+
+    def test_AncestorPathRange(self):
+        print("Test AncestorPathRange")
+
+        # Absolute paths
+        self.assertEqual(list(Sdf.Path("/foo").GetAncestorsRange()),
+                         [Sdf.Path("/foo")])
+
+        self.assertEqual(list(Sdf.Path("/foo/bar").GetAncestorsRange()),
+                         [Sdf.Path("/foo/bar"), Sdf.Path("/foo")])
+
+        self.assertEqual(
+            list(Sdf.Path("/foo/bar.prop").GetAncestorsRange()),
+            [Sdf.Path("/foo/bar.prop"), Sdf.Path("/foo/bar"), Sdf.Path("/foo")])
+
+        self.assertEqual(
+            list(Sdf.Path("/foo/bar.rel[/targ].attr").GetAncestorsRange()),
+            [Sdf.Path("/foo/bar.rel[/targ].attr"),
+             Sdf.Path("/foo/bar.rel[/targ]"),
+             Sdf.Path("/foo/bar.rel"),
+             Sdf.Path("/foo/bar"),
+             Sdf.Path("/foo")])
+
+        # Relative paths
+        self.assertEqual(list(Sdf.Path("foo").GetAncestorsRange()),
+                         [Sdf.Path("foo")])
+
+        self.assertEqual(list(Sdf.Path("foo/bar").GetAncestorsRange()),
+                         [Sdf.Path("foo/bar"), Sdf.Path("foo")])
+
+        self.assertEqual(
+            list(Sdf.Path("foo/bar.prop").GetAncestorsRange()),
+            [Sdf.Path("foo/bar.prop"), Sdf.Path("foo/bar"), Sdf.Path("foo")])
+
+        self.assertEqual(
+            list(Sdf.Path("foo/bar.rel[/targ].attr").GetAncestorsRange()),
+            [Sdf.Path("foo/bar.rel[/targ].attr"),
+             Sdf.Path("foo/bar.rel[/targ]"),
+             Sdf.Path("foo/bar.rel"),
+             Sdf.Path("foo/bar"),
+             Sdf.Path("foo")])
+
+        # Paths beginning with '..'
+        self.assertEqual(list(Sdf.Path("..").GetAncestorsRange()),
+                         [Sdf.Path("..")])
+
+        self.assertEqual(list(Sdf.Path("../bar").GetAncestorsRange()),
+                         [Sdf.Path("../bar"), Sdf.Path("..")])
+
+        self.assertEqual(
+            list(Sdf.Path("../bar.prop").GetAncestorsRange()),
+            [Sdf.Path("../bar.prop"), Sdf.Path("../bar"), Sdf.Path("..")])
+
+        self.assertEqual(
+            list(Sdf.Path("../bar.rel[/targ].attr").GetAncestorsRange()),
+            [Sdf.Path("../bar.rel[/targ].attr"),
+             Sdf.Path("../bar.rel[/targ]"),
+             Sdf.Path("../bar.rel"),
+             Sdf.Path("../bar"),
+             Sdf.Path("..")])
+
+        print('\tPassed')
+        
 
 if __name__ == "__main__":
     unittest.main()
