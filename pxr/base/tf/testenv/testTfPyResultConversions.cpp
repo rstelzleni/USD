@@ -145,45 +145,6 @@ AssertPySeqVecEqual(
 #define ASSERT_PY_SEQ_VEC_EQUAL(seq, vec) \
     AssertPySeqVecEqual(seq, vec, __FILE__, __LINE__)
 
-// Check that a Python bytearray contains the same items, in the same
-// order, as a C++ vector.
-template <typename T>
-static void
-AssertPyByteArrayVecEqual(
-    boost::python::object bytearray,
-    const std::vector<T> &vec,
-    const char *file,
-    const int line)
-{
-    try {
-        PyObject* bytes = bytearray.ptr();
-        const int seqSize = PyByteArray_Size(bytes);
-        const int vecSize = vec.size() * sizeof(T);
-        if (seqSize != vecSize) {
-            fprintf(
-                stderr, "Size mismatch: py size = %d, c++ size = %d (%s:%d)\n",
-                seqSize, vecSize, file, line);
-            _Exit(1);
-        }
-        if (seqSize > 0 && std::memcmp(
-                    PyByteArray_AsString(bytes), vec.data(), seqSize) != 0) {
-            fprintf(stderr,
-                "Memory not identical between bytearray and vector (%s:%d)\n",
-                file, line);
-            _Exit(1);
-        }
-    }
-    catch (boost::python::error_already_set &) {
-        fprintf(stderr, "Unexpected Python exception (%s:%d)\n", file, line);
-        PyErr_Print();
-        _Exit(1);
-    }
-}
-
-#define ASSERT_PY_BYTEARRAY_VEC_EQUAL(bytearray, vec) \
-    AssertPyByteArrayVecEqual(bytearray, vec, __FILE__, __LINE__)
-
-
 // Check that a Python set contains the same items as a C++ vector.  Items may
 // appear in any order.
 template <typename T>
@@ -296,14 +257,6 @@ main(int argc, char **argv)
         // TfPyPairToTuple methods
         .def("GetPair", &This::GetPair,
              return_value_policy<TfPyPairToTuple>())
-
-        // TfPyCopyVectorToByteArray methods
-        .def("GetEmptyVecAsByteArray", &This::GetEmptyVec,
-             return_value_policy<TfPyVectorToByteArray>())
-        .def("GetUniqueVecAsByteArray", &This::GetUniqueVec,
-             return_value_policy<TfPyVectorToByteArray>())
-        .def("GetDuplicateVecAsByteArray", &This::GetDuplicateVec,
-             return_value_policy<TfPyVectorToByteArray>())
         ;
 
     Tf_TestPyResultConversions conv;
@@ -382,19 +335,6 @@ main(int argc, char **argv)
     ASSERT_PY_SET_VEC_EQUAL(
         pyConv.attr("GetSetAsSet")(),
         conv.GetUniqueVec());
-
-    // TfPyCopyVectorToByteArray tests
-    ASSERT_PY_BYTEARRAY_VEC_EQUAL(
-        pyConv.attr("GetEmptyVecAsByteArray")(),
-        std::vector<int>());
-
-    ASSERT_PY_BYTEARRAY_VEC_EQUAL(
-        pyConv.attr("GetUniqueVecAsByteArray")(),
-        conv.GetUniqueVec());
-
-    ASSERT_PY_BYTEARRAY_VEC_EQUAL(
-        pyConv.attr("GetDuplicateVecAsByteArray")(),
-        conv.GetDuplicateVec());
 
     try {
         pyConv.attr("GetUnhashableVecAsSet")();

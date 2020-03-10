@@ -43,7 +43,6 @@ template <typename T> struct Tf_PySequenceToListConverter;
 template <typename T> struct Tf_PySequenceToSetConverter;
 template <typename T> struct Tf_PyMapToDictionaryConverter;
 template <typename T> struct Tf_PySequenceToTupleConverter;
-template <typename T> struct Tf_PyVectorToByteArrayConverter;
 template <typename First, typename Second> struct Tf_PyPairToTupleConverter;
 
 /// \class TfPySequenceToList
@@ -137,17 +136,6 @@ struct TfPyPairToTuple {
     };
 };
 
-/// \class TfPyVectorToByteArray
-///
-/// A \c boost::python result converter generator which converts standard
-/// library vectors to python bytearray objects.
-struct TfPyVectorToByteArray {
-    template <typename T>
-    struct apply {
-        typedef Tf_PyVectorToByteArrayConverter<T> type;
-    };
-};
-
 template <typename T>
 struct Tf_PySequenceToListConverter {
     typedef typename boost::remove_reference<T>::type SeqType;
@@ -219,20 +207,6 @@ struct Tf_PyPairToTupleConverter {
     }
     PyTypeObject *get_pytype() {
         return &PyTuple_Type;
-    }
-};
-
-template <typename T>
-struct Tf_PyVectorToByteArrayConverter {
-    typedef typename boost::remove_reference<T>::type SeqType;
-    bool convertible() const {
-        return true;
-    }
-    PyObject *operator()(SeqType const& seq) const {
-        return boost::python::incref(TfPyCopyVectorToByteArray(seq).ptr());
-    }
-    PyTypeObject *get_pytype() {
-        return &PyByteArray_Type;
     }
 };
 
