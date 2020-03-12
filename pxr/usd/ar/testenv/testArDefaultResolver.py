@@ -30,21 +30,13 @@ import unittest
 import shutil
 
 class TestArDefaultResolver(unittest.TestCase):
-    def lower_drive_letter(self, path):
-        return path
-        #d, p = os.path.splitdrive(path)
-        #return os.path.join(d.lower(), p)
 
     def assertPathsEqual(self, path1, path2):
-        # On windows on python3 drive letter is upper case, while ArDefaultResolver
-        # makes it lowercase 
-        path1 = self.lower_drive_letter(path1)
-        path2 = self.lower_drive_letter(path2)
-
-        # Flip backslashes to forward slashes to accommodate platform
-        # differences. We don't use os.path.normpath since that might
-        # fix up other differences we'd want to catch in these tests.
-        self.assertEqual(path1.replace("\\", "/"), path2.replace("\\", "/"))
+        # Flip backslashes to forward slashes and make sure path case doesn't
+        # cause test failures to accommodate platform differences. We don't use
+        # os.path.normpath since that might fix up other differences we'd want
+        # to catch in these tests.
+        self.assertEqual(os.path.normcase(path1), os.path.normcase(path2))
 
     @classmethod
     def setUpClass(cls):
