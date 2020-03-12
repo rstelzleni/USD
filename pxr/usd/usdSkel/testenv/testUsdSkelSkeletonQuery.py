@@ -100,7 +100,7 @@ class TestUsdSkelSkeletonQuery(unittest.TestCase):
         # Apply joint animations.
         animXforms = {i:[_RandomXf() for _ in range(len(animOrder))]
                       for i in range(numFrames)}
-        for frame,xforms in list(animXforms.items()):
+        for frame,xforms in animXforms.items():
             anim.SetTransforms(Vt.Matrix4dArray(xforms), frame)
 
         #

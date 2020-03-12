@@ -22,6 +22,8 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
+from __future__ import print_function
+
 import sys, os, unittest
 from pxr import Sdf, Usd, UsdGeom
 
@@ -162,7 +164,7 @@ class TestUsdGeomPurposeVisibility(unittest.TestCase):
         self.assertEqual(leaf.ComputeVisibility(), UsdGeom.Tokens.inherited,
                     leaf.GetPrim().GetPath())
         
-        print('Test that making the subscope invisible causes only the subscope and the leaf to be invisisible. Not the root.')
+        print('Test that making the subscope invisible causes only the subscope and the leaf to be invisible. Not the root.')
         sub.MakeInvisible()
         self.assertEqual(root.ComputeVisibility(), UsdGeom.Tokens.inherited,
                     root.GetPrim().GetPath())

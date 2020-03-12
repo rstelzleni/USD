@@ -22,6 +22,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 
+from __future__ import print_function
+
 from pxr import Ar
 
 def _IsPackageOrPackagedLayer(layer):

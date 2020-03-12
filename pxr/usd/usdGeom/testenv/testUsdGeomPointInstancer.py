@@ -315,7 +315,7 @@ class TestUsdGeomPointInstancer(unittest.TestCase):
         UsdGeom.Xformable(instancer).AddTranslateOp().Set((11,11,11))
 
         positions = [Gf.Vec3f(0,0,0)]*4
-        indices = list(range(4))
+        indices = range(4)
         self._SetTransformComponentsAndIndices(
             instancer, positions=positions, indices=indices)
         
