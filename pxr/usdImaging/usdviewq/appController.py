@@ -3154,14 +3154,13 @@ class AppController(QtCore.QObject):
         """Called when the currentPathWidget text is changed"""
         newPaths = self._ui.currentPathWidget.text()
         pathList = re.split(", ?", newPaths)
-        pathList = filter(lambda path: len(path) != 0, pathList)
+        pathList = [path for path in pathList if len(path) != 0]
 
         try:
             prims = self._getPrimsFromPaths(pathList)
         except PrimNotFoundException as ex:
             # _getPrimsFromPaths couldn't find one of the prims
-            _, message = ex.args
-            sys.stderr.write("ERROR: %s\n" % message)
+            sys.stderr.write("ERROR: %s\n" % str(ex))
             self._updatePrimPathText()
             return
 
