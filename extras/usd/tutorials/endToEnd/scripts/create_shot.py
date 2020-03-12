@@ -28,6 +28,8 @@ Creates a shot with separate layers for departments.
 
 '''
 
+from __future__ import print_function
+
 import os
 def main():
     import optparse

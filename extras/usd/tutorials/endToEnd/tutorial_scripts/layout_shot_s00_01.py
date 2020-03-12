@@ -23,6 +23,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 
+from __future__ import print_function
+
 import os
 ASSET_BASE = os.path.join(os.getcwd(), 'models')
 TABLE_HEIGHT = 74.5

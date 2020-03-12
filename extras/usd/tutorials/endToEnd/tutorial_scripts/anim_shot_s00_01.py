@@ -23,6 +23,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 
+from __future__ import print_function
+
 def main():
     shotFilePath = 'shots/s00_01/s00_01.usd'
     animLayerFilePath = 'shots/s00_01/s00_01_anim.usd'

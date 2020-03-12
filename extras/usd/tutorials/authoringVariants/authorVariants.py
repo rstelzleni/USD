@@ -23,6 +23,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 
+from __future__ import print_function
+
 # Assumes that $USD_INSTALL_ROOT/lib/python is in sys.path
 
 from pxr import Usd, UsdGeom

@@ -23,6 +23,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 
+from __future__ import print_function
+
 # section 1
 from pxr import Usd, UsdGeom, Vt
 
