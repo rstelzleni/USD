@@ -42,7 +42,7 @@ def PrintReport(fname, info, summaryOnly):
     for sec in info.GetSections():
         print('    %16s %16d bytes at offset 0x%X' % (
             sec.name, sec.size, sec.start))
-    print('')
+    print()
 
 def main():
     parser = argparse.ArgumentParser(
