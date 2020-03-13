@@ -23,6 +23,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 
+from __future__ import print_function
+
 from distutils.spawn import find_executable
 from tempfile import mkdtemp
 from argparse import ArgumentParser
@@ -319,7 +321,7 @@ def _getSconsBuildEnvSetting(environmentVariable, configuration):
     command = [find_executable('scons'), '-u', 
                '-Qq', '--echo=' + environmentVariable]
     line, _ = Popen(command, stdout=PIPE).communicate()
-    _, envSettingValue = line.strip().split(' = ')
+    _, envSettingValue = str(line).strip().split(' = ')
 
     if not envSettingValue:
         exit('*** Unable to determine ' + environmentVariable + 'from '
@@ -343,13 +345,16 @@ def _getCMakeBuildEnvSetting(environmentVariable, configuration):
                  'this information is needed for obtaining build environment '
                  'information from CMake.')
 
+    envSettingValue = None
     command = [find_executable('cmake'), '-LA', '-N', srcRootDir]
     output, _ = Popen(command, stdout=PIPE).communicate()
-    line = filter(lambda o: environmentVariable in o, output.split('\n'))[0]
-    _, envSettingValue = line.strip().split('=')
+    for line in str(output).split('\n'):
+        if environmentVariable in line:
+            _, envSettingValue = line.strip().split('=')
+            break
 
     if not envSettingValue:
-        exit('*** Unable to determine ' + environmentVariable + 'from '
+        exit('*** Unable to determine ' + environmentVariable + ' from '
              'CMake build system. Try supplying it through the command line '
              'options.')
 
