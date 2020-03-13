@@ -352,8 +352,7 @@ class PrimViewItem(QtWidgets.QTreeWidgetItem):
             item.emitDataChanged()
 
         # Traverse down to children to update their drawMode.
-        # bad perf in python 2
-        for child in [item.child(i) for i in range(item.childCount())]:            
+        for child in [item.child(i) for i in xrange(item.childCount())]:            
             PrimViewItem.propagateDrawMode(child, primView, 
                     parentDrawMode=item.computedDrawMode,
                     parentDrawModeIsInherited=item.isDrawModeInherited)
@@ -370,8 +369,7 @@ class PrimViewItem(QtWidgets.QTreeWidgetItem):
         if isinstance(item, PrimViewItem):
             item._pushVisRecursive(inheritedVis, authoredVisHasChanged)
         else:
-            # bad perf in python 2
-            for child in [item.child(i) for i in range(item.childCount())]:
+            for child in [item.child(i) for i in xrange(item.childCount())]:
                 child._pushVisRecursive(inheritedVis, authoredVisHasChanged)
 
     def _resetAncestorsRecursive(self, authoredVisHasChanged):
@@ -385,8 +383,7 @@ class PrimViewItem(QtWidgets.QTreeWidgetItem):
     def _pushVisRecursive(self, inheritedVis, authoredVisHasChanged):
         myComputedVis = self.loadVis(inheritedVis, authoredVisHasChanged)
 
-        # bad perf in python 2
-        for child in [self.child(i) for i in range(self.childCount())]:
+        for child in [self.child(i) for i in xrange(self.childCount())]:
             child._pushVisRecursive(myComputedVis, authoredVisHasChanged)
 
     def setLoaded(self, loaded):

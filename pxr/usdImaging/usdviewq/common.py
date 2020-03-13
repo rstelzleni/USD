@@ -102,7 +102,7 @@ class KeyboardShortcuts(ConstantGroup):
     FramingKey = QtCore.Qt.Key_F
 
 class PropertyViewIndex(ConstantGroup):
-    TYPE, NAME, VALUE = list(range(3))
+    TYPE, NAME, VALUE = range(3)
 
 ICON_DIR_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icons')
 

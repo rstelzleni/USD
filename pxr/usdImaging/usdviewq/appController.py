@@ -99,7 +99,7 @@ class HUDEntries(ConstantGroup):
     NOTYPE = "Typeless"
 
 class PropertyIndex(ConstantGroup):
-    VALUE, METADATA, LAYERSTACK, COMPOSITION = list(range(4))
+    VALUE, METADATA, LAYERSTACK, COMPOSITION = range(4)
 
 class UIDefaults(ConstantGroup):
     STAGE_VIEW_WIDTH = 604
@@ -2437,7 +2437,8 @@ class AppController(QtCore.QObject):
         extensions = Sdf.FileFormat.FindAllFileFormatExtensions()
         builtInFiles = lambda f: f.startswith(".usd")
         notBuiltInFiles = lambda f: not f.startswith(".usd")
-        extensions = list(filter(builtInFiles, extensions)) + list(filter(notBuiltInFiles, extensions))
+        extensions = list(filter(builtInFiles, extensions)) + \
+                     list(filter(notBuiltInFiles, extensions))
         fileFilter = "USD Compatible Files (" + " ".join("*." + e for e in extensions) + ")" 
         (filename, _) = QtWidgets.QFileDialog.getOpenFileName(
             self._mainWindow,
@@ -2912,8 +2913,7 @@ class AppController(QtCore.QObject):
                                                     for child in childrenToAdd])
             elif depth + 1 < maxDepth:
                 # The children already exist but we're recursing deeper.
-                # XXX inefficient
-                for i in range(item.childCount()):
+                for i in xrange(item.childCount()):
                     self._populateChildren(item.child(i), depth+1, maxDepth)
 
     def _populateItem(self, prim, depth=0, maxDepth=0):
@@ -3479,8 +3479,7 @@ class AppController(QtCore.QObject):
         curPrimSelection = self._dataModel.selection.getFocusPrim()
 
         currRow = 0
-        # XXX inefficient
-        for key, primProperty in self._propertiesDict.items():
+        for key, primProperty in self._propertiesDict.iteritems():
             targets = None
             isInheritedProperty = isinstance(primProperty, Usd.Property) and \
                 (primProperty.GetPrim() != curPrimSelection)
@@ -3854,8 +3853,7 @@ class AppController(QtCore.QObject):
         populateMetadataTable("[path]", str(obj.GetPath()), rowIndex)
         rowIndex += 1
 
-	# XXX inefficient
-        for variantSetName, combo in variantSets.items():
+        for variantSetName, combo in variantSets.iteritems():
             attrName = QtWidgets.QTableWidgetItem(str(variantSetName+ ' variant'))
             tableWidget.setItem(rowIndex, 0, attrName)
             tableWidget.setCellWidget(rowIndex, 1, combo)
@@ -3866,8 +3864,7 @@ class AppController(QtCore.QObject):
 
         # Add all the setless variant selections directly after the variant 
         # combo boxes
-        # XXX inefficient
-        for variantSetName, variantSelection in setlessVariantSelections.items():
+        for variantSetName, variantSelection in setlessVariantSelections.iteritems():
             attrName = QtWidgets.QTableWidgetItem(str(variantSetName+ ' variant'))
             tableWidget.setItem(rowIndex, 0, attrName)
 
@@ -4172,8 +4169,7 @@ class AppController(QtCore.QObject):
                     self._upperHUDInfo[HUDEntries.PRIM] = 0
                 self._upperHUDInfo[HUDEntries.PRIM] += count
 
-                # XXX inefficient
-                for type in list(types):
+                for type in types.iterkeys():
                     # no entry for this prim type? initilize it
                     if not self._upperHUDInfo.has_key(type):
                         self._upperHUDInfo[type] = 0
@@ -4559,8 +4555,7 @@ class AppController(QtCore.QObject):
                     specs = model.GetPrimStack()
                     name, time, owner = GetAssetCreationTime(specs,
                                                    mAPI.GetAssetIdentifier())
-                    # XXX inefficient
-                    for key, value in assetInfo.items():
+                    for key, value in assetInfo.iteritems():
                         aiStr += "<br> -- <em>%s</em> : %s" % (key, _HTMLEscape(str(value)))
                     aiStr += "<br><em><small>%s created on %s by %s</small></em>" % \
                         (_HTMLEscape(name), _HTMLEscape(time), 
@@ -4644,8 +4639,7 @@ class AppController(QtCore.QObject):
                     materialPurpose=UsdShade.Tokens.full)
 
             gotValidMaterial = False
-            # XXX inefficient
-            for purpose, materialAssign in materialAssigns.items():
+            for purpose, materialAssign in materialAssigns.iteritems():
                 (material, bindingRel) = materialAssign
                 if not material:
                     continue

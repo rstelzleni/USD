@@ -132,13 +132,17 @@ class _PrimSelection(object):
     def clear(self):
         """Clear the path selection."""
 
+        # _clearPrimPath modifies self._selection, so make a copy of keys
+        # before mutating it.
         for path in list(self._selection.keys()):
             self._clearPrimPath(path)
     
     def removeMatchingPaths(self, matches):
         """Remove any paths that pass the given predicate"""
 
-        for path in self._selection.keys():
+        # _clearPrimPath modifies self._selection, so make a copy of keys
+        # before mutating it.
+        for path in list(self._selection.keys()):
             if matches(path):
                 self._clearPrimPath(path)
 

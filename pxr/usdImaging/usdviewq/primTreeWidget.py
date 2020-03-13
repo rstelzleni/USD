@@ -64,7 +64,7 @@ def _GetBackgroundColor(item, option):
     return background
 
 class PrimViewColumnIndex(ConstantGroup):
-    NAME, TYPE, VIS, DRAWMODE = list(range(4))
+    NAME, TYPE, VIS, DRAWMODE = range(4)
 
 class DrawModes(ConstantGroup):
     DEFAULT = "default"
@@ -375,9 +375,8 @@ class PrimTreeWidget(QtWidgets.QTreeWidget):
                 rootItem = self.invisibleRootItem().child(0)
             if rootItem.childCount() == 0:
                 self._appController._populateChildren(rootItem)
-            # XXX bad perf in python 2
             rootsToProcess = [rootItem.child(i) for i in 
-                     range(rootItem.childCount())]
+                    xrange(rootItem.childCount())]
             for item in rootsToProcess:
                 PrimViewItem.propagateDrawMode(item, self)
             self.setUpdatesEnabled(True)

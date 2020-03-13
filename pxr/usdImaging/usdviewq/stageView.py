@@ -539,8 +539,7 @@ class HUD():
 
         # find the longest key so we know how far from the edge to print
         # add [0] at the end so that max() never gets an empty sequence
-        # bad perf in python 2
-        longestKeyLen = max([len(k) for k in dic]+[0])
+        longestKeyLen = max([len(k) for k in dic.iterkeys()]+[0])
         margin = int(longestKeyLen*1.4)
 
         painter.setFont(self._HUDFont)
@@ -1844,7 +1843,7 @@ class StageView(QtOpenGL.QGLWidget):
         if self._rendererAovName != "color":
             toPrint["  AOV"] = self._rendererAovName
         self._hud.updateGroup("TopRight", self.width()-160, 14, col,
-                              toPrint, list(toPrint.keys()))
+                              toPrint, toPrint.keys())
 
         # bottom left
         from collections import OrderedDict
@@ -1877,7 +1876,7 @@ class StageView(QtOpenGL.QGLWidget):
                 toPrint[key] = self.fpsHUDInfo[key]
         self._hud.updateGroup("BottomLeft",
                               0, self.height()-len(toPrint)*self._hud._HUDLineSpacing,
-                              col, toPrint, list(toPrint.keys()))
+                              col, toPrint, toPrint.keys())
 
         # draw HUD
         self._hud.draw(self)

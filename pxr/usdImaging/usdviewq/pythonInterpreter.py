@@ -498,9 +498,8 @@ class Controller(QtCore.QObject):
             index = 0
             completionsLength = len(completions)
 
-            # bad perf in python 2
-            for col in range(0,numCols):
-                for row in range(0,numRows):
+            for col in xrange(0,numCols):
+                for row in xrange(0,numRows):
                     cellNum = (row * numCols) + col
                     if (cellNum >= completionsLength):
                         continue
