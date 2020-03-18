@@ -55,7 +55,7 @@ from .primTreeWidget import PrimTreeWidget, PrimViewColumnIndex
 from .primViewItem import PrimViewItem
 from .variantComboBox import VariantComboBox
 from .legendUtil import ToggleLegendWithBrowser
-from . import prettyPrint, adjustClipping, adjustDefaultMaterial, settings
+from . import prettyPrint, adjustClipping, adjustDefaultMaterial
 from .constantGroup import ConstantGroup
 from .selectionDataModel import ALL_INSTANCES, SelectionDataModel
 
@@ -109,9 +109,6 @@ class UIDefaults(ConstantGroup):
     ATTRIBUTE_INSPECTOR_WIDTH = 443
     TOP_HEIGHT = 538
     BOTTOM_HEIGHT = 306
-
-# Name of the Qt binding being used
-QT_BINDING = QtCore.__name__.split('.')[0]
 
 
 class UsdviewDataModel(RootDataModel):
@@ -342,12 +339,6 @@ class AppController(QtCore.QObject):
             self._printTiming = parserData.timing or self._debug
             self._lastViewContext = {}
             self._paused = False
-            if QT_BINDING == 'PySide':
-                self._statusFileName = 'state'
-                self._deprecatedStatusFileNames = ('.usdviewrc')
-            else:
-                self._statusFileName = 'state.%s'%QT_BINDING
-                self._deprecatedStatusFileNames = ('state', '.usdviewrc')
             self._mallocTags = parserData.mallocTagStats
 
             self._allowViewUpdates = True
@@ -449,44 +440,21 @@ class AppController(QtCore.QObject):
                 self._startingPrimCameraName = parserData.camera.pathString
                 self._startingPrimCameraPath = None
 
+            # warn if there are deprecated settings
             settingsPathDir = self._outputBaseDirectory()
-            if settingsPathDir is None or parserData.defaultSettings:
-                # Create an ephemeral settings object with a non existent filepath
-                self._settings = settings.Settings('', seq=None, ephemeral=True)
-            else:
-                settingsPath = os.path.join(settingsPathDir, self._statusFileName)
-                for deprecatedName in self._deprecatedStatusFileNames:
-                    deprecatedSettingsPath = \
-                        os.path.join(settingsPathDir, deprecatedName)
-                    if (os.path.isfile(deprecatedSettingsPath) and
-                        not os.path.isfile(settingsPath)):
-                        warning = ('\nWARNING: The settings file at: '
-                                + str(deprecatedSettingsPath) + ' is deprecated.\n'
-                                + 'These settings are not being used, the new '
-                                + 'settings file will be located at: '
-                                + str(settingsPath) + '.\n')
-                        print(warning)
-                        break
-
-                self._settings = settings.Settings(settingsPath)
-
-                try:
-                    self._settings.load()
-                except IOError:
-                    # try to force out a new settings file
-                    try:
-                        self._settings.save()
-                    except:
-                        settings.EmitWarning(settingsPath)
-
-                except EOFError:
-                    # try to force out a new settings file
-                    try:
-                        self._settings.save()
-                    except:
-                        settings.EmitWarning(settingsPath)
-                except:
-                    settings.EmitWarning(settingsPath)
+            deprecatedStatusFileNames = ('state', '.usdviewrc', 'state.PySide2')
+            for deprecatedName in deprecatedStatusFileNames:
+                deprecatedSettingsPath = \
+                    os.path.join(settingsPathDir, deprecatedName)
+                if (os.path.isfile(deprecatedSettingsPath)):
+                    settings2Path = os.path.join(settingsPathDir, "state.json")
+                    warning = ('\nWARNING: The settings file at: '
+                            + str(deprecatedSettingsPath) + ' is deprecated.\n'
+                            + 'These settings are not being used, the new '
+                            + 'settings file will be located at: '
+                            + str(settings2Path) + '.\n')
+                    print(warning)
+                    break
 
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
 
