@@ -24,21 +24,14 @@
 #
 from __future__ import print_function
 
-import datetime
 import logging
 import os
+import platform
 import shutil
-import sys
 import time
 import unittest
 
 from pxr import Tf
-
-def Lstat(path):
-    return int(os.lstat(path).st_mtime)
-
-def Strftime(t):
-    return datetime.datetime.fromtimestamp(float(str(t))).strftime('%c')
 
 class TestFileUtils(unittest.TestCase):
     """
@@ -79,7 +72,12 @@ class TestFileUtils(unittest.TestCase):
             os.unlink(linkname)
 
         if hasattr(os, 'symlink'):
-            os.symlink(filename, linkname)
+            try:
+                os.symlink(filename, linkname)
+            except OSError:
+                # On windows this is expected if run by a non-administrator
+                if platform.system() != 'Windows':
+                    raise
 
     def SetupDirStructure(self, structure, withSymlink=False):
         """Create a dir structure for testing"""
@@ -120,47 +118,6 @@ class TestFileUtils(unittest.TestCase):
             os.unlink(self.link)
         if os.path.islink(self.copyLink):
             os.unlink(self.copyLink)
-
-    def VerifyDirStructure(self, rootDir):
-        '''
-        Verifies if given rootdir and all subdirs created by SetupDirStructure
-        exist.
-        '''
-
-        self.assertTrue(os.path.isdir(rootDir))
-        self.assertTrue(os.path.isdir("%s/sub1" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub2" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub3" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub1/sub1sub1" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub1/sub1sub2" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub2/sub2sub1" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub2/sub2sub2" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub3/sub3sub1" % rootDir))
-        self.assertTrue(os.path.isdir("%s/sub3/sub3sub2" % rootDir))
-
-    def VerifyDirAndFileStructure(self, rootDir):
-        '''
-        Verifies if given rootdir and all subdirs created by SetupDirStructure
-        exist.
-        '''
-
-        self.VerifyDirStructure(rootDir)
-
-        self.assertTrue(os.path.isfile("%s/a" % rootDir))
-        self.assertTrue(os.path.isfile("%s/b" % rootDir))
-        self.assertTrue(os.path.isfile("%s/c" % rootDir))
-
-        self.assertTrue(os.path.isfile("%s/sub1/a" % rootDir))
-        self.assertTrue(os.path.isfile("%s/sub1/b" % rootDir))
-        self.assertTrue(os.path.isfile("%s/sub1/c" % rootDir))
-
-        self.assertTrue(os.path.isfile("%s/sub2/a" % rootDir))
-        self.assertTrue(os.path.isfile("%s/sub2/b" % rootDir))
-        self.assertTrue(os.path.isfile("%s/sub2/c" % rootDir))
-
-        self.assertTrue(os.path.isfile("%s/sub3/a" % rootDir))
-        self.assertTrue(os.path.isfile("%s/sub3/b" % rootDir))
-        self.assertTrue(os.path.isfile("%s/sub3/c" % rootDir))
 
     def setUp(self):
         """ Setup of test directories and symlinks"""
@@ -222,39 +179,6 @@ class TestFileUtils(unittest.TestCase):
         self.assertTrue(newTime > oldTime)
     
         self.files.append("touchFile")
-
-    Links = [
-        ('file', 'a'),
-        ('a', 'b'),
-        ('b', 'c'),
-        ('c', 'd'),
-        ]
-
-    def PrintTestLinks(self):
-        mtime = Lstat(self.Links[0][0])
-        self.log.info('%s %s %s' % (
-            mtime, Strftime(mtime), self.Links[0][0]))
-        for sp,dp in self.Links:
-            mtime = Lstat(dp)
-            self.log.info('%s %s %s -> %s' % (
-                mtime, Strftime(mtime), dp, sp))
-
-    def RemoveTestLinks(self):
-        allFiles = set()
-        [allFiles.update(list(i)) for i in self.Links]
-        for f in allFiles:
-            try: os.unlink(f) 
-            except OSError:
-                pass
-
-    def CreateTestLinks(self):
-        self.RemoveTestLinks()
-        filePath = self.Links[0][0]
-        open(filePath, 'w').write('The real file\n')
-        linkPaths = []
-        for s,d in self.Links:
-            self.CreateSymlink(s, d)
-        self.PrintTestLinks()
 
 
 if __name__ == '__main__':

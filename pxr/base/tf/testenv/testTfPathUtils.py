@@ -41,18 +41,24 @@ class TestPathUtils(unittest.TestCase):
         self.assertEqual(os.path.abspath('subdir'), Tf.RealPath('subdir', True))
 
         if hasattr(os, 'symlink'):
-            if not os.path.islink('b'):
-                os.symlink('subdir', 'b')
-            if not os.path.islink('c'):
-                os.symlink('b', 'c')
-            if not os.path.islink('d'):
-                os.symlink('c', 'd')
-            if not os.path.islink('e'):
-                os.symlink('missing', 'e')
-            if not os.path.islink('f'):
-                os.symlink('e', 'f')
-            if not os.path.islink('g'):
-                os.symlink('f', 'g')
+            try:
+                if not os.path.islink('b'):
+                    os.symlink('subdir', 'b')
+                if not os.path.islink('c'):
+                    os.symlink('b', 'c')
+                if not os.path.islink('d'):
+                    os.symlink('c', 'd')
+                if not os.path.islink('e'):
+                    os.symlink('missing', 'e')
+                if not os.path.islink('f'):
+                    os.symlink('e', 'f')
+                if not os.path.islink('g'):
+                    os.symlink('f', 'g')
+            except OSError:
+                # On windows this is expected if run by a non-administrator
+                if platform.system() == 'Windows':
+                    return
+                raise
 
             self.log.info('leaf dir is symlink')
             self.assertEqual(os.path.abspath('subdir'), Tf.RealPath('d', True))
