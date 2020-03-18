@@ -22,6 +22,7 @@
 # language governing permissions and limitations under the Apache License.
 #
 from __future__ import print_function
+from . import six
 
 from pxr import Tf
 
@@ -498,8 +499,8 @@ class Controller(QtCore.QObject):
             index = 0
             completionsLength = len(completions)
 
-            for col in xrange(0,numCols):
-                for row in xrange(0,numRows):
+            for col in six.moves.xrange(0,numCols):
+                for row in six.moves.xrange(0,numRows):
                     cellNum = (row * numCols) + col
                     if (cellNum >= completionsLength):
                         continue

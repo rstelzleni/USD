@@ -23,6 +23,7 @@
 #
 
 from __future__ import print_function
+from . import six
 
 # Qt Components
 from .qt import QtCore, QtGui, QtWidgets
@@ -2913,7 +2914,7 @@ class AppController(QtCore.QObject):
                                                     for child in childrenToAdd])
             elif depth + 1 < maxDepth:
                 # The children already exist but we're recursing deeper.
-                for i in xrange(item.childCount()):
+                for i in six.moves.xrange(item.childCount()):
                     self._populateChildren(item.child(i), depth+1, maxDepth)
 
     def _populateItem(self, prim, depth=0, maxDepth=0):
@@ -3479,7 +3480,7 @@ class AppController(QtCore.QObject):
         curPrimSelection = self._dataModel.selection.getFocusPrim()
 
         currRow = 0
-        for key, primProperty in self._propertiesDict.iteritems():
+        for key, primProperty in six.iteritems(self._propertiesDict):
             targets = None
             isInheritedProperty = isinstance(primProperty, Usd.Property) and \
                 (primProperty.GetPrim() != curPrimSelection)
@@ -3853,7 +3854,7 @@ class AppController(QtCore.QObject):
         populateMetadataTable("[path]", str(obj.GetPath()), rowIndex)
         rowIndex += 1
 
-        for variantSetName, combo in variantSets.iteritems():
+        for variantSetName, combo in six.iteritems(variantSets):
             attrName = QtWidgets.QTableWidgetItem(str(variantSetName+ ' variant'))
             tableWidget.setItem(rowIndex, 0, attrName)
             tableWidget.setCellWidget(rowIndex, 1, combo)
@@ -3864,7 +3865,7 @@ class AppController(QtCore.QObject):
 
         # Add all the setless variant selections directly after the variant 
         # combo boxes
-        for variantSetName, variantSelection in setlessVariantSelections.iteritems():
+        for variantSetName, variantSelection in six.iteritems(setlessVariantSelections):
             attrName = QtWidgets.QTableWidgetItem(str(variantSetName+ ' variant'))
             tableWidget.setItem(rowIndex, 0, attrName)
 
@@ -4169,11 +4170,11 @@ class AppController(QtCore.QObject):
                     self._upperHUDInfo[HUDEntries.PRIM] = 0
                 self._upperHUDInfo[HUDEntries.PRIM] += count
 
-                for type in types.iterkeys():
+                for typeKey in six.iterkeys(types):
                     # no entry for this prim type? initilize it
-                    if not self._upperHUDInfo.has_key(type):
-                        self._upperHUDInfo[type] = 0
-                    self._upperHUDInfo[type] += types[type]
+                    if not self._upperHUDInfo.has_key(typeKey):
+                        self._upperHUDInfo[typeKey] = 0
+                    self._upperHUDInfo[typeKey] += types[typeKey]
 
             if self._stageView:
                 self._stageView.upperHUDInfo = self._upperHUDInfo
@@ -4555,7 +4556,7 @@ class AppController(QtCore.QObject):
                     specs = model.GetPrimStack()
                     name, time, owner = GetAssetCreationTime(specs,
                                                    mAPI.GetAssetIdentifier())
-                    for key, value in assetInfo.iteritems():
+                    for key, value in six.iteritems(assetInfo):
                         aiStr += "<br> -- <em>%s</em> : %s" % (key, _HTMLEscape(str(value)))
                     aiStr += "<br><em><small>%s created on %s by %s</small></em>" % \
                         (_HTMLEscape(name), _HTMLEscape(time), 
@@ -4639,7 +4640,7 @@ class AppController(QtCore.QObject):
                     materialPurpose=UsdShade.Tokens.full)
 
             gotValidMaterial = False
-            for purpose, materialAssign in materialAssigns.iteritems():
+            for purpose, materialAssign in six.iteritems(materialAssigns):
                 (material, bindingRel) = materialAssign
                 if not material:
                     continue

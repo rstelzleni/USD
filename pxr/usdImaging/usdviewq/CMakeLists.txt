@@ -63,6 +63,7 @@ pxr_library(usdviewq
         qt.py
         constantGroup.py
         rootDataModel.py
+        six.py
         selectionDataModel.py
         viewSettingsDataModel.py
         freeCamera.py

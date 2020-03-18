@@ -21,6 +21,8 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
+from . import six
+
 from .qt import QtCore, QtGui, QtWidgets
 from .constantGroup import ConstantGroup
 from pxr import Sdf, Usd, UsdGeom
@@ -376,7 +378,7 @@ class PrimTreeWidget(QtWidgets.QTreeWidget):
             if rootItem.childCount() == 0:
                 self._appController._populateChildren(rootItem)
             rootsToProcess = [rootItem.child(i) for i in 
-                    xrange(rootItem.childCount())]
+                    six.moves.xrange(rootItem.childCount())]
             for item in rootsToProcess:
                 PrimViewItem.propagateDrawMode(item, self)
             self.setUpdatesEnabled(True)

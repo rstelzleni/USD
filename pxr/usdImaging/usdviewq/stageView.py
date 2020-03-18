@@ -25,6 +25,7 @@
 Module that provides the StageView class.
 '''
 from __future__ import print_function
+from . import six
 
 from math import tan, floor, ceil, radians as rad, isinf
 import os, sys
@@ -539,7 +540,7 @@ class HUD():
 
         # find the longest key so we know how far from the edge to print
         # add [0] at the end so that max() never gets an empty sequence
-        longestKeyLen = max([len(k) for k in dic.iterkeys()]+[0])
+        longestKeyLen = max([len(k) for k in six.iterkeys(dic)]+[0])
         margin = int(longestKeyLen*1.4)
 
         painter.setFont(self._HUDFont)
