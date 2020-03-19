@@ -36,6 +36,8 @@
 # - specifying non-zero return codes
 # - comparing output files against a baseline
 #
+from __future__ import print_function
+
 import argparse
 import os
 import platform

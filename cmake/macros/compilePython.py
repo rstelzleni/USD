@@ -32,6 +32,8 @@
 # file.py - the installed location of the file
 # file.pyc - the precompiled python file
 
+from __future__ import print_function
+
 import sys
 import py_compile
 

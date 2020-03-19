@@ -23,6 +23,7 @@
 #
 # Generate doxygen based docs for USD.
 
+from __future__ import print_function
 import sys, os, argparse, shutil, subprocess, tempfile, platform, stat
 
 # This finds all modules in the source area. For example, it will find ar,

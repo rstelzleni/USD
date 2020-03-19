@@ -21,8 +21,6 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
-from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
 
 from distutils.spawn import find_executable
@@ -172,7 +170,8 @@ def GetPythonInfo():
     if Windows():
         pythonBaseDir = sysconfig.get_config_var('base')
         pythonVersionNoDot = sysconfig.get_config_var('py_version_nodot')
-        pythonLibPath = os.path.join(pythonBaseDir, 'libs', 'python' + pythonVersionNoDot + '.lib' )
+        pythonLibPath = os.path.join(pythonBaseDir, 'libs',
+                                     'python' + pythonVersionNoDot + '.lib' )
     elif Linux():
         pythonLibDir = sysconfig.get_config_var('LIBDIR')
         pythonLibName = sysconfig.get_config_var('LDLIBRARY')
@@ -182,12 +181,12 @@ def GetPythonInfo():
         pythonLibPath = os.path.join(pythonLibDir, pythonLibName)
     elif MacOS():
         pythonBaseDir = sysconfig.get_config_var('base')
-        pythonLibPath = os.path.join(pythonBaseDir, 'lib', 'libpython' + pythonVersion + '.dylib')
+        pythonLibPath = os.path.join(pythonBaseDir, 'lib',
+                                     'libpython' + pythonVersion + '.dylib')
     else:
         raise RuntimeError("Platform not supported")
 
     return (pythonExecPath, pythonLibPath, pythonIncludeDir, pythonVersion)
-
 
 def GetCPUCount():
     try:
@@ -278,7 +277,7 @@ def FormatMultiProcs(numJobs, generator):
 
     return "{tag}{procs}".format(tag=tag, procs=numJobs)
 
-def RunCMake(context, force, extraArgs = None, build=True):
+def RunCMake(context, force, extraArgs = None):
     """Invoke CMake to configure, build, and install a library whose 
     source code is located in the current working directory."""
     # Create a directory for out-of-source builds in the build directory
@@ -339,10 +338,9 @@ def RunCMake(context, force, extraArgs = None, build=True):
                     osx_rpath=(osx_rpath or ""),
                     generator=(generator or ""),
                     extraArgs=(" ".join(extraArgs) if extraArgs else "")))
-        if build:
-            Run("cmake --build . --config {config} --target install -- {multiproc}"
-                .format(config=config,
-                        multiproc=FormatMultiProcs(context.numJobs, generator)))
+        Run("cmake --build . --config {config} --target install -- {multiproc}"
+            .format(config=config,
+                    multiproc=FormatMultiProcs(context.numJobs, generator)))
 
 def GetCMakeVersion():
     """
@@ -655,8 +653,7 @@ def InstallBoost(context, force, buildArgs):
             # settings correctly and robustly for the Boost jam build system.
             # There are Python config arguments that can be passed to bootstrap 
             # but those are not available in boostrap.bat (Windows) so we must 
-            # take the following
-            # approach:
+            # take the following approach:
             projectPath = 'python-config.jam'
             with open(projectPath, 'w') as projectFile:
                 # Note that we must escape any special characters, like backslashes for jam, hence
@@ -1237,7 +1234,7 @@ def InstallUSD(context, force, buildArgs):
 
         if context.buildPython:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=ON')
-            if sys.version[0] == '3':
+            if sys.version_info.major == 3:
                 extraArgs.append('-DPXR_PYTHON_MAJOR_3=ON')
 
             # CMake has trouble finding the executable, library, and include
@@ -1258,9 +1255,6 @@ def InstallUSD(context, force, buildArgs):
                                  .format(pyLibPath=pythonInfo[1]))
                 extraArgs.append('-DPYTHON_INCLUDE_DIR="{pyIncPath}"'
                                  .format(pyIncPath=pythonInfo[2]))
-                # if boost >= 1.67
-                #extraArgs.append('-DPYTHON_VERSION_NODOT={pyVersion}'
-                #                 .format(pyVersion=pythonInfo[3].replace('.','')))
         else:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=OFF')
 
@@ -1384,7 +1378,7 @@ def InstallUSD(context, force, buildArgs):
 
         extraArgs += buildArgs
 
-        RunCMake(context, force, extraArgs, build=False)
+        RunCMake(context, force, extraArgs)
 
 USD = Dependency("USD", InstallUSD, "include/pxr/pxr.h")
 
@@ -1718,7 +1712,6 @@ class InstallContext:
         # - usdview
         self.buildUsdview = (self.buildUsdImaging and 
                              self.buildPython and 
-                             #sys.version[0] == '2' and
                              args.build_usdview)
 
         # - Imaging plugins

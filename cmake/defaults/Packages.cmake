@@ -59,9 +59,6 @@ if(PXR_ENABLE_PYTHON_SUPPORT)
         REQUIRED
     )
 
-#   XXX RYANS where is this used?
-#    set(Boost_PYTHON_LIBRARY "${Boost_PYTHON${PYTHON_VERSION_NODOT}_LIBRARY}")
-
     # --Jinja2
     find_package(Jinja2)
 else()
