@@ -80,8 +80,13 @@ class Settings(dict):
         if self._ephemeral:
             return
         try:
-            f = open(self._filename, "wb")
-            dump(self, f)
+            f = open(self._filename, "w")
+
+            # Explicly specify protocol 0 for cPickle/pickle.dump
+            # to maintain backwards compatibility. In Python 2
+            # protocol 0 was the default for cPickle.dump, but
+            # this changed in Python 3.
+            dump(self, f, protocol = 0)
             f.close()
         except:
             if ignoreErrors:
@@ -95,7 +100,7 @@ class Settings(dict):
         if self._ephemeral:
             return
         try:
-            f = open(self._filename, "rb")
+            f = open(self._filename, "r")
             self.update(load(f))
             f.close()
 
