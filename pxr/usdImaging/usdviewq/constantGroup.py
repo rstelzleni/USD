@@ -26,70 +26,74 @@
 module, but enum is not available in Python 2's standard library.
 """
 
+import sys
 import types
 
-from . import six
+if sys.version_info.major >= 3:
+    import enum
+    ConstantGroup = enum.Enum
+else:
+    class _MetaConstantGroup(type):
+        """A meta-class which handles the creation and behavior of ConstantGroups.
+        """
 
-class _MetaConstantGroup(type):
-    """A meta-class which handles the creation and behavior of ConstantGroups.
-    """
+        def __new__(metacls, cls, bases, classdict):
+            """Discover constants and create a new ConstantGroup class."""
 
-    def __new__(metacls, cls, bases, classdict):
-        """Discover constants and create a new ConstantGroup class."""
+            # If this is just the base ConstantGroup class, simply create it and do
+            # not search for constants.
+            if cls == "ConstantGroup":
+                return super(_MetaConstantGroup, metacls).__new__(metacls, cls, bases, classdict)
 
-        # If this is just the base ConstantGroup class, simply create it and do
-        # not search for constants.
-        if cls == "ConstantGroup":
+            # Search through the class-level properties and convert them into
+            # constants.
+            allConstants = list()
+            for key, value in classdict.items():
+                if (key.startswith("_") or isinstance(value, classmethod) or
+                        isinstance(value, staticmethod)):
+                    # Ignore variables which start with an underscore, and
+                    # static/class methods.
+                    pass
+                else:
+                    # Found a new constant.
+                    allConstants.append(value)
+
+                    # If the constant is a function/lambda, ensure that it is not
+                    # converted into a method.
+                    if isinstance(value, types.FunctionType):
+                        classdict[key] = staticmethod(value)
+
+            # All constants discovered, now create the `_all` property.
+            classdict["_all"] = tuple(allConstants)
+
+            # Finally, create the new ConstantGroup class.
             return super(_MetaConstantGroup, metacls).__new__(metacls, cls, bases, classdict)
 
-        # Search through the class-level properties and convert them into
-        # constants.
-        allConstants = list()
-        for key, value in classdict.items():
-            if (key.startswith("_") or isinstance(value, classmethod) or
-                    isinstance(value, staticmethod)):
-                # Ignore variables which start with an underscore, and
-                # static/class methods.
-                pass
-            else:
-                # Found a new constant.
-                allConstants.append(value)
+        def __setattr__(cls, name, value):
+            """Prevent modification of properties after a group is created."""
+            raise AttributeError("Constant groups cannot be modified.")
 
-                # If the constant is a function/lambda, ensure that it is not
-                # converted into a method.
-                if isinstance(value, types.FunctionType):
-                    classdict[key] = staticmethod(value)
+        def __delattr__(cls, name):
+            """Prevent deletion of properties after a group is created."""
+            raise AttributeError("Constant groups cannot be modified.")
 
-        # All constants discovered, now create the `_all` property.
-        classdict["_all"] = tuple(allConstants)
+        def __len__(self):
+            """Get the number of constants in the group."""
+            return len(self._all)
 
-        # Finally, create the new ConstantGroup class.
-        return super(_MetaConstantGroup, metacls).__new__(metacls, cls, bases, classdict)
+        def __contains__(self, value):
+            """Check if a constant exists in the group."""
+            return (value in self._all)
 
-    def __setattr__(cls, name, value):
-        """Prevent modification of properties after a group is created."""
-        raise AttributeError("Constant groups cannot be modified.")
+        def __iter__(self):
+            """Iterate over each constant in the group."""
+            return iter(self._all)
 
-    def __delattr__(cls, name):
-        """Prevent deletion of properties after a group is created."""
-        raise AttributeError("Constant groups cannot be modified.")
+    class ConstantGroup(object):
+        """The base constant group class, intended to be inherited by actual groups
+        of constants.
+        """
+        __metaclass__ = _MetaConstantGroup
 
-    def __len__(self):
-        """Get the number of constants in the group."""
-        return len(self._all)
-
-    def __contains__(self, value):
-        """Check if a constant exists in the group."""
-        return (value in self._all)
-
-    def __iter__(self):
-        """Iterate over each constant in the group."""
-        return iter(self._all)
-
-class ConstantGroup(six.with_metaclass(_MetaConstantGroup, object)):
-    """The base constant group class, intended to be inherited by actual groups
-    of constants.
-    """
-
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("ConstantGroup objects cannot be created.")
+        def __new__(cls, *args, **kwargs):
+            raise TypeError("ConstantGroup objects cannot be created.")
