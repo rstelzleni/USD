@@ -417,6 +417,14 @@ VtArray<T> *VtArray__init__2(unsigned int size, object const &values)
     return ret.release();
 }
 
+#if PY_MAJOR_VERSION == 2
+template <typename T>
+VtArray<T> __truediv__(const VtArray<T>& arr, double d)
+{
+    return arr / d;
+}
+#endif
+
 // overloading for operator special methods, to allow tuple / list & array
 // combinations
 ARCH_PRAGMA_PUSH
@@ -514,6 +522,11 @@ void VtWrapArray()
 #endif
 #ifdef DOUBLE_DIV_OPERATOR
         .def(self / double())
+#       if PY_MAJOR_VERSION == 2
+            // Needed only to support "from __future__ import division" in
+            // python 2. In python 3 builds boost::python adds this for us.
+            .def("__truediv__", __truediv__)
+#       endif
 #endif
 #ifdef UNARY_NEG_OPERATOR
         .def(- self)

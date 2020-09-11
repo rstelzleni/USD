@@ -72,6 +72,7 @@ pxr_test_scripts(
     testenv/testVtArray.py
     testenv/testVtValue.py
     testenv/testVtFunctions.py
+    testenv/testVtPythonDivision.py
 )
 pxr_register_test(testVtValue
     PYTHON
@@ -84,6 +85,10 @@ pxr_register_test(testVtArray
 pxr_register_test(testVtFunctions
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testVtFunctions"
+)
+pxr_register_test(testVtPythonDivision
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testVtPythonDivision"
 )
 pxr_register_test(testVtCpp
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testVtCpp"
