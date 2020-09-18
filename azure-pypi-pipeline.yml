@@ -32,7 +32,7 @@ jobs:
     vmImage: 'Ubuntu-18.04'
   container:
     image: quay.io/pypa/manylinux2014_x86_64
-    options: -v $HOME/USDinst:/opt/USD -v $(System.DefaultWorkingDirectory):/opt/USD
+    options: -v /home/vsts/USDinst:/opt/USDinst -v `pwd`:/opt/USD
   steps:
   - bash: |
       yum install -y openssl-devel wget
@@ -46,7 +46,7 @@ jobs:
       make -j$(nproc)
       make install
       cd /opt/USD
-      python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USDgen/build --src /opt/USDgen/src /opt/USD -v
+      python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USDgen/build --src /opt/USDgen/src /opt/USDinst -v
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
     inputs:
