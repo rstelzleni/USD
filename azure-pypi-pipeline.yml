@@ -34,8 +34,11 @@ jobs:
     options: -v /home/vsts/USDinst:/opt/USD/inst
   steps:
   - bash: |
-      sudo mkdir /opt/USD
-      sudo chmod u+w /opt/USD
+      AZURE_USER="$(whoami)"
+      sudo chown -R $AZURE_USER /opt/USD
+      sudo chmod -R 775 /opt/USD
+    displayName: 'Creating build output directory'
+  - bash: |
       /opt/python/cp36-cp36m/bin/python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD/inst -v
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
