@@ -31,10 +31,12 @@ jobs:
     vmImage: Ubuntu-18.04
   container:
     image: rstelzleni/usd-pypi-builder:latest
-    options: -v /home/vsts/USDinst:/opt/USDinst
+    options: -v /home/vsts/USDinst:/opt/USD/inst
   steps:
   - bash: |
-      /opt/python/cp36-cp36m/bin/python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USDgen/build --src /opt/USDgen/src /opt/USDinst -v
+      sudo mkdir /opt/USD
+      sudo chmod u+w /opt/USD
+      /opt/python/cp36-cp36m/bin/python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD/inst -v
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
     inputs:
