@@ -35,7 +35,7 @@ jobs:
     options: -v /home/vsts/USDinst:/opt/USDinst
   steps:
   - bash: |
-      yum install -y openssl-devel wget
+      sudo yum install -y openssl-devel sudo wget
       export LANG=en_US.UTF-8
       export LANGUAGE=en_US:en
     displayName: 'Installing dependencies'
@@ -46,7 +46,7 @@ jobs:
       cd cmake-3.17.3
       ./bootstrap
       make -j$(nproc)
-      make install
+      sudo make install
       popd
     displayName: 'Installing cmake'
   - bash: |
