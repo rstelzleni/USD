@@ -13,7 +13,7 @@ trigger:
         - /
  
 jobs:
-- job: Linux Build for PyPI
+- job: Linux_Build_for_PyPI
   timeoutInMinutes: 90
   pool:
     vmImage: 'Ubuntu-18.04'
