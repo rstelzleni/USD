@@ -1,0 +1,35 @@
+# Trigger this build whenever this pipeline file is changed. This way we will build
+# new pypi packages each time we update the version number, or any other information
+# listed here.
+trigger:
+    branches:
+        include:
+        - dev
+        - release
+    paths:
+        include:
+        - azure-pypi-pipeline.yml
+        exclude:
+        - /
+ 
+jobs:
+- job: Linux Build for PyPI
+  timeoutInMinutes: 90
+  pool:
+    vmImage: 'Ubuntu-18.04'
+  steps:
+  - script: |
+      sudo apt-get -qq update;
+      sudo pip install --upgrade pip
+      sudo apt-get install python-setuptools;
+      sudo apt-get install libglew-dev libxrandr-dev libxcursor-dev libxinerama-dev libxi-dev;
+      sudo pip install PySide2 ;
+      sudo pip install PyOpenGL ;
+      sudo python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build $HOME/USDgen/build --src $HOME/USDgen/src $HOME/USDinst  -v
+    displayName: 'Building USD'
+  - task: PublishPipelineArtifact@0
+    inputs:
+      artifactName: 'usd-linux'
+      targetPath: "/home/vsts/USDinst"
+
+
