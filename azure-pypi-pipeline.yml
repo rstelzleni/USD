@@ -130,7 +130,7 @@ jobs:
     displayName: 'Installing python packages'
   - bash: |
       mkdir ./packaging
-      cp -R /opt/USD/inst ./packaging
+      cp -R $HOME/USDinst ./packaging
       cp build_scripts/pypi/package_files/* ./packaging
     displayName: "Creating packaging directory"
   - bash: |
