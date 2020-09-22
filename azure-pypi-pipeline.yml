@@ -50,6 +50,7 @@ jobs:
       cp -R /opt/USD/inst ./packaging
       cp build_scripts/pypi/package_files/* ./packaging
       cd ./packaging
+      ls -l
     displayName: "Creating packaging directory"
   - bash: |
       /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel --python-tag cp36
@@ -66,25 +67,28 @@ jobs:
     inputs:
       targetPath: /home/vsts/dist/*
 
-- job: Windows_Build_for_PyPI
-  timeoutInMinutes: 90
-  pool:
-    vmImage: 'VS2017-Win2016'
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: 3.6
-      addToPath: true
-  - script: |
-      call C:\"Program Files (x86)"\"Microsoft Visual Studio"\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat
-      call set BOOST_ROOT=
-      call python --version
-      call python build_scripts/build_usd.py --for-pypi --build-args USD,"-DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build %HOME%/USDgen/build --src %HOME%/USDgen/src %HOME%/USDinst -v
-    displayName: 'Building USD'
-  - task: PublishPipelineArtifact@0
-    inputs:
-      artifactName: 'usd-pypi-win64'
-      targetPath: "D:/USDinst"
+# Current error 
+#    LINK : fatal error LNK1104: cannot open file 'python36.lib' [D:\USDgen\build\s\pxr\base\tf\tf.vcxproj]
+#  
+#- job: Windows_Build_for_PyPI
+#  timeoutInMinutes: 90
+#  pool:
+#    vmImage: 'VS2017-Win2016'
+#  steps:
+#  - task: UsePythonVersion@0
+#    inputs:
+#      versionSpec: 3.6
+#      addToPath: true
+#  - script: |
+#      call C:\"Program Files (x86)"\"Microsoft Visual Studio"\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat
+#      call set BOOST_ROOT=
+#      call python --version
+#      call python build_scripts/build_usd.py --for-pypi --build-args USD,"-DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build %HOME%/USDgen/build --src %HOME%/USDgen/src %HOME%/USDinst -v
+#    displayName: 'Building USD'
+#  - task: PublishPipelineArtifact@0
+#    inputs:
+#      artifactName: 'usd-pypi-win64'
+#      targetPath: "D:/USDinst"
 
 - job: Mac_Build_for_PyPI
   timeoutInMinutes: 90
