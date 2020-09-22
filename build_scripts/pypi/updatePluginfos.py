@@ -1,7 +1,11 @@
 
-import argparse, base64, csv, fnmatch, hashlib, io, json, os, zipfile
+import argparse, base64, csv, fnmatch, hashlib, io, json, os, platform, zipfile
 
 # TODO comment and usage
+
+def is_mac_platform():
+    return platform.system() == "Darwin"
+
 
 def get_hash(data):
     # based on the rewrite_record function in auditwheel
@@ -13,6 +17,26 @@ def get_hash(data):
             base64.urlsafe_b64encode(digest).rstrip(b'=').decode('utf-8')
     size = len(data)
     return (hashval, size)
+
+
+def process_plugin_dict(plugin_dict, libname, newname):
+    # Check if this dict needs to be updated for the new library name.
+    #
+    # This is assuming the relative path structure that we currently get. I
+    # think this should work for the way our wheels are currently built, and
+    # the way USD is currently setting these paths internally. If either
+    # changes this will break.
+    if is_mac_platform():
+        if f'libs/{libname}' in newname:
+            # strip off a pxr/ at the front of the newname
+            plugin_dict['LibraryPath'] = os.path.join('../../', newname[4:])
+            return True
+    else:
+        if f'libs/{libname}-' in newname:
+            # found a new location for this lib
+            plugin_dict['LibraryPath'] = os.path.join('../../../', newname)
+            return True
+    return False
 
 
 def update_pluginfo(contents, new_lib_names, new_pluginfo_hashes):
@@ -31,15 +55,8 @@ def update_pluginfo(contents, new_lib_names, new_pluginfo_hashes):
             libname, _ = os.path.splitext(libname)
             # libname is now like libsdf or libtf
             for newname in new_lib_names:
-                if f'libs/{libname}-' in newname:
-                    # found a new location for this lib
-                    # TODO, this is assuming the relative path structure that
-                    # we currently get. I think this should work for the way
-                    # our wheels are currently built, and the way USD is
-                    # currently setting these paths internally. If either
-                    # changes this will break.
-                    p['LibraryPath'] = os.path.join('../../../', newname)
-                    changed = True
+                changed = process_plugin_dict(p, libname, newname)
+                if changed:
                     break
 
     if changed:
@@ -49,7 +66,6 @@ def update_pluginfo(contents, new_lib_names, new_pluginfo_hashes):
 
 
 def update_record(contents, new_pluginfo_hashes):
-
     result = io.StringIO()
     csv_writer = csv.writer(result)
     csv_reader = csv.reader(io.StringIO(contents.decode('utf-8')))
@@ -77,21 +93,20 @@ def main():
     input_file, output_file = parse_command_line()
 
     if not os.path.exists(input_file):
-        raise Exception("no such file " + input_file)
+        raise RuntimeError("no such file " + input_file)
 
-    # Find the archive
-    # Make a temp dir
-    # unzip
-    # read each pluginfo and update it
-    # zip back up
-
+    # Loop over the file once to update pluginfos and compute new hash values
+    temp_file_name = input_file + '_old_hashes'
+    new_pluginfo_hashes = {}
     with zipfile.ZipFile(input_file, 'r') as input_wheel:
-        with zipfile.ZipFile(output_file, 'w', compression=input_wheel.compression) as output_wheel:
+        with zipfile.ZipFile(temp_file_name, 'w', compression=input_wheel.compression) as output_wheel:
             # This seems blank, but can't hurt to keep it
             output_wheel.comment = input_wheel.comment
 
-            new_lib_names = fnmatch.filter(input_wheel.namelist(), '*/lib*.so')
-            new_pluginfo_hashes = {}
+            if is_mac_platform():
+                new_lib_names = fnmatch.filter(input_wheel.namelist(), '*/*.dylib')
+            else:
+                new_lib_names = fnmatch.filter(input_wheel.namelist(), '*/lib*.so')
 
             for file_info in input_wheel.infolist():
                 if fnmatch.fnmatch(file_info.filename, '*/plugInfo.json'):
@@ -103,21 +118,24 @@ def main():
                     new_pluginfo_hashes[file_info.filename] = get_hash(contents)
 
                     output_wheel.writestr(file_info, contents)
-                elif fnmatch.fnmatch(file_info.filename, '*/RECORD'):
-                    # contains hashes of every file. Luckily, it comes at the end of the
-                    # archive, so I can use the hashes I precomputed.
-                    # TODO this is fragile as f. Instead we could extract everything to a
-                    # temp directory, do all our changes there, and then zip up in the
-                    # expected way. If we do that we could conceivably use the existing
-                    # helper functions in wheel and auditwheel, which are pretty nice
-                    # and straightforward
+                else:
+                    print(f'copying: {file_info.filename}')
+                    # writestr also writes binary if passed a bytes instance
+                    output_wheel.writestr(file_info, input_wheel.read(file_info))
+
+    # Loop over a second time this time keeping all files intact, but rewriting 
+    # the RECORD file containing the hashes
+    with zipfile.ZipFile(temp_file_name, 'r') as input_wheel:
+        with zipfile.ZipFile(output_file, 'w', compression=input_wheel.compression) as output_wheel:
+            output_wheel.comment = input_wheel.comment
+
+            for file_info in input_wheel.infolist():
+                if fnmatch.fnmatch(file_info.filename, '*/RECORD'):
                     print(f'updating hashes in {file_info.filename}')
                     data = input_wheel.read(file_info)
                     contents = update_record(data, new_pluginfo_hashes)
                     output_wheel.writestr(file_info, contents)
                 else:
-                    print(f'copying: {file_info.filename}')
-                    # writestr also writes binary if passed a bytes instance
                     output_wheel.writestr(file_info, input_wheel.read(file_info))
 
 if __name__ == '__main__':
