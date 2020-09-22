@@ -1,16 +1,9 @@
 name: PyPI_Packaging
 
-# Set a new package_version_number here for each new version of the packages you
-# intend to publish.
-variables:
-- name: package_version_number
-  value: 0.1.0
-
-# Need a matrix of python versions for these builds
-
-# Trigger this build whenever this pipeline file is changed. This way we will build
-# new pypi packages each time we update the version number, or any other information
-# listed here, like supported python versions.
+# Trigger this build whenever this pipeline file is changed, or when setup.py
+# or other supporting files are updated. This way we will build new pypi
+# packages each time we update the version number, or any other information
+# listed here or in setup.py, like supported python versions.
 trigger:
     branches:
         include:
@@ -20,6 +13,8 @@ trigger:
     paths:
         include:
         - azure-pypi-pipeline.yml
+        - build_scripts/pypi/*.py
+        - build_scripts/pypi/package_files/*
         exclude:
         - /
  
