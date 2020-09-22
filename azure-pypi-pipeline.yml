@@ -64,8 +64,8 @@ jobs:
       PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl
     displayName: 'Running audtiwheel repair (moves .so files into package)'
   - bash: |
-      WHEEL_PACKAGE_NAME=`ls /wheelhouse`
-      $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD/dist/$WHEEL_PACKAGE_NAME"
+      WHEEL_PACKAGE_NAME=`ls wheelhouse`
+      $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD/dist/$WHEEL_PACKAGE_NAME"
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:
