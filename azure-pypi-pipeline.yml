@@ -60,7 +60,7 @@ jobs:
   - bash: |
       WHEEL_PACKAGE_NAME=`ls /wheelhouse`
       /opt/python/cp36-cp36m/bin/python ../build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
-      cp "./dist/$WHEEL_PACKAGE_NAME" /opt/USD/inst
+      cp "./dist/$WHEEL_PACKAGE_NAME" /opt/USD/dist
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:
