@@ -135,7 +135,7 @@ jobs:
       mkdir ./packaging
       ls -l
       pwd
-      cp -R $HOME/USDinst/* ./packaging
+      cp -R $HOME/USDinst/* ./packaging/inst
       cp build_scripts/pypi/package_files/* ./packaging
       ls -l ./packaging
     displayName: "Creating packaging directory"
