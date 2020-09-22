@@ -20,57 +20,58 @@ trigger:
  
 jobs:
 
-- job: Linux_Build_for_PyPI
-  strategy:
-    matrix:
-      Python36:
-        PYTHON_INTERPRETER: /opt/python/cp36-cp36m/bin/python
-        PYTHON_TAG: cp36
-      Python37:
-        PYTHON_INTERPRETER: /opt/python/cp37-cp37m/bin/python
-        PYTHON_TAG: cp37
-      Python38:
-        PYTHON_INTERPRETER: /opt/python/cp38-cp38/bin/python
-        PYTHON_TAG: cp38
-  timeoutInMinutes: 90
-  pool:
-    vmImage: Ubuntu-18.04
-  container:
-    image: rstelzleni/usd-pypi-builder:latest
-    options: -v /home/vsts/USDinst:/opt/USD/inst -v /home/vsts/dist:/opt/USD/dist
-  steps:
-  - bash: |
-      AZURE_USER="$(whoami)"
-      sudo chown -R $AZURE_USER /opt/USD
-      sudo chmod -R 775 /opt/USD
-    displayName: 'Creating build output directory'
-  - bash: |
-      $(PYTHON_INTERPRETER)  build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD/inst -v
-    displayName: 'Building USD'
-  - task: PublishPipelineArtifact@0
-    inputs:
-      artifactName: usd-pypi-linux-$(PYTHON_TAG)
-      targetPath: /home/vsts/USDinst
-  - bash: |
-      mkdir ./packaging
-      cp -R /opt/USD/inst ./packaging
-      cp build_scripts/pypi/package_files/* ./packaging
-    displayName: "Creating packaging directory"
-  - bash: |
-      cd ./packaging
-      $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
-    displayName: 'Running setup.py'
-  - bash: |
-      PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl
-    displayName: 'Running audtiwheel repair (moves .so files into package)'
-  - bash: |
-      WHEEL_PACKAGE_NAME=`ls wheelhouse`
-      $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD/dist/$WHEEL_PACKAGE_NAME"
-    displayName: 'Updating pluginfo paths'
-  - task: PublishPipelineArtifact@0
-    inputs:
-      artifactName: dist-linux-$(PYTHON_TAG)
-      targetPath: /home/vsts/dist
+    # Working!!
+#- job: Linux_Build_for_PyPI
+#  strategy:
+#    matrix:
+#      Python36:
+#        PYTHON_INTERPRETER: /opt/python/cp36-cp36m/bin/python
+#        PYTHON_TAG: cp36
+#      Python37:
+#        PYTHON_INTERPRETER: /opt/python/cp37-cp37m/bin/python
+#        PYTHON_TAG: cp37
+#      Python38:
+#        PYTHON_INTERPRETER: /opt/python/cp38-cp38/bin/python
+#        PYTHON_TAG: cp38
+#  timeoutInMinutes: 90
+#  pool:
+#    vmImage: Ubuntu-18.04
+#  container:
+#    image: rstelzleni/usd-pypi-builder:latest
+#    options: -v /home/vsts/USDinst:/opt/USD/inst -v /home/vsts/dist:/opt/USD/dist
+#  steps:
+#  - bash: |
+#      AZURE_USER="$(whoami)"
+#      sudo chown -R $AZURE_USER /opt/USD
+#      sudo chmod -R 775 /opt/USD
+#    displayName: 'Creating build output directory'
+#  - bash: |
+#      $(PYTHON_INTERPRETER)  build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD/inst -v
+#    displayName: 'Building USD'
+#  - task: PublishPipelineArtifact@0
+#    inputs:
+#      artifactName: usd-pypi-linux-$(PYTHON_TAG)
+#      targetPath: /home/vsts/USDinst
+#  - bash: |
+#      mkdir ./packaging
+#      cp -R /opt/USD/inst ./packaging
+#      cp build_scripts/pypi/package_files/* ./packaging
+#    displayName: "Creating packaging directory"
+#  - bash: |
+#      cd ./packaging
+#      $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
+#    displayName: 'Running setup.py'
+#  - bash: |
+#      PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl
+#    displayName: 'Running audtiwheel repair (moves .so files into package)'
+#  - bash: |
+#      WHEEL_PACKAGE_NAME=`ls wheelhouse`
+#      $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD/dist/$WHEEL_PACKAGE_NAME"
+#    displayName: 'Updating pluginfo paths'
+#  - task: PublishPipelineArtifact@0
+#    inputs:
+#      artifactName: dist-linux-$(PYTHON_TAG)
+#      targetPath: /home/vsts/dist
 
 
 # Current error 
@@ -132,20 +133,32 @@ jobs:
     displayName: 'Installing python packages'
   - bash: |
       mkdir ./packaging
+      ls -l
+      pwd
       cp -R $HOME/USDinst/* ./packaging
       cp build_scripts/pypi/package_files/* ./packaging
+      ls -l ./packaging
     displayName: "Creating packaging directory"
   - bash: |
+      pwd
       cd ./packaging
+      pwd
+      ls -l
       $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name macosx_10_9_x86_64
     displayName: 'Running setup.py'
   - bash: |
+      pwd
+      ls -l
       delocate-wheel -v -w dist-delocated packaging/dist/*
     displayName: 'Running delocate (moves shared lib files into package)'
   - bash: |
+      pwd
+      ls -l
       WHEEL_PACKAGE_NAME=`ls ./packaging/dist`
-      $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./packaging/dist/$WHEEL_PACKAGE_NAME" "./$WHEEL_PACKAGE_NAME"
+      mkdir -p ./dist
+      $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./packaging/dist/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:
-      targetPath: ./*.whl
+      artifactName: dist-mac-$(PYTHON_TAG)
+      targetPath: ./dist
