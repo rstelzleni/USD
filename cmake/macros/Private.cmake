@@ -1148,7 +1148,7 @@ function(_pxr_library NAME)
             # On Mac, we need this linker flag to enable this type of build.
             target_link_options(${NAME}
                 PUBLIC
-                "LINKER:SHELL:--undefined dynamic_lookup"
+                "LINKER:SHELL:-undefined dynamic_lookup"
             )
         endif()
     endif()
