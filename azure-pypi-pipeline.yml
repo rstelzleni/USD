@@ -60,22 +60,17 @@ jobs:
       mkdir ./packaging
       cp -R /opt/USD/inst ./packaging
       cp build_scripts/pypi/package_files/* ./packaging
-      cd ./packaging
-      ls -l
     displayName: "Creating packaging directory"
   - bash: |
-      ls -l
       cd ./packaging
-      ls -l
       $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
     displayName: 'Running setup.py'
   - bash: |
-      PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair ./dist/*.whl
+      PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl
     displayName: 'Running audtiwheel repair (moves .so files into package)'
   - bash: |
       WHEEL_PACKAGE_NAME=`ls /wheelhouse`
-      $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
-      cp "./dist/$WHEEL_PACKAGE_NAME" /opt/USD/dist
+      $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD/dist/$WHEEL_PACKAGE_NAME"
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:
@@ -142,22 +137,17 @@ jobs:
       mkdir ./packaging
       cp -R /opt/USD/inst ./packaging
       cp build_scripts/pypi/package_files/* ./packaging
-      cd ./packaging
-      ls -l
     displayName: "Creating packaging directory"
   - bash: |
-      ls -l
       cd ./packaging
-      ls -l
       $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name macosx_10_9_x86_64
     displayName: 'Running setup.py'
   - bash: |
-      delocate-wheel -v -w dist-delocated dist/*
+      delocate-wheel -v -w dist-delocated packaging/dist/*
     displayName: 'Running delocate (moves shared lib files into package)'
   - bash: |
-      WHEEL_PACKAGE_NAME=`ls ./dist`
-      $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./dist/$WHEEL_PACKAGE_NAME" "./$WHEEL_PACKAGE_NAME"
-      cp "./dist/$WHEEL_PACKAGE_NAME" .
+      WHEEL_PACKAGE_NAME=`ls ./packaging/dist`
+      $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./packaging/dist/$WHEEL_PACKAGE_NAME" "./$WHEEL_PACKAGE_NAME"
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:
