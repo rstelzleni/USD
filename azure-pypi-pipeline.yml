@@ -31,7 +31,7 @@ jobs:
     vmImage: Ubuntu-18.04
   container:
     image: rstelzleni/usd-pypi-builder:latest
-    options: -v /home/vsts/USDinst:/opt/USD/inst
+    options: -v /home/vsts/USDinst:/opt/USD/inst -v /home/vsts/dist:/opt/USD/dist
   steps:
   - bash: |
       AZURE_USER="$(whoami)"
@@ -45,6 +45,27 @@ jobs:
     inputs:
       artifactName: usd-pypi-linux
       targetPath: /home/vsts/USDinst
+  - bash: |
+      mkdir ./packaging
+      cp -R /opt/USD/inst ./packaging
+      cp build_scripts/pypi/package_files/* ./packaging
+      cd ./packaging
+    displayName: "Creating packaging directory"
+  - bash: |
+      python3 setup.py bdist_wheel --python-tag cp36
+    displayName: 'Running setup.py'
+  - bash: |
+      PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib auditwheel repair ./dist/*.whl
+      # cp /wheelhouse/*.whl ./dist/*.whl
+    displayName: 'Running audtiwheel repair (moves .so files into package)'
+  - bash: |
+      WHEEL_PACKAGE_NAME=`ls /wheelhouse`
+      /opt/python/cp36-cp36m/bin/python ../build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
+      cp "./dist/$WHEEL_PACKAGE_NAME" /opt/USD/inst
+    displayName: 'Updating pluginfo paths'
+  - task: PublishPipelineArtifact@0
+    inputs:
+      targetPath: /home/vsts/dist/*
 
 #- job: Windows_Build_for_PyPI
 #  timeoutInMinutes: 90
