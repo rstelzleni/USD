@@ -72,8 +72,9 @@ jobs:
     vmImage: 'VS2017-Win2016'
   steps:
   - task: UsePythonVersion@0
-    versionSpec: 3.6
-    addToPath: true
+    inputs:
+      versionSpec: 3.6
+      addToPath: true
   - script: |
       call C:\"Program Files (x86)"\"Microsoft Visual Studio"\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat
       call set BOOST_ROOT=
@@ -91,8 +92,9 @@ jobs:
     vmImage: 'macOS-10.14'
   steps:
   - task: UsePythonVersion@0
-    versionSpec: 3.6
-    addToPath: true
+    inputs:
+      versionSpec: 3.6
+      addToPath: true
   - script: |
       # The SYSTEM env var is used by the Makefile of glew and having it set trips it up
       unset SYSTEM
