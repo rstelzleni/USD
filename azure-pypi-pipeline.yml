@@ -54,7 +54,7 @@ jobs:
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
     inputs:
-      artifactName: usd-pypi-linux
+      artifactName: usd-pypi-linux-$(PYTHON_TAG)
       targetPath: /home/vsts/USDinst
   - bash: |
       mkdir ./packaging
