@@ -26,6 +26,17 @@ trigger:
 jobs:
 
 - job: Linux_Build_for_PyPI
+  strategy:
+    matrix:
+      Python36:
+        PYTHON_INTERPRETER: /opt/python/cp36-cp36m/bin/python
+        PYTHON_TAG: cp36
+      Python37:
+        PYTHON_INTERPRETER: /opt/python/cp37-cp37m/bin/python
+        PYTHON_TAG: cp37
+      Python38:
+        PYTHON_INTERPRETER: /opt/python/cp38-cp38m/bin/python
+        PYTHON_TAG: cp38
   timeoutInMinutes: 90
   pool:
     vmImage: Ubuntu-18.04
@@ -39,7 +50,7 @@ jobs:
       sudo chmod -R 775 /opt/USD
     displayName: 'Creating build output directory'
   - bash: |
-      /opt/python/cp36-cp36m/bin/python build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD/inst -v
+      $(PYTHON_INTERPRETER)  build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD/inst -v
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
     inputs:
@@ -53,14 +64,14 @@ jobs:
       ls -l
     displayName: "Creating packaging directory"
   - bash: |
-      /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel --python-tag cp36
+      $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
     displayName: 'Running setup.py'
   - bash: |
       PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib auditwheel repair ./dist/*.whl
     displayName: 'Running audtiwheel repair (moves .so files into package)'
   - bash: |
       WHEEL_PACKAGE_NAME=`ls /wheelhouse`
-      /opt/python/cp36-cp36m/bin/python ../build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
+      $(PYTHON_INTERPRETER)  ../build_scripts/pypi/updatePluginfos.py "/wheelhouse/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
       cp "./dist/$WHEEL_PACKAGE_NAME" /opt/USD/dist
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
