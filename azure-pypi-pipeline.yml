@@ -133,6 +133,7 @@ jobs:
     displayName: 'Installing python packages'
   - bash: |
       mkdir ./packaging
+      mkdir ./packaging/inst
       ls -l
       pwd
       cp -R $HOME/USDinst/* ./packaging/inst
