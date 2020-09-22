@@ -52,7 +52,7 @@ jobs:
       cd ./packaging
     displayName: "Creating packaging directory"
   - bash: |
-      python3 setup.py bdist_wheel --python-tag cp36
+      /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel --python-tag cp36
     displayName: 'Running setup.py'
   - bash: |
       PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib auditwheel repair ./dist/*.whl
