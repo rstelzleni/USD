@@ -69,7 +69,9 @@ jobs:
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:
-      targetPath: /home/vsts/dist/*
+      artifactName: dist-linux-$(PYTHON_TAG)
+      targetPath: /home/vsts/dist
+
 
 # Current error 
 #    LINK : fatal error LNK1104: cannot open file 'python36.lib' [D:\USDgen\build\s\pxr\base\tf\tf.vcxproj]
@@ -130,7 +132,7 @@ jobs:
     displayName: 'Installing python packages'
   - bash: |
       mkdir ./packaging
-      cp -R $HOME/USDinst ./packaging
+      cp -R $HOME/USDinst/* ./packaging
       cp build_scripts/pypi/package_files/* ./packaging
     displayName: "Creating packaging directory"
   - bash: |
