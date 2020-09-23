@@ -134,27 +134,17 @@ jobs:
   - bash: |
       mkdir ./packaging
       mkdir ./packaging/inst
-      ls -l
-      pwd
       cp -R $HOME/USDinst/* ./packaging/inst
       cp build_scripts/pypi/package_files/* ./packaging
-      ls -l ./packaging
     displayName: "Creating packaging directory"
   - bash: |
-      pwd
       cd ./packaging
-      pwd
-      ls -l
       $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name macosx_10_9_x86_64
     displayName: 'Running setup.py'
   - bash: |
-      pwd
-      ls -l
       delocate-wheel -v -w dist-delocated packaging/dist/*
     displayName: 'Running delocate (moves shared lib files into package)'
   - bash: |
-      pwd
-      ls -l
       WHEEL_PACKAGE_NAME=`ls ./packaging/dist`
       mkdir -p ./dist
       $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./packaging/dist/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
