@@ -147,7 +147,7 @@ jobs:
   - bash: |
       WHEEL_PACKAGE_NAME=`ls ./packaging/dist`
       mkdir -p ./dist
-      $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./packaging/dist/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
+      $(PYTHON_INTERPRETER)  build_scripts/pypi/updatePluginfos.py "./packaging/dist-delocated/$WHEEL_PACKAGE_NAME" "./dist/$WHEEL_PACKAGE_NAME"
     displayName: 'Updating pluginfo paths'
   - task: PublishPipelineArtifact@0
     inputs:

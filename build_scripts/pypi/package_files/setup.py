@@ -48,7 +48,7 @@ setuptools.setup(
     packages=setuptools.find_packages(os.path.join(BUILD_DIR, 'lib/python')),
     package_dir={"": os.path.join(BUILD_DIR, 'lib/python')},
     package_data={
-        "": ["*.so", "*.dll", "*.dylib"],
+        "": ["*.so"],
         "pxr": ["pluginfo/*", "pluginfo/*/*", "pluginfo/*/*/*"],
     },
     classifiers=[
