@@ -5,3 +5,5 @@
 * docker container is used for linux builds only, give update instructions
 * mention docker container is in my namespace
 * check with sunya, best place for change in cmake Private.cmake macro
+* -for-pypi flag added just for mac linking support. other flags passed at command line
+* should we try to build in a better place than the default checkout?
