@@ -110,9 +110,10 @@ jobs:
   - script: |
       dir
       mkdir D:\packaging
-      copy %HOME%\USDinst D:\packaging\inst
+      xcopy /E /I %HOME%\USDinst D:\packaging\inst
       copy build_scripts\pypi\package_files\* D:\packaging
       dir D:\packaging
+      dir D:\packaging\inst
     displayName: "Creating packaging directory"
   - script: |
       cd D:\packaging

@@ -16,8 +16,8 @@ def windows():
     return platform.system() == "Windows"
 
 WORKING_ROOT = '.'
-USD_BUILD_OUTPUT = os.path.join(WORKING_ROOT, 'inst/')
-BUILD_DIR = os.path.join(WORKING_ROOT, 'pypi/')
+USD_BUILD_OUTPUT = os.path.join(WORKING_ROOT, 'inst')
+BUILD_DIR = os.path.join(WORKING_ROOT, 'pypi')
 
 # Copy everything in lib over before we start making changes
 shutil.copytree(os.path.join(USD_BUILD_OUTPUT, 'lib'), os.path.join(BUILD_DIR, 'lib'))
