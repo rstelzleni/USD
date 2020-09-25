@@ -99,9 +99,9 @@ jobs:
       addToPath: true
   - script: |
       call C:\"Program Files (x86)"\"Microsoft Visual Studio"\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat
-      call set BOOST_ROOT=
-      call python --version
-      call python build_scripts/build_usd.py --for-pypi --build-args USD,"-DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build %HOME%/USDgen/build --src %HOME%/USDgen/src %HOME%/USDinst -v
+      set BOOST_ROOT=
+      python --version
+      python build_scripts/build_usd.py --for-pypi --build-args USD,"-DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build %HOME%/USDgen/build --src %HOME%/USDgen/src %HOME%/USDinst -v
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
     inputs:
@@ -116,9 +116,12 @@ jobs:
       dir D:\packaging\inst
     displayName: "Creating packaging directory"
   - script: |
+      python -m pip install wheel
+    displayName: 'Installing python packages'
+  - script: |
       cd D:\packaging
       dir
-      call python setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name win_amd64
+      python setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name win_amd64
     displayName: 'Running setup.py'
   - task: PublishPipelineArtifact@0
     inputs:
