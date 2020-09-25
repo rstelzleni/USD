@@ -181,7 +181,7 @@ stages:
     pool:
       vmImage: Ubuntu-18.04
     steps:
-    - task: DownloadPipelineArtifacts@2
+    - task: DownloadPipelineArtifact@2
       displayName: 'Downloading all artifacts'
       inputs:
         source: current
@@ -197,6 +197,7 @@ stages:
         cp dist_*/*.whl dist
       displayName: 'Collecting whl packages'
     - task: PublishPipelineArtifact@0
+      displayName: 'Publishing in a single download'
       inputs:
         artifactName: dist
         targetPath: dist
