@@ -110,8 +110,8 @@ jobs:
   - script: |
       dir
       mkdir D:\packaging
-      cp -R %HOME%\USDinst D:\\packaging
-      cp build_scripts\\pypi\\package_files\\* D:\\packaging
+      copy -R %HOME%\USDinst D:\packaging
+      copy build_scripts\pypi\package_files\* D:\packaging
       dir D:\packaging
     displayName: "Creating packaging directory"
   - script: |
