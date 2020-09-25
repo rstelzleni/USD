@@ -109,13 +109,13 @@ jobs:
       targetPath: "D:/USDinst"
   - script: |
       dir
-      mkdir .\packaging
-      cp -R %HOME%\USDinst .\packaging
-      cp build_scripts\pypi\package_files\* .\packaging
-      dir .\packaging
+      mkdir D:\packaging
+      cp -R %HOME%\USDinst D:\\packaging
+      cp build_scripts\\pypi\\package_files\\* D:\\packaging
+      dir D:\packaging
     displayName: "Creating packaging directory"
   - script: |
-      cd .\packaging
+      cd D:\packaging
       dir
       call python setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name win_amd64
     displayName: 'Running setup.py'
