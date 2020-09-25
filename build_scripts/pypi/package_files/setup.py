@@ -1,6 +1,6 @@
 import setuptools
 
-import glob, os, shutil
+import glob, os, platform, shutil
 
 # This setup.py script expects to be run from an inst directory in a typical
 # USD build run from build_usd.py. USD should be built with the for-pypi flag. 
@@ -11,6 +11,9 @@ import glob, os, shutil
 # to point to the new locations of those shared library dependencies. How this
 # is done depends on platform, and is mostly accomplished by steps in the CI
 # system.
+
+def windows():
+    return platform.system() == "Windows"
 
 WORKING_ROOT = '.'
 USD_BUILD_OUTPUT = os.path.join(WORKING_ROOT, 'inst/')
@@ -24,6 +27,30 @@ shutil.copytree(os.path.join(USD_BUILD_OUTPUT, 'lib'), os.path.join(BUILD_DIR, '
 # to update them later anyway after running "auditwheel repair", which will
 # move the libraries to a new directory
 shutil.move(os.path.join(BUILD_DIR, 'lib/usd'), os.path.join(BUILD_DIR, 'lib/python/pxr/pluginfo'))
+
+if windows():
+    # On windows we also need dlls from the bin directory
+    shutil.copytree(os.path.join(USD_BUILD_OUTPUT, 'bin'), os.path.join(BUILD_DIR, 'bin'))
+
+    # On Linux and Mac there are tools that do this for us (auditwheel and
+    # delocate) On Windows we'll move these here in setup. This is simpler
+    # because there are no RPATHs to worry about.
+    dll_files = glob.glob(os.path.join(BUILD_DIR, "lib/*.dll"))
+    dll_files.extend(glob.glob(os.path.join(BUILD_DIR, "bin/*.dll")))
+    for f in dll_files:
+        shutil.move(f, os.path.join(BUILD_DIR, "lib/python/pxr"))
+
+    # Because there are no RPATHS, patch __init__.py
+    # See this thread and related conversations
+    # https://mail.python.org/pipermail/distutils-sig/2014-September/024962.html
+    with open(os.path.join(BUILD_DIR, 'lib/python/pxr/__init__.py'), 'a+') as init_file:
+        init_file.write('''
+
+# appended to this file for the windows PyPI package
+import os
+dllPath = os.path.split(os.path.realpath(__file__))[0]
+os.environ['PATH'] = dllPath + os.pathsep + os.environ['PATH']
+''')
 
 # Get the readme text
 with open("README.md", "r") as fh:
@@ -48,7 +75,7 @@ setuptools.setup(
     packages=setuptools.find_packages(os.path.join(BUILD_DIR, 'lib/python')),
     package_dir={"": os.path.join(BUILD_DIR, 'lib/python')},
     package_data={
-        "": ["*.so"],
+        "": ["*.so", "*.dll", "*.pyd"],
         "pxr": ["pluginfo/*", "pluginfo/*/*", "pluginfo/*/*/*"],
     },
     classifiers=[

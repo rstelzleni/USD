@@ -107,6 +107,22 @@ jobs:
     inputs:
       artifactName: 'usd-pypi-win64'
       targetPath: "D:/USDinst"
+  - script: |
+      dir
+      mkdir .\packaging
+      cp -R %HOME%\USDinst .\packaging
+      cp build_scripts\pypi\package_files\* .\packaging
+      dir .\packaging
+    displayName: "Creating packaging directory"
+  - bash: |
+      cd .\packaging
+      dir
+      call python setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name win_amd64
+    displayName: 'Running setup.py'
+  - task: PublishPipelineArtifact@0
+    inputs:
+      artifactName: dist-windows-$(PYTHON_TAG)
+      targetPath: D:\packaging\dist
 
 #- job: Mac_Build_for_PyPI
 #  strategy:
