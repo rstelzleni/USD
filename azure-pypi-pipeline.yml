@@ -101,7 +101,7 @@ jobs:
       call C:\"Program Files (x86)"\"Microsoft Visual Studio"\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat
       call set BOOST_ROOT=
       call python --version
-      call python build_scripts/build_usd.py --for-pypi --build-args USD,"/link /FORCE -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build %HOME%/USDgen/build --src %HOME%/USDgen/src %HOME%/USDinst -v
+      call python build_scripts/build_usd.py --for-pypi --build-args USD,"-DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build %HOME%/USDgen/build --src %HOME%/USDgen/src %HOME%/USDinst -v
     displayName: 'Building USD'
   - task: PublishPipelineArtifact@0
     inputs:
