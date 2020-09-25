@@ -114,7 +114,7 @@ jobs:
       cp build_scripts\pypi\package_files\* .\packaging
       dir .\packaging
     displayName: "Creating packaging directory"
-  - bash: |
+  - script: |
       cd .\packaging
       dir
       call python setup.py bdist_wheel --python-tag ${PYTHON_TAG} --plat-name win_amd64
