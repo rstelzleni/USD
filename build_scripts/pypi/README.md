@@ -7,3 +7,6 @@
 * check with sunya, best place for change in cmake Private.cmake macro
 * -for-pypi flag added just for mac linking support. other flags passed at command line
 * should we try to build in a better place than the default checkout?
+* need to try an older linux base image for older pip support
+* windows, do we need x86 and x64 builds?
+* check on windows py3.8 issue, seems like ctypes shouldn't matter
