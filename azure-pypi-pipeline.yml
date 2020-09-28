@@ -195,13 +195,12 @@ stages:
     - bash: |
         pwd
         ls -l
-        ls -l dist_*
-        ls -l dist_*/*.whl
-        mkdir dist
-        cp dist_*/*.whl dist
+        ls -l dist*
+        mkdir dist-final
+        cp dist*/*.whl dist-final
       displayName: 'Collecting whl packages'
     - task: PublishPipelineArtifact@0
       displayName: 'Publishing in a single download'
       inputs:
         artifactName: dist
-        targetPath: '$(Pipeline.Workspace)/dist'
+        targetPath: '$(Pipeline.Workspace)/dist-final'
