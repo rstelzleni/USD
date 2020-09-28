@@ -199,7 +199,6 @@ stages:
         ls -l dist_*/*.whl
         mkdir dist
         cp dist_*/*.whl dist
-      workingDirectory: $(Pipeline.Workspace)
       displayName: 'Collecting whl packages'
     - task: PublishPipelineArtifact@0
       displayName: 'Publishing in a single download'
