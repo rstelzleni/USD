@@ -186,12 +186,12 @@ stages:
       inputs:
         source: current
         # Not specifying artifact names so we get all of them
-        downloadPath: '$(System.ArtifactsDirectory)' 
-    - task: ExtractFiles@1
-      displayName: 'Extracting artifacts'
-      inputs:
-        archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
-        destinationFolder: '$(Pipeline.Workspace)'
+        downloadPath: '$(Pipeline.Workspace)' #'$(System.ArtifactsDirectory)' 
+        #    - task: ExtractFiles@1
+        #      displayName: 'Extracting artifacts'
+        #      inputs:
+        #        archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
+        #        destinationFolder: '$(Pipeline.Workspace)'
     - bash: |
         pwd
         ls -l
@@ -204,3 +204,47 @@ stages:
       inputs:
         artifactName: dist
         targetPath: '$(Pipeline.Workspace)/dist-final'
+
+
+# there's a lot repeated per platform here, could remove some redundancy
+#- stage: Test_Packages
+#  dependsOn: Deliver
+#  jobs:
+#      #- job: Test_Linux
+#
+#  - job: Test_Windows
+#    strategy:
+#      matrix:
+#        Python36:
+#          PYTHON_VERSION_SPEC: 3.6
+#        Python37:
+#          PYTHON_VERSION_SPEC: 3.7
+#        Python38:
+#          PYTHON_VERSION_SPEC: 3.8
+#    timeoutInMinutes: 10
+#    pool:
+#      vmImage: 'VS2017-Win2016'
+#    steps:
+#    - task: UsePythonVersion@0
+#      inputs:
+#        versionSpec: $(PYTHON_VERSION_SPEC)
+#        addToPath: true
+#    - task: DownloadPipelineArtifact@2
+#      displayName: 'Downloading dist package'
+#      inputs:
+#        source: current
+#        artifact: dist
+#        downloadPath: '$(System.ArtifactsDirectory)' 
+#    - task: ExtractFiles@1
+#      displayName: 'Extracting dist'
+#      inputs:
+#        archiveFilePatterns: '$(System.ArtifactsDirectory)/dist.zip'
+#        destinationFolder: '$(Pipeline.Workspace)'
+#    - script: |
+#        python --version
+#        python -m pip install pytest
+#        python -m pip install --no-index --find-links=dist example-pxr-usd-from-nvidia
+#        py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/tests.py
+#    - task: PublishTestResults@2
+#
+#      #  - job: Test_Mac

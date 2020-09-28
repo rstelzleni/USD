@@ -10,3 +10,4 @@
 * need to try an older linux base image for older pip support
 * windows, do we need x86 and x64 builds?
 * check on windows py3.8 issue, seems like ctypes shouldn't matter
+* need to update package name, in setup and in pipeline file
