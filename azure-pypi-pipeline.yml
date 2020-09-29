@@ -193,6 +193,7 @@ stages:
         #        archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
         #        destinationFolder: '$(Pipeline.Workspace)'
     - bash: |
+        cd $(Pipeline.Workspace)
         pwd
         ls -l
         ls -l dist*
