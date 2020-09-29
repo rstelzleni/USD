@@ -186,17 +186,9 @@ stages:
       inputs:
         source: current
         # Not specifying artifact names so we get all of them
-        downloadPath: '$(Pipeline.Workspace)' #'$(System.ArtifactsDirectory)' 
-        #    - task: ExtractFiles@1
-        #      displayName: 'Extracting artifacts'
-        #      inputs:
-        #        archiveFilePatterns: '$(System.ArtifactsDirectory)/*.zip'
-        #        destinationFolder: '$(Pipeline.Workspace)'
+        downloadPath: '$(Pipeline.Workspace)'
     - bash: |
         cd $(Pipeline.Workspace)
-        pwd
-        ls -l
-        ls -l dist*
         mkdir dist-final
         cp dist*/*.whl dist-final
       displayName: 'Collecting whl packages'
@@ -271,7 +263,7 @@ stages:
     - script: |
         $(PYTHON_INTERPRETER) --version
         $(PYTHON_INTERPRETER) -m pip install pytest
-        $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=dist example-pxr-usd-from-nvidia
+        $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=$(Pipeline.Workspace)/dist example-pxr-usd-from-nvidia
         py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/tests.py
     - task: PublishTestResults@2
 
