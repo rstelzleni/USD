@@ -22,7 +22,7 @@ stages:
 - stage: Build_and_Package
   jobs:
 
-  - job: Linux_Build_for_PyPI
+  - job: Linux
     strategy:
       matrix:
         Python36:
@@ -70,7 +70,7 @@ stages:
         artifactName: dist-linux-$(PYTHON_TAG)
         targetPath: /home/vsts/dist
 
-  - job: Windows_Build_for_PyPI
+  - job: Windows
     strategy:
       matrix:
         Python36:
@@ -117,7 +117,7 @@ stages:
         artifactName: dist-windows-$(PYTHON_TAG)
         targetPath: D:\packaging\dist
 
-  - job: Mac_Build_for_PyPI
+  - job: Mac
     strategy:
       matrix:
         Python36:
@@ -261,12 +261,11 @@ stages:
         artifact: dist
         downloadPath: '$(Pipeline.Workspace)'
     - script: |
-        ls $(Pipeline.Workspace)
-        ls $(Pipeline.Workspace)/dist
         $(PYTHON_INTERPRETER) --version
         $(PYTHON_INTERPRETER) -m pip install pytest
         $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=file://$(Pipeline.Workspace) example-pxr-usd-from-nvidia
         py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/test.py
+      displayName: "Testing fresh pip install"
     - task: PublishTestResults@2
       condition: succeededOrFailed()
       inputs:

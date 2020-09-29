@@ -47,9 +47,12 @@ if windows():
         init_file.write('''
 
 # appended to this file for the windows PyPI package
-import os
+import os, sys
 dllPath = os.path.split(os.path.realpath(__file__))[0]
-os.environ['PATH'] = dllPath + os.pathsep + os.environ['PATH']
+if sys.version_info >= (3, 8, 0):
+    os.add_dll_directory(dllPath)
+else:
+    os.environ['PATH'] = dllPath + os.pathsep + os.environ['PATH']
 ''')
 
 # Get the readme text
