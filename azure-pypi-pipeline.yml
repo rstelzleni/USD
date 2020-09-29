@@ -206,45 +206,71 @@ stages:
         targetPath: '$(Pipeline.Workspace)/dist-final'
 
 
-# there's a lot repeated per platform here, could remove some redundancy
-#- stage: Test_Packages
-#  dependsOn: Deliver
-#  jobs:
-#      #- job: Test_Linux
-#
-#  - job: Test_Windows
-#    strategy:
-#      matrix:
-#        Python36:
-#          PYTHON_VERSION_SPEC: 3.6
-#        Python37:
-#          PYTHON_VERSION_SPEC: 3.7
-#        Python38:
-#          PYTHON_VERSION_SPEC: 3.8
-#    timeoutInMinutes: 10
-#    pool:
-#      vmImage: 'VS2017-Win2016'
-#    steps:
-#    - task: UsePythonVersion@0
-#      inputs:
-#        versionSpec: $(PYTHON_VERSION_SPEC)
-#        addToPath: true
-#    - task: DownloadPipelineArtifact@2
-#      displayName: 'Downloading dist package'
-#      inputs:
-#        source: current
-#        artifact: dist
-#        downloadPath: '$(System.ArtifactsDirectory)' 
-#    - task: ExtractFiles@1
-#      displayName: 'Extracting dist'
-#      inputs:
-#        archiveFilePatterns: '$(System.ArtifactsDirectory)/dist.zip'
-#        destinationFolder: '$(Pipeline.Workspace)'
-#    - script: |
-#        python --version
-#        python -m pip install pytest
-#        python -m pip install --no-index --find-links=dist example-pxr-usd-from-nvidia
-#        py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/tests.py
-#    - task: PublishTestResults@2
-#
-#      #  - job: Test_Mac
+# The matrix below is verbose. There is a way to do this with a more n x m
+# syntax using a foreach loop kind of construct. For now, opting for the below
+# because it seems easier to read. An example of the other approach can be
+# found here:
+# https://github.com/nedrebo/parameterized-azure-jobs
+- stage: Test_Packages
+  dependsOn: Deliver
+  jobs:
+  - job: Test_Install
+    strategy:
+      matrix:
+        Linux_Python36:
+          PYTHON_VERSION_SPEC: 3.6
+          IMAGE: 'Ubuntu-18.04'
+          PYTHON_INTERPRETER: python3
+        Linux_Python37:
+          PYTHON_VERSION_SPEC: 3.7
+          IMAGE: 'Ubuntu-18.04'
+          PYTHON_INTERPRETER: python3
+        Linux_Python38:
+          PYTHON_VERSION_SPEC: 3.8
+          IMAGE: 'Ubuntu-18.04'
+          PYTHON_INTERPRETER: python3
+        Windows_Python36:
+          PYTHON_VERSION_SPEC: 3.6
+          IMAGE: 'VS2017-Win2016'
+          PYTHON_INTERPRETER: python
+        Windows_Python37:
+          PYTHON_VERSION_SPEC: 3.7
+          IMAGE: 'VS2017-Win2016'
+          PYTHON_INTERPRETER: python
+        Windows_Python38:
+          PYTHON_VERSION_SPEC: 3.8
+          IMAGE: 'VS2017-Win2016'
+          PYTHON_INTERPRETER: python
+        Mac_Python36:
+          PYTHON_VERSION_SPEC: 3.6
+          IMAGE: 'macOS-10.14'
+          PYTHON_INTERPRETER: python3
+        Mac_Python37:
+          PYTHON_VERSION_SPEC: 3.7
+          IMAGE: 'macOS-10.14'
+          PYTHON_INTERPRETER: python3
+        Mac_Python38:
+          PYTHON_VERSION_SPEC: 3.8
+          IMAGE: 'macOS-10.14'
+          PYTHON_INTERPRETER: python3
+    timeoutInMinutes: 10
+    pool:
+      vmImage: '$(IMAGE)'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(PYTHON_VERSION_SPEC)
+        addToPath: true
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Downloading dist package'
+      inputs:
+        source: current
+        artifact: dist
+        downloadPath: '$(Pipeline.Workspace)'
+    - script: |
+        $(PYTHON_INTERPRETER) --version
+        $(PYTHON_INTERPRETER) -m pip install pytest
+        $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=dist example-pxr-usd-from-nvidia
+        py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/tests.py
+    - task: PublishTestResults@2
+
