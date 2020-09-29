@@ -263,7 +263,7 @@ stages:
     - script: |
         $(PYTHON_INTERPRETER) --version
         $(PYTHON_INTERPRETER) -m pip install pytest
-        $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=$(Pipeline.Workspace)/dist example-pxr-usd-from-nvidia
+        $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=file://$(Pipeline.Workspace)/dist example-pxr-usd-from-nvidia
         py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/tests.py
     - task: PublishTestResults@2
 
