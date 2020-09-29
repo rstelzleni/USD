@@ -261,9 +261,14 @@ stages:
         artifact: dist
         downloadPath: '$(Pipeline.Workspace)'
     - script: |
+        ls $(Pipeline.Workspace)
+        ls $(Pipeline.Workspace)/dist
         $(PYTHON_INTERPRETER) --version
         $(PYTHON_INTERPRETER) -m pip install pytest
         $(PYTHON_INTERPRETER) -m pip install --no-index --find-links=file://$(Pipeline.Workspace)/dist example-pxr-usd-from-nvidia
         py.test --junitxml TEST-usdinstall.xml build_scripts/pypi/test.py
     - task: PublishTestResults@2
+      condition: succeededOrFailed()
+      inputs:
+        testRunTitle: 'Publish test results for $(IMAGE) Python $(PYTHON_VERSION_SPEC)'
 
