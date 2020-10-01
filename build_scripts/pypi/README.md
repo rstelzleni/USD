@@ -41,7 +41,7 @@ The name, version number and other properties of your package will be extracted
 from the whl files that are uploaded. The above publishes to the test server,
 to publish to the main PyPI archive remove the `repository-url` parameter.
 
-## Steps to Add Support For New Python
+## Steps to Add Support For New Python Versions
 
 To support a new version of python 3 it should be as easy as adding a new build
 to the matrix for each platform you want to support. If the build environment has
@@ -87,13 +87,13 @@ That should kick off a new packaging build using the new docker image.
 
 ## Open Questions
 
-[ ] What should we name the package? 
-    (needs update in setup.py and pipeline file)
-[ ] What versioning scheme should we use?
-[ ] Where can the docker container be hosted?
-[ ] Is there a better place for my changes in cmake/macros/Private.cmake ?
-    Also, is there a way to get this on the command line? I coudn't find one.
-[ ] Can we build with an older version of manylinux? (ryan to verify)
-[ ] Windows, I have only built an x64 version, x86 important?
-[ ] Would like more testing, can I post to usd-interest?
+- [ ] What should we name the package? 
+      (needs update in setup.py and pipeline file)
+- [ ] What versioning scheme should we use?
+- [ ] Where can the docker container be hosted?
+- [ ] Is there a better place for my changes in cmake/macros/Private.cmake ?
+      Also, is there a way to get this on the command line? I coudn't find one.
+- [ ] Can we build with an older version of manylinux? (ryan to verify)
+- [ ] Windows, I have only built an x64 version, x86 important?
+- [ ] Would like more testing, can I post to usd-interest?
 
