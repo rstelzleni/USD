@@ -1,7 +1,13 @@
+'''Rewrite pluginfo library paths for changed library locations.
 
+This is used for updating wheel packages on linux and mac. On those platforms
+there are automated tools that move binary dependencies into a sandboxed
+location for installing on a targeted system. We use that to get the USD shared
+libraries into a safely redistributable package. Once the libraries are moved,
+we need to update the pluginfo files to also point to the new locations.
+'''
 import argparse, base64, csv, fnmatch, hashlib, io, json, os, platform, zipfile
 
-# TODO comment and usage
 
 def is_mac_platform():
     return platform.system() == "Darwin"
@@ -79,7 +85,9 @@ def update_record(contents, new_pluginfo_hashes):
 
 
 def parse_command_line():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+                        description=__doc__,
+                        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("input_file", type=str, 
                         help="The input wheel archive to be updated")
     parser.add_argument("output_file", type=str, 
@@ -99,20 +107,25 @@ def main():
     temp_file_name = input_file + '_old_hashes'
     new_pluginfo_hashes = {}
     with zipfile.ZipFile(input_file, 'r') as input_wheel:
-        with zipfile.ZipFile(temp_file_name, 'w', compression=input_wheel.compression) as output_wheel:
+        with zipfile.ZipFile(temp_file_name, 'w', 
+                             compression=input_wheel.compression) \
+                                                        as output_wheel:
             # This seems blank, but can't hurt to keep it
             output_wheel.comment = input_wheel.comment
 
             if is_mac_platform():
-                new_lib_names = fnmatch.filter(input_wheel.namelist(), '*/*.dylib')
+                new_lib_names = fnmatch.filter(input_wheel.namelist(),
+                                               '*/*.dylib')
             else:
-                new_lib_names = fnmatch.filter(input_wheel.namelist(), '*/lib*.so')
+                new_lib_names = fnmatch.filter(input_wheel.namelist(), 
+                                               '*/lib*.so')
 
             for file_info in input_wheel.infolist():
                 if fnmatch.fnmatch(file_info.filename, '*/plugInfo.json'):
                     print(f'processing: {file_info.filename}')
                     data = input_wheel.read(file_info)
-                    contents = update_pluginfo(data, new_lib_names, new_pluginfo_hashes)
+                    contents = update_pluginfo(
+                                    data, new_lib_names, new_pluginfo_hashes)
 
                     # update hash
                     new_pluginfo_hashes[file_info.filename] = get_hash(contents)
@@ -121,12 +134,15 @@ def main():
                 else:
                     print(f'copying: {file_info.filename}')
                     # writestr also writes binary if passed a bytes instance
-                    output_wheel.writestr(file_info, input_wheel.read(file_info))
+                    output_wheel.writestr(file_info, 
+                                          input_wheel.read(file_info))
 
-    # Loop over a second time this time keeping all files intact, but rewriting 
+    # Loop over a second time this time keeping all files intact, but rewriting
     # the RECORD file containing the hashes
     with zipfile.ZipFile(temp_file_name, 'r') as input_wheel:
-        with zipfile.ZipFile(output_file, 'w', compression=input_wheel.compression) as output_wheel:
+        with zipfile.ZipFile(output_file, 'w', 
+                             compression=input_wheel.compression) \
+                                                        as output_wheel:
             output_wheel.comment = input_wheel.comment
 
             for file_info in input_wheel.infolist():
@@ -136,7 +152,9 @@ def main():
                     contents = update_record(data, new_pluginfo_hashes)
                     output_wheel.writestr(file_info, contents)
                 else:
-                    output_wheel.writestr(file_info, input_wheel.read(file_info))
+                    output_wheel.writestr(file_info, 
+                                          input_wheel.read(file_info))
+
 
 if __name__ == '__main__':
     main()
