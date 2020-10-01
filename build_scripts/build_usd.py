@@ -1393,6 +1393,10 @@ def InstallUSD(context, force, buildArgs):
                                  .format(pyLibPath=pythonInfo[1]))
                 extraArgs.append('-DPYTHON_INCLUDE_DIR="{pyIncPath}"'
                                  .format(pyIncPath=pythonInfo[2]))
+
+            # If we're building for PyPI, pass that information along
+            if context.buildForPyPI:
+                extraArgs.append('-DPXR_BUILD_FOR_PYPI=ON')
         else:
             extraArgs.append('-DPXR_ENABLE_PYTHON_SUPPORT=OFF')
 
@@ -1635,6 +1639,9 @@ subgroup.add_argument("--build-monolithic", dest="build_type",
 group.add_argument("--debug", dest="build_debug", action="store_true",
                     help="Build with debugging information")
 
+group.add_argument("--for-pypi", dest="build_for_pypi", action="store_true",
+                   help="Build binaries suitable for packing into PyPI packages")
+
 subgroup = group.add_mutually_exclusive_group()
 subgroup.add_argument("--tests", dest="build_tests", action="store_true",
                       default=False, help="Build unit tests")
@@ -1835,6 +1842,7 @@ class InstallContext:
         self.buildDebug = args.build_debug;
         self.buildShared = (args.build_type == SHARED_LIBS)
         self.buildMonolithic = (args.build_type == MONOLITHIC_LIB)
+        self.buildForPyPI = args.build_for_pypi
 
         # Build options
         self.safetyFirst = args.safety_first
@@ -1968,6 +1976,22 @@ if context.buildDraco and context.buildMonolithic and Windows():
     PrintError("Draco plugin can not be enabled for monolithic build on Windows")
     sys.exit(1)
 
+# Report an error if building for PyPI with any parameters we know aren't
+# supported.
+if context.buildForPyPI:
+    if context.buildMonolithic:
+        PrintError("PyPI support is currently configured for non-monolithic libraries")
+        sys.exit(1)
+    if not context.buildShared:
+        PrintError("PyPI support is currently only enabled for shared libraries")
+        sys.exit(1)
+    if not context.buildPython:
+        PrintError("Can't build PyPI support without also building for python")
+        sys.exit(1)
+    if context.buildImaging:
+        PrintError("Imaging support is not implemented for PyPI packages")
+        sys.exit(1)
+
 # Error out if user explicitly specified building usdview without required
 # components. Otherwise, usdview will be silently disabled. This lets users
 # specify "--no-python" without explicitly having to specify "--no-usdview",
@@ -2015,14 +2039,15 @@ if find_executable("python"):
                    "PATH")
         sys.exit(1)
 
-    # Error out on Windows with Python 3.8+. USD currently does not support
-    # these versions due to:
-    # https://docs.python.org/3.8/whatsnew/3.8.html#bpo-36085-whatsnew
-    isPython38 = (sys.version_info.major >= 3 and
-                  sys.version_info.minor >= 8)
-    if Windows() and isPython38:
-        PrintError("Python 3.8+ is not supported on Windows")
-        sys.exit(1)
+    if not context.buildForPyPI:
+        # Error out on Windows with Python 3.8+. USD currently does not support
+        # these versions due to:
+        # https://docs.python.org/3.8/whatsnew/3.8.html#bpo-36085-whatsnew
+        isPython38 = (sys.version_info.major >= 3 and
+                      sys.version_info.minor >= 8)
+        if Windows() and isPython38:
+            PrintError("Python 3.8+ is not supported on Windows")
+            sys.exit(1)
 
 else:
     PrintError("python not found -- please ensure python is included in your "
@@ -2159,7 +2184,8 @@ summaryMsg = summaryMsg.format(
     buildType=("Shared libraries" if context.buildShared
                else "Monolithic shared library" if context.buildMonolithic
                else ""),
-    buildConfig=("Debug" if context.buildDebug else "Release"),
+    buildConfig=("Debug" if context.buildDebug else "Release" +
+                 " for PyPI" if context.buildForPyPI else ""),
     buildImaging=("On" if context.buildImaging else "Off"),
     enablePtex=("On" if context.enablePtex else "Off"),
     enableOpenVDB=("On" if context.enableOpenVDB else "Off"),
