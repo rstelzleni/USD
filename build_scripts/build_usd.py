@@ -1394,7 +1394,6 @@ def InstallUSD(context, force, buildArgs):
                 extraArgs.append('-DPYTHON_INCLUDE_DIR="{pyIncPath}"'
                                  .format(pyIncPath=pythonInfo[2]))
 
-            # If we're building for PyPI, pass that information along
             if context.buildForPyPI:
                 extraArgs.append('-DPXR_BUILD_FOR_PYPI=ON')
         else:
@@ -2043,6 +2042,9 @@ if find_executable("python"):
         # Error out on Windows with Python 3.8+. USD currently does not support
         # these versions due to:
         # https://docs.python.org/3.8/whatsnew/3.8.html#bpo-36085-whatsnew
+        #
+        # In a PyPI build this isn't a problem, because we know where the binaries
+        # will be installed and can make sure they're accessible.
         isPython38 = (sys.version_info.major >= 3 and
                       sys.version_info.minor >= 8)
         if Windows() and isPython38:

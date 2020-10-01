@@ -9,7 +9,6 @@ trigger:
         include:
         - dev
         - release
-        - pypi-builds
     paths:
         include:
         - azure-pypi-pipeline.yml

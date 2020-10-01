@@ -8,6 +8,11 @@ if(WIN32)
     set(WINLIBS Shlwapi.lib)
 endif()
 
+# If building for PyPI we can't explicitly link these python libs,
+# or we won't be able to take advantage of python's approach to ABI
+# compatibility. On Windows this is not an issue due to the way DLL
+# runtime linking works, see
+# https://docs.python.org/3/extending/windows.html
 if(WIN32 OR NOT PXR_BUILD_FOR_PYPI)
     set(PYTHONLIBS ${PYTHON_LIBRARIES})
 endif()
