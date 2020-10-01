@@ -8,11 +8,15 @@ if(WIN32)
     set(WINLIBS Shlwapi.lib)
 endif()
 
+if(WIN32 OR NOT PXR_BUILD_FOR_PYPI)
+    set(PYTHONLIBS ${PYTHON_LIBRARIES})
+endif()
+
 pxr_library(tf
     LIBRARIES
         arch
         ${WINLIBS}
-        ${PYTHON_LIBRARIES}
+        ${PYTHONLIBS}
         ${Boost_PYTHON_LIBRARY}
         ${TBB_tbb_LIBRARY}
 
