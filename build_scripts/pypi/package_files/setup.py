@@ -62,7 +62,7 @@ with open("README.md", "r") as fh:
 # Config
 setuptools.setup(
     name="example-pxr-usd-from-nvidia",
-    version="0.0.8",
+    version="0.0.9",
     author="Ryan Stelzleni",
     author_email="rstelzleni@nvidia.com",
     description="Pixar's Universal Scene Description library",
