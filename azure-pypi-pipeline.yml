@@ -47,25 +47,25 @@ stages:
 #      displayName: 'Creating build output directory'
     - bash: |
         docker build -t manylinuxwithcmake build_scripts/pypi/docker
-        docker run --name usdmanylinux --rm -itd -v $(Build.SourcesDirectory):/opt/USD -v /home/vsts/dist:/opt/USD-dist manylinuxwithcmake
+        docker run --name usdmanylinux --rm -id -v $(Build.SourcesDirectory):/opt/USD -v /home/vsts/dist:/opt/USD-dist manylinuxwithcmake
       displayName: 'Creating docker build environment'
     - bash: |
-        docker exec -it usdmanylinux $(PYTHON_INTERPRETER)  build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD-inst -v
+        docker exec usdmanylinux $(PYTHON_INTERPRETER)  build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD-inst -v
       displayName: 'Building USD'
     - bash: |
-        docker exec -it usdmanylinux mkdir ./packaging
-        docker exec -it usdmanylinux cp -R /opt/USD-inst ./packaging
-        docker exec -it usdmanylinux sh -c 'cp build_scripts/pypi/package_files/* ./packaging'
+        docker exec usdmanylinux mkdir ./packaging
+        docker exec usdmanylinux cp -R /opt/USD-inst ./packaging
+        docker exec usdmanylinux sh -c 'cp build_scripts/pypi/package_files/* ./packaging'
       displayName: "Creating packaging directory"
     - bash: |
-        docker exec -it usdmanylinux -w /opt/USD/packaging $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
+        docker exec usdmanylinux -w /opt/USD/packaging $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
       displayName: 'Running setup.py'
     - bash: |
-        docker exec -it usdmanylinux -e PYTHONPATH=/opt/USD/pypi/lib/python -e LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH /bin/bash -c 'auditwheel repair packaging/dist/*.whl'
+        docker exec usdmanylinux -e PYTHONPATH=/opt/USD/pypi/lib/python -e LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH /bin/bash -c 'auditwheel repair packaging/dist/*.whl'
       displayName: 'Running audtiwheel repair (moves .so files into package)'
     - bash: |
-        WHEEL_PACKAGE_NAME=`docker exec -it usdmanylinux ls wheelhouse`
-        docker exec -it usdmanylinux $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD-dist/$WHEEL_PACKAGE_NAME"
+        WHEEL_PACKAGE_NAME=`docker exec usdmanylinux ls wheelhouse`
+        docker exec usdmanylinux $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD-dist/$WHEEL_PACKAGE_NAME"
       displayName: 'Updating pluginfo paths'
     - bash: |
         docker stop usdmanylinux
