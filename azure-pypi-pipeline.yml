@@ -46,8 +46,8 @@ stages:
 #        sudo chmod -R 775 /opt/USD
 #      displayName: 'Creating build output directory'
     - bash: |
-        docker build -t manylinuxWithCmake build_scripts/pypi/docker
-        docker run --name usdmanylinux --rm -id -v $(Build.SourcesDirectory):/opt/USD -v /home/vsts/dist:/opt/USD-dist manylinuxWithCmake
+        docker build -t manylinuxwithcmake build_scripts/pypi/docker
+        docker run --name usdmanylinux --rm -id -v $(Build.SourcesDirectory):/opt/USD -v /home/vsts/dist:/opt/USD-dist manylinuxwithcmake
       displayName: 'Creating docker build environment'
     - bash: |
         docker exec -it usdmanylinux $(PYTHON_INTERPRETER)  build_scripts/build_usd.py --for-pypi --build-args USD,"-Xlinker --allow-shlib-undefined -DPXR_BUILD_USD_TOOLS=OFF -DPXR_INSTALL_LOCATION=../pxr/pluginfo" --no-imaging --no-examples --no-tutorials --build /opt/USD/gen/build --src /opt/USD/gen/src /opt/USD-inst -v
