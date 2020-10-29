@@ -61,7 +61,7 @@ stages:
         docker exec -w /opt/USD/packaging usdmanylinux $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
       displayName: 'Running setup.py'
     - bash: |
-        docker exec -e PYTHONPATH=/opt/USD/pypi/lib/python -e LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH usdmanylinux /bin/bash -c 'auditwheel repair packaging/dist/*.whl'
+        docker exec usdmanylinux /bin/bash -c 'PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl'
       displayName: 'Running audtiwheel repair (moves .so files into package)'
     - bash: |
         WHEEL_PACKAGE_NAME=`docker exec usdmanylinux ls wheelhouse`
