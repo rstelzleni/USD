@@ -61,14 +61,14 @@ stages:
         docker exec -w /opt/USD/packaging usdmanylinux $(PYTHON_INTERPRETER) setup.py bdist_wheel --python-tag ${PYTHON_TAG}
       displayName: 'Running setup.py'
     - bash: |
-        docker exec usdmanylinux pwd
-        docker exec usdmanylinux ls -l
-        docker exec usdmanylinux ls -l pypi
-        docker exec usdmanylinux ls -l packaging
-        docker exec usdmanylinux ls -l packaging/pypi
-        docker exec usdmanylinux /bin/bash -c 'PYTHONPATH=/opt/USD/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl'
+        docker exec usdmanylinux /bin/bash -c 'PYTHONPATH=/opt/USD/packaging/pypi/lib/python LD_LIBRARY_PATH=/opt/USD/packaging/pypi/lib:$LD_LIBRARY_PATH auditwheel repair packaging/dist/*.whl'
       displayName: 'Running audtiwheel repair (moves .so files into package)'
     - bash: |
+        docker exec usdmanylinux pwd
+        docker exec usdmanylinux ls -l
+        docker exec usdmanylinux ls -l wheelhouse
+        docker exec usdmanylinux ls -l packaging
+        docker exec usdmanylinux ls -l packaging/wheelhouse
         WHEEL_PACKAGE_NAME=`docker exec usdmanylinux ls wheelhouse`
         docker exec usdmanylinux $(PYTHON_INTERPRETER) build_scripts/pypi/updatePluginfos.py "wheelhouse/$WHEEL_PACKAGE_NAME" "/opt/USD-dist/$WHEEL_PACKAGE_NAME"
       displayName: 'Updating pluginfo paths'
