@@ -2015,20 +2015,14 @@ if find_executable("python"):
                    "PATH")
         sys.exit(1)
 
-    # Warn on Windows with Python 3.8+. USD currently does not support
+    # Error out on Windows with Python 3.8+. USD currently does not support
     # these versions due to:
     # https://docs.python.org/3.8/whatsnew/3.8.html#bpo-36085-whatsnew
-    #
-    # This can work if __init__.py is updated to call
-    # os.add_dll_directory(usdDllPath)
-    # This requires a known usdDllPath. We'll allow such builds on the
-    # assumption that the builder can make this patch. In the future it will be
-    # better to provide this support in USD by default
     isPython38 = (sys.version_info.major >= 3 and
                   sys.version_info.minor >= 8)
     if Windows() and isPython38:
-        PrintWarning("Python 3.8+ is not supported on Windows. See "
-            "https://docs.python.org/3.8/whatsnew/3.8.html#bpo-36085-whatsnew")
+        PrintError("Python 3.8+ is not supported on Windows")
+        sys.exit(1)
 
 else:
     PrintError("python not found -- please ensure python is included in your "
