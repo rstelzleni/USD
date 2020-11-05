@@ -1137,19 +1137,22 @@ function(_pxr_library NAME)
             ${args_PUBLIC_HEADERS}
             ${args_PRIVATE_HEADERS}
         )
-        if(PXR_BUILD_FOR_PYPI AND APPLE)
-            # In this case we know we're building shared libraries.
-            #
-            # When building for pypi we can't link explicitly to the python
-            # libraries. Python wants undefined symbols it can resolve at
-            # runtime, and uses this to support python versions built with
-            # different compilers.
-            #
-            # On Mac, we need this linker flag to enable this type of build.
-            target_link_options(${NAME}
-                PUBLIC
-                "LINKER:SHELL:-undefined dynamic_lookup"
-            )
+        if(PXR_PY_UNDEFINED_DYNAMIC_LOOKUP)
+            # When not explicitly linking to the python lib we need to allow
+            # the linker to complete without resolving all symbols. This lets
+            # python resolve at runtime, and use this to support python
+            # versions built with different compilers and point versions.
+            if(APPLE)
+                target_link_options(${NAME}
+                    PUBLIC
+                    "LINKER:SHELL:-undefined dynamic_lookup"
+                )
+            elseif(UNIX)
+                target_link_options(${NAME}
+                    PUBLIC
+                    "--allow-shlib-undefined"
+                )
+            endif()
         endif()
     endif()
 
