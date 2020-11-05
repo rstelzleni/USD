@@ -1147,11 +1147,6 @@ function(_pxr_library NAME)
                     PUBLIC
                     "LINKER:SHELL:-undefined dynamic_lookup"
                 )
-            elseif(UNIX)
-                target_link_options(${NAME}
-                    PUBLIC
-                    "--allow-shlib-undefined"
-                )
             endif()
         endif()
     endif()
