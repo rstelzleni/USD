@@ -25,6 +25,40 @@
 Tf -- Tools Foundation
 """
 
+# Type to help handle DLL import paths on Windows with python interpreters v3.8
+# and newer. These interpreters don't search for DLLs in the path anymore, you
+# have to provide a path explicitly. This re-enables path searching for USD 
+# dependency libraries
+import platform, sys
+if sys.version_info >= (3, 8) and platform.system() == "Windows":
+    import contextlib
+    import os
+
+    @contextlib.contexmanager
+    def WindowsImportWrapper():
+        dirs = []
+        for path in os.getenv('PATH', '').split(os.pathsep):
+            # Calling add_dll_directory raises an exception if paths don't
+            # exist.
+            if os.path.exists(path):
+                dirs.append(os.add_dll_directory(path))
+        # This block guarantees we clear the dll directories if an exception
+        # is raised in the with block.
+        try:
+            yield
+        finally:
+            for dll_dir in dirs:
+                dll_dir.close()
+    del contextlib, os
+else:
+    class WindowsImportWrapper(object):
+        def __enter__(self):
+            pass
+        def __exit__(self, exc_type, ex_val, exc_tb):
+            pass
+del platform, sys
+
+
 def PrepareModule(module, result):
     """PrepareModule(module, result) -- Prepare an extension module at import
     time.  Generally, this should only be called by the __init__.py script for a
@@ -82,7 +116,8 @@ def GetCodeLocation(framesUp):
 # which is odd since _tf is a DSO and can't be reloaded anyway:
 import sys
 if "pxr.Tf._tf" not in sys.modules:
-    from . import _tf
+    with WindowsImportWrapper():
+        from . import _tf
     PrepareModule(_tf, locals())
     del _tf
 del sys

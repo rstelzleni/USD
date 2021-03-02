@@ -21,8 +21,9 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
-from . import _pcp
 from pxr import Tf
+with Tf.WindowsImportWrapper():
+    from . import _pcp
 Tf.PrepareModule(_pcp, locals())
 del _pcp, Tf
 

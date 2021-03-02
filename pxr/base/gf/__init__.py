@@ -29,7 +29,8 @@ This package defines classes for fundamental graphics types and operations.
 import sys
 if 'pxr.Gf._gf' not in sys.modules:
     from pxr import Tf
-    from . import _gf
+    with Tf.WindowsImportWrapper():
+        from . import _gf
     Tf.PrepareModule(_gf, locals())
     del _gf, Tf
 del sys

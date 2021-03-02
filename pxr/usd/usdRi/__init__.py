@@ -21,8 +21,9 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
-from . import _usdRi
 from pxr import Tf
+with Tf.WindowsImportWrapper():
+    from . import _usdRi
 Tf.PrepareModule(_usdRi, locals())
 del Tf
 

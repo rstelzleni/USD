@@ -28,8 +28,9 @@ Allows for configuration of the system's multithreading subsystem.
 
 """
 
-from . import _work
 from pxr import Tf
+with Tf.WindowsImportWrapper():
+    from . import _work
 Tf.PrepareModule(_work, locals())
 del _work, Tf
 

@@ -28,8 +28,9 @@ types.  It contains facilities for creating simple copy-on-write
 implicitly shared types.
 """
 
-from . import _vt
 from pxr import Tf
+with Tf.WindowsImportWrapper():
+    from . import _vt
 Tf.PrepareModule(_vt, locals())
 del _vt, Tf
 

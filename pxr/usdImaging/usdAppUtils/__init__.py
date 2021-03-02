@@ -22,8 +22,9 @@
 # language governing permissions and limitations under the Apache License.
 #
 
-from . import _usdAppUtils
 from pxr import Tf
+with Tf.WindowsImportWrapper():
+    from . import _usdAppUtils
 Tf.PrepareModule(_usdAppUtils, locals())
 del _usdAppUtils, Tf
 

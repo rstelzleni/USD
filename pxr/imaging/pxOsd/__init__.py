@@ -25,8 +25,9 @@
 Pixar OSD implementation.
 """
 
-from . import _pxOsd
 from pxr import Tf
+with Tf.WindowsImportWrapper():
+    from . import _pxOsd
 Tf.PrepareModule(_pxOsd, locals())
 del _pxOsd, Tf
 
