@@ -24,8 +24,9 @@
 from __future__ import print_function
 
 from .qt import QtCore, QtGui, QtWidgets
-from pxr import Sdf, Usd, UsdGeom
-from ._usdviewq import Utils
+from pxr import Sdf, Tf, Usd, UsdGeom
+with Tf.WindowsImportWrapper():
+    from ._usdviewq import Utils
 
 from .common import UIPrimTypeColors, UIFonts
 

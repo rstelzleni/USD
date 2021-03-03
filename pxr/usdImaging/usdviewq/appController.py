@@ -40,7 +40,8 @@ from pxr import UsdAppUtils
 from pxr.UsdAppUtils.complexityArgs import RefinementComplexities
 
 # UI Components
-from ._usdviewq import Utils
+with Tf.WindowsImportWrapper():
+    from ._usdviewq import Utils
 from .stageView import StageView
 from .mainWindowUI import Ui_MainWindow
 from .primContextMenu import PrimContextMenu

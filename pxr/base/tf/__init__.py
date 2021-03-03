@@ -32,10 +32,10 @@ Tf -- Tools Foundation
 import platform, sys
 if sys.version_info >= (3, 8) and platform.system() == "Windows":
     import contextlib
-    import os
 
-    @contextlib.contexmanager
+    @contextlib.contextmanager
     def WindowsImportWrapper():
+        import os
         dirs = []
         for path in os.getenv('PATH', '').split(os.pathsep):
             # Calling add_dll_directory raises an exception if paths don't
@@ -49,7 +49,8 @@ if sys.version_info >= (3, 8) and platform.system() == "Windows":
         finally:
             for dll_dir in dirs:
                 dll_dir.close()
-    del contextlib, os
+        del os
+    del contextlib
 else:
     class WindowsImportWrapper(object):
         def __enter__(self):
