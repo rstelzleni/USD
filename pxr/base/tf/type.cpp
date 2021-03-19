@@ -206,8 +206,6 @@ struct TfType::_TypeInfo
     {
     }
 
-    _TypeInfo() = delete;
-
     // Disallow copies
     _TypeInfo(const _TypeInfo&) = delete;
     _TypeInfo& operator=(const _TypeInfo&) = delete;
