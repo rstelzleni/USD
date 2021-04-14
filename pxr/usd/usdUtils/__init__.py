@@ -22,10 +22,8 @@
 # language governing permissions and limitations under the Apache License.
 #
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _usdUtils
-Tf.PrepareModule(_usdUtils, locals())
-del _usdUtils, Tf
+Tf.PreparePythonModule("_usdUtils")
+del Tf
 
 try:
     from . import __DOC

@@ -22,9 +22,7 @@
 # language governing permissions and limitations under the Apache License.
 #
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _usdGeom
-Tf.PrepareModule(_usdGeom, locals())
+Tf.PreparePythonModule("_usdGeom")
 del Tf
 
 try:

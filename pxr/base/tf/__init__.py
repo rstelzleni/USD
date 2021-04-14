@@ -59,6 +59,27 @@ else:
             pass
 del platform, sys
 
+def PreparePythonModule(moduleName):
+    """Prepare an extension module at import time.  This will import the
+    Python module with the given moduleName (e.g., '_tf') relative to the
+    caller's package and copy its contents into the caller's local namespace.
+
+    Generally, this should only be called by the __init__.py script for a module
+    upon loading a boost python module (generally '_LibName.so')."""
+    import importlib
+    import inspect
+    frame = inspect.currentframe().f_back
+    try:
+        f_locals = frame.f_locals
+
+        with WindowsImportWrapper():
+            module = importlib.import_module(
+                "." + moduleName, f_locals["__name__"])
+
+        PrepareModule(module, f_locals)
+        del f_locals[moduleName]
+    finally:
+        del frame
 
 def PrepareModule(module, result):
     """PrepareModule(module, result) -- Prepare an extension module at import
@@ -117,10 +138,7 @@ def GetCodeLocation(framesUp):
 # which is odd since _tf is a DSO and can't be reloaded anyway:
 import sys
 if "pxr.Tf._tf" not in sys.modules:
-    with WindowsImportWrapper():
-        from . import _tf
-    PrepareModule(_tf, locals())
-    del _tf
+    PreparePythonModule("_tf")
 del sys
 
 # Need to provide an exception type that tf errors will show up as.

@@ -22,9 +22,7 @@
 # language governing permissions and limitations under the Apache License.
 #
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _usdHydra
-Tf.PrepareModule(_usdHydra, locals())
+Tf.PreparePythonModule("_usdHydra")
 del Tf
 
 try:

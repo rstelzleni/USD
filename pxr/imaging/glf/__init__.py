@@ -27,10 +27,8 @@ glf
 """
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _glf
-Tf.PrepareModule(_glf, locals())
-del _glf, Tf
+Tf.PreparePythonModule("_glf")
+del Tf
 
 try:
     from . import __DOC

@@ -26,10 +26,8 @@ Trace -- Utilities for counting and recording events.
 """
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _trace
-Tf.PrepareModule(_trace, locals())
-del _trace, Tf
+Tf.PreparePythonModule("_trace")
+del Tf
 
 import contextlib
 

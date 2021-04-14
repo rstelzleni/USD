@@ -21,9 +21,8 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
-from . import _usdDraco
 from pxr import Tf
-Tf.PrepareModule(_usdDraco, locals())
+Tf.PreparePythonModule("_usdDraco")
 del Tf
 
 try:

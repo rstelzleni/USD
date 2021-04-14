@@ -25,10 +25,8 @@
 """Python bindings for libSdr"""
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _sdr
-Tf.PrepareModule(_sdr, locals())
-del _sdr, Tf
+Tf.PreparePythonModule("_sdr")
+del Tf
 
 try:
     from . import __DOC

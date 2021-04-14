@@ -24,10 +24,8 @@
 """Python bindings for libKind"""
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _kind
-Tf.PrepareModule(_kind, locals())
-del _kind, Tf
+Tf.PreparePythonModule("_kind")
+del Tf
 
 try:
     from . import __DOC

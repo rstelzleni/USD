@@ -27,10 +27,8 @@ Camera utilities.
 """
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _cameraUtil
-Tf.PrepareModule(_cameraUtil, locals())
-del _cameraUtil, Tf
+Tf.PreparePythonModule("_cameraUtil")
+del Tf
 
 try:
     import __DOC

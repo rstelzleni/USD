@@ -21,9 +21,8 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 #
-from . import _rmanArgsParser
 from pxr import Tf
-Tf.PrepareModule(_rmanArgsParser, locals())
+Tf.PreparePythonModule("_rmanArgsParser")
 del Tf
 
 try:

@@ -26,10 +26,8 @@ This package defines facilities for dealing with plugins.
 """
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _plug
-Tf.PrepareModule(_plug, locals())
-del _plug, Tf
+Tf.PreparePythonModule("_plug")
+del Tf
 
 try:
     from . import __DOC

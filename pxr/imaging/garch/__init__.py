@@ -27,10 +27,8 @@ garch
 """
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _garch
-Tf.PrepareModule(_garch, locals())
-del _garch, Tf
+Tf.PreparePythonModule("_garch")
+del Tf
 
 try:
     from . import __DOC

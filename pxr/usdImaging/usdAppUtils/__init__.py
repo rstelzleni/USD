@@ -23,10 +23,8 @@
 #
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _usdAppUtils
-Tf.PrepareModule(_usdAppUtils, locals())
-del _usdAppUtils, Tf
+Tf.PreparePythonModule("_usdAppUtils")
+del Tf
 
 try:
     from . import __DOC

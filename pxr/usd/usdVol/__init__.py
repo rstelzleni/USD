@@ -22,9 +22,7 @@
 # language governing permissions and limitations under the Apache License.
 #
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _usdVol
-Tf.PrepareModule(_usdVol, locals())
+Tf.PreparePythonModule("_usdVol")
 del Tf
 
 try:

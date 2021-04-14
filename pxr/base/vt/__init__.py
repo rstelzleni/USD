@@ -29,10 +29,8 @@ implicitly shared types.
 """
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _vt
-Tf.PrepareModule(_vt, locals())
-del _vt, Tf
+Tf.PreparePythonModule("_vt")
+del Tf
 
 try:
     from . import __DOC

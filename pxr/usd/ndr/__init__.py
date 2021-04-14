@@ -25,10 +25,8 @@
 """Python bindings for libNdr"""
 
 from pxr import Tf
-with Tf.WindowsImportWrapper():
-    from . import _ndr
-Tf.PrepareModule(_ndr, locals())
-del _ndr, Tf
+Tf.PreparePythonModule("_ndr")
+del Tf
 
 try:
     from . import __DOC
