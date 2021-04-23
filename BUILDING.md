@@ -604,3 +604,11 @@ platforms to avoid issues with Boost config files (introduced in Boost version
 to use Boost specified config files for their USD build, specify 
 -DBoost_NO_BOOST_CMAKE=OFF when running cmake.
 
+2. Windows and Python 3.8+
+After python 3.8 on windows, python will no longer search the whole path for
+DLL dependencies. Instead, clients can call `os.add_dll_directory(p)` to set
+paths to search. By default on that platform USD will iterate over the path and
+add all paths using `os.add_dll_directory()`. This can be disabled by setting
+the environment variable `USD_WINDOWS_DLL_DIRECTORY` to a PATH like string to
+search. If it is set to an empty string, no paths will be added to the dll
+search path.

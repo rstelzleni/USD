@@ -73,7 +73,7 @@ if windows():
 import os, sys
 dllPath = os.path.split(os.path.realpath(__file__))[0]
 if sys.version_info >= (3, 8, 0):
-    os.add_dll_directory(dllPath)
+    os.environ['USD_WINDOWS_DLL_DIRECTORY'] = dllPath
 else:
     os.environ['PATH'] = dllPath + os.pathsep + os.environ['PATH']
 ''')
