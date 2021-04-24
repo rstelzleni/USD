@@ -43,7 +43,7 @@ if sys.version_info >= (3, 8) and platform.system() == "Windows":
         for path in import_paths.split(os.pathsep):
             # Calling add_dll_directory raises an exception if paths don't
             # exist.
-            if os.path.exists(path):
+            if os.path.exists(path) and path != '.':
                 dirs.append(os.add_dll_directory(path))
         # This block guarantees we clear the dll directories if an exception
         # is raised in the with block.
