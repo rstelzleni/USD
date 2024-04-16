@@ -40,7 +40,7 @@ ArchStrerror(int errorCode)
         return "Unknown error code";
     }
     return std::string(msg);  
-#elif defined(_GNU_SOURCE)
+#elif defined(_GNU_SOURCE) && defined(__GLIBC__)
     // from strerror_r(3):
     //
     //   The GNU-specific strerror_r() returns a pointer to a string

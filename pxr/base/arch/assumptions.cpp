@@ -34,7 +34,16 @@ static size_t
 Arch_ObtainCacheLineSize()
 {
 #if defined(ARCH_OS_LINUX)
+#   if defined(_SC_LEVEL1_DCACHE_LINESIZE)
     return sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+#   elif !defined(__GLIBC__)
+    // Under Alpine linux this is not defined
+    // The way to determine this under musl is to parse
+    // /sys/devices/system/cpu/cpu*/cache/index*/coherency_line_size
+    // but I'm building for x86_64 and ARM64 and the line size in those
+    // cases is 64, so we'll hard code.
+    return 64;
+#   endif
 #elif defined(ARCH_OS_WASM_VM)
     return 64;
 #elif defined(ARCH_OS_DARWIN)
