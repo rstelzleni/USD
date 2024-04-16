@@ -43,7 +43,7 @@ ArchStrerror(int errorCode)
 {
     char msg_buf[256];
    
-#if defined(_GNU_SOURCE)
+#if defined(__GLIBC__)
     // from strerror_r(3):
     //
     //   The GNU-specific strerror_r() returns a pointer to a string
