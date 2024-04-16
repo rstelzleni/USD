@@ -661,6 +661,9 @@ nonLockingLinux__execve (const char *file,
  * currently, it's only different from execv for linux.  The crash
  * recovery behavior can be tested with ArchTestCrash().
  */
+#if defined(ARCH_OS_LINUX) && !defined(__GLIBC__)
+extern __environ;
+#endif
 static int
 nonLockingExecv(const char *path, char *const argv[])
 {
