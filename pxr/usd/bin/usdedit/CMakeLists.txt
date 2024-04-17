@@ -27,6 +27,9 @@ elseif(NOT EXISTS ${CHMODBIN})
 elseif(NOT EXISTS ${HEADBIN})
     message(STATUS "Skipping usdedit tests, could not find head command.")
 else()
+
+# Disable this test, under docker I'm building as root
+if (0)
     pxr_install_test_dir(
         SRC testenv/testUsdEditFilePermissions
         DEST testUsdEditFilePermissions1
@@ -42,6 +45,7 @@ else()
         PRE_PATH
             ${CMAKE_INSTALL_PREFIX}/bin
     )
+endif() # end tests skipped when root
 
     pxr_install_test_dir(
         SRC testenv/testUsdEditFilePermissions
