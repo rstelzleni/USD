@@ -108,8 +108,11 @@ class TestUsdUtilsStitchClips(unittest.TestCase):
         self.assertEqual(rootLayer.endTimeCode, 24.000000)
 
     def test_FilePermissions(self):
-        import os, stat
+        import os, platform, stat
         from pxr import Tf
+        if platform.system() == 'Linux' and os.geteuid() == 0:
+            # Don't test permissions for the root user on linux
+            return
         rootLayerFile = 'permissions.usd'
         clipPath = Sdf.Path('/World/fx/points')
         rootLayer = Sdf.Layer.CreateNew(rootLayerFile)
