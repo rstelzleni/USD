@@ -77,6 +77,20 @@ PXR_NAMESPACE_OPEN_SCOPE
     #define R_OK    4       // Test for read permission.
 #endif
 
+// If we're on linux but not using glibc (using musl libc, for example)
+// we might be missing these defines.
+#if defined(ARCH_OS_LINUX) && !defined(__GLIBC__)
+#   if !defined(ACCESSPERMS)
+#       define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
+#   endif
+#   if !defined(ALLPERMS)
+#       define ALLPERMS (S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)/* 07777 */
+#   endif
+#   if !defined(DEFFILEMODE)
+#       define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
+#   endif
+#endif
+
 #if defined(ARCH_OS_WINDOWS)
     #define ARCH_GLOB_NOCHECK   1
     #define ARCH_GLOB_MARK      2
