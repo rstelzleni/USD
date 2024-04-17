@@ -27,6 +27,7 @@
 #include "pxr/pxr.h"
 #include "pxr/base/tf/atomicOfstreamWrapper.h"
 
+#include "pxr/base/arch/systemInfo.h"
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/base/tf/fileUtils.h"
 #include "pxr/base/tf/ostreamMethods.h"
@@ -59,10 +60,13 @@ TestErrorCases()
     TF_AXIOM(!TfAtomicOfstreamWrapper("").Open());
     // Can't create destination directory.
     TF_AXIOM(!TfAtomicOfstreamWrapper("/var/run/a/testTf_file_").Open());
-    // Insufficient permission to create destination file.
-    TF_AXIOM(!TfAtomicOfstreamWrapper("/var/run/testTf_file_").Open());
-    // Unwritable file.
-    TF_AXIOM(!TfAtomicOfstreamWrapper("/etc/passwd").Open());
+    if (!ArchTestIsRootUser())
+    {
+        // Insufficient permission to create destination file.
+        TF_AXIOM(!TfAtomicOfstreamWrapper("/var/run/testTf_file_").Open());
+        // Unwritable file.
+        TF_AXIOM(!TfAtomicOfstreamWrapper("/etc/passwd").Open());
+    }
     // wrapper not open.
     TF_AXIOM(!TfAtomicOfstreamWrapper("").Commit());
     TF_AXIOM(!TfAtomicOfstreamWrapper("").Cancel());
