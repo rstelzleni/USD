@@ -648,11 +648,7 @@ static int
 nonLockingExecv(const char *path, char *const argv[])
 {
 #if defined(ARCH_OS_LINUX)
-#    if defined(__GLIBC__)
-     return nonLockingLinux__execve (path, argv, __environ);
-#    else
-     return nonLockingLinux__execve (path, argv, environ);
-#    endif
+     return nonLockingLinux__execve (path, argv, ArchEnviron());
 #else
      return execv(path, argv);
 #endif
