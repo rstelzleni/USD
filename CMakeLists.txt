@@ -13,6 +13,10 @@ if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     endif()
 endif()
 
+# Override the cmake default of -O3 so I can provide on on the command
+# line
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
+
 list(APPEND CMAKE_MODULE_PATH
     ${PROJECT_SOURCE_DIR}/cmake/defaults
     ${PROJECT_SOURCE_DIR}/cmake/modules
