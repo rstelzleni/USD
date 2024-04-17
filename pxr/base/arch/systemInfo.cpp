@@ -192,4 +192,12 @@ ArchGetPageSize()
 
 }
 
+bool ArchTestIsRootUser()
+{
+#if defined(ARCH_OS_LINUX)
+    return geteuid() == 0;
+#endif
+    return false;
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE
