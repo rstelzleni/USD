@@ -27,6 +27,7 @@
 #include "pxr/pxr.h"
 #include "pxr/base/tf/safeOutputFile.h"
 
+#include "pxr/base/arch/systemInfo.h"
 #include "pxr/base/tf/errorMark.h"
 #include "pxr/base/tf/fileUtils.h"
 #include "pxr/base/tf/ostreamMethods.h"
@@ -71,21 +72,24 @@ TestErrorCases()
     CheckFail([]() { return TfSafeOutputFile::Update(""); });
     CheckFail([]() { return TfSafeOutputFile::Replace(""); });
     
-    // Can't create destination directory.
-    CheckFail([]() {
-            return TfSafeOutputFile::Update("/var/run/a/testTf_file_"); });
-    CheckFail([]() {
-            return TfSafeOutputFile::Replace("/var/run/a/testTf_file_"); });
+    if (!ArchTestIsRootUser())
+    {
+        // Can't create destination directory.
+        CheckFail([]() {
+                return TfSafeOutputFile::Update("/var/run/a/testTf_file_"); });
+        CheckFail([]() {
+                return TfSafeOutputFile::Replace("/var/run/a/testTf_file_"); });
 
-    // Insufficient permission to create destination file.
-    CheckFail([]() {
-            return TfSafeOutputFile::Update("/var/run/testTf_file_"); });
-    CheckFail([]() {
-            return TfSafeOutputFile::Replace("/var/run/testTf_file_"); });
+        // Insufficient permission to create destination file.
+        CheckFail([]() {
+                return TfSafeOutputFile::Update("/var/run/testTf_file_"); });
+        CheckFail([]() {
+                return TfSafeOutputFile::Replace("/var/run/testTf_file_"); });
 
-    // Unwritable file.
-    CheckFail([]() { return TfSafeOutputFile::Update("/etc/passwd"); });
-    CheckFail([]() { return TfSafeOutputFile::Replace("/etc/passwd"); });
+        // Unwritable file.
+        CheckFail([]() { return TfSafeOutputFile::Update("/etc/passwd"); });
+        CheckFail([]() { return TfSafeOutputFile::Replace("/etc/passwd"); });
+    }
 }
 
 static void

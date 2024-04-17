@@ -49,6 +49,13 @@ std::string ArchGetExecutablePath();
 ARCH_API
 int ArchGetPageSize();
 
+// On Linux if tests are run as root then any tests that check for write
+// permissions fail. We may run tests as root, for instance in a docker
+// container, so this method provides a way for tests to check if they
+// should test for file write permissions.
+ARCH_API
+bool ArchTestIsRootUser();
+
 ///@}
 
 PXR_NAMESPACE_CLOSE_SCOPE
