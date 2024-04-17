@@ -116,6 +116,7 @@ Arch_ComputeNanosecondsPerTick()
     uint64_t counter_hz;
     __asm __volatile("mrs	%0, CNTFRQ_EL0" : "=&r" (counter_hz));
     Arch_NanosecondsPerTick = double(1e9) / double(counter_hz);
+    return double(1e9) / double(counter_hz);
 #else
 
     // Measure how long it takes to call ::now().
