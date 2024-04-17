@@ -5,6 +5,7 @@
 // https://openusd.org/license.
 //
 #include "pxr/pxr.h"
+#include "pxr/base/arch/systemInfo.h"
 #include "pxr/base/tf/errorMark.h"
 #include "pxr/base/tf/fileUtils.h"
 #include "pxr/base/tf/iterator.h"
@@ -225,9 +226,11 @@ TestTfIsWritable()
     TF_AXIOM(TfIsWritable(ArchGetTmpDir()));
     TF_AXIOM(!TfIsWritable(""));
 #if !defined(ARCH_OS_WINDOWS)
-    // We can't be sure these aren't writable on Windows.
-    TF_AXIOM(!TfIsWritable(knownDirPath));
-    TF_AXIOM(!TfIsWritable(knownFilePath));
+    if (!ArchTestIsRootUser()) {
+        // We can't be sure these aren't writable on Windows.
+        TF_AXIOM(!TfIsWritable(knownDirPath));
+        TF_AXIOM(!TfIsWritable(knownFilePath));
+    }
 #endif
 
     TfTouchFile("testTfIsWritable.txt");
