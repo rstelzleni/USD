@@ -564,6 +564,7 @@
         SCHEMA_TOKEN = 'material',
         EXTRA_TOKENS = [
             '(universalRenderContext, "")',
+            '(all, "__all")',
         ],
         ADD_DEFAULT_LOCATOR = True,
 
