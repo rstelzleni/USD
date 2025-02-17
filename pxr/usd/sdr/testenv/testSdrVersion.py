@@ -5,7 +5,7 @@
 # Licensed under the terms set forth in the LICENSE.txt file available at
 # https://openusd.org/license.
 
-from pxr import Ndr
+from pxr import Sdr
 import unittest
 
 class TestVersion(unittest.TestCase):
@@ -35,14 +35,14 @@ class TestVersion(unittest.TestCase):
 
     def test_Version(self):
         """
-        Test NdrVersion.
+        Test SdrVersion.
         """
 
         # Invalid version.
-        v = Ndr.Version()
+        v = Sdr.Version()
         self.assertFalse(v)
         self.assertFalse(v.IsDefault())
-        self.relationalTestsEqual(v, Ndr.Version())
+        self.relationalTestsEqual(v, Sdr.Version())
         self.reprTests(v)
         self.assertEqual(str(v), "<invalid version>")
 
@@ -50,15 +50,15 @@ class TestVersion(unittest.TestCase):
         u = v.GetAsDefault()
         self.assertFalse(u)
         self.assertTrue(u.IsDefault())
-        self.relationalTestsEqual(u, Ndr.Version())
+        self.relationalTestsEqual(u, Sdr.Version())
         self.reprTests(u)
         self.assertEqual(str(u), "<invalid version>")
 
         # Valid versions.
-        v1 = Ndr.Version(1)
-        v1_0 = Ndr.Version(1, 0).GetAsDefault()
-        v1_1 = Ndr.Version(1, 1)
-        v2_0 = Ndr.Version(2, 0)
+        v1 = Sdr.Version(1)
+        v1_0 = Sdr.Version(1, 0).GetAsDefault()
+        v1_1 = Sdr.Version(1, 1)
+        v2_0 = Sdr.Version(2, 0)
         self.assertTrue(v1)
         self.assertTrue(v1_0)
         self.assertTrue(v1_1)

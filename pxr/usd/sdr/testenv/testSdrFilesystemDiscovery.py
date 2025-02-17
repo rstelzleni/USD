@@ -12,21 +12,21 @@ import unittest
 # files in the search path, but they should not be converted into
 # discovery results because they don't match the allowed extensions.
 # NOTE: these must be set before the library is loaded
-os.environ["PXR_NDR_FS_PLUGIN_SEARCH_PATHS"] = os.getcwd()
-os.environ["PXR_NDR_FS_PLUGIN_ALLOWED_EXTS"] = "oso:args"
+os.environ["PXR_SDR_FS_PLUGIN_SEARCH_PATHS"] = os.getcwd()
+os.environ["PXR_SDR_FS_PLUGIN_ALLOWED_EXTS"] = "oso:args"
 
-from pxr import Ndr
+from pxr import Sdr
 
-class TestNdrFilesystemDiscovery(unittest.TestCase):
-    def test_NdrFilesystemDiscovery(self):
+class TestSdrFilesystemDiscovery(unittest.TestCase):
+    def test_SdrFilesystemDiscovery(self):
         """
         Ensure the discovery process works correctly, including finding nested
         directories and nodes with the same name.
         """
 
-        fsPlugin = Ndr._FilesystemDiscoveryPlugin()
-        context = Ndr._FilesystemDiscoveryPlugin.Context()
-        discoveryResults = fsPlugin.DiscoverNodes(context)
+        fsPlugin = Sdr._FilesystemDiscoveryPlugin()
+        context = Sdr._FilesystemDiscoveryPlugin.Context()
+        discoveryResults = fsPlugin.DiscoverShaderNodes(context)
         discoveredNodeNames = [
             (result.identifier, result.name, result.family, result.version) 
             for result in discoveryResults]
@@ -34,35 +34,35 @@ class TestNdrFilesystemDiscovery(unittest.TestCase):
         assert len(discoveryResults) == 13
         assert set(discoveredNodeNames) == {
             ("TestNodeARGS", "TestNodeARGS", "TestNodeARGS", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("TestNodeOSL", "TestNodeOSL", "TestNodeOSL", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("NestedTestARGS", "NestedTestARGS", "NestedTestARGS", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("NestedTestOSL", "NestedTestOSL", "NestedTestOSL", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("TestNodeSameName", "TestNodeSameName", "TestNodeSameName", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("Primvar", "Primvar", "Primvar", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("Primvar_float", "Primvar_float", "Primvar", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("Primvar_float_3", "Primvar_float", "Primvar", 
-             Ndr.Version(3, 0)),
+             Sdr.Version(3, 0)),
             ("Primvar_float_3_4", "Primvar_float", "Primvar", 
-             Ndr.Version(3, 4)),
+             Sdr.Version(3, 4)),
             ("Primvar_float2", "Primvar_float2", "Primvar", 
-             Ndr.Version()),
+             Sdr.Version()),
             ("Primvar_float2_3", "Primvar_float2", "Primvar", 
-             Ndr.Version(3, 0)),
+             Sdr.Version(3, 0)),
             ("Primvar_float2_3_4", "Primvar_float2", "Primvar", 
-             Ndr.Version(3, 4))
+             Sdr.Version(3, 4))
         }
 
         # Verify that the discovery files helper returns the same URIs as 
         # full discovery plugin when run on the same search path and allowed
         # extensions.
-        discoveryUris = Ndr.FsHelpersDiscoverFiles(
+        discoveryUris = Sdr.FsHelpersDiscoverFiles(
             [os.getcwd()], ["oso","args"], True)
         assert len(discoveryResults) == 13
         for result, uris in zip(discoveryResults, discoveryUris):
@@ -71,22 +71,22 @@ class TestNdrFilesystemDiscovery(unittest.TestCase):
 
     def test_testSplitShaderIdentifier(self):
         self.assertEqual(
-            Ndr.FsHelpersSplitShaderIdentifier('Primvar'),
-            ('Primvar', 'Primvar', Ndr.Version()))
+            Sdr.FsHelpersSplitShaderIdentifier('Primvar'),
+            ('Primvar', 'Primvar', Sdr.Version()))
         self.assertEqual(
-            Ndr.FsHelpersSplitShaderIdentifier('Primvar_float2'),
-            ('Primvar', 'Primvar_float2', Ndr.Version()))
+            Sdr.FsHelpersSplitShaderIdentifier('Primvar_float2'),
+            ('Primvar', 'Primvar_float2', Sdr.Version()))
         self.assertEqual(
-            Ndr.FsHelpersSplitShaderIdentifier('Primvar_float2_3'),
-            ('Primvar', 'Primvar_float2', Ndr.Version(3, 0)))
+            Sdr.FsHelpersSplitShaderIdentifier('Primvar_float2_3'),
+            ('Primvar', 'Primvar_float2', Sdr.Version(3, 0)))
         self.assertEqual(
-            Ndr.FsHelpersSplitShaderIdentifier('Primvar_float_3_4'),
-            ('Primvar', 'Primvar_float', Ndr.Version(3, 4)))
+            Sdr.FsHelpersSplitShaderIdentifier('Primvar_float_3_4'),
+            ('Primvar', 'Primvar_float', Sdr.Version(3, 4)))
     
         self.assertIsNone(
-            Ndr.FsHelpersSplitShaderIdentifier('Primvar_float2_3_nonNumber'))
+            Sdr.FsHelpersSplitShaderIdentifier('Primvar_float2_3_nonNumber'))
         self.assertIsNone(
-            Ndr.FsHelpersSplitShaderIdentifier('Primvar_4_nonNumber'))
+            Sdr.FsHelpersSplitShaderIdentifier('Primvar_4_nonNumber'))
 
 if __name__ == '__main__':
     unittest.main()
