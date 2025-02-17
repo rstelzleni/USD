@@ -12,8 +12,10 @@ pxr_library(usdSkelImaging
         animationAdapter
         animationSchema
         dataSourceAnimationPrim
+        dataSourceSkeletonPrim
         package
         skeletonAdapter
+        skeletonSchema
         skelRootAdapter
         tokens
         utils

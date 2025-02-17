@@ -243,6 +243,30 @@ public:
                 UsdTimeCode time,
                 VtIntArray *outIndices) const override;
 
+    // ---------------------------------------------------------------------- //
+    /// \name Scene Index Support
+    // ---------------------------------------------------------------------- //
+    USDSKELIMAGING_API
+    TfTokenVector GetImagingSubprims(UsdPrim const &prim) override;
+
+    USDSKELIMAGING_API
+    TfToken GetImagingSubprimType(
+            UsdPrim const &prim,
+            TfToken const &subprim) override;
+
+    USDSKELIMAGING_API
+    HdContainerDataSourceHandle GetImagingSubprimData(
+            UsdPrim const& prim,
+            TfToken const& subprim,
+            const UsdImagingDataSourceStageGlobals &stageGlobals) override;
+
+    USDSKELIMAGING_API
+    HdDataSourceLocatorSet InvalidateImagingSubprim(
+            UsdPrim const& prim,
+            TfToken const& subprim,
+            TfTokenVector const& properties,
+            UsdImagingPropertyInvalidationType invalidationType) override;
+    
 protected:
     // ---------------------------------------------------------------------- //
     /// \name Change Processing API (protected)

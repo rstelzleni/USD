@@ -11,6 +11,30 @@
     ),
 
     #--------------------------------------------------------------------------
+    # usdSkelImaging/skeleton
+    dict(
+        SCHEMA_NAME = 'Skeleton',
+        SCHEMA_TOKEN = 'skeleton',
+        ADD_DEFAULT_LOCATOR = True,
+        DOC = '''Corresponds to UsdSkelSkeleton.''',
+        MEMBERS = [
+            ('ALL_MEMBERS', '', dict(ADD_LOCATOR=True)),
+
+            ('joints', T_TOKENARRAY,
+             dict(DOC='''
+                    Determines topology of skeleton.''')),
+            ('jointNames', T_TOKENARRAY,
+             dict(DOC='''
+                    Here for completeness but ignored for posing the geometry.
+                    See Skeleton.jointNames in usdSkel/schema for uses.''')),
+            ('bindTransforms', T_MATRIXARRAY, {}),
+            ('restTransforms', T_MATRIXARRAY,
+             dict(DOC='''
+                    These are local rest transforms.''')),
+        ],
+    ),
+
+    #--------------------------------------------------------------------------
     # usdSkelImaging/animation
     dict(
         SCHEMA_NAME = 'Animation',
