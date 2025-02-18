@@ -45,6 +45,10 @@ namespace mx = MaterialX;
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+#if PXR_VERSION < 2505
+using SdrTokenMap = NdrTokenMap;
+#endif
+
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
     (mtlx)
@@ -550,7 +554,11 @@ _UpdateNetwork(
                 // Update the connection into the terminal node so that the
                 // output makes it into the closure
                 TfToken const &inputName = cName;
+#if PXR_VERSION >= 2505
+                if (sdrNode->GetShaderOutput(outputName)) {
+#else
                 if (sdrNode->GetOutput(outputName)) {
+#endif
                     netInterface->SetNodeInputConnection(
                         terminalNodeName,
                         inputName,
@@ -627,7 +635,7 @@ _UpdateNetwork(
             SdrShaderNodeConstPtr sdrNode = 
                 sdrRegistry.GetShaderNodeFromAsset(
                                 SdfAssetPath(compiledShaderPath),
-                                NdrTokenMap(),  // metadata
+                                SdrTokenMap(),  // metadata
                                 _tokens->mtlx,  // subId
                                 _tokens->OSL);  // sourceType
 
@@ -641,7 +649,11 @@ _UpdateNetwork(
 
             // Update the connection into the terminal node so that the 
             // nodegraph outputs make their way into the closure
+#if PXR_VERSION >= 2505
+            if (sdrNode->GetShaderOutput(outputName)) {
+#else
             if (sdrNode->GetOutput(outputName)) {
+#endif
                 TfToken inputName = cName;
                 TfToken updatedInputName = _GetUpdatedInputToken(inputName);
                 bool deletePreviousConnection = false;
@@ -732,7 +744,11 @@ _TransformTerminalNode(
     netInterface->SetNodeType(rmanShaderNodeName, shaderType);
 
     // Connect the RenderMan material inputs to the Adapter's outputs
+#if PXR_VERSION >= 2505
+    for (const auto& inParamName: sdrShader->GetShaderInputNames()) {
+#else
     for (const auto& inParamName: sdrShader->GetInputNames()) {
+#endif
 
         if (sdrShader->GetShaderInput(inParamName)) {
 
