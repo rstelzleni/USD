@@ -2123,8 +2123,20 @@ _EvalRefOrPayloadArcs(PcpNodeRef node,
             fail = true;
         }
 
+        const bool isNegativeScale = layerOffset.GetScale() < 0.0;
+        const bool negativeScaleAllowed = PcpNegativeLayerOffsetScaleAllowed();
+
+        if (isNegativeScale && negativeScaleAllowed) {
+            TF_WARN("Found negative scale in layer offset for %s to @%s@<%s>. "
+                    "Negative offset scale is deprecated.",
+                    ARC_TYPE == PcpArcTypePayload ? "payload" : "reference",
+                    info.authoredAssetPath.c_str(), 
+                    refOrPayload.GetPrimPath().GetText());
+        }
+
         // Validate layer offset in original reference or payload.
-        if (!layerOffset.IsValid() ||
+        if ((isNegativeScale && !negativeScaleAllowed) ||
+            !layerOffset.IsValid() ||
             !layerOffset.GetInverse().IsValid()) {
             PcpErrorInvalidReferenceOffsetPtr err =
                 PcpErrorInvalidReferenceOffset::New();
