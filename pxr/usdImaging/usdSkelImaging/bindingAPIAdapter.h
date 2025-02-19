@@ -4,51 +4,43 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_USD_IMAGING_USD_SKEL_IMAGING_ANIMATION_ADAPTER_H
-#define PXR_USD_IMAGING_USD_SKEL_IMAGING_ANIMATION_ADAPTER_H
+#ifndef PXR_USD_IMAGING_USD_SKEL_IMAGING_BINDING_API_ADAPTER_H
+#define PXR_USD_IMAGING_USD_SKEL_IMAGING_BINDING_API_ADAPTER_H
 
 #include "pxr/pxr.h"
 #include "pxr/usdImaging/usdSkelImaging/api.h"
 
-#include "pxr/usdImaging/usdImaging/sceneIndexPrimAdapter.h"
+#include "pxr/usdImaging/usdImaging/apiSchemaAdapter.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-
-/// \class UsdSkelImagingAnimationAdapter
+/// \class UsdSkelImagingBindingAPIAdapter
 ///
-/// Prim adapter for UsdSkel's SkelAnimation.
+/// API Schema adapter for UsdSkel's SkelBindingAPI.
 ///
-class UsdSkelImagingAnimationAdapter
-    : public UsdImagingSceneIndexPrimAdapter
+class UsdSkelImagingBindingAPIAdapter : public UsdImagingAPISchemaAdapter
 {
 public:
-    using BaseAdapter = UsdImagingSceneIndexPrimAdapter;
+    using BaseAdapter = UsdImagingAPISchemaAdapter;
 
     USDSKELIMAGING_API
-    UsdSkelImagingAnimationAdapter();
+    UsdSkelImagingBindingAPIAdapter();
 
     USDSKELIMAGING_API
-    ~UsdSkelImagingAnimationAdapter() override;
-
-    USDSKELIMAGING_API
-    TfTokenVector GetImagingSubprims(UsdPrim const &prim) override;
-
-    USDSKELIMAGING_API
-    TfToken GetImagingSubprimType(
-            UsdPrim const &prim,
-            TfToken const &subprim) override;
+    ~UsdSkelImagingBindingAPIAdapter() override;
 
     USDSKELIMAGING_API
     HdContainerDataSourceHandle GetImagingSubprimData(
             UsdPrim const& prim,
             TfToken const& subprim,
+            TfToken const& appliedInstanceName,
             const UsdImagingDataSourceStageGlobals &stageGlobals) override;
 
     USDSKELIMAGING_API
     HdDataSourceLocatorSet InvalidateImagingSubprim(
             UsdPrim const& prim,
             TfToken const& subprim,
+            TfToken const& appliedInstanceName,
             TfTokenVector const& properties,
             UsdImagingPropertyInvalidationType invalidationType) override;
 };
@@ -56,4 +48,4 @@ public:
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // PXR_USD_IMAGING_USD_SKEL_IMAGING_ANIMATION_ADAPTER_H
+#endif

@@ -15,7 +15,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 #define USD_SKEL_IMAGING_PRIM_TYPE_TOKENS \
     (skeleton)                            \
-    (skelAnimation)
+    (skelAnimation)                       \
+    (skelBlendShape)
 
 TF_DECLARE_PUBLIC_TOKENS(
     UsdSkelImagingPrimTypeTokens,

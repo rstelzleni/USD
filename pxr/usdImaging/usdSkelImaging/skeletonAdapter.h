@@ -21,13 +21,11 @@
 
 #include <unordered_map>
 
-
 PXR_NAMESPACE_OPEN_SCOPE
 
-
-/// \class UsdImagingSkeletonAdapter
+/// \class UsdSkelImagingSkeletonAdapter
 ///
-/// Support for drawing bones of a UsdSkelSkeleton.  
+/// Prim adapter for UsdSkel's Skeleton.
 ///
 class UsdSkelImagingSkeletonAdapter : public UsdImagingInstanceablePrimAdapter 
 {
