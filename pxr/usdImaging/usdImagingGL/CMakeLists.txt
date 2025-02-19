@@ -788,7 +788,7 @@ pxr_register_test(testUsdImagingGLBasicDrawing_textureChannels
 )
 
 pxr_register_test(testUsdImagingGLBasicDrawingNonBindless_batch
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -lighting -offscreen -stage shaders.usda -frameAll -write testUsdImagingGLBasicDrawingNonBindless_batch.png"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -lighting -offscreen -stage shaders-batch.usda -frameAll -write testUsdImagingGLBasicDrawingNonBindless_batch.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLBasicDrawingNonBindless_batch.png
     FAIL 1
