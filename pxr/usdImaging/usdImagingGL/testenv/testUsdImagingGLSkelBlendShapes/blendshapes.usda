@@ -54,10 +54,10 @@ def SkelRoot "TestPlane"(
     }
 
     def Mesh "Mesh" (
-        prepend apiSchemas = ["SkelBindingAPI"]
+        prepend apiSchemas = ["SkelBindingAPI", "MaterialBindingAPI"]
     )
     {
-        custom rel material:binding = </Materials/lambert1>
+        rel material:binding = </Materials/lambert1>
 
         float3[] extent.timeSamples = {
             1: [(-9.199999, -1.110223e-15, -5), (5, 11.999998, 5)],
