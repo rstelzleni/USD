@@ -1,4 +1,4 @@
-set(PXR_PREFIX pxr/usdImaging)
+set(PXR_PREFIX pxr/usd)
 set(PXR_PACKAGE usdShaders)
 
 pxr_plugin(usdShaders

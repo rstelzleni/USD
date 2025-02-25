@@ -4,8 +4,8 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_USD_IMAGING_PLUGIN_USD_SHADERS_DISCOVERY_PLUGIN_H
-#define PXR_USD_IMAGING_PLUGIN_USD_SHADERS_DISCOVERY_PLUGIN_H
+#ifndef PXR_USD_PLUGIN_USD_SHADERS_DISCOVERY_PLUGIN_H
+#define PXR_USD_PLUGIN_USD_SHADERS_DISCOVERY_PLUGIN_H
 
 #include "pxr/pxr.h"
 #include "pxr/base/tf/token.h"
@@ -30,4 +30,4 @@ public:
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // PXR_USD_IMAGING_PLUGIN_USD_SHADERS_DISCOVERY_PLUGIN_H
+#endif // PXR_USD_PLUGIN_USD_SHADERS_DISCOVERY_PLUGIN_H

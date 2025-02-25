@@ -4,7 +4,7 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#include "pxr/usdImaging/plugin/usdShaders/discoveryPlugin.h"
+#include "pxr/usd/plugin/usdShaders/discoveryPlugin.h"
 
 #include "pxr/base/plug/plugin.h"
 #include "pxr/base/plug/thisPlugin.h"
