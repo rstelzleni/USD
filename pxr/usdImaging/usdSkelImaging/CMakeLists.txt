@@ -19,6 +19,7 @@ pxr_library(usdSkelImaging
         dataSourceBindingAPI
         dataSourceBlendShapePrim
         dataSourceSkeletonPrim
+        extComputations
         inbetweenShapeSchema
         package
         skeletonAdapter
