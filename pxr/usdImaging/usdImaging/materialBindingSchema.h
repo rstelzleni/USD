@@ -15,50 +15,60 @@
 /* **                                                                      ** */
 /* ************************************************************************** */
 
-#ifndef PXR_USD_IMAGING_USD_IMAGING_DIRECT_MATERIAL_BINDING_SCHEMA_H
-#define PXR_USD_IMAGING_USD_IMAGING_DIRECT_MATERIAL_BINDING_SCHEMA_H
+#ifndef PXR_USD_IMAGING_USD_IMAGING_MATERIAL_BINDING_SCHEMA_H
+#define PXR_USD_IMAGING_USD_IMAGING_MATERIAL_BINDING_SCHEMA_H
 
 /// \file
 
 #include "pxr/usdImaging/usdImaging/api.h"
+#include "pxr/usdImaging/usdImaging/directMaterialBindingSchema.h"
 
 #include "pxr/imaging/hd/schema.h"
 
 // --(BEGIN CUSTOM CODE: Includes)--
+#include "pxr/imaging/hd/vectorSchema.h"
 // --(END CUSTOM CODE: Includes)--
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 // --(BEGIN CUSTOM CODE: Declares)--
+using UsdImagingCollectionMaterialBindingVectorSchema =
+    HdSchemaBasedVectorSchema<class UsdImagingCollectionMaterialBindingSchema>;
 // --(END CUSTOM CODE: Declares)--
 
-#define USD_IMAGING_DIRECT_MATERIAL_BINDING_SCHEMA_TOKENS \
+#define USD_IMAGING_MATERIAL_BINDING_SCHEMA_TOKENS \
+    (usdMaterialBinding) \
     (directMaterialBinding) \
-    (materialPath) \
-    (bindingStrength) \
+    (collectionMaterialBindings) \
 
-TF_DECLARE_PUBLIC_TOKENS(UsdImagingDirectMaterialBindingSchemaTokens, USDIMAGING_API,
-    USD_IMAGING_DIRECT_MATERIAL_BINDING_SCHEMA_TOKENS);
+TF_DECLARE_PUBLIC_TOKENS(UsdImagingMaterialBindingSchemaTokens, USDIMAGING_API,
+    USD_IMAGING_MATERIAL_BINDING_SCHEMA_TOKENS);
 
 //-----------------------------------------------------------------------------
 
+// The UsdImagingMaterialBindingSchema specifies a container for a prim's
+// material bindings for a particular purpose. Note that only one direct
+// binding but any number of collection-based bindings may be declared for a
+// given purpose. See UsdImagingMaterialBindingsSchema which specifies the
+// purposes and their associated bindings.
+//
 
-class UsdImagingDirectMaterialBindingSchema : public HdSchema
+class UsdImagingMaterialBindingSchema : public HdSchema
 {
 public:
     /// \name Schema retrieval
     /// @{
 
-    UsdImagingDirectMaterialBindingSchema(HdContainerDataSourceHandle container)
+    UsdImagingMaterialBindingSchema(HdContainerDataSourceHandle container)
       : HdSchema(container) {}
 
     /// Retrieves a container data source with the schema's default name token
-    /// "directMaterialBinding" from the parent container and constructs a
-    /// UsdImagingDirectMaterialBindingSchema instance.
+    /// "usdMaterialBinding" from the parent container and constructs a
+    /// UsdImagingMaterialBindingSchema instance.
     /// Because the requested container data source may not exist, the result
     /// should be checked with IsDefined() or a bool comparison before use.
     USDIMAGING_API
-    static UsdImagingDirectMaterialBindingSchema GetFromParent(
+    static UsdImagingMaterialBindingSchema GetFromParent(
         const HdContainerDataSourceHandle &fromParentContainer);
 
     /// @}
@@ -70,10 +80,10 @@ public:
     /// @{
 
     USDIMAGING_API
-    HdPathDataSourceHandle GetMaterialPath() const;
+    UsdImagingDirectMaterialBindingSchema GetDirectMaterialBinding() const;
 
     USDIMAGING_API
-    HdTokenDataSourceHandle GetBindingStrength() const; 
+    UsdImagingCollectionMaterialBindingVectorSchema GetCollectionMaterialBindings() const; 
 
     /// @}
 
@@ -105,11 +115,11 @@ public:
     USDIMAGING_API
     static HdContainerDataSourceHandle
     BuildRetained(
-        const HdPathDataSourceHandle &materialPath,
-        const HdTokenDataSourceHandle &bindingStrength
+        const HdContainerDataSourceHandle &directMaterialBinding,
+        const HdVectorDataSourceHandle &collectionMaterialBindings
     );
 
-    /// \class UsdImagingDirectMaterialBindingSchema::Builder
+    /// \class UsdImagingMaterialBindingSchema::Builder
     /// 
     /// Utility class for setting sparse sets of child data source fields to be
     /// filled as arguments into BuildRetained. Because all setter methods
@@ -119,19 +129,19 @@ public:
     {
     public:
         USDIMAGING_API
-        Builder &SetMaterialPath(
-            const HdPathDataSourceHandle &materialPath);
+        Builder &SetDirectMaterialBinding(
+            const HdContainerDataSourceHandle &directMaterialBinding);
         USDIMAGING_API
-        Builder &SetBindingStrength(
-            const HdTokenDataSourceHandle &bindingStrength);
+        Builder &SetCollectionMaterialBindings(
+            const HdVectorDataSourceHandle &collectionMaterialBindings);
 
         /// Returns a container data source containing the members set thus far.
         USDIMAGING_API
         HdContainerDataSourceHandle Build();
 
     private:
-        HdPathDataSourceHandle _materialPath;
-        HdTokenDataSourceHandle _bindingStrength;
+        HdContainerDataSourceHandle _directMaterialBinding;
+        HdVectorDataSourceHandle _collectionMaterialBindings;
 
     };
 

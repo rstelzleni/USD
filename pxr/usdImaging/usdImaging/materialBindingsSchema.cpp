@@ -15,24 +15,25 @@
 /* **                                                                      ** */
 /* ************************************************************************** */
 
-#include "pxr/usdImaging/usdImaging/directMaterialBindingsSchema.h"
+#include "pxr/usdImaging/usdImaging/materialBindingsSchema.h"
 
 #include "pxr/imaging/hd/retainedDataSource.h"
 
 #include "pxr/base/trace/trace.h"
 
 // --(BEGIN CUSTOM CODE: Includes)--
+#include "pxr/usdImaging/usdImaging/materialBindingSchema.h"
 // --(END CUSTOM CODE: Includes)--
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-TF_DEFINE_PUBLIC_TOKENS(UsdImagingDirectMaterialBindingsSchemaTokens,
-    USD_IMAGING_DIRECT_MATERIAL_BINDINGS_SCHEMA_TOKENS);
+TF_DEFINE_PUBLIC_TOKENS(UsdImagingMaterialBindingsSchemaTokens,
+    USD_IMAGING_MATERIAL_BINDINGS_SCHEMA_TOKENS);
 
 // --(BEGIN CUSTOM CODE: Schema Methods)--
 
 TfTokenVector
-UsdImagingDirectMaterialBindingsSchema::GetPurposes()
+UsdImagingMaterialBindingsSchema::GetPurposes() const
 {
     if (HdContainerDataSourceHandle h = GetContainer()) {
         return h->GetNames();
@@ -41,45 +42,46 @@ UsdImagingDirectMaterialBindingsSchema::GetPurposes()
     return {};
 }
 
-UsdImagingDirectMaterialBindingSchema
-UsdImagingDirectMaterialBindingsSchema::GetDirectMaterialBinding()
+UsdImagingMaterialBindingVectorSchema
+UsdImagingMaterialBindingsSchema::GetMaterialBindings() const
 {
-    return GetDirectMaterialBinding(
-            UsdImagingDirectMaterialBindingsSchemaTokens->allPurpose);
+    return UsdImagingMaterialBindingVectorSchema(
+        _GetTypedDataSource<HdVectorDataSource>(
+            UsdImagingMaterialBindingsSchemaTokens->allPurpose));
 }
 
-UsdImagingDirectMaterialBindingSchema
-UsdImagingDirectMaterialBindingsSchema::GetDirectMaterialBinding(
-    const TfToken &purpose)
+UsdImagingMaterialBindingVectorSchema
+UsdImagingMaterialBindingsSchema::GetMaterialBindings(
+    const TfToken &purpose) const
 {
-    return UsdImagingDirectMaterialBindingSchema(
-        _GetTypedDataSource<HdContainerDataSource>(purpose));
+    return UsdImagingMaterialBindingVectorSchema(
+        _GetTypedDataSource<HdVectorDataSource>(purpose));
 }
 
 // --(END CUSTOM CODE: Schema Methods)--
 
 /*static*/
-UsdImagingDirectMaterialBindingsSchema
-UsdImagingDirectMaterialBindingsSchema::GetFromParent(
+UsdImagingMaterialBindingsSchema
+UsdImagingMaterialBindingsSchema::GetFromParent(
         const HdContainerDataSourceHandle &fromParentContainer)
 {
-    return UsdImagingDirectMaterialBindingsSchema(
+    return UsdImagingMaterialBindingsSchema(
         fromParentContainer
         ? HdContainerDataSource::Cast(fromParentContainer->Get(
-                UsdImagingDirectMaterialBindingsSchemaTokens->directMaterialBindings))
+                UsdImagingMaterialBindingsSchemaTokens->usdMaterialBindings))
         : nullptr);
 }
 
 /*static*/
 const TfToken &
-UsdImagingDirectMaterialBindingsSchema::GetSchemaToken()
+UsdImagingMaterialBindingsSchema::GetSchemaToken()
 {
-    return UsdImagingDirectMaterialBindingsSchemaTokens->directMaterialBindings;
+    return UsdImagingMaterialBindingsSchemaTokens->usdMaterialBindings;
 }
 
 /*static*/
 const HdDataSourceLocator &
-UsdImagingDirectMaterialBindingsSchema::GetDefaultLocator()
+UsdImagingMaterialBindingsSchema::GetDefaultLocator()
 {
     static const HdDataSourceLocator locator(GetSchemaToken());
     return locator;

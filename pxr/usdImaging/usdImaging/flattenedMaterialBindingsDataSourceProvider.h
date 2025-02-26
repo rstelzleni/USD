@@ -13,7 +13,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-class UsdImagingFlattenedDirectMaterialBindingsDataSourceProvider
+class UsdImagingFlattenedMaterialBindingsDataSourceProvider
     : public HdFlattenedDataSourceProvider
 {
     HD_API

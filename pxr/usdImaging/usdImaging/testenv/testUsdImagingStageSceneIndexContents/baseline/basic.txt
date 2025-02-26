@@ -76,14 +76,6 @@
 			/CoordSys/modelSpace
 		[worldSpace]
 			/CoordSys/worldSpace
-	[directMaterialBindings]
-		[preview]
-			[bindingOriginPath]
-				/Geom/Subdiv
-			[bindingStrength]
-				weakerThanDescendants
-			[materialPath]
-				/Materials/MyMaterial
 	[extent]
 		[max]
 			(2, 2, 2)
@@ -145,6 +137,14 @@
 				[(-2, -2, -2), (2, -2, -2), (-2, -2, 2), (2, -2, 2)]
 			[role]
 				point
+	[usdMaterialBindings]
+		[preview]
+			[0]
+				[directMaterialBinding]
+					[bindingStrength]
+						weakerThanDescendants
+					[materialPath]
+						/Materials/MyMaterial
 </Materials> type = 
 	[__usdPrimInfo]
 		[isLoaded]

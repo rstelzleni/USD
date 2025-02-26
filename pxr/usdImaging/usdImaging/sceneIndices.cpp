@@ -18,9 +18,8 @@
 #include "pxr/usdImaging/usdImaging/stageSceneIndex.h"
 #include "pxr/usdImaging/usdImaging/unloadedDrawModeSceneIndex.h"
 
-#include "pxr/usdImaging/usdImaging/collectionMaterialBindingsSchema.h"
-#include "pxr/usdImaging/usdImaging/directMaterialBindingsSchema.h"
 #include "pxr/usdImaging/usdImaging/geomModelSchema.h"
+#include "pxr/usdImaging/usdImaging/materialBindingsSchema.h"
 
 #include "pxr/imaging/hd/flatteningSceneIndex.h"
 #include "pxr/imaging/hd/overlayContainerDataSource.h"
@@ -181,8 +180,7 @@ UsdImagingCreateSceneIndices(
         // across native instances for the instances be aggregated
         // together.
         static const TfTokenVector instanceDataSourceNames = {
-            UsdImagingDirectMaterialBindingsSchema::GetSchemaToken(),
-            UsdImagingCollectionMaterialBindingsSchema::GetSchemaToken(),
+            UsdImagingMaterialBindingsSchema::GetSchemaToken(),
             HdPurposeSchema::GetSchemaToken(),
             // We include model to aggregate scene indices
             // by draw mode.

@@ -15,8 +15,8 @@
 /* **                                                                      ** */
 /* ************************************************************************** */
 
-#ifndef PXR_USD_IMAGING_USD_IMAGING_COLLECTION_MATERIAL_BINDINGS_SCHEMA_H
-#define PXR_USD_IMAGING_USD_IMAGING_COLLECTION_MATERIAL_BINDINGS_SCHEMA_H
+#ifndef PXR_USD_IMAGING_USD_IMAGING_MATERIAL_BINDINGS_SCHEMA_H
+#define PXR_USD_IMAGING_USD_IMAGING_MATERIAL_BINDINGS_SCHEMA_H
 
 /// \file
 
@@ -25,46 +25,50 @@
 #include "pxr/imaging/hd/schema.h"
 
 // --(BEGIN CUSTOM CODE: Includes)--
-
 #include "pxr/imaging/hd/vectorSchema.h"
-
 // --(END CUSTOM CODE: Includes)--
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 // --(BEGIN CUSTOM CODE: Declares)--
-
-using UsdImagingCollectionMaterialBindingVectorSchema =
-    HdSchemaBasedVectorSchema<class UsdImagingCollectionMaterialBindingSchema>;
-
+using UsdImagingMaterialBindingVectorSchema = HdSchemaBasedVectorSchema<
+    class UsdImagingMaterialBindingSchema>;
 // --(END CUSTOM CODE: Declares)--
 
-#define USD_IMAGING_COLLECTION_MATERIAL_BINDINGS_SCHEMA_TOKENS \
-    (collectionMaterialBindings) \
+#define USD_IMAGING_MATERIAL_BINDINGS_SCHEMA_TOKENS \
+    (usdMaterialBindings) \
     ((allPurpose, "")) \
 
-TF_DECLARE_PUBLIC_TOKENS(UsdImagingCollectionMaterialBindingsSchemaTokens, USDIMAGING_API,
-    USD_IMAGING_COLLECTION_MATERIAL_BINDINGS_SCHEMA_TOKENS);
+TF_DECLARE_PUBLIC_TOKENS(UsdImagingMaterialBindingsSchemaTokens, USDIMAGING_API,
+    USD_IMAGING_MATERIAL_BINDINGS_SCHEMA_TOKENS);
 
 //-----------------------------------------------------------------------------
 
+// The UsdImagingMaterialBindingsSchema specifies a container for all the
+// material bindings declared on a prim. The material binding purpose serves
+// as the key, with the value being a vector of
+// UsdImagingMaterialBindingSchema. While one entry (element) would suffice
+// for a prim's material bindings opinion, we use a vector for aggregating
+// ancestor material bindings to model the inheritance semantics of
+// UsdShadeMaterialBindingAPI.
+//
 
-class UsdImagingCollectionMaterialBindingsSchema : public HdSchema
+class UsdImagingMaterialBindingsSchema : public HdSchema
 {
 public:
     /// \name Schema retrieval
     /// @{
 
-    UsdImagingCollectionMaterialBindingsSchema(HdContainerDataSourceHandle container)
+    UsdImagingMaterialBindingsSchema(HdContainerDataSourceHandle container)
       : HdSchema(container) {}
 
     /// Retrieves a container data source with the schema's default name token
-    /// "collectionMaterialBindings" from the parent container and constructs a
-    /// UsdImagingCollectionMaterialBindingsSchema instance.
+    /// "usdMaterialBindings" from the parent container and constructs a
+    /// UsdImagingMaterialBindingsSchema instance.
     /// Because the requested container data source may not exist, the result
     /// should be checked with IsDefined() or a bool comparison before use.
     USDIMAGING_API
-    static UsdImagingCollectionMaterialBindingsSchema GetFromParent(
+    static UsdImagingMaterialBindingsSchema GetFromParent(
         const HdContainerDataSourceHandle &fromParentContainer);
 
     /// @}
@@ -77,12 +81,13 @@ public:
     TfTokenVector GetPurposes() const;
 
     /// Returns the bindings for 'allPurpose'.
-    UsdImagingCollectionMaterialBindingVectorSchema
-    GetCollectionMaterialBindings() const;
+    USDIMAGING_API
+    UsdImagingMaterialBindingVectorSchema GetMaterialBindings() const;
 
-    /// Returns the bindings for the requested purpose.
-    UsdImagingCollectionMaterialBindingVectorSchema
-    GetCollectionMaterialBindings(const TfToken &purpose) const;
+    /// Returns the bindings for the given purpose.
+    USDIMAGING_API
+    UsdImagingMaterialBindingVectorSchema
+    GetMaterialBindings(const TfToken &purpose) const;
 
 // --(END CUSTOM CODE: Schema Methods)--
 
