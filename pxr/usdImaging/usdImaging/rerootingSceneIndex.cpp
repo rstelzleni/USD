@@ -152,6 +152,46 @@ private:
 
 // ----------------------------------------------------------------------------
 
+HdDataSourceBaseHandle
+_RerootingSceneIndexCreateDataSource(
+    const SdfPath &srcPrefix,
+    const SdfPath &dstPrefix,
+    HdDataSourceBaseHandle const &inputDataSource);
+
+class _RerootingSceneIndexVectorDataSource : public HdVectorDataSource
+{
+public:
+    HD_DECLARE_DATASOURCE(_RerootingSceneIndexVectorDataSource)
+
+    size_t GetNumElements() {
+        return _inputDataSource->GetNumElements();
+    }
+
+    HdDataSourceBaseHandle GetElement(const size_t element) {
+        return _RerootingSceneIndexCreateDataSource(
+            _srcPrefix,
+            _dstPrefix,
+            _inputDataSource->GetElement(element));
+    }
+
+private:
+    _RerootingSceneIndexVectorDataSource(
+        const SdfPath &srcPrefix,
+        const SdfPath &dstPrefix,
+        HdVectorDataSourceHandle inputDataSource)
+        : _srcPrefix(srcPrefix)
+        , _dstPrefix(dstPrefix)
+        , _inputDataSource(std::move(inputDataSource))
+    {
+    }
+
+    const SdfPath _srcPrefix;
+    const SdfPath _dstPrefix;
+    const HdVectorDataSourceHandle _inputDataSource;
+};
+
+// ----------------------------------------------------------------------------
+
 class _RerootingSceneIndexContainerDataSource : public HdContainerDataSource
 {
 public:
@@ -178,35 +218,11 @@ public:
 
     HdDataSourceBaseHandle Get(const TfToken& name) override
     {
-        if (!_inputDataSource) {
-            return nullptr;
-        }
-
-        // wrap child containers so that we can wrap their children
-        HdDataSourceBaseHandle const childSource = _inputDataSource->Get(name);
-        if (!childSource) {
-            return nullptr;
-        }
-
-        if (auto childContainer =
-                HdContainerDataSource::Cast(childSource)) {
-            return New(_srcPrefix, _dstPrefix, std::move(childContainer));
-        }
-
-        if (auto childPathDataSource =
-                HdTypedSampledDataSource<SdfPath>::Cast(childSource)) {
-            return _RerootingSceneIndexPathDataSource::New(
-                _srcPrefix, _dstPrefix, childPathDataSource);
-        }
-
-        if (auto childPathArrayDataSource =
-                HdTypedSampledDataSource<VtArray<SdfPath>>::Cast(
-                    childSource)) {
-            return _RerootingSceneIndexPathArrayDataSource::New(
-                _srcPrefix, _dstPrefix, childPathArrayDataSource);
-        }
-
-        return childSource;
+        // Type dispatch for the child data source.
+        return _RerootingSceneIndexCreateDataSource(
+            _srcPrefix,
+            _dstPrefix,
+            _inputDataSource->Get(name));
     }
 
 private:
@@ -214,6 +230,43 @@ private:
     const SdfPath _dstPrefix;
     HdContainerDataSourceHandle const _inputDataSource;
 };
+
+// ----------------------------------------------------------------------------
+
+HdDataSourceBaseHandle
+_RerootingSceneIndexCreateDataSource(
+    const SdfPath &srcPrefix,
+    const SdfPath &dstPrefix,
+    HdDataSourceBaseHandle const &inputDataSource)
+{
+    if (!inputDataSource) {
+        return nullptr;
+    }
+
+    if (auto containerDs = HdContainerDataSource::Cast(inputDataSource)) {
+        return _RerootingSceneIndexContainerDataSource::New(
+            srcPrefix, dstPrefix, std::move(containerDs));
+    }
+
+    if (auto vectorDs = HdVectorDataSource::Cast(inputDataSource)) {
+        return _RerootingSceneIndexVectorDataSource::New(
+            srcPrefix, dstPrefix, std::move(vectorDs));
+    }
+
+    if (auto pathDataSource =
+            HdTypedSampledDataSource<SdfPath>::Cast(inputDataSource)) {
+        return _RerootingSceneIndexPathDataSource::New(
+            srcPrefix, dstPrefix, pathDataSource);
+    }
+
+    if (auto pathArrayDataSource =
+            HdTypedSampledDataSource<VtArray<SdfPath>>::Cast(inputDataSource)) {
+        return _RerootingSceneIndexPathArrayDataSource::New(
+            srcPrefix, dstPrefix, pathArrayDataSource);
+    }
+
+    return inputDataSource;
+}
 
 } // anonymous namespace
 
