@@ -85,6 +85,12 @@
             ('blendShapeTargets', T_PATHARRAY,
              dict(DOC = '''
                   This is not inherited according to the UsdSkel spec.''')),
+
+            ('hasSkelRoot', T_BOOL,
+             dict(DOC = '''
+                  Is this prim a descendant of a SkelRoot?
+                  Does not correspond to Usd attribute and is actually
+                  populated by the SkelRoot and not the SkelBinding.''')),
         ],
         EXTRA_TOKENS = [
             '(skinningMethodPrimvar, "skel:skinningMethod")',

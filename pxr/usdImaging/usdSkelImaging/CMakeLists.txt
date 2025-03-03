@@ -22,6 +22,7 @@ pxr_library(usdSkelImaging
         extComputations
         inbetweenShapeSchema
         package
+        resolvingSceneIndexPlugin
         skeletonAdapter
         skeletonSchema
         skelRootAdapter

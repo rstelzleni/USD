@@ -11,6 +11,8 @@
 
 #include "pxr/usdImaging/usdImaging/api.h"
 
+#include "pxr/imaging/hd/dataSource.h"
+
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/type.h"
 
@@ -53,6 +55,17 @@ public:
     virtual HdSceneIndexBaseRefPtr AppendSceneIndex(
         HdSceneIndexBaseRefPtr const &inputScene) = 0;
 
+    /// Clients can register additional HdFlattenedDataSourceProvider's that
+    /// UsdImagingCreateSceneIndices will pass to the flattening scene index.
+    ///
+    /// Clients can use
+    /// HdMakeDataSourceContainingFlattenedDataSourceProvider::Make
+    /// to create the values of the container data source.
+    ///
+    USDIMAGING_API
+    virtual HdContainerDataSourceHandle
+    FlattenedDataSourceProviders();
+
     USDIMAGING_API
     virtual ~UsdImagingSceneIndexPlugin();
 
@@ -84,6 +97,10 @@ public:
         TfType::Define<T, TfType::Bases<UsdImagingSceneIndexPlugin>>()
             .template SetFactory<Factory<T>>();
     }
+
+    /// Get an instance of each registered UsdImagingSceneIndexPlugin.
+    static
+    std::vector<UsdImagingSceneIndexPluginUniquePtr> GetAllSceneIndexPlugins();
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

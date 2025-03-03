@@ -37,6 +37,12 @@
                         ],
                         "isInternal": true,
                         "primTypeName": "BlendShape"
+                    },
+                    "UsdSkelImagingResolvingSceneIndexPlugin": {
+                        "bases": [
+                            "UsdImagingSceneIndexPlugin"
+                        ],
+                        "isInternal": true
                     }
                 }
             },

@@ -8,7 +8,6 @@
 
 #include "pxr/usdImaging/usdImaging/drawModeSceneIndex.h"
 #include "pxr/usdImaging/usdImaging/extentResolvingSceneIndex.h"
-#include "pxr/usdImaging/usdImaging/flattenedDataSourceProviders.h"
 #include "pxr/usdImaging/usdImaging/materialBindingsResolvingSceneIndex.h"
 #include "pxr/usdImaging/usdImaging/niPrototypePropagatingSceneIndex.h"
 #include "pxr/usdImaging/usdImaging/piPrototypePropagatingSceneIndex.h"
@@ -28,8 +27,7 @@
 #include "pxr/imaging/hd/purposeSchema.h"
 #include "pxr/imaging/hd/sceneIndexUtil.h"
 
-#include "pxr/base/plug/plugin.h"
-#include "pxr/base/plug/registry.h"
+#include "pxr/base/trace/trace.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -42,43 +40,10 @@ static
 HdSceneIndexBaseRefPtr
 _AddPluginSceneIndices(HdSceneIndexBaseRefPtr sceneIndex)
 {
-    PlugRegistry &plugRegistry = PlugRegistry::GetInstance();
-
-    std::set<TfType> pluginTypes;
-    PlugRegistry::GetAllDerivedTypes(
-        TfType::Find<UsdImagingSceneIndexPlugin>(), &pluginTypes);
-
-    for (const TfType &pluginType : pluginTypes) {
-        PlugPluginPtr const plugin = plugRegistry.GetPluginForType(pluginType);
-        if (!plugin) {
-            TF_CODING_ERROR(
-                "Could not get plugin for type %s.",
-                pluginType.GetTypeName().c_str());
-            continue;
-        }
-        if (!plugin->Load()) {
-            TF_CODING_ERROR(
-                "Could not load plugin %s.",
-                plugin->GetName().c_str());
-            continue;
-        }
-
-        UsdImagingSceneIndexPlugin::FactoryBase * const factory =
-            pluginType.GetFactory<UsdImagingSceneIndexPlugin::FactoryBase>();
-        if (!factory) {
-            TF_CODING_ERROR(
-                "No factory for UsdImagingSceneIndexPlugin %s.",
-                plugin->GetName().c_str());
-            continue;
-        }
-        UsdImagingSceneIndexPluginUniquePtr const sceneIndexPlugin =
-            factory->Create();
-        if (!sceneIndexPlugin) {
-            TF_CODING_ERROR(
-                "Could not create UsdImagingSceneIndexPlugin %s.",
-                plugin->GetName().c_str());
-            continue;
-        }
+    TRACE_FUNCTION();
+    
+    for (const UsdImagingSceneIndexPluginUniquePtr &sceneIndexPlugin :
+             UsdImagingSceneIndexPlugin::GetAllSceneIndexPlugins()) {
         sceneIndex = sceneIndexPlugin->AppendSceneIndex(sceneIndex);
     }
     
@@ -131,6 +96,19 @@ _GetStageName(UsdStageRefPtr const &stage)
     return rootLayer->GetIdentifier();
 }
 
+static
+TfTokenVector
+_InstanceDataSourceNames()
+{
+    return {
+        UsdImagingMaterialBindingsSchema::GetSchemaToken(),
+        HdPurposeSchema::GetSchemaToken(),
+        // We include model to aggregate scene indices
+        // by draw mode.
+        UsdImagingGeomModelSchema::GetSchemaToken()
+    };
+};
+
 UsdImagingSceneIndices
 UsdImagingCreateSceneIndices(
     const UsdImagingCreateSceneIndicesInfo &createInfo)
@@ -179,13 +157,8 @@ UsdImagingCreateSceneIndices(
         // Names of data sources that need to have the same values
         // across native instances for the instances be aggregated
         // together.
-        static const TfTokenVector instanceDataSourceNames = {
-            UsdImagingMaterialBindingsSchema::GetSchemaToken(),
-            HdPurposeSchema::GetSchemaToken(),
-            // We include model to aggregate scene indices
-            // by draw mode.
-            UsdImagingGeomModelSchema::GetSchemaToken()
-        };
+        static const TfTokenVector instanceDataSourceNames =
+            _InstanceDataSourceNames();
 
         using SceneIndexAppendCallback =
             UsdImagingNiPrototypePropagatingSceneIndex::
