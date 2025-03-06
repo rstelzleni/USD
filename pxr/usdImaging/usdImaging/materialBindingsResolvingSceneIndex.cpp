@@ -14,12 +14,16 @@
 
 #include "pxr/usd/usdShade/tokens.h"
 
+#include "pxr/imaging/hd/collectionExpressionEvaluator.h"
+#include "pxr/imaging/hd/collectionSchema.h"
+#include "pxr/imaging/hd/collectionsSchema.h"
 #include "pxr/imaging/hd/materialBindingsSchema.h"
 #include "pxr/imaging/hd/materialBindingSchema.h"
 #include "pxr/imaging/hd/meshSchema.h"
 #include "pxr/imaging/hd/overlayContainerDataSource.h"
 #include "pxr/imaging/hd/retainedDataSource.h"
 
+#include "pxr/base/tf/debug.h"
 #include "pxr/base/trace/trace.h"
 
 #include <optional>
@@ -54,6 +58,10 @@ public:
     {
         return UsdImagingMaterialBindingsSchema::GetFromParent(
             _primContainer).GetPurposes();
+
+        // Note: We don't check for collection membership here since it can be
+        //       expensive and would involve pulling on bindings for purposes
+        //       the renderer may not be interested in.
     }
 
     HdDataSourceBaseHandle
@@ -89,6 +97,90 @@ public:
 
 private:
 
+    struct _ResolveInfo
+    {
+        SdfPath materialPath;
+        bool strongerThanDescendants;
+        std::optional<SdfPath> collectionPath;
+    };
+
+    std::optional<_ResolveInfo>
+    _ComputeResolveInfo(
+        const UsdImagingCollectionMaterialBindingVectorSchema &colVecSchema)
+        const
+    {
+        // Return the first collection binding that affects the prim.
+        //
+        for (size_t j = 0; j < colVecSchema.GetNumElements(); j++) {
+            const UsdImagingCollectionMaterialBindingSchema
+                colBindingSchema = colVecSchema.GetElement(j);
+            
+            auto colPathDs    = colBindingSchema.GetCollectionPath();
+            auto matPathDs    = colBindingSchema.GetMaterialPath();
+            auto strengthDs   = colBindingSchema.GetBindingStrength();
+
+            if (!(colPathDs && matPathDs && strengthDs)) {
+                continue;
+            }
+
+            // Path returned will be of the form /Foo.collection:colName
+            const SdfPath collectionAttributePath =
+                colPathDs->GetTypedValue(0.0);
+
+            // Query scene index to get collection path expression.
+            auto exprOpt = _GetCollectionPathExpression(
+                collectionAttributePath);
+            if (!exprOpt) {
+                continue;
+            }
+
+            auto eval = HdCollectionExpressionEvaluator(_si, *exprOpt);
+            // XXX This does not handle instance proxy paths yet.
+            if (!eval.Match(_primPath)) {
+                TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
+                "- Prim <%s> is NOT affected by collection material binding "
+                "<%s> (expr = \"%s\").\n", _primPath.GetText(),
+                collectionAttributePath.GetText(), exprOpt->GetText().c_str());
+
+                continue;
+            }
+
+            TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
+                "+ Prim <%s> IS affected by collection material binding <%s> "
+                "(expr = \"%s\").\n", _primPath.GetText(),
+                collectionAttributePath.GetText(), exprOpt->GetText().c_str());
+
+            return
+                _ResolveInfo {
+                    matPathDs->GetTypedValue(0.0),
+                    strengthDs->GetTypedValue(0.0) ==
+                        UsdShadeTokens->strongerThanDescendants,
+                    collectionAttributePath};
+        }
+
+        return std::nullopt;
+    }
+
+    std::optional<_ResolveInfo>
+    _ComputeResolveInfo(
+        const UsdImagingDirectMaterialBindingSchema &dirBindingSchema)
+        const
+    {
+        auto dirBindingMatPathDs = dirBindingSchema.GetMaterialPath();
+        auto dirBindingStrengthDs = dirBindingSchema.GetBindingStrength();
+
+        if (dirBindingMatPathDs && dirBindingStrengthDs) {
+            return
+                _ResolveInfo{
+                    dirBindingMatPathDs->GetTypedValue(0.0),
+                    dirBindingStrengthDs->GetTypedValue(0.0) ==
+                        UsdShadeTokens->strongerThanDescendants,
+                    /* collectionPath */ std::nullopt};
+        }
+
+        return std::nullopt;   
+    }
+
     SdfPath
     _ComputeResolvedMaterialBinding(
         const UsdImagingMaterialBindingVectorSchema &bindingVecSchema) const
@@ -100,58 +192,105 @@ private:
         // appearing before descendants. So, if we find a binding with a
         // strongerThanDescendants strength, we can skip the rest of the
         // bindings.
-        // XXX: Add support for collection material bindings.
         //
         SdfPath winningBindingPath;
-        int winningBindingIdx = -1;
 
         for (size_t i = 0; i < bindingVecSchema.GetNumElements(); i++) {
             const UsdImagingMaterialBindingSchema bindingSchema =
                 bindingVecSchema.GetElement(i);
             
-            const UsdImagingDirectMaterialBindingSchema dirBindingSchema =
-                bindingSchema.GetDirectMaterialBinding();
+            std::optional<_ResolveInfo> colBindInfo = _ComputeResolveInfo(
+                bindingSchema.GetCollectionMaterialBindings());
+
+            if (colBindInfo && colBindInfo->strongerThanDescendants) {
+                winningBindingPath = colBindInfo->materialPath;
+
+                TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
+                    "Prim <%s>: Winning material set to <%s>. "
+                    "Binding strength for collection binding "
+                    "<%s> is strongerThanDescendants. "
+                    "Skipping the rest of the bindings.\n",
+                    _primPath.GetText(),
+                    winningBindingPath.GetText(),
+                    colBindInfo->collectionPath->GetText());
+
+                break;
+            }
+
+            std::optional<_ResolveInfo> dirBindInfo = _ComputeResolveInfo(
+                    bindingSchema.GetDirectMaterialBinding());
+
+            if (dirBindInfo && dirBindInfo->strongerThanDescendants) {
+                winningBindingPath = dirBindInfo->materialPath;
+
+                TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
+                    "Prim <%s>: Winning material set to <%s>. "
+                    "Binding strength for direct binding "
+                    "is strongerThanDescendants. "
+                    "Skipping the rest of the bindings.\n",
+                    _primPath.GetText(), winningBindingPath.GetText());
             
-            if (!dirBindingSchema) {
+                break;
+            }
+
+            if (colBindInfo ) {
+                // Neither of the bindings is stronger than descendants.
+                // The collection binding is considered stronger than the direct
+                // binding at any namespace level.
+                //
+                winningBindingPath = colBindInfo->materialPath;
+
+                TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
+                    "Prim <%s>: Current winning material set to <%s> for "
+                    "collection binding <%s>.\n",
+                    _primPath.GetText(),
+                    winningBindingPath.GetText(),
+                    colBindInfo->collectionPath->GetText());
+                
                 continue;
             }
 
-            auto dirBindingMatPathDs = dirBindingSchema.GetMaterialPath();
-            auto dirBindingStrengthDs = dirBindingSchema.GetBindingStrength();
+            if (dirBindInfo) {
+                // No collection binding was found, so the direct binding
+                // wins. We still need to iterate over the rest of the
+                // bindings.
+                //
+                winningBindingPath = dirBindInfo->materialPath;
 
-            if (dirBindingMatPathDs && dirBindingStrengthDs) {
-                const SdfPath dirMatPath =
-                    dirBindingMatPathDs->GetTypedValue(0.0);
-                
-                if (dirBindingStrengthDs->GetTypedValue(0.0) ==
-                        UsdShadeTokens->strongerThanDescendants) {
-                    
-                    TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
-                        "Prim <%s>: Winning material set to <%s>. "
-                        "Binding strength for direct binding "
-                        "is strongerThanDescendants. "
-                        "Skipping the rest of the bindings.\n",
-                        _primPath.GetText(), dirMatPath.GetText());
-                
-                    winningBindingPath = dirMatPath;
-                    break;
-
-                } else {
-                    if (int(i) > winningBindingIdx) {
-                        TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
-                         "Prim <%s>: Current winning material set to <%s> "
-                         "because the direct binding is more local.\n",
-                         _primPath.GetText(), dirMatPath.GetText());
-
-                        winningBindingPath = dirMatPath;
-                        winningBindingIdx = i;
-                    }
-                    // We still need to iterate over the rest of the bindings.
-                }
+                TF_DEBUG(USDIMAGING_MATERIAL_BINDING_RESOLUTION).Msg(
+                    "Prim <%s>: Current winning material set to <%s> "
+                    "because the direct binding is more local.\n",
+                    _primPath.GetText(), winningBindingPath.GetText());
             }
         }
   
         return winningBindingPath;
+    }
+
+    std::optional<SdfPathExpression>
+    _GetCollectionPathExpression(const SdfPath &collectionAttributePath) const
+    {
+        const SdfPath primPath = collectionAttributePath.GetPrimPath();
+        const auto [collectionName, namespaceFound] =
+            SdfPath::StripPrefixNamespace(
+                collectionAttributePath.GetName(),
+                HdCollectionSchemaTokens->collection.GetString());
+
+        if (!namespaceFound) {
+            return std::nullopt;
+        }
+
+        HdContainerDataSourceHandle primDs = _si->GetPrim(primPath).dataSource;
+        HdCollectionSchema colSchema =
+            HdCollectionsSchema::GetFromParent(primDs)
+            .GetCollection(TfToken(collectionName));
+        
+        const auto  exprDs = colSchema.GetMembershipExpression();
+        if (!exprDs) {
+            return std::nullopt;
+        }
+
+        return exprDs->GetTypedValue(0.0);
     }
 
     static HdDataSourceBaseHandle
@@ -168,9 +307,7 @@ private:
 
 private:
     HdContainerDataSourceHandle _primContainer;
-    
-    const HdSceneIndexBaseRefPtr _si; // currently unused, but will be used for
-                                      // collection membership queries.
+    const HdSceneIndexBaseRefPtr _si;
     const SdfPath _primPath;
 };
 

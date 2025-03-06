@@ -138,10 +138,8 @@ _BuildMaterialBindingVectorDataSource(
     const UsdShadeMaterialBindingAPI &mbApi,
     const TfToken &purpose)
 {
-    if (!mbApi.GetDirectBinding(purpose).IsBound()) {
-        return nullptr;
-    }
-    if (!mbApi.GetCollectionBindings(purpose).empty()) {
+    if (!mbApi.GetDirectBinding(purpose).IsBound() &&
+        mbApi.GetCollectionBindings(purpose).empty()) {
         return nullptr;
     }
 
