@@ -151,11 +151,14 @@ typedef std::vector<UsdAttribute> UsdAttributeVector;
 /// \section Usd_AssetPathValuedAttributes Attributes of type SdfAssetPath and UsdAttribute::Get()
 ///
 /// If an attribute's value type is SdfAssetPath or SdfAssetPathArray, Get()
-/// performs extra work to compute the resolved asset paths, using the layer
-/// that has the strongest value opinion as the anchor for "relative" asset
-/// paths.  Both the unresolved and resolved results are available through
-/// SdfAssetPath::GetAssetPath() and SdfAssetPath::GetResolvedPath(),
-/// respectively.
+/// does extra work to perform variable expression evaluation and compute
+/// resolved asset paths. The layer that has the strongest value opinion is 
+/// used as the anchor for "relative" asset paths.  The unresolved results are
+/// available through SdfAssetPath::GetAssetPath. The fully resolved path
+/// (including any substitutions) can be retrieved with
+/// SdfAssetPath::GetResolvedPath. The authored or evaluated paths may
+/// be explicitly retrieved through SdfAssetPath::GetAuthoredPath and 
+/// SdfAssetPath::GetEvaluatedPath respectively.
 ///
 /// Clients that call Get() on many asset-path-valued attributes may wish to
 /// employ an ArResolverScopedCache to improve asset path resolution

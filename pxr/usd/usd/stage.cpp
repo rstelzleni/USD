@@ -478,12 +478,12 @@ _MakeResolvedAssetPathsImpl(const Usd_AssetPathContext &assetContext,
     ArResolverContextBinder binder(resolverContext);
     for (size_t i = 0; i != numAssetPaths; ++i) {
 
-        if (SdfVariableExpression::IsExpression(assetPaths[i].GetAssetPath())) {
+        if (SdfVariableExpression::IsExpression(assetPaths[i].GetAuthoredPath())) {
             const PcpExpressionVariables& exprVars =
                 assetContext.node.GetLayerStack()->GetExpressionVariables();
 
             SdfVariableExpression::Result r = 
-                SdfVariableExpression(assetPaths[i].GetAssetPath())
+                SdfVariableExpression(assetPaths[i].GetAuthoredPath())
                 .EvaluateTyped<std::string>(exprVars.GetVariables());
 
             if (!r.errors.empty()) {
@@ -491,9 +491,10 @@ _MakeResolvedAssetPathsImpl(const Usd_AssetPathContext &assetContext,
                 continue;
             }
 
-            assetPaths[i] = SdfAssetPath(
-                r.value.IsHolding<std::string>() ? 
-                r.value.UncheckedGet<std::string>() : std::string());
+            if (r.value.IsHolding<std::string>()) {
+                assetPaths[i].SetEvaluatedPath(
+                    r.value.UncheckedGet<std::string>());
+            }
         }
 
         // When flattening, if the resolver can't handle this path 
@@ -514,10 +515,9 @@ _MakeResolvedAssetPathsImpl(const Usd_AssetPathContext &assetContext,
             }
         }
         else {
-            assetPaths[i] = SdfAssetPath(
-                assetPaths[i].GetAssetPath(),
-                _ResolveAssetPathRelativeToLayer(
-                    assetContext.layer, assetPaths[i].GetAssetPath()));
+            assetPaths[i].SetResolvedPath(_ResolveAssetPathRelativeToLayer(
+                assetContext.layer, assetPaths[i].GetAssetPath())
+            );
         }
     }
 }
