@@ -131,6 +131,7 @@ pxr_library(usdImaging
         renderSettingsFlatteningSceneIndex
         renderVarAdapter
         representedByAncestorPrimAdapter
+        rerootingContainerDataSource
         rerootingSceneIndex
         sceneIndexPlugin
         sceneIndexPrimAdapter
