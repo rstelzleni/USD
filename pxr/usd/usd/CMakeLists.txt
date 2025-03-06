@@ -223,6 +223,7 @@ pxr_test_scripts(
     testenv/testUsdNamespaceEditor.py
     testenv/testUsdNamespaceEditorDependentEditsBase.py:testUsdNamespaceEditorDependentEditsBase.py
     testenv/testUsdNamespaceEditorDependentEditsBasicReferencesAndPayloads.py
+    testenv/testUsdNamespaceEditorDependentEditsBasicRelocates.py
     testenv/testUsdNamespaceEditorDependentEditsBasicSublayers.py
     testenv/testUsdNamespaceEditorDependentEditsBasicVariants.py
     testenv/testUsdNamespaceEditorProperties.py
@@ -1241,6 +1242,12 @@ pxr_register_test(testUsdNamespaceEditor
 pxr_register_test(testUsdNamespaceEditorDependentEditsBasicReferencesAndPayloads
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdNamespaceEditorDependentEditsBasicReferencesAndPayloads"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testUsdNamespaceEditorDependentEditsBasicRelocates
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdNamespaceEditorDependentEditsBasicRelocates"
     EXPECTED_RETURN_CODE 0
 )
 
