@@ -66,6 +66,11 @@ _GetBasicPredicateLib() {
         .Define("isPropertyPath", [](SdfPath const &p) {
             return p.IsPropertyPath();
         })
+        .Define("capital", [](SdfPath const &p) {
+            std::string const &name = p.GetName();
+            auto isCap = [](char l) { return 'A' <= l && l <= 'Z'; };
+            return !name.empty() && isCap(name[0]);
+        })
         ;
     return theLib;
 }
