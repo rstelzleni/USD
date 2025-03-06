@@ -1749,7 +1749,7 @@ pxr_register_test(testUsdImagingGLSurfaceShader_3_4
 )
 
 pxr_register_test(testUsdImagingGLShadeBadTexture
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLSurfaceShader -offscreen -frameAll -stage shader_change.usda -lighting"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLSurfaceShader -offscreen -frameAll -numErrorsAllowed 1 -stage shader_change.usda -lighting"
     IMAGE_DIFF_COMPARE
         out1.png
         out2.png
@@ -4710,7 +4710,7 @@ pxr_register_test(testUsdImagingGLAovVisualization_Storm_Neye
 )
 
 pxr_register_test(testUsdImagingGLInvalidMaterial
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth  -frameAll -stage invalidMaterial.usda -write testUsdImagingGLInvalidMaterial.png"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth  -frameAll -numErrorsAllowed 1 -stage invalidMaterial.usda -write testUsdImagingGLInvalidMaterial.png"
     IMAGE_DIFF_COMPARE
     testUsdImagingGLInvalidMaterial.png
     FAIL 1
