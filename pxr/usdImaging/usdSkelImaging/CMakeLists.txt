@@ -26,6 +26,7 @@ pxr_library(usdSkelImaging
         skelData
         skeletonAdapter
         skeletonSchema
+        skelGuideData
         skelRootAdapter
         tokens
         utils
