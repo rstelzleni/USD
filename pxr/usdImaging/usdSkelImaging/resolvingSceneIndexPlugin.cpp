@@ -44,4 +44,13 @@ UsdSkelImagingResolvingSceneIndexPlugin::FlattenedDataSourceProviders()
         Make<HdFlattenedOverlayDataSourceProvider>());
 }
 
+TfTokenVector
+UsdSkelImagingResolvingSceneIndexPlugin::InstanceDataSourceNames()
+{
+    return {
+        UsdSkelImagingBindingSchema::GetSchemaToken()
+    };
+}
+
+
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -29,6 +29,9 @@ public:
 
     USDSKELIMAGING_API
     HdContainerDataSourceHandle FlattenedDataSourceProviders() override;
+
+    USDSKELIMAGING_API
+    TfTokenVector InstanceDataSourceNames() override;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -66,6 +66,22 @@ public:
     virtual HdContainerDataSourceHandle
     FlattenedDataSourceProviders();
 
+    /// Clients can register additional names used by the (native) instance
+    /// aggregation scene index when grouping instances.
+    ///
+    /// For example, two instances with different material bindings cannot
+    /// be aggregated together and instantiated by the same instancer.
+    ///
+    /// UsdImagingCreateSceneIndices knows about several such bindings
+    /// already. Here, clients can add additional data sources that should
+    /// be expected by the aggregation scene index. These data sources
+    /// are identified by their name in the prim-level container data
+    /// source.
+    ///
+    USDIMAGING_API
+    virtual TfTokenVector
+    InstanceDataSourceNames();
+
     USDIMAGING_API
     virtual ~UsdImagingSceneIndexPlugin();
 

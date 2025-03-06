@@ -26,11 +26,17 @@ UsdImagingSceneIndexPlugin::FlattenedDataSourceProviders()
     return nullptr;
 }
 
+TfTokenVector
+UsdImagingSceneIndexPlugin::InstanceDataSourceNames()
+{
+    return {};
+}
+
 std::vector<UsdImagingSceneIndexPluginUniquePtr>
 UsdImagingSceneIndexPlugin::GetAllSceneIndexPlugins()
 {
     TRACE_FUNCTION();
-    
+
     std::vector<UsdImagingSceneIndexPluginUniquePtr> result;
 
     PlugRegistry &plugRegistry = PlugRegistry::GetInstance();

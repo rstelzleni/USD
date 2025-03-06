@@ -100,13 +100,24 @@ static
 TfTokenVector
 _InstanceDataSourceNames()
 {
-    return {
+    TRACE_FUNCTION();
+    
+    TfTokenVector result = {
         UsdImagingMaterialBindingsSchema::GetSchemaToken(),
         HdPurposeSchema::GetSchemaToken(),
         // We include model to aggregate scene indices
         // by draw mode.
         UsdImagingGeomModelSchema::GetSchemaToken()
     };
+
+    for (const UsdImagingSceneIndexPluginUniquePtr &plugin :
+             UsdImagingSceneIndexPlugin::GetAllSceneIndexPlugins()) {
+        for (const TfToken &name : plugin->InstanceDataSourceNames()) {
+            result.push_back(name);
+        }
+    }
+
+    return result;
 };
 
 UsdImagingSceneIndices
