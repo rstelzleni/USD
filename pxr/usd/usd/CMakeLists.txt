@@ -222,6 +222,7 @@ pxr_test_scripts(
     testenv/testUsdModel.py
     testenv/testUsdNamespaceEditor.py
     testenv/testUsdNamespaceEditorDependentEditsBase.py:testUsdNamespaceEditorDependentEditsBase.py
+    testenv/testUsdNamespaceEditorDependentEditsBasicClassArcs.py
     testenv/testUsdNamespaceEditorDependentEditsBasicReferencesAndPayloads.py
     testenv/testUsdNamespaceEditorDependentEditsBasicRelocates.py
     testenv/testUsdNamespaceEditorDependentEditsBasicSublayers.py
@@ -1237,6 +1238,12 @@ pxr_register_test(testUsdObjectsChangedNoticesSublayerOps
 pxr_register_test(testUsdNamespaceEditor
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdNamespaceEditor"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testUsdNamespaceEditorDependentEditsBasicClassArcs
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdNamespaceEditorDependentEditsBasicClassArcs"
     EXPECTED_RETURN_CODE 0
 )
 
