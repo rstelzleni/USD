@@ -141,12 +141,19 @@ pxr_library(usd
 
     PYMODULE_FILES
         __init__.py
+        usdGenSchema.py
 
     RESOURCE_FILES
+        codegenTemplates/__init__.py
         codegenTemplates/api.h
+        codegenTemplates/CMakeLists.txt
         codegenTemplates/generatedSchema.classes.txt
         codegenTemplates/generatedSchema.module.h
+        codegenTemplates/module.cpp
+        codegenTemplates/moduleDeps.cpp
         codegenTemplates/plugInfo.json:no_subst
+        codegenTemplates/schema.usda
+        codegenTemplates/schemaUserDoc.usda
         codegenTemplates/schemaClass.cpp
         codegenTemplates/schemaClass.h
         codegenTemplates/tokens.cpp
@@ -185,6 +192,17 @@ else()
         DEPENDENCIES
             tf
             sdf
+            usd
+    )
+endif()
+
+if (NOT PXR_ENABLE_PYTHON_SUPPORT)
+    message(STATUS "Skipping building usdInitSchema, Python modules required.")
+elseif (NOT JINJA2_FOUND)
+    message(WARNING "Skipping building usdInitSchema due to missing dependency: Jinja2")
+else()
+    pxr_python_bin(usdInitSchema
+        DEPENDENCIES
             usd
     )
 endif()
