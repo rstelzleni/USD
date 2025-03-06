@@ -1306,6 +1306,13 @@ def InstallOpenVDB(context, force, buildArgs):
         openvdb_url = OPENVDB_INTEL_URL
 
     with CurrentWorkingDirectory(DownloadURL(openvdb_url, context, force)):
+        # Back-port patch from OpenVDB PR #1977 to avoid errors when building
+        # with Xcode 16.3+. This fix is anticipated to be part of an OpenVDB
+        # 12.x release, which is in the VFX Reference Platform CY2025 and is
+        # several major versions ahead of what we currently use.
+        PatchFile("openvdb/openvdb/tree/NodeManager.h",
+                  [("OpT::template eval", "OpT::eval")])
+
         extraArgs = [
             '-DOPENVDB_BUILD_PYTHON_MODULE=OFF',
             '-DOPENVDB_BUILD_BINARIES=OFF',
