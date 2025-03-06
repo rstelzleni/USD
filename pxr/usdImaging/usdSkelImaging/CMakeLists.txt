@@ -34,7 +34,6 @@ pxr_library(usdSkelImaging
     PUBLIC_HEADERS
         api.h
         dataSourceUtils.h
-        schemaTypeDefs.h
 
     RESOURCE_FILES
         plugInfo.json

@@ -124,8 +124,6 @@
         SCHEMA_TOKEN = 'skelBlendShape',
         ADD_DEFAULT_LOCATOR = True,
         DOC = '''Corresponds to UsdSkelBlendShape.''',
-        SCHEMA_INCLUDES = [
-            '{{LIBRARY_PATH}}/schemaTypeDefs'],
         MEMBERS = [
             ('ALL_MEMBERS', '', dict(ADD_LOCATOR=True)),
 
