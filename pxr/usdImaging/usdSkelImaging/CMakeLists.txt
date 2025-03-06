@@ -23,6 +23,7 @@ pxr_library(usdSkelImaging
         inbetweenShapeSchema
         package
         resolvingSceneIndexPlugin
+        skelData
         skeletonAdapter
         skeletonSchema
         skelRootAdapter
@@ -31,6 +32,7 @@ pxr_library(usdSkelImaging
 
     PUBLIC_HEADERS
         api.h
+        dataSourceUtils.h
         schemaTypeDefs.h
 
     RESOURCE_FILES
