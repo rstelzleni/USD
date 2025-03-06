@@ -120,15 +120,10 @@ UsdSkelImagingComputeSkelGuideData(
             ++boneJointIndices;
         }
 
-        /*
-
-          Get tree to compile again - this will be fixed soon.
-
         UsdSkelImagingComputePointsForSingleBone(
-            boneMeshPoints,
             GfMatrix4d(skelData.bindTransforms[joint]),
-            GfMatrix4d(skelData.bindTransforms[parent]));
-        */
+            GfMatrix4d(skelData.bindTransforms[parent]),
+            boneMeshPoints);
         boneMeshPoints += _boneNumPoints;
     }
 
