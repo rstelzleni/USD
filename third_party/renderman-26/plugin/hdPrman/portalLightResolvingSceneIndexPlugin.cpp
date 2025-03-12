@@ -106,16 +106,22 @@ TF_REGISTRY_FUNCTION(HdSceneIndexPlugin)
 
 namespace {
 
-bool
-_IsPortalLight(const HdSceneIndexPrim& prim, const SdfPath& primPath)
+HdContainerDataSourceHandle
+_GetMaterialDataSource(const HdSceneIndexPrim &prim)
 {
-    auto matDataSource =
-        HdMaterialSchema::GetFromParent(prim.dataSource)
+    return HdMaterialSchema::GetFromParent(prim.dataSource)
             .GetMaterialNetwork(_tokens->renderContext)
 #if HD_API_VERSION >= 63
             .GetContainer()
 #endif
         ;
+}
+
+bool
+_IsPortalLight(const HdSceneIndexPrim& prim, const SdfPath& primPath)
+{
+    const HdContainerDataSourceHandle matDataSource =
+        _GetMaterialDataSource(prim);
     HdDataSourceMaterialNetworkInterface matInterface(primPath, matDataSource,
                                                       prim.dataSource);
 
@@ -229,13 +235,8 @@ _BuildPortalLightDataSource(
 
     // Get data sources for the associated dome light.
     // -------------------------------------------------------------------------
-    const HdContainerDataSourceHandle domeMatDataSource = 
-        HdMaterialSchema::GetFromParent(domePrim.dataSource)
-            .GetMaterialNetwork(_tokens->renderContext)
-#if HD_API_VERSION >= 63
-            .GetContainer()
-#endif
-        ;
+    const HdContainerDataSourceHandle domeMatDataSource =
+        _GetMaterialDataSource(domePrim);
     HdDataSourceMaterialNetworkInterface domeMatInterface(domePrimPath,
                                                           domeMatDataSource,
                                                           domePrim.dataSource);
@@ -254,15 +255,26 @@ _BuildPortalLightDataSource(
                 domeMatTerminal.second.upstreamNodeName, paramName);
         };
 
+    // Note that the attribute name for colorMap is "texture:file";
+    // That is the attribute name used by USD, and reflected in the
+    // RenderMan light plugin args files for most light types -- with
+    // the exception of portals, which is why map it to domeColorMap.
     const VtValue domeColorMapVal  = getDomeMatVal(_tokens->colorMap);
     const VtValue domeColorVal     = getDomeMatVal(_tokens->color);
     const VtValue domeIntensityVal = getDomeMatVal(_tokens->intensity);
     const VtValue domeExposureVal  = getDomeMatVal(_tokens->exposure);
 
-    const std::string domeColorMap =
+    // Use the resolved path of the asset if available, otherwise
+    // pass through the original asset path.  This is important in
+    // order to support RenderMan's texture plugin system, which
+    // uses texture paths of the form "rtxplugin:...".
+    const SdfAssetPath domeColorMapAssetPath =
         domeColorMapVal.IsHolding<SdfAssetPath>()
-            ? domeColorMapVal.UncheckedGet<SdfAssetPath>().GetResolvedPath()
-            : "";
+        ? domeColorMapVal.UncheckedGet<SdfAssetPath>() : SdfAssetPath();
+    const std::string domeColorMap =
+        domeColorMapAssetPath.GetResolvedPath().empty()
+        ? domeColorMapAssetPath.GetAssetPath()
+        : domeColorMapAssetPath.GetResolvedPath();
 
     const auto domeColor     = domeColorVal.GetWithDefault(GfVec3f(1.0f));
     const auto domeIntensity = domeIntensityVal.GetWithDefault(1.0f);
@@ -286,14 +298,8 @@ _BuildPortalLightDataSource(
 
     // Get data sources for the portal light.
     // -------------------------------------------------------------------------
-    const HdContainerDataSourceHandle portalMatDataSource = 
-        HdMaterialSchema::GetFromParent(portalPrim.dataSource)
-            .GetMaterialNetwork(_tokens->renderContext)
-#if HD_API_VERSION >= 63
-            .GetContainer()
-#endif
-        ;
-
+    const HdContainerDataSourceHandle portalMatDataSource =
+        _GetMaterialDataSource(portalPrim);
     HdDataSourceMaterialNetworkInterface portalMatInterface(
         portalPrimPath, portalMatDataSource, portalPrim.dataSource);
 
@@ -642,7 +648,7 @@ _PortalLightResolvingSceneIndex::_AddMappingsForDome(
                         "domeLight path <%s>", domePrimPath.GetText());
         return SdfPathVector();
     }
-
+    
     SdfPathVector portalPaths = _GetPortalPaths(domePrim.dataSource);
 
     _domesWithPortals[domePrimPath] = !portalPaths.empty();
