@@ -21,6 +21,7 @@ pxr_library(usdSkelImaging
         dataSourceSkeletonPrim
         extComputations
         inbetweenShapeSchema
+        jointInfluencesData
         package
         resolvingSceneIndexPlugin
         skelData
