@@ -166,7 +166,7 @@ _ProcessBlendShapePrim(
         // Empty if not inbetween
         TfToken inbetweenName;
 
-        bool operator<(const WeightAndOffsets &other) {
+        bool operator<(const WeightAndOffsets &other) const {
             return weight < other.weight;
         }
     };

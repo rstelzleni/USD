@@ -19,13 +19,16 @@ pxr_library(usdSkelImaging
         dataSourceAnimationPrim
         dataSourceBindingAPI
         dataSourceBlendShapePrim
+        dataSourceResolvedSkeletonPrim
         dataSourceSkeletonPrim
         extComputations
         inbetweenShapeSchema
         jointInfluencesData
         package
+        resolvedSkeletonSchema
         resolvingSceneIndexPlugin
         skelData
+        skeletonResolvingSceneIndex
         skeletonAdapter
         skeletonSchema
         skelGuideData

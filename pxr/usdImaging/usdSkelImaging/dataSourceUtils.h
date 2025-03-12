@@ -11,6 +11,42 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+/// \class UsdSkelImagingSharedPtrThunk
+///
+/// A thunk for shared pointers computing the result only once and using
+/// atomic operations to store the cached result.
+///
+template<typename T>
+class UsdSkelImagingSharedPtrThunk
+{
+public:
+    using Handle = std::shared_ptr<T>;
+
+    Handle Get()
+    {
+        if (auto const result = std::atomic_load(&_data)) {
+            return result;
+        }
+
+        Handle expected;
+        Handle desired = _Compute();
+
+        if (std::atomic_compare_exchange_strong(&_data, &expected, desired)) {
+            return desired;
+        } else {
+            return expected;
+        }
+    }
+
+    void Invalidate() { std::atomic_store(&_data, Handle()); }
+
+protected:
+    virtual Handle _Compute() = 0;
+
+private:
+    Handle _data;
+};
+
 template<typename T>
 auto UsdSkelImagingGetTypedValue(
     const T &ds,

@@ -134,4 +134,37 @@
             ('inbetweenShapes', 'UsdSkelImagingInbetweenShapeContainerSchema', {})
         ],
     ),
+
+    #--------------------------------------------------------------------------
+    # usdSkelImaging/resolvedSkeleton
+    dict(
+        SCHEMA_NAME = 'ResolvedSkeleton',
+        SCHEMA_TOKEN = 'resolvedSkeleton',
+        ADD_DEFAULT_LOCATOR = True,
+        DOC = '''
+            Resolved data for a skeleton and the targeted skelAnim.
+            Populated by the skeleton resolving scene index.''',
+        MEMBERS = [
+            ('ALL_MEMBERS', '', dict(ADD_LOCATOR=True)),
+
+            ('skelLocalToWorld', T_MATRIX,
+             dict(DOC='''
+                Xform of skeleton prim.''')),
+
+            ('skinningTransforms', T_MATRIX4FARRAY,
+             dict(DOC='''
+                Passed to the extComputations. Computed from the following:
+                skeleton's joints (determining the topology),
+                and bind and rest (if needed) transforms. skelAnim's joints
+                (determining the remapping) and translations, rotations and
+                scales.''')),
+
+            ('blendShapes', T_TOKENARRAY,
+             dict(DOC='''
+                Just forwarded from the skelAnim's blendShapes.''')),
+            ('blendShapeWeights', T_FLOATARRAY,
+             dict(DOC='''
+                Just forwarded from the skelAnim's blendShapeWeights.'''))
+        ],
+    ),
 ]
