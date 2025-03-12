@@ -570,6 +570,8 @@ _PortalLightResolvingSceneIndex::_PrimsDirtied(
     static const auto& lightLocator    = HdLightSchema::GetDefaultLocator();
     static const auto& materialLocator = HdMaterialSchema::GetDefaultLocator();
     static const auto& xformLocator    = HdXformSchema::GetDefaultLocator();
+    static const HdDataSourceLocatorSet portalLocators =    
+        {materialLocator, lightLocator, xformLocator};
 
     HdSceneIndexObserver::DirtiedPrimEntries dirtied;
     SdfPathSet dirtiedPortals;
@@ -587,9 +589,7 @@ _PortalLightResolvingSceneIndex::_PrimsDirtied(
                     std::make_move_iterator(removedPortals.begin()),
                     std::make_move_iterator(removedPortals.end()));
             }
-            if (entry.dirtyLocators.Contains(lightLocator) ||
-                entry.dirtyLocators.Contains(materialLocator) ||
-                entry.dirtyLocators.Contains(xformLocator)) {
+            if (entry.dirtyLocators.Intersects(portalLocators)) {
                 // Assume that the dome's portals should be considered dirty.
                 for (const auto& [portalPath, domePath]: _portalsToDomes) {
                     if (domePath == entry.primPath) {
@@ -618,17 +618,13 @@ _PortalLightResolvingSceneIndex::_PrimsDirtied(
             // If the portal is already in the dirtied vector, we don't want to
             // add it again.
             dirtiedPortals.erase(entry.primPath);
-
-            // We do, however, want to ensure that the material and light data
-            // sources are considered dirty.
-            entry.dirtyLocators.insert({materialLocator, lightLocator});
+            // We do, however, need to invalidate the portal data sources.
+            entry.dirtyLocators.insert(portalLocators);
         }
     }
 
     for (const auto& portalPath: dirtiedPortals) {
-        dirtied.emplace_back(
-            portalPath,
-            HdDataSourceLocatorSet{materialLocator, lightLocator});
+        dirtied.emplace_back(portalPath, portalLocators);
     }
 
     _SendPrimsDirtied(dirtied);
