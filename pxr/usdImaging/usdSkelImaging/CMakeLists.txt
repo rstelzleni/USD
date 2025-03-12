@@ -14,6 +14,7 @@ pxr_library(usdSkelImaging
         bindingAPIAdapter
         bindingSchema
         blendShapeAdapter
+        blendShapeData
         blendShapeSchema
         dataSourceAnimationPrim
         dataSourceBindingAPI
