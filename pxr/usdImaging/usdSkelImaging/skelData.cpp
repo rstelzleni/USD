@@ -93,7 +93,7 @@ UsdSkelImagingComputeSkelData(
     _Convert(
         UsdSkelImagingGetTypedValue(skeletonSchema.GetBindTransforms()),
         &data.bindTransforms);
-    
+
     _Invert(
         data.bindTransforms,
         &data.inverseBindTransforms);
@@ -163,6 +163,10 @@ _ComputeJointLocalTransforms(
         TF_WARN("Could not compute transforms for skelAnimation %s.\n",
                 data.animationSource.GetText());
         return UsdSkelImagingGetTypedValue(restTransforms);
+    }
+
+    if (data.animMapper.IsIdentity()) {
+        return animTransforms;
     }
 
     VtArray<GfMatrix4f> result;
