@@ -1879,12 +1879,13 @@ private:
     // consider property spec fields. In some cases, this can avoid expensive
     // operations which would pull large amounts of data.
     template<typename DeleteSpecFunc, typename CreateSpecFunc, 
-            typename SetFieldFunc, typename ErrorFunc>
+            typename GetFieldValuesFunc, typename SetFieldFunc, typename ErrorFunc>
     void _ProcessIncomingData(const SdfAbstractDataPtr &newData,
                               const SdfSchemaBase *newDataSchema,
                               bool processPropertyFields,
                               const DeleteSpecFunc &deleteSpecFunc,
                               const CreateSpecFunc &createSpecFunc,
+                              const GetFieldValuesFunc &getFieldValuesFunc,
                               const SetFieldFunc &setFieldFunc,
                               const ErrorFunc &errorFunc) const;
 
