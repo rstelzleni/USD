@@ -947,10 +947,10 @@ pxr_register_test(testUsdImagingGLDomeLight_ZupFront
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -camera /Scene/FrontCamera -stage domeLightZup.usda -write testUsdImagingGLDomeLight_ZupFront.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_ZupFront.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.005
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.0025
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -958,10 +958,10 @@ pxr_register_test(testUsdImagingGLDomeLight_ZupBack
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -camera /Scene/BackCamera -stage domeLightZup.usda -write testUsdImagingGLDomeLight_ZupBack.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_ZupBack.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.006
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.003
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -969,10 +969,10 @@ pxr_register_test(testUsdImagingGLDomeLight_YupFront
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -camera /Scene/FrontCamera -stage domeLightYup.usda -write testUsdImagingGLDomeLight_YupFront.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_YupFront.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.002
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.001
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -980,10 +980,10 @@ pxr_register_test(testUsdImagingGLDomeLight_YupBack
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -camera /Scene/BackCamera -stage domeLightYup.usda -write testUsdImagingGLDomeLight_YupBack.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_YupBack.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.003
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.0015
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -991,10 +991,10 @@ pxr_register_test(testUsdImagingGLDomeLight_multi
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -stage multiDomeLights.usda -write testUsdImagingGLDomeLight_multi.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_multi.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.001
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.0005
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -1002,10 +1002,10 @@ pxr_register_test(testUsdImagingGLDomeLight_metallic
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -stage sphereMetallic.usda -write testUsdImagingGLDomeLight_metallic.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_metallic.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.001
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.0005
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -1013,10 +1013,10 @@ pxr_register_test(testUsdImagingGLDomeLight_rough
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -stage sphereRough.usda -write testUsdImagingGLDomeLight_rough.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_rough.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.005
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.0005
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -1024,10 +1024,10 @@ pxr_register_test(testUsdImagingGLDomeLight_grid
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -stage sphereGrid.usda -write testUsdImagingGLDomeLight_grid.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_grid.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.5
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.0025
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -1035,10 +1035,10 @@ pxr_register_test(testUsdImagingGLDomeLight_metallic_specwf
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -stage sphereMetallic_specwf.usda -write testUsdImagingGLDomeLight_metallic_specwf.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_metallic_specwf.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.4
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.003
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -1046,10 +1046,10 @@ pxr_register_test(testUsdImagingGLDomeLight_grid_specwf
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -frameAll -offscreen -lighting -sceneLights -shading smooth -complexity 1.3 -stage sphereGrid_specwf.usda -write testUsdImagingGLDomeLight_grid_specwf.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLDomeLight_grid_specwf.png
-    FAIL 1
+    FAIL 0.01
     FAIL_PERCENT 0.6
-    PERCEPTUAL
-    EXPECTED_RETURN_CODE 0
+    WARN 0.02
+    WARN_PERCENT 0.15
     TESTENV testUsdImagingGLDomeLight
 )
 
@@ -1061,7 +1061,6 @@ pxr_register_test(testUsdImagingGLDomeLight_invis
     FAIL_PERCENT 0.2
     WARN 0.02
     WARN_PERCENT 0.005
-    EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLDomeLight
 )
 
