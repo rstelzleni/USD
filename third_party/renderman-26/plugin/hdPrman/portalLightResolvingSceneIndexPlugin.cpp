@@ -157,6 +157,21 @@ _GetLightData(
     return {};
 }
 
+TfToken
+_ResolveLinking(
+    const HdContainerDataSourceHandle& portalDataSource,
+    const HdContainerDataSourceHandle& domeDataSource,
+    const TfToken& linkType)
+{
+    // Light/shadow linking set directly on the portal light wins, if present.
+    // Otherwise, fall back to linking set on the dome light.
+    TfToken linking = _GetLightData<TfToken>(portalDataSource, linkType);
+    if (linking.IsEmpty()) {
+        linking = _GetLightData<TfToken>(domeDataSource, linkType);
+    }
+    return linking;
+}
+
 SdfPathVector
 _GetPortalPaths(const HdContainerDataSourceHandle& primDataSource)
 {
@@ -391,12 +406,16 @@ _BuildPortalLightDataSource(
     const auto computedFiltersDataSource =
         HdRetainedTypedSampledDataSource<SdfPathVector>::New(allFilters);
 
-    // XXX -- If the portal has an authored shadowLink value, we shouldn't
-    //        overwrite it. (The shadowLink code should be updated when we have
-    //        a good way to tell whether values are authored.)
+    // Resolve light and shadow linking.
+    const auto lightLink = _ResolveLinking(
+        portalPrim.dataSource, domePrim.dataSource, HdTokens->lightLink);
+    const auto shadowLink = _ResolveLinking(
+        portalPrim.dataSource, domePrim.dataSource, HdTokens->shadowLink);
+
+    const auto computedLightLinkDataSource =
+        HdRetainedTypedSampledDataSource<TfToken>::New(lightLink);
     const auto computedShadowLinkDataSource =
-        HdRetainedTypedSampledDataSource<TfToken>::New(
-            _GetLightData<TfToken>(domePrim.dataSource, HdTokens->shadowLink));
+        HdRetainedTypedSampledDataSource<TfToken>::New(shadowLink);
 
     // Assemble the final data source for the portal light.
     // -------------------------------------------------------------------------
@@ -410,6 +429,7 @@ _BuildPortalLightDataSource(
     names.push_back(HdLightSchemaTokens->light);
     sources.push_back(HdRetainedContainerDataSource::New(
         HdTokens->filters,    computedFiltersDataSource,
+        HdTokens->lightLink,  computedLightLinkDataSource,
         HdTokens->shadowLink, computedShadowLinkDataSource));
 
     return HdOverlayContainerDataSource::New(
