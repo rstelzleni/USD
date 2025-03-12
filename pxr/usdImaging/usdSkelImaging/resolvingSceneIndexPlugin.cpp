@@ -6,6 +6,7 @@
 //
 #include "pxr/usdImaging/usdSkelImaging/resolvingSceneIndexPlugin.h"
 
+#include "pxr/usdImaging/usdSkelImaging/pointsResolvingSceneIndex.h"
 #include "pxr/usdImaging/usdSkelImaging/bindingSchema.h"
 #include "pxr/usdImaging/usdSkelImaging/skeletonResolvingSceneIndex.h"
 
@@ -30,6 +31,9 @@ UsdSkelImagingResolvingSceneIndexPlugin::AppendSceneIndex(
 
     sceneIndex =
         UsdSkelImagingSkeletonResolvingSceneIndex::New(sceneIndex);
+
+    sceneIndex =
+        UsdSkelImagingPointsResolvingSceneIndex::New(sceneIndex);
 
     return sceneIndex;
 }
