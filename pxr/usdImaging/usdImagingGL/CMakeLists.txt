@@ -3717,6 +3717,19 @@ pxr_register_test(testUsdImagingGLUsdUdims_TextureFallback
         HGIGL_ENABLE_BINDLESS_TEXTURE=1
 )
 
+pxr_register_test(testUsdImagingGLUsdUdims_DifferentDir
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage dir/usdUdimsDifferentDir.usda -write usdUdimsDifferentDir.png"
+    IMAGE_DIFF_COMPARE
+    usdUdimsDifferentDir.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+)
+
 # TODO: Requires create_symlinks.py to run properly
 #pxr_register_test(testUsdImagingGLUsdUdimsNonBindless_Symlinked
 #    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdimsSymlinked.usda -write usdUdimsSymlinked.png"
@@ -3729,6 +3742,76 @@ pxr_register_test(testUsdImagingGLUsdUdims_TextureFallback
 #    ENV
 #        HGIGL_ENABLE_BINDLESS_TEXTURE=0
 #)
+
+pxr_register_test(testUsdImagingGLUsdUdims_SceneIndex
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdims.usda -write usdUdims.png"
+    IMAGE_DIFF_COMPARE
+        usdUdims.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+        USDIMAGGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+)
+
+pxr_register_test(testUsdImagingGLUsdUdims_Usdz_SceneIndex
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdims.usdz -write usdUdimsUsdz.png"
+    IMAGE_DIFF_COMPARE
+        usdUdimsUsdz.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+        USDIMAGGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+)
+
+pxr_register_test(testUsdImagingGLUsdUdims_ScaleAndBias_SceneIndex
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdimsScaleAndBias.usda -write usdUdimsScaleAndBias.png"
+    IMAGE_DIFF_COMPARE
+        usdUdimsScaleAndBias.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+        USDIMAGGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+)
+
+pxr_register_test(testUsdImagingGLUsdUdims_TextureFallback_SceneIndex
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdimsTextureFallback.usda -write usdUdimsTextureFallback.png"
+    IMAGE_DIFF_COMPARE
+        usdUdimsTextureFallback.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+        USDIMAGGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+)
+
+pxr_register_test(testUsdImagingGLUsdUdims_DifferentDir_SceneIndex
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage dir/usdUdimsDifferentDir.usda -write usdUdimsDifferentDir.png"
+    IMAGE_DIFF_COMPARE
+    usdUdimsDifferentDir.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+        USDIMAGGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+)
 
 pxr_register_test(testUsdImagingGLUsdUdimsNonBindless
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdims.usda -write usdUdims.png"
@@ -3760,6 +3843,19 @@ pxr_register_test(testUsdImagingGLUsdUdimsNonBindless_TextureFallback
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage usdUdimsTextureFallback.usda -write usdUdimsTextureFallback.png"
     IMAGE_DIFF_COMPARE
         usdUdimsTextureFallback.png
+    FAIL 1
+    FAIL_PERCENT 1
+    PERCEPTUAL
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLUsdUdims
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=0
+)
+
+pxr_register_test(testUsdImagingGLUsdUdimsNonBindless_DifferentDir
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage dir/usdUdimsDifferentDir.usda -write usdUdimsDifferentDir.png"
+    IMAGE_DIFF_COMPARE
+    usdUdimsDifferentDir.png
     FAIL 1
     FAIL_PERCENT 1
     PERCEPTUAL
