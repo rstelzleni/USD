@@ -605,7 +605,7 @@ _PortalLightResolvingSceneIndex::_PrimsDirtied(
         auto domeIt = _domesWithPortals.find(entry.primPath);
         if (domeIt != _domesWithPortals.end()) {
             // entry.primPath is a known dome
-            if (entry.dirtyLocators.Contains(lightLocator)) {
+            if (entry.dirtyLocators.Intersects(lightLocator)) {
                 // The dome's portals may have changed.
                 auto removedPortals =
                     _RemoveMappingsForDome(entry.primPath);
@@ -626,7 +626,7 @@ _PortalLightResolvingSceneIndex::_PrimsDirtied(
             dirtied.push_back(entry);
         }
         else if (_portalsToDomes.count(entry.primPath) &&
-                 entry.dirtyLocators.Contains(xformLocator)) {
+                 entry.dirtyLocators.Intersects(xformLocator)) {
             // An xform change will affect portalToDome and portalName,
             // so we need to make sure the material data source gets dirtied.
             HdSceneIndexObserver::DirtiedPrimEntry newEntry(entry);
