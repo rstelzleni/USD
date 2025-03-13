@@ -646,6 +646,9 @@ void wrapLayer()
 
         .def("ScheduleRemoveIfInert", &This::ScheduleRemoveIfInert)
 
+        .def("RemovePropertyIfHasOnlyRequiredFields",
+             &This::RemovePropertyIfHasOnlyRequiredFields)
+
         .def("RemoveInertSceneDescription", &This::RemoveInertSceneDescription)
 
         .def("UpdateExternalReference", &This::UpdateExternalReference)
