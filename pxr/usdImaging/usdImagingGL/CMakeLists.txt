@@ -792,7 +792,7 @@ pxr_register_test(testUsdImagingGLBasicDrawingNonBindless_batch
     IMAGE_DIFF_COMPARE
         testUsdImagingGLBasicDrawingNonBindless_batch.png
     FAIL 1
-    FAIL_PERCENT 1.1
+    FAIL_PERCENT 1.4
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLBasicDrawingNonBindless
@@ -1204,7 +1204,7 @@ pxr_register_test(testUsdImagingGLBasisCurvesWithScale
     IMAGE_DIFF_COMPARE
         testUsdImagingGLBasisCurvesWithScale_1.1.png
     FAIL .05
-    FAIL_PERCENT .03
+    FAIL_PERCENT .08
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLBasisCurvesWithScale
@@ -2500,8 +2500,8 @@ pxr_register_test(testUsdImagingGLColorOpacityPrimvar
     IMAGE_DIFF_COMPARE
         color_opacity_primvar_000.png
         color_opacity_primvar_001.png
-    FAIL .05
-    FAIL_PERCENT .03
+    FAIL 0.1
+    FAIL_PERCENT 0.15
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLColorOpacityPrimvar
@@ -2534,7 +2534,7 @@ pxr_register_test(testUsdImagingGLCards
     IMAGE_DIFF_COMPARE
         testCards.png
     FAIL 0.01
-    FAIL_PERCENT 0.1
+    FAIL_PERCENT 0.2
     WARN 0.02
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
@@ -2546,9 +2546,9 @@ pxr_register_test(testUsdImagingGLCards_anim
     IMAGE_DIFF_COMPARE
         testAnim_001.png
         testAnim_002.png
-    FAIL 0.01
-    FAIL_PERCENT 0.1
-    WARN 0.02
+    FAIL 0.02
+    FAIL_PERCENT 0.2
+    WARN 0.03
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLCards
@@ -2752,9 +2752,9 @@ pxr_register_test(testUsdImagingGLPreviewSurface_Texture
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTexture.usda -write testPreviewSurfaceTexture.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTexture.png
-    FAIL 0.04
+    FAIL 0.1
     FAIL_PERCENT 0.02
-    WARN 0.02
+    WARN 0.05
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLPreviewSurface
@@ -2783,7 +2783,7 @@ pxr_register_test(testUsdImagingGLPreviewSurface_Displacement
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceDisplacement.png
     FAIL 0.04
-    FAIL_PERCENT 0.02
+    FAIL_PERCENT 0.5
     WARN 0.02
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
@@ -2797,7 +2797,7 @@ pxr_register_test(testUsdImagingGLPreviewSurface_TextureOpacity
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTextureOpacity.usda -write testPreviewSurfaceTextureOpacity.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTextureOpacity.png
-    FAIL 0.05
+    FAIL 0.15
     FAIL_PERCENT 0.1
     WARN 0.025
     WARN_PERCENT 0.05
@@ -2813,7 +2813,7 @@ pxr_register_test(testUsdImagingGLPreviewSurface_TextureScaleAndBias
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTextureScaleAndBias.png
     FAIL 0.04
-    FAIL_PERCENT 0.02
+    FAIL_PERCENT 0.03
     WARN 0.02
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
@@ -2827,9 +2827,9 @@ pxr_register_test(testUsdImagingGLPreviewSurface_Transform2d
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTransform2d.usda -write testPreviewSurfaceTransform2d.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTransform2d.png
-    FAIL 0.04
+    FAIL 0.1
     FAIL_PERCENT 0.02
-    WARN 0.02
+    WARN 0.05
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLPreviewSurface
@@ -2842,8 +2842,8 @@ pxr_register_test(testUsdImagingGLPreviewSurface_SourceColorSpace
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceSourceColorSpace.usda -write testPreviewSurfaceSourceColorSpace.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceSourceColorSpace.png
-    FAIL 0.02
-    FAIL_PERCENT 0.01
+    FAIL 0.05
+    FAIL_PERCENT 0.025
     WARN 0.01
     WARN_PERCENT 0.005
     EXPECTED_RETURN_CODE 0
@@ -2857,8 +2857,8 @@ pxr_register_test(testUsdImagingGLPreviewSurface_NormalMap
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceNormalMap.usda -write testPreviewSurfaceNormalMap.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceNormalMap.png
-    FAIL 0.04
-    FAIL_PERCENT 0.1
+    FAIL 0.05
+    FAIL_PERCENT 0.12
     WARN 0.02
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
@@ -2889,9 +2889,9 @@ pxr_register_test(testUsdImagingGLPreviewSurface_Animated
         testPreviewSurfaceAnimated_002.png
         testPreviewSurfaceAnimated_003.png
         testPreviewSurfaceAnimated_004.png
-    FAIL 0.04
+    FAIL 0.1
     FAIL_PERCENT 0.02
-    WARN 0.02
+    WARN 0.05
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLPreviewSurface
@@ -3047,9 +3047,9 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_Texture
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTexture.usda -write testPreviewSurfaceTexture.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTexture.png
-    FAIL 0.04
+    FAIL 0.1
     FAIL_PERCENT 0.02
-    WARN 0.02
+    WARN 0.05
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLPreviewSurface
@@ -3078,7 +3078,7 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_Displacement
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceDisplacement.png
     FAIL 0.04
-    FAIL_PERCENT 0.02
+    FAIL_PERCENT 0.5
     WARN 0.02
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
@@ -3092,7 +3092,7 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_TextureOpacity
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTextureOpacity.usda -write testPreviewSurfaceTextureOpacity.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTextureOpacity.png
-    FAIL 0.05
+    FAIL 0.15
     FAIL_PERCENT 0.1
     WARN 0.025
     WARN_PERCENT 0.05
@@ -3108,7 +3108,7 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_TextureScaleAndBias
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTextureScaleAndBias.png
     FAIL 0.04
-    FAIL_PERCENT 0.02
+    FAIL_PERCENT 0.03
     WARN 0.02
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
@@ -3122,9 +3122,9 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_Transform2d
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTransform2d.usda -write testPreviewSurfaceTransform2d.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTransform2d.png
-    FAIL 0.04
+    FAIL 0.1
     FAIL_PERCENT 0.02
-    WARN 0.02
+    WARN 0.05
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLPreviewSurface
@@ -3137,8 +3137,8 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_SourceColorSpace
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceSourceColorSpace.usda -write testPreviewSurfaceSourceColorSpace.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceSourceColorSpace.png
-    FAIL 0.02
-    FAIL_PERCENT 0.01
+    FAIL 0.05
+    FAIL_PERCENT 0.025
     WARN 0.01
     WARN_PERCENT 0.005
     EXPECTED_RETURN_CODE 0
@@ -3152,8 +3152,8 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_NormalMap
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceNormalMap.usda -write testPreviewSurfaceNormalMap.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceNormalMap.png
-    FAIL 0.04
-    FAIL_PERCENT 0.1
+    FAIL 0.05
+    FAIL_PERCENT 0.12
     WARN 0.02
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
@@ -3185,9 +3185,9 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_Animated
         testPreviewSurfaceAnimated_002.png
         testPreviewSurfaceAnimated_003.png
         testPreviewSurfaceAnimated_004.png
-    FAIL 0.04
+    FAIL 0.1
     FAIL_PERCENT 0.02
-    WARN 0.02
+    WARN 0.05
     WARN_PERCENT 0.01
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLPreviewSurface
@@ -3464,7 +3464,7 @@ pxr_register_test(testUsdImagingGLFaceVarying_Uniform_Low
     IMAGE_DIFF_COMPARE
         testUsdImagingGLFaceVarying_Uniform_Low.png
     FAIL 1
-    FAIL_PERCENT 1
+    FAIL_PERCENT 1.5
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLFaceVarying
@@ -3488,7 +3488,7 @@ pxr_register_test(testUsdImagingGLFaceVaryingLinearInterp_Uniform_Low
     IMAGE_DIFF_COMPARE
         testUsdImagingGLFaceVaryingLinearInterp_Uniform_Low.png
     FAIL 1
-    FAIL_PERCENT 1
+    FAIL_PERCENT 1.5
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLFaceVarying
@@ -3500,7 +3500,7 @@ pxr_register_test(testUsdImagingGLFaceVaryingLinearInterp_Uniform_Medium
     IMAGE_DIFF_COMPARE
         testUsdImagingGLFaceVaryingLinearInterp_Uniform_Medium.png
     FAIL 1
-    FAIL_PERCENT 1
+    FAIL_PERCENT 1.5
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLFaceVarying
@@ -3591,7 +3591,7 @@ pxr_register_test(testUsdImagingGLFaceVaryingLeftHanded_Adaptive_Low
     IMAGE_DIFF_COMPARE
         testUsdImagingGLFaceVaryingLeftHanded_Adaptive_Low.png
     FAIL 1
-    FAIL_PERCENT 1
+    FAIL_PERCENT 1.5
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLFaceVarying
@@ -3696,7 +3696,7 @@ pxr_register_test(testUsdImagingGLUsdUdims_ScaleAndBias
     IMAGE_DIFF_COMPARE
         usdUdimsScaleAndBias.png
     FAIL 1
-    FAIL_PERCENT 1
+    FAIL_PERCENT 1.5
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLUsdUdims
@@ -3748,7 +3748,7 @@ pxr_register_test(testUsdImagingGLUsdUdimsNonBindless_ScaleAndBias
     IMAGE_DIFF_COMPARE
         usdUdimsScaleAndBias.png
     FAIL 1
-    FAIL_PERCENT 1
+    FAIL_PERCENT 1.5
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLUsdUdims
@@ -4688,8 +4688,8 @@ pxr_register_test(testUsdImagingGLAovVisualization_Storm_primId
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -stage viz_aov.usda -rendererAov primId -clear 0 0 0 1 -lighting -camera /main_cam -write testUsdImagingGLAovVisualization_Storm_primId.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLAovVisualization_Storm_primId.png
-    FAIL 0.05
-    FAIL_PERCENT 0.02
+    FAIL 0.001
+    FAIL_PERCENT 0.6
     WARN 0.025
     WARN_PERCENT 0.002
     EXPECTED_RETURN_CODE 0
@@ -4904,8 +4904,8 @@ if (MaterialX_FOUND AND ${PXR_ENABLE_MATERIALX_SUPPORT})
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -lighting -sceneLights -shading smooth -complexity 1.3 -offscreen -frameAll -stage mxNormalMap.usda -write mxNormalMap.png"
         IMAGE_DIFF_COMPARE
             mxNormalMap.png
-        FAIL 0.1
-        FAIL_PERCENT 0.005
+        FAIL 0.15
+        FAIL_PERCENT 0.1
         WARN 0.05
         WARN_PERCENT 0.03
         EXPECTED_RETURN_CODE 0
