@@ -8,6 +8,7 @@
 
 #include "pxr/base/gf/rotation.h"
 #include "pxr/base/gf/vec3f.h"
+#include "pxr/base/gf/matrix3d.h"
 #if PXR_VERSION >= 2311
 #include "pxr/base/tf/hash.h"
 #endif
@@ -193,13 +194,13 @@ _GetPortalName(
 #if PXR_VERSION >= 2311
     size_t hashValue = TfHash::Combine(
         domeColorMap, 
-        domeXform.ExtractRotation(),
-        portalXform.ExtractRotation());
+        domeXform.ExtractRotationMatrix(),
+        portalXform.ExtractRotationMatrix());
 #else
     size_t hashValue = 0;
     boost::hash_combine(hashValue, domeColorMap);
-    boost::hash_combine(hashValue, domeXform.ExtractRotation());
-    boost::hash_combine(hashValue, portalXform.ExtractRotation());
+    boost::hash_combine(hashValue, domeXform.ExtractRotationMatrix());
+    boost::hash_combine(hashValue, portalXform.ExtractRotationMatrix());
 #endif
 
     return std::to_string(hashValue);
