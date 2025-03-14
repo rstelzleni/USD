@@ -267,6 +267,15 @@ pxr_build_test_shared_lib(TestSdfResolver
         testenv/TestSdfResolver.cpp
 )
 
+pxr_build_test(testSdfAbstractData_Cpp
+    LIBRARIES
+        tf
+        vt
+        sdf
+    CPPFILES
+        testenv/testSdfAbstractData.cpp
+) 
+
 pxr_build_test(testSdfAttributeBlocking_Cpp
     LIBRARIES
         sdf
@@ -368,6 +377,10 @@ pxr_install_test_dir(
 pxr_install_test_dir(
     SRC testenv/testSdfParsing.testenv
     DEST testSdfParsing/testSdfParsing.testenv
+)
+
+pxr_register_test(testSdfAbstractData_Cpp
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfAbstractData_Cpp"
 )
 
 pxr_register_test(testSdfAssetPath

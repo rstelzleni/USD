@@ -1219,9 +1219,17 @@ SdfLayer::GetNumTimeSamplesForPath(const SdfPath& path) const
 bool 
 SdfLayer::GetBracketingTimeSamplesForPath(const SdfPath& path, 
                                           double time,
-                                          double* tLower, double* tUpper)
+                                          double* tLower, double* tUpper) const
 {
-    return _data->GetBracketingTimeSamplesForPath(path, time, tLower, tUpper);
+    return _data->GetBracketingTimeSamplesForPath(
+        path, time, tLower, tUpper);
+}
+
+bool
+SdfLayer::GetPreviousTimeSampleForPath(
+    const SdfPath& path, double time, double* tPrevious) const
+{
+    return _data->GetPreviousTimeSampleForPath(path, time, tPrevious);
 }
 
 bool 
