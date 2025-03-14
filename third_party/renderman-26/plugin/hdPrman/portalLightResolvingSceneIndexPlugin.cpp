@@ -46,6 +46,9 @@ TF_DEFINE_PRIVATE_TOKENS(
     (PxrPortalLight)
     ((sceneIndexPluginName, "HdPrman_PortalLightResolvingSceneIndexPlugin"))
 
+    // light schema tokens
+    (domeOffset)
+
     // material network tokens
     (color)
     ((colorMap,                "texture:file"))
@@ -146,7 +149,8 @@ template <typename T>
 T
 _GetLightData(
     const HdContainerDataSourceHandle& primDataSource,
-    const TfToken& name)
+    const TfToken& name,
+    const T defaultValue=T())
 {
     if (auto lightSchema = HdLightSchema::GetFromParent(primDataSource)) {
         if (auto dataSource = HdTypedSampledDataSource<T>::Cast(
@@ -155,7 +159,7 @@ _GetLightData(
         }
     }
 
-    return {};
+    return defaultValue;
 }
 
 TfToken
@@ -296,6 +300,13 @@ _BuildPortalLightDataSource(
     const auto domeIntensity = domeIntensityVal.GetWithDefault(1.0f);
     const auto domeExposure  = domeExposureVal.GetWithDefault(0.0f);
 
+    // domeOffset exists in the light schema, not in the material netowrk.
+    // See UsdImaging/domeLight_1_Adapter.cpp for an example provider,
+    // and hdPrman/light.cpp for where this is used.
+    GfMatrix4d domeOffset =
+        _GetLightData<GfMatrix4d>(domePrim.dataSource, _tokens->domeOffset,
+                                  GfMatrix4d(1.0));
+
     GfMatrix4d domeXform;
     if (const auto origDomeXform = domeXformSchema.GetMatrix()) {
         // This matrix encodes a -90 deg rotation about the x-axis and a 90 deg
@@ -305,8 +316,8 @@ _BuildPortalLightDataSource(
                                                     -1.0, 0.0,  0.0, 0.0,
                                                      0.0, 1.0,  0.0, 0.0,
                                                      0.0, 0.0,  0.0, 1.0);
-
-        domeXform = domeXformAdjustment * origDomeXform->GetTypedValue(0.0f);
+        domeXform = domeXformAdjustment * domeOffset *
+            origDomeXform->GetTypedValue(0.0f);
     }
     else {
         domeXform.SetIdentity();
