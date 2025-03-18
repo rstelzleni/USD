@@ -607,9 +607,7 @@ _ConvertNodes(
                 }
             } else if(name == us_filename) {
                 SdfAssetPath path(v);
-                bool isLight = (sn.type == riley::ShadingNode::Type::k_Light &&
-                                param.first == HdLightTokens->textureFile);
-
+                bool isLight = (sn.type == riley::ShadingNode::Type::k_Light);
                 RtUString ustr = HdPrman_Utils::ResolveAssetToRtUString(
                     path,
                     !isLight, // only flip if NOT a light
@@ -631,9 +629,7 @@ _ConvertNodes(
             // This code processes nodes for both surface materials
             // and lights.  RenderMan does not flip light textures
             // as it does surface textures.
-            bool isLight = (sn.type == riley::ShadingNode::Type::k_Light &&
-                            param.first == HdLightTokens->textureFile);
-
+            bool isLight = (sn.type == riley::ShadingNode::Type::k_Light);
             RtUString v = HdPrman_Utils::ResolveAssetToRtUString(
                 param.second.UncheckedGet<SdfAssetPath>(),
                 !isLight, // only flip if NOT a light
