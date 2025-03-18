@@ -24,11 +24,11 @@ Prim Stack:
     root.sdf             /Parent/Child
     root.sdf             /Parent/Sibling
     root.sdf             /PI/Sibling
-    root.sdf             /PIS/Sibling
-    root.sdf             /PISI/Sibling
     root.sdf             /PI/Child
     ref.sdf              /PR/Child
     ref.sdf              /PR/Sibling
+    root.sdf             /PIS/Sibling
+    root.sdf             /PISI/Sibling
     root.sdf             /PIS/Child
     root.sdf             /PISI/Child
 

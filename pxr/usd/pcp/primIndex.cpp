@@ -483,11 +483,12 @@ _GatherNodesRecursively(const PcpNodeRef& node,
                         std::vector<PcpNodeRef> *result);
 
 static bool
-_HasSpecializesChild(const PcpNodeRef & parent)
+_HasSpecializesChildInSubtree(const PcpNodeRef & parent)
 {
-    TF_FOR_ALL(child, Pcp_GetChildrenRange(parent)) {
-        if (PcpIsSpecializeArc((*child).GetArcType()))
+    for (PcpNodeRef child : Pcp_GetSubtreeRange(parent)) {
+        if (PcpIsSpecializeArc(child.GetArcType())) {
             return true;
+        }
     }
     return false;
 }
@@ -1366,13 +1367,11 @@ struct Pcp_PrimIndexer
                     // beneath this node to the appropriate location.
                     AddTask(Task(Task::Type::EvalImpliedSpecializes, base));
                 }
-                else if (_HasSpecializesChild(n)) {
+                else if (_HasSpecializesChildInSubtree(n)) {
                     // The new node is not a specializes node or beneath a
-                    // specializes node, but has specializes children.
-                    // Such children represent arcs found during the recursive 
-                    // computation of the node's subgraph.  We need to pick them 
-                    // up and continue propagating them now that we are
-                    // merging the subgraph into the parent graph.
+                    // specializes node, but has specializes children. We also
+                    // need to propagate those children to the appropriate
+                    // location.
                     AddTask(Task(Task::Type::EvalImpliedSpecializes, n));
                 }
             }
