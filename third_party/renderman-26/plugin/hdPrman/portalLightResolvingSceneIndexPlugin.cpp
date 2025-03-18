@@ -387,7 +387,7 @@ _BuildPortalLightDataSource(
     const auto computedPortalName = _GetPortalName(domeColorMap, domeXform,
                                                    portalXform);
 
-    setPortalParamVal(_tokens->domeColorMap, VtValue(domeColorMap));
+    setPortalParamVal(_tokens->domeColorMap, VtValue(domeColorMapAssetPath));
     setPortalParamVal(_tokens->color,        VtValue(computedPortalColor));
     setPortalParamVal(_tokens->intensity,    VtValue(computedPortalIntensity));
     setPortalParamVal(_tokens->portalToDome, VtValue(computedPortalToDome));
