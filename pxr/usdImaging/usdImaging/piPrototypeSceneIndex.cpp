@@ -72,11 +72,9 @@ _ComputePrototypeRootOverlaySource(const SdfPath &instancer)
                         true))
                 .Build(),
             HdVisibilitySchema::GetSchemaToken(),
-            HdVisibilitySchema::Builder()
-                .SetVisibility(
-                    HdRetainedTypedSampledDataSource<bool>::New(
-                        true))
-                .Build());
+            HdRetainedContainerDataSource::New(
+                HdVisibilitySchemaTokens->visibility,
+                HdBlockDataSource::New()));
     return ds;
 }
 
