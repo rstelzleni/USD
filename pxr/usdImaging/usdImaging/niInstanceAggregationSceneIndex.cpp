@@ -316,7 +316,7 @@ public:
             }
             const SdfPath &primPath = *(_instances->begin());
             return
-                _GetPrimvarSchema(_inputSceneIndex, primPath, name)
+                _GetPrimvarSchema(_inputSceneIndex, primPath, _primvarName)
                     .GetRole();
         }
         return nullptr;
