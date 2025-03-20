@@ -3536,10 +3536,6 @@ _EvalImpliedClassTree(
     }
 }
 
-static bool
-_IsPropagatedSpecializesNode(
-    const PcpNodeRef& node);
-
 static void
 _EvalImpliedClasses(
     PcpNodeRef node,
@@ -3559,7 +3555,7 @@ _EvalImpliedClasses(
     // the origin of these specializes arcs -- this ensures the origin
     // nodes of the propagated inherits have a consistent strength 
     // ordering.  This is handled with the implied specializes task.
-    if (_IsPropagatedSpecializesNode(node)) {
+    if (Pcp_IsPropagatedSpecializesNode(node)) {
         return;
     }
 
@@ -3630,18 +3626,6 @@ _EvalNodeSpecializes(
 
     // Add specializes arcs.
     _AddClassBasedArcs(node, specArcs, PcpArcTypeSpecialize, indexer);
-}
-
-// Returns true if the given node is a specializes node that
-// has been propagated to the root of the graph for strength
-// ordering purposes in _EvalImpliedSpecializes.
-static bool
-_IsPropagatedSpecializesNode(
-    const PcpNodeRef& node)
-{
-    return (PcpIsSpecializeArc(node.GetArcType()) && 
-            node.GetParentNode() == node.GetRootNode() && 
-            node.GetSite() == node.GetOriginNode().GetSite());
 }
 
 static bool
@@ -3965,7 +3949,7 @@ _EvalImpliedSpecializes(
     if (!node.GetParentNode())
         return;
 
-    if (_IsPropagatedSpecializesNode(node)) {
+    if (Pcp_IsPropagatedSpecializesNode(node)) {
         _FindArcsToPropagateToOrigin(node, indexer);
     }
     else {
@@ -5014,7 +4998,7 @@ _CullSubtreesWithNoOpinions(
     // test_PrimIndexCulling_SpecializesHierarchy in testPcpPrimIndex for
     // an example.
     TF_REVERSE_FOR_ALL(child, Pcp_GetChildrenRange(primIndex->GetRootNode())) {
-        if (_IsPropagatedSpecializesNode(*child)) {
+        if (Pcp_IsPropagatedSpecializesNode(*child)) {
             std::unordered_set<PcpLayerStackSite, TfHash> culledSites;
             _CullSubtreesWithNoOpinionsHelper(
                 *child, rootSite, culledDeps, &culledSites);
@@ -5024,7 +5008,7 @@ _CullSubtreesWithNoOpinions(
     }
 
     TF_FOR_ALL(child, Pcp_GetChildrenRange(primIndex->GetRootNode())) {
-        if (!_IsPropagatedSpecializesNode(*child)) {
+        if (!Pcp_IsPropagatedSpecializesNode(*child)) {
             _CullSubtreesWithNoOpinionsHelper(*child, rootSite, culledDeps);
         }
     }
