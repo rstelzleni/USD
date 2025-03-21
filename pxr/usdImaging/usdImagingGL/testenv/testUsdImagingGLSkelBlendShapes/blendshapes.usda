@@ -160,15 +160,18 @@ def Scope "Materials"
         custom color3f displayColor = (0, 1, 0)
 
         # For UsdImagingStageSceneIndex.
-        #
-        # Note that there is no primvar reader for displayColor.
-        # But displayColor is used when lighting is disabled in Storm.
         color3f primvars:displayColor = (0, 1, 0)
         def Shader "PbrPreview"
         {
             uniform token info:id = "UsdPreviewSurface"
-            color3f inputs:diffuseColor = (0, 1, 0)
+            color3f inputs:diffuseColor.connect = </Materials/lambert1/DisplayColorReader.outputs:result>
             token outputs:surface
+        }
+        def Shader "DisplayColorReader"
+        {
+            uniform token info:id = "UsdPrimvarReader_float3"
+            string inputs:varname = "displayColor"
+            float3 outputs:result
         }
     }
 }
