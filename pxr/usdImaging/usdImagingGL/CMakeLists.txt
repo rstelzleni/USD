@@ -665,6 +665,11 @@ pxr_install_test_dir(
     DEST testUsdImagingGLVelocityMotion_SceneIndex
 )
 
+pxr_install_test_dir(
+    SRC testenv/testUsdImagingGLMaterialPrimvars
+    DEST testUsdImagingGLMaterialPrimvars
+)
+
 #
 # Register tests that don't depend on build configuration or external libraries
 # (such as MaterialX, OpenVDB, PTEX).
@@ -1382,6 +1387,8 @@ pxr_register_test(testUsdImagingGLSphereWithFloatRadius
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLSphere
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=false
 )
 
 pxr_register_test(testUsdImagingGLNurbsCurves
@@ -2505,6 +2512,8 @@ pxr_register_test(testUsdImagingGLColorOpacityPrimvar
     PERCEPTUAL
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLColorOpacityPrimvar
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=false
 )
 
 pxr_register_test(testUsdImagingGLTriangleSubdivisionRuleOsd3
@@ -4855,6 +4864,18 @@ pxr_register_test(testUsdImagingGLVelocityMotion_SceneIndex
     ENV
         USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1)
 
+pxr_register_test(testUsdImagingGLMaterialPrimvars
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -lighting -camlight -camera /main_cam -stage materialPrimvars.usda -write testUsdImagingGLMaterialPrimvars.png"
+    IMAGE_DIFF_COMPARE
+        testUsdImagingGLMaterialPrimvars.png
+    FAIL 0.04
+    WARN 0.02
+    FAIL_PERCENT 0.02
+    WARN_PERCENT 0.01
+    TESTENV testUsdImagingGLMaterialPrimvars
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true)
+      
 #
 # Conditionally install and register MaterialX tests
 #
