@@ -337,7 +337,7 @@ def Xform "TimeVaryingMeshWithEmptyVertexPrimvar"
 def Sphere "SphereWithEmptyOpacity"
 {
     float[] primvars:displayOpacity = []
-    float radius = 1
+    double radius = 1
     custom double3 xformOp:translate = (15, 0, -10)
     uniform token[] xformOpOrder = ["xformOp:translate"]
 }
