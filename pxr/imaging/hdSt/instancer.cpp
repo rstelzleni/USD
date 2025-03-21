@@ -177,9 +177,12 @@ HdStInstancer::_GetInstanceIndices(SdfPath const &prototypeId,
                     "primvars (%d >= %zu) for <%s>",
                     *it, _instancePrimvarNumElements, instancerId.GetText());
             instanceIndices.clear();
-            // insert 0-th index as placeholder (0th should always exist, since
-            // we don't populate instance primvars with numElements == 0).
-            instanceIndices.push_back(0);
+            if (_instancePrimvarNumElements > 0) {
+                // insert 0-th index as placeholder (0th should always exist,
+                // since we don't populate instance primvars with
+                // numElements == 0).
+                instanceIndices.push_back(0);
+            }
             break;
         }
     }
