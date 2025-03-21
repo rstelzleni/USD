@@ -3711,6 +3711,7 @@ _PropagateNodeToParent(
             newNode.SetHasSymmetry(srcNode.HasSymmetry());
             newNode.SetPermission(srcNode.GetPermission());
             newNode.SetRestricted(srcNode.IsRestricted());
+            newNode.SetIsDueToAncestor(srcNode.IsDueToAncestor());
 
             // If we're propagating nodes to the origin, newNode may be a
             // previously-existing node that was created during an ancestral

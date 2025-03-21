@@ -271,7 +271,7 @@ Node 9:
 Node 10:
     Parent node:              0
     Type:                     specialize
-    DependencyType:           non-virtual, purely-direct
+    DependencyType:           non-virtual, partly-direct
     Source path:              </PIS/Sibling>
     Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
     Target path:              </Parent/Child>
@@ -288,7 +288,7 @@ Node 10:
         /PIS/Sibling -> /Parent/Child
     Namespace depth:          2
     Depth below introduction: 0
-    Is due to ancestor:       FALSE
+    Is due to ancestor:       TRUE
     Permission:               Public
     Is restricted:            FALSE
     Is inert:                 FALSE
@@ -301,7 +301,7 @@ Node 10:
 Node 11:
     Parent node:              10
     Type:                     inherit
-    DependencyType:           non-virtual, purely-direct
+    DependencyType:           non-virtual, partly-direct
     Source path:              </PISI/Sibling>
     Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
     Target path:              </PIS/Sibling>
@@ -315,7 +315,7 @@ Node 11:
         /PISI/Sibling -> /Parent/Child
     Namespace depth:          1
     Depth below introduction: 1
-    Is due to ancestor:       FALSE
+    Is due to ancestor:       TRUE
     Permission:               Public
     Is restricted:            FALSE
     Is inert:                 FALSE
