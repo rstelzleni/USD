@@ -1367,6 +1367,14 @@ pxr_register_test(testPcpMuseum_SpecializesAndAncestralArcs4
     DIFF_COMPARE compositionResults_SpecializesAndAncestralArcs4.txt 
 )
 
+pxr_register_test(testPcpMuseum_SpecializesAndAncestralArcs4_graph
+    PYTHON
+    TESTENV testPcpMuseum_SpecializesAndAncestralArcs4
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testPcpCompositionResults --usd --dumpPath /Parent/Child SpecializesAndAncestralArcs4/root.sdf" 
+    STDOUT_REDIRECT compositionResults_SpecializesAndAncestralArcs4_graph.txt
+    DIFF_COMPARE compositionResults_SpecializesAndAncestralArcs4_graph.txt 
+)
+
 pxr_register_test(testPcpMuseum_SubrootInheritsAndVariants
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testPcpCompositionResults --usd SubrootInheritsAndVariants/root.sdf" 
