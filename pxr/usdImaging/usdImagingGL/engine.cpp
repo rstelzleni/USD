@@ -100,23 +100,6 @@ _GetUseSceneIndices()
     return useSceneIndices;
 }
 
-std::string
-_GetPlatformDependentRendererDisplayName(HfPluginDesc const &pluginDescriptor)
-{
-#if defined(__APPLE__)
-    // Rendering for Storm is delegated to Hgi. We override the
-    // display name for macOS since the Hgi implementation for
-    // macOS uses Metal instead of GL. Eventually, this should
-    // properly delegate to using Hgi to determine the display
-    // name for Storm.
-    static const TfToken _stormRendererPluginName("HdStormRendererPlugin");
-    if (pluginDescriptor.id == _stormRendererPluginName) {
-        return "Metal";
-    }
-#endif
-    return pluginDescriptor.displayName;
-}
-
 } // anonymous namespace
 
 //----------------------------------------------------------------------------
@@ -978,7 +961,25 @@ UsdImagingGLEngine::GetRendererDisplayName(TfToken const &id)
         return std::string();
     }
 
-    return _GetPlatformDependentRendererDisplayName(pluginDescriptor);
+    // Storm's display name is GL, but that's just confusing since it
+    // also has Metal and Vulkan implementations. Change it here for now,
+    // eventually it will have to be properly renamed.
+    static const TfToken _stormRendererPluginName("HdStormRendererPlugin");
+    if (pluginDescriptor.id == _stormRendererPluginName) {
+        return "Storm";
+    }
+
+    return pluginDescriptor.displayName;
+}
+
+std::string
+UsdImagingGLEngine::GetRendererHgiDisplayName() const
+{
+    if (!_hgi) {
+        return "";
+    }
+
+    return _hgi->GetAPIName();
 }
 
 bool
@@ -1938,6 +1939,7 @@ UsdImagingGLEngine::_ComputeRenderTags(UsdImagingGLRenderParams const& params,
 TfToken
 UsdImagingGLEngine::_GetDefaultRendererPluginId()
 {
+    // XXX clachanski
     static const std::string defaultRendererDisplayName = 
         TfGetenv("HD_DEFAULT_RENDERER", "");
 
@@ -2041,4 +2043,3 @@ UsdImagingGLEngine::PollForAsynchronousUpdates() const
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
-
