@@ -22,12 +22,12 @@
                         ]
                     }, 
                     "ArticulationChecker": {
-                        "doc": "Validates all of the UsdPhysicsArticulationAPIs applied to a prim.", 
+                        "doc": "Validates all of the UsdPhysicsArticulationRootAPIs applied to a prim.", 
                         "keywords": [
-                            "UsdPhysicsArticulationAPI"
+                            "UsdPhysicsArticulationRootAPI"
                         ], 
                         "schemaTypes": [
-                            "UsdPhysicsArticulationAPI"
+                            "UsdPhysicsArticulationRootAPI"
                         ]
                     }, 
                     "PhysicsJointChecker": {
