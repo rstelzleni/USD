@@ -4865,7 +4865,7 @@ pxr_register_test(testUsdImagingGLVelocityMotion_SceneIndex
         USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1)
 
 pxr_register_test(testUsdImagingGLMaterialPrimvars
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -lighting -camlight -camera /main_cam -stage materialPrimvars.usda -write testUsdImagingGLMaterialPrimvars.png"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -camlight -camera /main_cam -stage materialPrimvars.usda -write testUsdImagingGLMaterialPrimvars.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLMaterialPrimvars.png
     FAIL 0.04
