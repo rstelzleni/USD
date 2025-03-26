@@ -34,6 +34,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 HdStPoints::HdStPoints(SdfPath const& id)
   : HdPoints(id)
   , _displayOpacity(false)
+  , _displayInOverlay(false)
 {
     /*NOTHING*/
 }
@@ -61,7 +62,8 @@ HdStPoints::Sync(HdSceneDelegate *delegate,
         HdStSetMaterialId(delegate, renderParam, this);
         updateMaterialTags = true;
     }
-    if (*dirtyBits & HdChangeTracker::NewRepr) {
+    if (*dirtyBits & (HdChangeTracker::DirtyDisplayStyle|
+                      HdChangeTracker::NewRepr)) {
         updateMaterialTags = true;
     }
 
@@ -123,6 +125,11 @@ HdStPoints::_UpdateDrawItem(HdSceneDelegate *sceneDelegate,
     /* MATERIAL SHADER (may affect subsequent primvar population) */
     drawItem->SetMaterialNetworkShader(
         HdStGetMaterialNetworkShader(this, sceneDelegate));
+
+    if (*dirtyBits & HdChangeTracker::DirtyDisplayStyle) {
+        HdDisplayStyle ds = GetDisplayStyle(sceneDelegate);
+        _displayInOverlay = ds.displayInOverlay;
+    }
 
     // Reset value of _displayOpacity
     if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
@@ -370,6 +377,7 @@ HdStPoints::_UpdateMaterialTagsForAllReprs(HdSceneDelegate *sceneDelegate,
                 _smoothHullRepr->GetDrawItem(drawItemIndex++));
             HdStSetMaterialTag(sceneDelegate, renderParam, drawItem, 
                 this->GetMaterialId(), _displayOpacity, 
+                _displayInOverlay,
                 /*occludedSelectionShowsThrough = */false);
         }
     }
@@ -384,6 +392,7 @@ HdStPoints::GetInitialDirtyBitsMask() const
         | HdChangeTracker::DirtyPoints
         | HdChangeTracker::DirtyPrimID
         | HdChangeTracker::DirtyPrimvar
+        | HdChangeTracker::DirtyDisplayStyle
         | HdChangeTracker::DirtyRepr
         | HdChangeTracker::DirtyMaterialId
         | HdChangeTracker::DirtyTransform

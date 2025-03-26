@@ -1566,6 +1566,7 @@ public:
         results.push_back(HdLegacyDisplayStyleSchemaTokens->refineLevel);
         results.push_back(HdLegacyDisplayStyleSchemaTokens->flatShadingEnabled);
         results.push_back(HdLegacyDisplayStyleSchemaTokens->displacementEnabled);
+        results.push_back(HdLegacyDisplayStyleSchemaTokens->displayInOverlay);
         results.push_back(HdLegacyDisplayStyleSchemaTokens->occludedSelectionShowsThrough);
         results.push_back(HdLegacyDisplayStyleSchemaTokens->pointsShadingEnabled);
         results.push_back(HdLegacyDisplayStyleSchemaTokens->materialIsFinal);
@@ -1600,6 +1601,13 @@ public:
             }
             return HdRetainedTypedSampledDataSource<bool>::New(
                     _displayStyle.displacementEnabled);
+        } else if (name == HdLegacyDisplayStyleSchemaTokens->displayInOverlay) {
+            if (!_displayStyleRead) {
+                _displayStyle = _sceneDelegate->GetDisplayStyle(_id);
+                _displayStyleRead = true;
+            }
+            return HdRetainedTypedSampledDataSource<bool>::New(
+                    _displayStyle.displayInOverlay);
         } else if (name == HdLegacyDisplayStyleSchemaTokens->occludedSelectionShowsThrough) {
             if (!_displayStyleRead) {
                 _displayStyle = _sceneDelegate->GetDisplayStyle(_id);

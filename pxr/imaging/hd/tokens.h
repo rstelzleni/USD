@@ -253,8 +253,7 @@ PXR_NAMESPACE_OPEN_SCOPE
     (guide)                                     \
     (hidden)                                    \
     (proxy)                                     \
-    (render)                                    \
-    (widget)
+    (render)
 
 #define HD_RENDER_CONTEXT_TOKENS                \
     ((universal, ""))

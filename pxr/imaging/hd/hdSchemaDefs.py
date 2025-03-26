@@ -831,6 +831,7 @@
             ('refineLevel', T_INT, {}),
             ('flatShadingEnabled', T_BOOL, {}),
             ('displacementEnabled', T_BOOL, {}),
+            ('displayInOverlay', T_BOOL, {}),
             ('occludedSelectionShowsThrough', T_BOOL, {}),
             ('pointsShadingEnabled', T_BOOL, {}),
             ('materialIsFinal', T_BOOL, {}),

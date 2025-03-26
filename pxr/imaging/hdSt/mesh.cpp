@@ -87,6 +87,7 @@ HdStMesh::HdStMesh(SdfPath const& id)
     , _sceneNormals(false)
     , _hasVaryingTopology(false)
     , _displayOpacity(false)
+    , _displayInOverlay(false)
     , _occludedSelectionShowsThrough(false)
     , _pointsShadingEnabled(false)
     , _fvarTopologyTracker(std::make_unique<_FvarTopologyTracker>())
@@ -551,6 +552,7 @@ HdStMesh::_PopulateTopology(HdSceneDelegate *sceneDelegate,
 
         _flatShadingEnabled = displayStyle.flatShadingEnabled;
         _displacementEnabled = displayStyle.displacementEnabled;
+        _displayInOverlay = displayStyle.displayInOverlay;
         _occludedSelectionShowsThrough =
             displayStyle.occludedSelectionShowsThrough;
         _pointsShadingEnabled = displayStyle.pointsShadingEnabled;
@@ -3009,7 +3011,7 @@ HdStMesh::_UpdateMaterialTagsForAllReprs(HdSceneDelegate *sceneDelegate,
                     repr->GetDrawItem(drawItemIndex++));
                 HdStSetMaterialTag(sceneDelegate, renderParam, drawItem, 
                     this->GetMaterialId(), _displayOpacity, 
-                    _occludedSelectionShowsThrough);
+                    _displayInOverlay, _occludedSelectionShowsThrough);
             }
 
             // Update geom subset draw items if they exist 
@@ -3030,7 +3032,7 @@ HdStMesh::_UpdateMaterialTagsForAllReprs(HdSceneDelegate *sceneDelegate,
                 }
                 HdStSetMaterialTag(sceneDelegate, renderParam, drawItem,
                     materialId, _displayOpacity, 
-                    _occludedSelectionShowsThrough);
+                    _displayInOverlay, _occludedSelectionShowsThrough);
             }
             geomSubsetDescIndex++;
         }

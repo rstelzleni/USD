@@ -44,6 +44,7 @@ HdStBasisCurves::HdStBasisCurves(SdfPath const& id)
     , _customDirtyBitsInUse(0)
     , _refineLevel(0)
     , _displayOpacity(false)
+    , _displayInOverlay(false)
     , _occludedSelectionShowsThrough(false)
     , _pointsShadingEnabled(false)
 {
@@ -591,7 +592,7 @@ HdStBasisCurves::_UpdateMaterialTagsForAllReprs(HdSceneDelegate *sceneDelegate,
 
             HdStSetMaterialTag(sceneDelegate, renderParam, drawItem, 
                 this->GetMaterialId(), _displayOpacity, 
-                _occludedSelectionShowsThrough);
+                _displayInOverlay, _occludedSelectionShowsThrough);
         }
     }
 }
@@ -616,6 +617,7 @@ HdStBasisCurves::_PopulateTopology(HdSceneDelegate *sceneDelegate,
     if (*dirtyBits & HdChangeTracker::DirtyDisplayStyle) {
         HdDisplayStyle ds = GetDisplayStyle(sceneDelegate);
         _refineLevel = ds.refineLevel;
+        _displayInOverlay = ds.displayInOverlay;
         _occludedSelectionShowsThrough = ds.occludedSelectionShowsThrough;
         _pointsShadingEnabled = ds.pointsShadingEnabled;
     }

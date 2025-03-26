@@ -198,6 +198,7 @@ pxr_library(hdSt
         shaders/meshFaceCull.glslfx
         shaders/meshNormal.glslfx
         shaders/meshWire.glslfx
+        shaders/overlayShader.glslfx
         shaders/points.glslfx
         shaders/pointId.glslfx
         shaders/pointDisk.glslfx

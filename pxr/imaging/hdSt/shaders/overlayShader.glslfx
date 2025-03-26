@@ -8,10 +8,10 @@
 //
 
 --- This is what an import might look like.
---- #import $TOOLS/hdSt/shaders/widgetShader.glslfx
+--- #import $TOOLS/hdSt/shaders/overlayShader.glslfx
 
 ---
---- The fallback widget shader is used as a replacement shader if the
+--- The fallback overlay shader is used as a replacement shader if the
 --- original material shader failed to compile. It needs to
 --- define both the surfaceShader() and displacementShader() terminals.
 ---
@@ -20,17 +20,17 @@
     "techniques": {
         "default": {
             "displacementShader": {
-                "source": [ "Widget.Displacement" ]
+                "source": [ "Overlay.Displacement" ]
             },
             "surfaceShader": {
-                "source": [ "Widget.Surface" ]
+                "source": [ "Overlay.Surface" ]
             }
         }
     }
 }
 
 --- --------------------------------------------------------------------------
--- glsl Widget.Surface
+-- glsl Overlay.Surface
 
 vec4 surfaceShader(vec4 Peye, vec3 Neye, vec4 color, vec4 patchCoord)
 {
@@ -58,7 +58,7 @@ vec4 surfaceShader(vec4 Peye, vec3 Neye, vec4 color, vec4 patchCoord)
     return colorOut;
 }
 --- --------------------------------------------------------------------------
--- glsl Widget.Displacement
+-- glsl Overlay.Displacement
 
 vec4 displacementShader(int index, vec4 Peye, vec3 Neye, vec4 patchCoord)
 {

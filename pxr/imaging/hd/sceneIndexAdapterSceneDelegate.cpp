@@ -2928,6 +2928,11 @@ HdSceneIndexAdapterSceneDelegate::GetDisplayStyle(SdfPath const &id)
         }
 
         if (HdBoolDataSourceHandle ds =
+                styleSchema.GetDisplayInOverlay()) {
+            result.displayInOverlay = ds->GetTypedValue(0.0f);
+        }
+
+        if (HdBoolDataSourceHandle ds =
                 styleSchema.GetOccludedSelectionShowsThrough()) {
             result.occludedSelectionShowsThrough = ds->GetTypedValue(0.0f);
         }

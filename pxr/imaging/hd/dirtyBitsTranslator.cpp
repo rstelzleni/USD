@@ -629,6 +629,11 @@ HdDirtyBitsTranslator::RprimLocatorSetToDirtyBits(
                     bits |= HdChangeTracker::DirtyDisplayStyle;
                 }
                 if (_FindLocator(
+                        Schema::GetDisplayInOverlayLocator(),
+                        end, &it)) {
+                    bits |= HdChangeTracker::DirtyDisplayStyle;
+                }
+                if (_FindLocator(
                         Schema::GetFlatShadingEnabledLocator(),
                         end, &it)) {
                     bits |= HdChangeTracker::DirtyDisplayStyle;
