@@ -8283,16 +8283,28 @@ public:
             }
         }
 
+        const char* preTimeDebug = time.IsPreTime() ? " (pretime)" : "";
         TF_DEBUG(USD_VALUE_RESOLUTION).Msg(
             "RESOLVE: reading field %s:%s from @%s@, "
-            "with requested time = %.3f (local time = %.3f) "
+            "with requested time = %.3f%s (local time = %.3f) "
             "reading from sample %.3f \n",
             specPath.GetText(),
             SdfFieldKeys->TimeSamples.GetText(),
             layer->GetIdentifier().c_str(),
             time.GetValue(),
+            preTimeDebug,
             localTime,
             lower);
+
+        if (time.IsPreTime() && lower == upper) {
+            // We should update our lower and upper to represent the previous
+            // time sample segment, upper is already set to lower.
+            if (!layer->GetPreviousTimeSampleForPath(
+                    specPath, localTime, &lower)) {
+                // Trying to access a previous sample before the first sample.
+                lower = upper;
+            }
+        }
 
         return Usd_GetOrInterpolateValue(
             layer, specPath, localTime, lower, upper, interpolator, result);
@@ -8369,6 +8381,16 @@ public:
             localTime,
             lower);
 
+        if (time.IsPreTime() && lower == upper) {
+            // We should update our lower and upper to represent the previous
+            // time sample segment, upper is already set to lower.
+            if (!clipSet->GetPreviousTimeSampleForPath(
+                    specPath, localTime, &lower)) {
+                // Trying to access a previous sample before the first sample.
+                lower = upper;
+            }
+        }
+
         return Usd_GetOrInterpolateValue(
             clipSet, specPath, localTime, lower, upper, interpolator, result);
     }
@@ -8441,8 +8463,7 @@ UsdStage::_GetAssetPathContext(UsdTimeCode time, const UsdAttribute &attr) const
 template <class T>
 bool
 UsdStage::_GetValueImpl(UsdTimeCode time, const UsdAttribute &attr, 
-                        Usd_InterpolatorBase* interpolator,
-                        T *result) const
+                        Usd_InterpolatorBase* interpolator, T *result) const
 {
     UsdResolveInfo resolveInfo;
     _ExtraResolveInfo<T> extraResolveInfo;
