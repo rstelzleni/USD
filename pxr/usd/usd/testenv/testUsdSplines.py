@@ -22,6 +22,7 @@ class TestUsdSplines(unittest.TestCase):
             typeName = typeName,
             time = 1,
             value = 8,
+            preValue = 6,
             nextInterp = Ts.InterpCurve,
             postTanWidth = 1.3,
             postTanSlope = 0.125))
@@ -29,6 +30,7 @@ class TestUsdSplines(unittest.TestCase):
             typeName = typeName,
             time = 6,
             value = 20,
+            preValue = 10,
             nextInterp = Ts.InterpCurve,
             preTanWidth = 1.3,
             preTanSlope = -0.2,
@@ -249,6 +251,13 @@ class TestUsdSplines(unittest.TestCase):
         print (spline2.Eval(1.0))
         print (f"Attribute Get spline eval, {case}:")
         print (attr2.Get(1.0))
+        self.assertEqual(spline2.Eval(1.0), attr2.Get(1.0))
+        print (f"Explicit spline preeval, {case}:")
+        print (spline2.EvalPreValue(1.0))
+        print (f"Attribute Get spline preeval, {case}:")
+        print (attr2.Get(Usd.TimeCode.PreTime(1.0)))
+        self.assertEqual(spline2.EvalPreValue(1.0), 
+                         attr2.Get(Usd.TimeCode.PreTime(1.0)))
         print(f"Retrieved spline, {case}:")
         print(spline2)
 

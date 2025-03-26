@@ -68,6 +68,19 @@ _TestSplineAndAttr(
     } else {
         TF_AXIOM(splineValue == attrValue);
     }
+
+    // Do a pre value test.
+    splineDouble = 0.0;
+    splineSuccess = spline.EvalPreValue(0.0, &splineDouble);
+    attrDouble = 1.0;
+    attrSuccess = attr.Get<double>(&attrDouble, UsdTimeCode::PreTime(1.0));
+    if (!attrSuccess || !splineSuccess) {
+        // If either fails, both should fail to eval / get the value.
+        // This is the case when spline is empty.
+        TF_AXIOM(attrSuccess == splineSuccess);
+    } else {
+        TF_AXIOM(splineDouble == attrDouble);
+    }
 }
 
 static
@@ -79,6 +92,7 @@ _GetTestSpline(
     TsKnot knot1(attrType.GetType());
     knot1.SetTime(1);
     knot1.SetValue(8.0);
+    knot1.SetPreValue(6.0);
     knot1.SetNextInterpolation(TsInterpCurve);
     knot1.SetPostTanWidth(1.3);
     knot1.SetPostTanSlope(0.125);
@@ -86,6 +100,7 @@ _GetTestSpline(
     TsKnot knot2(attrType.GetType());
     knot2.SetTime(6);
     knot2.SetValue(20.0);
+    knot2.SetPreValue(10.0);
     knot2.SetNextInterpolation(TsInterpCurve);
     knot2.SetPreTanWidth(1.3);
     knot2.SetPreTanSlope(-0.2);

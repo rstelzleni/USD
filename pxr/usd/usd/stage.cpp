@@ -8226,12 +8226,14 @@ template <typename S>
 struct _EvalSplineFunctor
 {
     template <typename T>
-    void operator()(const TsSpline& spline, double localTime,
+    void operator()(const TsSpline& spline, UsdTimeCode localTime,
                     const SdfLayerOffset& layerToStageOffset, T* result,
                     bool* successOut)
     {
         S val;
-        if (!spline.Eval(localTime, &val)) {
+        auto evalFunc = !localTime.IsPreTime() ?
+                            &TsSpline::Eval<S> : &TsSpline::EvalPreValue<S>;
+        if (!(spline.*evalFunc)(localTime.GetValue(), &val)) {
             return;
         }
         *successOut = true;
@@ -8334,10 +8336,12 @@ public:
 
         bool success = false;
 
+        const UsdTimeCode localTimeCode = time.IsPreTime() ?
+            UsdTimeCode::PreTime(localTime) : UsdTimeCode(localTime);
         // Use the Spline's value type to dispatch to the appropriate Evaluator.
         TsDispatchToValueTypeTemplate<_EvalSplineFunctor>(
-            spline.GetValueType(), spline, localTime, info._layerToStageOffset, 
-            result, &success);
+            spline.GetValueType(), spline, localTimeCode, 
+            info._layerToStageOffset, result, &success);
 
         return success;
     }
