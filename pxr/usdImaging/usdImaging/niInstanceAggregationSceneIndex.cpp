@@ -144,24 +144,6 @@ _GetTypedPrimvarValue(
     return {};
 }
 
-GfMatrix4d
-_GetPrimTransform(
-    HdSceneIndexBaseRefPtr const &sceneIndex, const SdfPath &primPath)
-{
-    static const GfMatrix4d id(1.0);
-    if (!sceneIndex) {
-        return id;
-    }
-    HdContainerDataSourceHandle const primSource =
-        sceneIndex->GetPrim(primPath).dataSource;
-    HdMatrixDataSourceHandle const ds =
-        HdXformSchema::GetFromParent(primSource).GetMatrix();
-    if (!ds) {
-        return id;
-    }
-    return ds->GetTypedValue(0.0f);
-}
-
 // Data source for locator primvars:NAME:primvarValue for an instancer.
 //
 // Extracts the values of the primvar of given name authored on the native
@@ -338,6 +320,32 @@ private:
     const TfToken _primvarName;
 };
 
+static
+VtArray<GfMatrix4d>
+_Extract(const std::vector<HdSampledDataSourceHandle> &sources,
+         const HdSampledDataSource::Time shutterOffset)
+{
+    VtArray<GfMatrix4d> result;
+
+    result.resize(
+        sources.size(),
+        [&sources, shutterOffset](
+                GfMatrix4d * const begin, GfMatrix4d * const end) {
+            const HdSampledDataSourceHandle * source = sources.data();
+            for (GfMatrix4d * outData = begin; outData < end; ++outData) {
+                if (HdMatrixDataSource * const matrixSource =
+                        dynamic_cast<HdMatrixDataSource*>(source->get())) {
+                    new (outData) GfMatrix4d(
+                        matrixSource->GetTypedValue(shutterOffset));
+                } else {
+                    new (outData) GfMatrix4d(1.0);
+                }
+                ++source;
+            }});
+
+    return result;
+}
+
 // Data source for locator primvars:hydra:instanceTransforms:primvarValue for an
 // instancer.
 //
@@ -358,42 +366,38 @@ public:
             const Time endTime,
             std::vector<Time> * const outSampleTimes) override
     {
-        // TODO: Support motion blur
-        return false;
+        TRACE_FUNCTION();
+
+        return
+            HdGetMergedContributingSampleTimesForInterval(
+                _xformSources.size(),
+                _xformSources.data(),
+                startTime, endTime, outSampleTimes);
     }
 
     VtArray<GfMatrix4d> GetTypedValue(const Time shutterOffset) override
     {
-        VtArray<GfMatrix4d> result(_instances->size());
+        TRACE_FUNCTION();
 
-        int i = 0;
-        for (const SdfPath &instance : *_instances) {
-            // If this is for a native instance within a Usd point instancer's
-            // prototype, this transform will include the prototype's
-            // root transform.
-            //
-            // The instancer for this native instance has no transform and thus
-            // does not include the prototype's root transform.
-            //
-            // Thus, prototype's root transform will be applied exactly once.
-            result[i] =
-                _GetPrimTransform(_inputSceneIndex, instance);
-            i++;
-        }
-        return result;
+        // If this is for a native instance within a Usd point instancer's
+        // prototype, this transform will include the prototype's
+        // root transform.
+        //
+        // The instancer for this native instance has no transform and thus
+        // does not include the prototype's root transform.
+        //
+        // Thus, prototype's root transform will be applied exactly once.
+        return _Extract(_xformSources, shutterOffset);
     }
 
 private:
     _InstanceTransformPrimvarValueDataSource(
-        HdSceneIndexBaseRefPtr const &inputSceneIndex,
-        std::shared_ptr<SdfPathSet> const &instances)
-      : _inputSceneIndex(inputSceneIndex)
-      , _instances(instances)
+        std::vector<HdSampledDataSourceHandle> &&xformSources)
+     : _xformSources(std::move(xformSources))
     {
     }
 
-    HdSceneIndexBaseRefPtr const _inputSceneIndex;
-    std::shared_ptr<SdfPathSet> const _instances;
+    const std::vector<HdSampledDataSourceHandle> _xformSources;
 };
 
 // Data source for locator primvars:hydra:instanceTransforms for an instancer.
@@ -423,8 +427,17 @@ public:
             return ds;
         }
         if (name == HdPrimvarSchemaTokens->primvarValue) {
+            std::vector<HdSampledDataSourceHandle> xformSources;
+            xformSources.reserve(_instances->size());
+            for (const SdfPath &instance : *_instances) {
+                HdContainerDataSourceHandle const primSource =
+                    _inputSceneIndex->GetPrim(instance).dataSource;
+                xformSources.push_back(
+                    HdXformSchema::GetFromParent(primSource).GetMatrix());
+            }
+
             return _InstanceTransformPrimvarValueDataSource::New(
-                _inputSceneIndex, _instances);
+                std::move(xformSources));
         }
         // Does the instanceTransform have a role?
         return nullptr;
