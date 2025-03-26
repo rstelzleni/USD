@@ -2662,5 +2662,727 @@ class TestUsdNamespaceEditorDependentEditsBasicClassArcs(
 
         self._RunTestNestedClassClassArcs("specializes")
 
+    def test_TestMixedInheritAndSpecializesClassHierarchies(self):
+        """Tests downstream dependency namespace edits across a mix of inherits
+        and specializes arcs in a single nested class hierarchy."""
+
+        # Layer1 has a nested class hierarchy interleaving inherits and 
+        # specializes arcs and ending in a reference. I.e. /ClassA inherits 
+        # /ClassB specializes /ClassC inherits /ClassD references /Ref. They all
+        # define a Child and GrandChild hierarchy.
+        # Then we have three instance prims that specialize /ClassA, 
+        # /ClassA/Child, and /ClassA/Child/GrandChild respectively.
+        # The direct namespace edits will be performed at the referenced prim 
+        # /Ref to demonstrate how the edits are propagated through the mixed 
+        # class arcs.
+        layer1 = Sdf.Layer.CreateAnonymous("layer1.usda")
+        layer1.ImportFromString('''#usda 1.0
+            def "Instance1" (
+                specializes = </ClassA>
+            ) {}
+
+            def "Instance2" (
+                specializes = </ClassA/Child>
+            ) {}
+
+            def "Instance3" (
+                specializes = </ClassA/Child/GrandChild>
+            ) {}
+
+            class "ClassA" (
+                inherits = </ClassB>
+            ) {
+                int classAAttr
+            
+                def "Child" {
+                    int childAAttr
+
+                    def "GrandChild" {
+                        int grandChildAAttr
+                    }
+                }    
+            }
+
+            class "ClassB" (
+                specializes = </ClassC>
+            ) {
+                int classBAttr
+            
+                def "Child" {
+                    int childBAttr
+
+                    def "GrandChild" {
+                        int grandChildBAttr
+                    }
+                }    
+            }
+
+            class "ClassC" (
+                inherits = </ClassD>
+            ) {
+                int classCAttr
+            
+                def "Child" {
+                    int childCAttr
+
+                    def "GrandChild" {
+                        int grandChildCAttr
+                    }
+                }    
+            }
+
+            class "ClassD" (
+                references = </Ref>
+            ) {
+                int classDAttr
+            
+                def "Child" {
+                    int childDAttr
+
+                    def "GrandChild" {
+                        int grandChildDAttr
+                    }
+                }    
+            }
+
+            class "Ref" {
+                int refAttr
+            
+                def "Child" {
+                    int childAttr
+
+                    def "GrandChild" {
+                        int grandChildAttr
+                    }
+                }    
+            }
+        ''')
+
+        # Layer2 has three instance prims that directly reference the instance 
+        # prims from layer1. It also provides implied class opinions for each of
+        # the class arcs that will implied from the class arcs across the 
+        # references.
+        layer2 = Sdf.Layer.CreateAnonymous("layer2.usda")
+        layer2.ImportFromString('''#usda 1.0
+            def "Instance1" (
+                references = @''' + layer1.identifier + '''@</Instance1>
+            ) {}
+
+            def "Instance2" (
+                references = @''' + layer1.identifier + '''@</Instance2>
+            ) {}
+
+            def "Instance3" (
+                references = @''' + layer1.identifier + '''@</Instance3>
+            ) {}
+
+            over "ClassA" {
+                int implied2ClassAAttr
+            
+                over "Child" {
+                    int implied2ChildAAttr
+
+                    over "GrandChild" {
+                        int implied2GrandChildAAttr
+                    }
+                }    
+            }
+
+            over "ClassB" {
+                int implied2ClassBAttr
+            
+                over "Child" {
+                    int implied2ChildBAttr
+
+                    over "GrandChild" {
+                        int implied2GrandChildBAttr
+                    }
+                }    
+            }
+
+            over "ClassC" {
+                int implied2ClassCAttr
+            
+                over "Child" {
+                    int implied2ChildCAttr
+
+                    over "GrandChild" {
+                        int implied2GrandChildCAttr
+                    }
+                }    
+            }
+
+            over "ClassD" {
+                int implied2ClassDAttr
+            
+                over "Child" {
+                    int implied2ChildDAttr
+
+                    over "GrandChild" {
+                        int implied2GrandChildDAttr
+                    }
+                }    
+            }
+        ''')
+
+
+        # Layer3 is similar to layer2 and has three instance prims that directly
+        # reference the instance prims from layer2 (that in turn reference 
+        # layer1). It also provides implied class opinions for each of the class
+        # arcs that will implied from the class arcs across the references.
+        layer3 = Sdf.Layer.CreateAnonymous("layer3.usda")
+        layer3.ImportFromString('''#usda 1.0
+            def "Instance1" (
+                references = @''' + layer2.identifier + '''@</Instance1>
+            ) {}
+
+            def "Instance2" (
+                references = @''' + layer2.identifier + '''@</Instance2>
+            ) {}
+
+            def "Instance3" (
+                references = @''' + layer2.identifier + '''@</Instance3>
+            ) {}
+
+            over "ClassA" {
+                int implied3ClassAAttr
+            
+                over "Child" {
+                    int implied3ChildAAttr
+
+                    over "GrandChild" {
+                        int implied3GrandChildAAttr
+                    }
+                }    
+            }
+
+            over "ClassB" {
+                int implied3ClassBAttr
+            
+                over "Child" {
+                    int implied3ChildBAttr
+
+                    over "GrandChild" {
+                        int implied3GrandChildBAttr
+                    }
+                }    
+            }
+
+            over "ClassC" {
+                int implied3ClassCAttr
+            
+                over "Child" {
+                    int implied3ChildCAttr
+
+                    over "GrandChild" {
+                        int implied3GrandChildCAttr
+                    }
+                }    
+            }
+
+            over "ClassD" {
+                int implied3ClassDAttr
+            
+                over "Child" {
+                    int implied3ChildDAttr
+
+                    over "GrandChild" {
+                        int implied3GrandChildDAttr
+                    }
+                }    
+            }
+        ''')
+
+        # Open stages for each layer.
+        stage1 = Usd.Stage.Open(layer1, Usd.Stage.LoadAll)
+        stage2 = Usd.Stage.Open(layer2, Usd.Stage.LoadAll)
+        stage3 = Usd.Stage.Open(layer3, Usd.Stage.LoadAll)
+
+        # Create an editor for stage1 so we can edit the base class.
+        editor = Usd.NamespaceEditor(stage1)
+
+        # Only stage3 is added as a dependent stage. Stage2 will be affected by
+        # changes to layer2 that are caused by dependencies on stage3.
+        editor.AddDependentStage(stage3)
+
+        # Verify the composition fields in layer one where the class arcs for 
+        # the class hierarchy are defined in addition to the specializes on the
+        # instance prims.
+        self.assertEqual(self._GetCompositionFieldsInLayer(layer1), 
+            {
+                '/ClassD' : {
+                    'references' : (Sdf.Reference(primPath = '/Ref'),)
+                },
+                '/ClassC' : {
+                    'inherits' : ('/ClassD',)
+                },
+                '/ClassB' : {
+                    'specializes' : ('/ClassC',)
+                },
+                '/ClassA' : {
+                    'inherits' : ('/ClassB',)
+                },
+                '/Instance1' : {
+                    'specializes' : ('/ClassA',)
+                },
+                '/Instance2' : {
+                    'specializes' : ('/ClassA/Child',)
+                },
+                '/Instance3' : {
+                    'specializes' : ('/ClassA/Child/GrandChild',)
+                },
+            })
+
+        # Verify the composition fields in layer2 and layer3 where we just have 
+        # the references to the instance prims. These will not be be changed
+        # across the edits we plan to perform in this test.
+        def _VerifyUnchangedLayer2And3CompositionFields():
+            self.assertEqual(self._GetCompositionFieldsInLayer(layer2), 
+                {
+                    '/Instance1' : {
+                        'references' : (
+                            Sdf.Reference(layer1.identifier, '/Instance1'),)
+                    },
+                    '/Instance2' : {
+                        'references' : (
+                            Sdf.Reference(layer1.identifier, '/Instance2'),)
+                    },
+                    '/Instance3' : {
+                        'references' : (
+                            Sdf.Reference(layer1.identifier, '/Instance3'),)
+                    },
+                })
+            self.assertEqual(self._GetCompositionFieldsInLayer(layer3), 
+                {
+                    '/Instance1' : {
+                        'references' : (
+                            Sdf.Reference(layer2.identifier, '/Instance1'),)
+                    },
+                    '/Instance2' : {
+                        'references' : (
+                            Sdf.Reference(layer2.identifier, '/Instance2'),)
+                    },
+                    '/Instance3' : {
+                        'references' : (
+                            Sdf.Reference(layer2.identifier, '/Instance3'),)
+                    },
+                })
+        
+        _VerifyUnchangedLayer2And3CompositionFields()
+
+        # Verify the initial contents of stage1 which reflects how /ClassA
+        # composes in /ClassB which composes in /ClassC which composes in 
+        # /ClassD which composes in /Ref.
+        refAttrs = ['refAttr']
+        refChildAttrs =  ['childAttr']
+        refGrandChildAttrs = ['grandChildAttr']
+        refChildContents = {
+            '.' : refChildAttrs,
+            'GrandChild' : {
+                '.' : refGrandChildAttrs
+            }
+        }    
+
+        classDAttrs = refAttrs + ['classDAttr']
+        classDChildAttrs =  refChildAttrs + ['childDAttr']
+        classDGrandChildAttrs = refGrandChildAttrs + ['grandChildDAttr']
+        classDChildContents = {
+            '.' : classDChildAttrs,
+            'GrandChild' : {
+                '.' : classDGrandChildAttrs
+            }
+        }    
+
+        classCAttrs = classDAttrs + ['classCAttr']
+        classCChildAttrs =  classDChildAttrs + ['childCAttr']
+        classCGrandChildAttrs = classDGrandChildAttrs + ['grandChildCAttr']
+        classCChildContents = {
+            '.' : classCChildAttrs,
+            'GrandChild' : {
+                '.' : classCGrandChildAttrs
+            }
+        }    
+
+        classBAttrs = classCAttrs + ['classBAttr']
+        classBChildAttrs =  classCChildAttrs + ['childBAttr']
+        classBGrandChildAttrs = classCGrandChildAttrs + ['grandChildBAttr']
+        classBChildContents = {
+            '.' : classBChildAttrs,
+            'GrandChild' : {
+                '.' : classBGrandChildAttrs
+            }
+        }    
+
+        classAAttrs = classBAttrs + ['classAAttr']
+        classAChildAttrs =  classBChildAttrs + ['childAAttr']
+        classAGrandChildAttrs = classBGrandChildAttrs + ['grandChildAAttr']
+        classAChildContents = {
+            '.' : classAChildAttrs,
+            'GrandChild' : {
+                '.' : classAGrandChildAttrs
+            }
+        }    
+
+        self._VerifyStageContents(stage1, {
+            'Ref' : {
+                '.' : refAttrs,
+                'Child' : refChildContents
+            },
+            'ClassD' : {
+                '.' : classDAttrs,
+                'Child' : classDChildContents
+            },
+            'ClassC' : {
+                '.' : classCAttrs,
+                'Child' : classCChildContents
+            },
+            'ClassB' : {
+                '.' : classBAttrs,
+                'Child' : classBChildContents
+            },
+            'ClassA' : {
+                '.' : classAAttrs,
+                'Child' : classAChildContents
+            },
+            # /Instance1 composes /ClassA
+            'Instance1' : {
+                '.' : classAAttrs,
+                'Child' : classAChildContents
+            },
+            # /Instance2 composes /ClassA/Child
+            'Instance2' : classAChildContents,
+            # /Instance3 composes /ClassA/Child/GrandChild
+            'Instance3' : {
+                '.' : classAGrandChildAttrs
+            },
+        })
+
+        # Verify the initial contents of stage2 which reflects how each Instance
+        # composes the corresponding instance in layer1 along with the implied
+        # class opinions in layer2.
+        stage2RefComposedAttrs = classAAttrs + \
+            ['implied2ClassDAttr', 'implied2ClassCAttr', 
+             'implied2ClassBAttr', 'implied2ClassAAttr']
+        stage2ChildComposedAttrs =  classAChildAttrs + \
+            ['implied2ChildDAttr', 'implied2ChildCAttr', 
+             'implied2ChildBAttr', 'implied2ChildAAttr']
+        stage2GrandChildComposedAttrs = classAGrandChildAttrs + \
+            ['implied2GrandChildDAttr', 'implied2GrandChildCAttr', 
+             'implied2GrandChildBAttr', 'implied2GrandChildAAttr']
+        stage2ChildComposedContents = {
+            '.' : stage2ChildComposedAttrs,
+            'GrandChild' : {
+                '.' : stage2GrandChildComposedAttrs
+            }
+        }    
+
+        self._VerifyStageContents(stage2, {
+            'ClassD' : {
+                '.' : ['implied2ClassDAttr'],
+                'Child' : {
+                    '.' : ['implied2ChildDAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied2GrandChildDAttr']
+                    }
+                }    
+            },
+            'ClassC' : {
+                '.' : ['implied2ClassCAttr'],
+                'Child' : {
+                    '.' : ['implied2ChildCAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied2GrandChildCAttr']
+                    }
+                }    
+            },
+            'ClassB' : {
+                '.' : ['implied2ClassBAttr'],
+                'Child' : {
+                    '.' : ['implied2ChildBAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied2GrandChildBAttr']
+                    }
+                }    
+            },
+            'ClassA' : {
+                '.' : ['implied2ClassAAttr'],
+                'Child' : {
+                    '.' : ['implied2ChildAAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied2GrandChildAAttr']
+                    }
+                }    
+            },
+            'Instance1' : {
+                '.' : stage2RefComposedAttrs, 
+                'Child' : stage2ChildComposedContents,
+            },
+            'Instance2' : stage2ChildComposedContents,
+            'Instance3' : {
+                '.' : stage2GrandChildComposedAttrs
+            },
+        })
+
+        # Verify the initial contents of stage3 which reflects how each Instance
+        # composes the corresponding instance in layer2 along with the implied
+        # class opinions in layer3.
+        stage3RefComposedAttrs = stage2RefComposedAttrs + \
+            ['implied3ClassDAttr', 'implied3ClassCAttr', 
+             'implied3ClassBAttr', 'implied3ClassAAttr']
+        stage3ChildComposedAttrs =  stage2ChildComposedAttrs + \
+            ['implied3ChildDAttr', 'implied3ChildCAttr', 
+             'implied3ChildBAttr', 'implied3ChildAAttr']
+        stage3GrandChildComposedAttrs = stage2GrandChildComposedAttrs + \
+            ['implied3GrandChildDAttr', 'implied3GrandChildCAttr', 
+             'implied3GrandChildBAttr', 'implied3GrandChildAAttr']
+        stage3ChildComposedContents = {
+            '.' : stage3ChildComposedAttrs,
+            'GrandChild' : {
+                '.' : stage3GrandChildComposedAttrs
+            }
+        }    
+
+        self._VerifyStageContents(stage3, {
+            'ClassD' : {
+                '.' : ['implied3ClassDAttr'],
+                'Child' : {
+                    '.' : ['implied3ChildDAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied3GrandChildDAttr']
+                    }
+                }    
+            },
+            'ClassC' : {
+                '.' : ['implied3ClassCAttr'],
+                'Child' : {
+                    '.' : ['implied3ChildCAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied3GrandChildCAttr']
+                    }
+                }    
+            },
+            'ClassB' : {
+                '.' : ['implied3ClassBAttr'],
+                'Child' : {
+                    '.' : ['implied3ChildBAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied3GrandChildBAttr']
+                    }
+                }    
+            },
+            'ClassA' : {
+                '.' : ['implied3ClassAAttr'],
+                'Child' : {
+                    '.' : ['implied3ChildAAttr'],
+                    'GrandChild' : {
+                        '.' : ['implied3GrandChildAAttr']
+                    }
+                }    
+            },
+            'Instance1' : {
+                '.' : stage3RefComposedAttrs,
+                'Child' : stage3ChildComposedContents
+            },
+            'Instance2' : stage3ChildComposedContents,
+            'Instance3' : {
+                '.' : stage3GrandChildComposedAttrs
+            },
+        })
+
+        # Edit: Rename /Ref/Child to to RenamedChild on stage1
+        with self.ApplyEdits(editor, "Rename /Ref/Child -> /Ref/RenamedChild"):
+            self.assertTrue(
+                editor.MovePrimAtPath("/Ref/Child", "/Ref/RenamedChild"))
+
+        # Verify the changed composition fields on layer1. Only the specializes 
+        # in /Instance1 and /Instance2 on layer1 have been updated to reflect
+        # that /ClassA/Child has been moved to /ClassA/RenamedChild in response
+        # to the dependencies on /Ref/Child across all the class arcs.
+        self.assertEqual(self._GetCompositionFieldsInLayer(layer1), 
+            {
+                '/ClassD' : {
+                    'references' : (Sdf.Reference(primPath = '/Ref'),)
+                },
+                '/ClassC' : {
+                    'inherits' : ('/ClassD',)
+                },
+                '/ClassB' : {
+                    'specializes' : ('/ClassC',)
+                },
+                '/ClassA' : {
+                    'inherits' : ('/ClassB',)
+                },
+                '/Instance1' : {
+                    'specializes' : ('/ClassA',)
+                },
+                '/Instance2' : {
+                    'specializes' : ('/ClassA/RenamedChild',)
+                },
+                '/Instance3' : {
+                    'specializes' : ('/ClassA/RenamedChild/GrandChild',)
+                },
+            })
+
+        # Verify that composition fiels in layer2 and layer3 remain unchanged
+        _VerifyUnchangedLayer2And3CompositionFields()
+
+        # Verify the changed contents of stage1 where /Ref/Child is renamed to
+        # /Ref/RenamedChild and this is propagated up through each class arc so
+        # that ClassD through ClassA and Instance1 have all had their "Child"
+        # prims fully renamed to "RenamedChild". The contents of /Instance2 and
+        # /Instance3 are completely unchanged as their specializes arcs were 
+        # updated to refer to the renamed class paths.
+        self._VerifyStageContents(stage1, {
+            'Ref' : {
+                '.' : refAttrs,
+                'RenamedChild' : refChildContents
+            },
+            'ClassD' : {
+                '.' : classDAttrs,
+                'RenamedChild' : classDChildContents
+            },
+            'ClassC' : {
+                '.' : classCAttrs,
+                'RenamedChild' : classCChildContents
+            },
+            'ClassB' : {
+                '.' : classBAttrs,
+                'RenamedChild' : classBChildContents
+            },
+            'ClassA' : {
+                '.' : classAAttrs,
+                'RenamedChild' : classAChildContents
+            },
+            'Instance1' : {
+                '.' : classAAttrs,
+                'RenamedChild' : classAChildContents
+            },
+            'Instance2' : classAChildContents,
+            'Instance3' : {
+                '.' : classAGrandChildAttrs
+            },
+        })
+
+        # XXX: The verifications of stage2 and stage3 contents are commnented
+        # out do to a bug/limitation with the prim index graph that prevents us
+        # from being able to find all the implied class spec dependencies when
+        # inherits arcs are nested under specializes arcs.
+
+        # Verify the changed contents of stage2 where "Child" is renamed to
+        # "RenamedChild" under every implied class spec to match the renames in
+        # classes they were implied from. Instance1 has its child prim "Child"
+        # fully renamed to "RenamedChild" because of the rename across its
+        # reference. The contents of /Instance2 and /Instance3 are completely 
+        # unchanged as the composed prims they reference were unchanged due the
+        # the changes in layer1.
+        # 
+        # Note that the changes reflected in stage2 are only due to the 
+        # dependencies in stage3 on all the specs in layer2 as stage2 was not 
+        # added as a dependent stage of the namespace editor. If stage3 didn't 
+        # have prims that depend on these layer2 specs, the layer2 specs would
+        # not have updated to reflect the rename.
+        #
+        # self._VerifyStageContents(stage2, {
+        #     'ClassD' : {
+        #         '.' : ['implied2ClassDAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied2ChildDAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied2GrandChildDAttr']
+        #             }
+        #         }    
+        #     },
+        #     'ClassC' : {
+        #         '.' : ['implied2ClassCAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied2ChildCAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied2GrandChildCAttr']
+        #             }
+        #         }    
+        #     },
+        #     'ClassB' : {
+        #         '.' : ['implied2ClassBAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied2ChildBAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied2GrandChildBAttr']
+        #             }
+        #         }    
+        #     },
+        #     'ClassA' : {
+        #         '.' : ['implied2ClassAAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied2ChildAAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied2GrandChildAAttr']
+        #             }
+        #         }    
+        #     },
+        #     'Instance1' : {
+        #         '.' : stage2RefComposedAttrs, 
+        #         'RenamedChild' : stage2ChildComposedContents,
+        #     },
+        #     'Instance2' : stage2ChildComposedContents,
+        #     'Instance3' : {
+        #         '.' : stage2GrandChildComposedAttrs
+        #     },
+        # })
+
+        # Verify the changed contents of stage3 where "Child" is renamed to
+        # "RenamedChild" under every implied class spec to match the renames in
+        # classes they were implied from. Instance1 has its child prim "Child"
+        # fully renamed to "RenamedChild" because of the rename across its
+        # reference. The contents of /Instance2 and /Instance3 are completely 
+        # unchanged as the composed prims they reference in layer2 were 
+        # unchanged due the the changes in layer1.
+        #
+        # self._VerifyStageContents(stage3, {
+        #     'ClassD' : {
+        #         '.' : ['implied3ClassDAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied3ChildDAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied3GrandChildDAttr']
+        #             }
+        #         }    
+        #     },
+        #     'ClassC' : {
+        #         '.' : ['implied3ClassCAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied3ChildCAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied3GrandChildCAttr']
+        #             }
+        #         }    
+        #     },
+        #     'ClassB' : {
+        #         '.' : ['implied3ClassBAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied3ChildBAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied3GrandChildBAttr']
+        #             }
+        #         }    
+        #     },
+        #     'ClassA' : {
+        #         '.' : ['implied3ClassAAttr'],
+        #         'RenamedChild' : {
+        #             '.' : ['implied3ChildAAttr'],
+        #             'GrandChild' : {
+        #                 '.' : ['implied3GrandChildAAttr']
+        #             }
+        #         }    
+        #     },
+        #     'Instance1' : {
+        #         '.' : stage3RefComposedAttrs,
+        #         'RenamedChild' : stage3ChildComposedContents
+        #     },
+        #     'Instance2' : stage3ChildComposedContents,
+        #     'Instance3' : {
+        #         '.' : stage3GrandChildComposedAttrs
+        #     },
+        # })
+
 if __name__ == '__main__':
     unittest.main()
