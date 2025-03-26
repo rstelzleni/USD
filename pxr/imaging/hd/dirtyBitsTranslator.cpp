@@ -393,6 +393,9 @@ HdDirtyBitsTranslator::InstancerDirtyBitsToLocatorSet(TfToken const& primType,
     if (bits & HdChangeTracker::DirtyPrimvar) {
         set->append(HdPrimvarsSchema::GetDefaultLocator());
     }
+    if (bits & HdChangeTracker::DirtyVisibility) {
+        set->append(HdVisibilitySchema::GetDefaultLocator());
+    }
     if (bits & HdChangeTracker::DirtyTransform) {
         set->append(HdXformSchema::GetDefaultLocator());
     }
@@ -1017,6 +1020,9 @@ HdDirtyBitsTranslator::InstancerLocatorSetToDirtyBits(
     }
     if (_FindLocator(HdPrimvarsSchema::GetDefaultLocator(), end, &it)) {
         bits |= HdChangeTracker::DirtyPrimvar;
+    }
+    if (_FindLocator(HdVisibilitySchema::GetDefaultLocator(), end, &it)) {
+        bits |= HdChangeTracker::DirtyVisibility;
     }
     if (_FindLocator(HdXformSchema::GetDefaultLocator(), end, &it)) {
         bits |= HdChangeTracker::DirtyTransform;

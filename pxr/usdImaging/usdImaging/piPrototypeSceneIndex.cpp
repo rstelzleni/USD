@@ -71,10 +71,14 @@ _ComputePrototypeRootOverlaySource(const SdfPath &instancer)
                     HdRetainedTypedSampledDataSource<bool>::New(
                         true))
                 .Build(),
+            // We ignore the visibility authored on a prototype instanced
+            // by a point instancer in USD.
             HdVisibilitySchema::GetSchemaToken(),
-            HdRetainedContainerDataSource::New(
-                HdVisibilitySchemaTokens->visibility,
-                HdBlockDataSource::New()));
+            HdVisibilitySchema::Builder()
+                .SetVisibility(
+                    HdRetainedTypedSampledDataSource<bool>::New(
+                        true))
+                .Build());
     return ds;
 }
 

@@ -76,6 +76,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 TF_DEFINE_PUBLIC_TOKENS(HdLegacyPrimTypeTokens, HD_LEGACY_PRIMTYPE_TOKENS);
 
+TF_DEFINE_PUBLIC_TOKENS(HdLegacyFlagTokens, HD_LEGACY_FLAG_TOKENS);
+
 // XXX: currently private and duplicated where used so as to not yet formally
 //      define this convention.
 TF_DEFINE_PRIVATE_TOKENS(
@@ -1487,6 +1489,7 @@ public:
         TfTokenVector results;
         results.push_back(HdInstancerTopologySchemaTokens->prototypes);
         results.push_back(HdInstancerTopologySchemaTokens->instanceIndices);
+        results.push_back(HdLegacyFlagTokens->isLegacyInstancer);
         return results;
     }
 
@@ -1498,6 +1501,8 @@ public:
         } else if (name == HdInstancerTopologySchemaTokens->instanceIndices) {
             return Hd_InstanceIndicesDataSource::New(
                     _id, _sceneDelegate, _protos);
+        } else if (name == HdLegacyFlagTokens->isLegacyInstancer) {
+            return HdRetainedTypedSampledDataSource<bool>::New(true);
         } else {
             return nullptr;
         }
