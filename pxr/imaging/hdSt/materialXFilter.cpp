@@ -1287,7 +1287,13 @@ _IsTopologicalShader(TfToken const& nodeId)
     const SdrShaderNodeConstPtr sdrNode = 
         sdrRegistry.GetShaderNodeByIdentifierAndType(nodeId, _tokens->mtlx);
 
-    return sdrNode && topologicalTokenSet.count(sdrNode->GetFamily()) > 0;
+    if (sdrNode) {
+        return topologicalTokenSet.count(sdrNode->GetFamily()) > 0;
+    }
+
+    // Swizzle nodes were topolgical in MaterialX v1.38 but were removed in 
+    // v1.39, so they won't be caught above if running with v1.39.
+    return TfStringStartsWith(nodeId.GetString(), "ND_swizzle_");
 }
 
 // Build the topoNetwork, equivalent to the given hdNetwork but anonymized and 
