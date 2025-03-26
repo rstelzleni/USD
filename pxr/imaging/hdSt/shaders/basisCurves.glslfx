@@ -1202,7 +1202,9 @@ void main(void)
     // shader fast, we use this camera-facing approximation.
     vec3 Neye = vec3(0,0,1);
 
-    vec4 patchCoord = vec4(0);
+    // y = 0.5 to approximate the wire shading the midpoint
+    // of the curve width-wise
+    vec4 patchCoord = vec4(0, 0.5, 0, 0);
 
     color = ShadingTerminal(vec4(Peye, 1), Neye, color, patchCoord);
 
