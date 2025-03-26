@@ -344,6 +344,38 @@ bool TsSpline::DoSidesDiffer(
     return (value == preValue);
 }
 
+template <>
+bool TsSpline::_Eval(
+    const TsTime time,
+    VtValue* const valueOut,
+    const Ts_EvalAspect aspect,
+    const Ts_EvalLocation location) const
+{
+    const std::optional<double> result =
+        Ts_Eval(_GetData(), time, aspect, location);
+
+    if (!result)
+    {
+        return false;
+    }
+
+#define _ASSIGN_TYPE(unused, tuple)                                       \
+    if (GetValueType() == Ts_GetType<TS_SPLINE_VALUE_CPP_TYPE(tuple)>())  \
+    {                                                                     \
+        *valueOut = TS_SPLINE_VALUE_CPP_TYPE(tuple)(*result);             \
+        return true;                                                      \
+    }
+
+    TF_PP_SEQ_FOR_EACH(_ASSIGN_TYPE, ~, TS_SPLINE_SUPPORTED_VALUE_TYPES);
+
+    TF_CODING_ERROR("Unsupported spline value type");
+
+#undef _ASSIGN_TYPE
+
+    return false;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Whole-Spline Queries
 
