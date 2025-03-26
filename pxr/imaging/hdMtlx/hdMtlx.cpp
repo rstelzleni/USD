@@ -708,7 +708,8 @@ HdMtlxCreateMtlxDocumentFromHdMaterialNetworkInterface(
     mxDoc->importLibrary(libraries);
 
     // Get the version of the MaterialX document if specified, otherwise
-    // default to v1.38.
+    // default to v1.38. Note that we should always default to 1.38 to handle 
+    // the case where older USD files have not made use of this config schema. 
     std::string materialXVersionString = "1.38";
     const VtValue materialXVersionValue =
         netInterface->GetMaterialConfigValue(_tokens->mtlxVersion);

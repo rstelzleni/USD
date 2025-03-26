@@ -674,9 +674,8 @@ HdStMaterialXShaderGen<Base>::emitLine(
     // 'occlusion' represents shadow occlusion. We don't use MaterialX's
     // shadow implementation (hwShadowMap is false). Instead, use our own 
     // per-light occlusion value calculated in mxInit() and stored in lightData.
-    // Note: Metal uses float3, Glsl uses vec3, in the line we're looking for.
-    if (_emittingSurfaceNode && (str == "vec3 L = lightShader.direction" ||
-                                 str == "float3 L = lightShader.direction" )) {
+    if (_emittingSurfaceNode &&
+        TfStringEndsWith(str, "L = lightShader.direction")) {
         emitLine(
             "occlusion = u_lightData[activeLightIndex].shadowOcclusion", stage);
     }
