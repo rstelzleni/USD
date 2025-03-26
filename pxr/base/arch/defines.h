@@ -35,7 +35,8 @@
 #if defined(i386) || defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64)
 #define ARCH_CPU_INTEL
-#elif defined(__arm__) || defined(__aarch64__) || defined(_M_ARM)
+#elif defined(__arm__) || defined(__aarch64__) || defined(_M_ARM) || \
+    defined(_M_ARM64)
 #define ARCH_CPU_ARM
 #endif
 
@@ -43,7 +44,8 @@
 // Bits
 //
 
-#if defined(__x86_64__) || defined(__aarch64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(__aarch64__) || defined(_M_X64) || \
+    defined(_M_ARM64)
 #define ARCH_BITS_64
 #else
 #error "Unsupported architecture.  x86_64 or ARM64 required."
