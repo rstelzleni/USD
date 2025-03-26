@@ -2061,6 +2061,13 @@ UsdStage::_SetValue(
 bool
 UsdStage::_ClearValue(UsdTimeCode time, const UsdAttribute &attr)
 {
+    if (time.IsPreTime()) {
+        TF_CODING_ERROR("Cannot clear value on <%s> at the pre-time %lf. "
+                        "Pre-time is meant only for retrieving values at the "
+                        "limit when approaching time from the left.",
+                        attr.GetPath().GetText(), time.GetValue());
+        return false;
+    }
     if (ARCH_UNLIKELY(!_ValidateEditPrim(attr.GetPrim(), "clear attribute value"))) {
         return false;
     }
@@ -6872,6 +6879,13 @@ bool
 UsdStage::_SetValueImpl(
     UsdTimeCode time, const UsdAttribute &attr, const T& newValue)
 {
+    if (time.IsPreTime()) {
+        TF_CODING_ERROR("Cannot set value on <%s> at the pre-time %lf. "
+                        "Pre-time is meant only for retrieving values at the "
+                        "limit when approaching time from the left.",
+                        attr.GetPath().GetText(), time.GetValue());
+        return false;
+    }
     // if we are setting a value block, we don't want type checking
     if (!Usd_ValueContainsBlock(&newValue)) {
         // Find the attribute's value type.

@@ -464,7 +464,9 @@ public:
     ///
     /// \return false and generate an error if type \c T does not match
     /// this attribute's defined scene description type <b>exactly</b>,
-    /// or if there is no existing definition for the attribute.
+    /// or if there is no existing definition for the attribute, or if the
+    /// \p time is pre-time, which is only used to for querying for values at 
+    /// the limit when the time is approached from the left.
     template <typename T>
     bool Set(const T& value, UsdTimeCode time = UsdTimeCode::Default()) const {
         static_assert(!std::is_pointer<T>::value, "");
@@ -517,6 +519,10 @@ public:
     ///
     /// Calling clear when either no value is authored or no spec is present,
     /// is a silent no-op returning true. 
+    ///
+    /// Issue a coding error if \p time is a pre-time, which is only used to
+    /// for querying for values at the limit when the time is approached from
+    /// the left.
     USD_API
     bool ClearAtTime(UsdTimeCode time) const;
 
