@@ -11,6 +11,7 @@
 #include "pxr/usd/sdf/path.h"
 
 #include "pxr/usd/usd/attribute.h"
+#include "pxr/usd/usd/attributeQuery.h"
 #include "pxr/usd/usd/stage.h"
 
 #include "pxr/base/tf/error.h"
@@ -80,6 +81,18 @@ _TestSplineAndAttr(
         TF_AXIOM(attrSuccess == splineSuccess);
     } else {
         TF_AXIOM(splineDouble == attrDouble);
+    }
+    // Lets also try UsdAttributeQuery matching the spline value and the attr
+    // value.
+    UsdAttributeQuery attrQuery(attr);
+    VtValue queryValue;
+    bool querySuccess = attrQuery.Get(&queryValue, 1.0);
+    if (!querySuccess || !splineSuccess) {
+        // If either fails, both should fail to eval / get the value.
+        // This is the case when spline is empty.
+        TF_AXIOM(querySuccess == splineSuccess);
+    } else {
+        TF_AXIOM(queryValue == splineValue);
     }
 }
 

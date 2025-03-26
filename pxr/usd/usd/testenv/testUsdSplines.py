@@ -260,6 +260,10 @@ class TestUsdSplines(unittest.TestCase):
                          attr2.Get(Usd.TimeCode.PreTime(1.0)))
         print(f"Retrieved spline, {case}:")
         print(spline2)
+        self.assertEqual(spline2.Eval(1.0), attr2.Get(1.0))
+        attrQuery = Usd.AttributeQuery(attr2)
+        self.assertTrue(attrQuery)
+        self.assertEqual(attrQuery.Get(1.0), attr2.Get(1.0))
 
         spline3 = attr2.GetMetadata("spline")
         print("Retrieved spline, generic, {case}:")
