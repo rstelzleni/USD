@@ -15,7 +15,7 @@ Our test machines have the following software versions installed.
 | ------------- | -------------------- | ---------------------------- | ------------------------------ |
 | OS            | CentOS Linux 7       | 12.6.3, 14.5 for visionOS  | Windows 10                     |
 | C++ Compiler  | gcc 9.3.1            | Apple clang 13.1.6 (Xcode 13.3)<br>Apple clang 15.0.0 (Xcode 15.4) for visionOS | Visual Studio 2017 15.9     |
-| CMake         | 3.17.5               | 3.19.5                       | 3.25.3                         |
+| CMake         | 3.26.5               | 3.26.5                       | 3.26.4                         |
 | Python        | 3.9.16               | 3.9.13                       | 3.9.13                         |
 | Intel TBB     | 2020.3               | 2020.3                       | 2020.3                         |
 | OneTBB        | 2021.9               | 2021.9                       | 2021.9                         |

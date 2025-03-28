@@ -2564,31 +2564,12 @@ if not isPython64Bit:
 
 if which("cmake"):
     # Check cmake minimum version requirements
-    pyInfo = GetPythonInfo(context)
-    pyVer = (int(pyInfo[3].split('.')[0]), int(pyInfo[3].split('.')[1]))
-    if context.buildPython and pyVer >= (3, 11):
-        # Python 3.11 requires boost 1.82.0, which is not supported prior
-        # to 3.27
-        cmake_required_version = (3, 27)
-    elif context.buildPython and pyVer >= (3, 10):
-        # Python 3.10 is not supported prior to 3.24
-        cmake_required_version = (3, 24)
-    elif IsVisualStudio2022OrGreater():
-        # Visual Studio 2022 is not supported prior to 3.24
-        cmake_required_version = (3, 24)
-    elif Windows():
-        # Visual Studio 2017 and 2019 are verified to work correctly with 3.14
-        cmake_required_version = (3, 14)
-    elif MacOS():
-        # Apple Silicon is not supported prior to 3.19
-        cmake_required_version = (3, 19)
-
+    if MacOS() and context.buildTarget == apple_utils.TARGET_VISIONOS:
         # visionOS support was added in CMake 3.28
-        if context.buildTarget == apple_utils.TARGET_VISIONOS:
-            cmake_required_version = (3, 28)
+        cmake_required_version = (3, 28)
     else:
-        # Linux, and vfx platform CY2020, are verified to work correctly with 3.14
-        cmake_required_version = (3, 14)
+        # OpenUSD requires CMake 3.26+
+        cmake_required_version = (3, 26)
 
     cmake_version = GetCMakeVersion()
     if not cmake_version:
