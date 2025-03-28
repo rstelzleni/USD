@@ -417,6 +417,14 @@ public:
     /// consumer's use-case requires a default value, the consumer will need
     /// to provide one, possibly using GetTypeName().GetDefaultValue().
     ///
+    /// Value resolution first needs to determine the source of the strongest
+    /// value opinion for this attribute at the requested UsdTimeCode \p time.
+    /// But often (i.e. unless the attribute is affected by 
+    /// \ref Usd_Page_ValueClips "Value Clips") the source of the resolved value
+    /// does not vary over time. UsdAttributeQuery finds the source opinion and 
+    /// saves it so that repeated calls to UsdAttributeQuery::Get() avoid 
+    /// redundant work.
+    ///
     /// This templated accessor is designed for high performance data-streaming
     /// applications, allowing one to fetch data into the same container
     /// repeatedly, avoiding memory allocations when possible (VtArray
