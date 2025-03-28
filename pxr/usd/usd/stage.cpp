@@ -4097,7 +4097,17 @@ UsdStage::MuteAndUnmuteLayers(const std::vector<std::string> &muteLayers,
     const auto& cacheChanges = _pendingChanges->pcpChanges.GetCacheChanges();
     const auto result = cacheChanges.find(_cache.get());
     if (result != cacheChanges.end()) {
-        _ProcessChangeLists(result->second.layerChangeListVec);
+        const bool noticesDispatched = 
+            _ProcessChangeLists(result->second.layerChangeListVec);
+        
+        // In order to preserve behavior that existed before finer grained 
+        // change notifications, if all layers that were muted and unmuted were
+        // empty, we still trigger Objects/StageContents changed notifications.
+        if (!noticesDispatched) {
+            UsdNotice::ObjectsChanged::_PathsToChangesMap resyncChanges;
+            UsdNotice::ObjectsChanged(self, &resyncChanges).Send(self);
+            UsdNotice::StageContentsChanged(self).Send(self);
+        }
     }
 }
 
@@ -4393,14 +4403,14 @@ UsdStage::_HandleLayersDidChange(
     _ProcessChangeLists(n.GetChangeListVec());
 }
 
-void UsdStage::_ProcessChangeLists(
+bool UsdStage::_ProcessChangeLists(
     const SdfLayerChangeListVec & changeListVec)
 {
     // Callers of this function are expected to have  set up _PendingChanges.
     // We will merge in all of the information from layer changes so it can 
     // be processed later.
     if (!TF_VERIFY(_pendingChanges)) {
-        return;
+        return false;
     }
 
     // Keep track of paths to USD objects that need to be recomposed or
@@ -4588,14 +4598,14 @@ void UsdStage::_ProcessChangeLists(
     // However, the _PathsToChangesMap objects in _pendingChanges may hold
     // raw pointers to entries stored in the notice, so we must process these
     // changes immediately while the notice is still alive.
-    _ProcessPendingChanges();
+    return _ProcessPendingChanges();
 }
 
-void
+bool
 UsdStage::_ProcessPendingChanges()
 {
     if (!TF_VERIFY(_pendingChanges)) {
-        return;
+        return false;
     }
 
     TF_DEBUG(USD_CHANGES).Msg(
@@ -4754,7 +4764,9 @@ UsdStage::_ProcessPendingChanges()
 
         // Receivers can now refresh their caches... or just dirty them
         UsdNotice::StageContentsChanged(self).Send(self);
+        return true;
     }
+    return false;
 }
 
 void

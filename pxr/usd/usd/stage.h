@@ -1880,14 +1880,17 @@ private:
 
     // Pushes changes through PCP to determine invalidation based on 
     // composition metadata.
-    void _ProcessChangeLists(const SdfLayerChangeListVec &);
+    // Returns a value indicating if notices were sent during execution.
+    bool _ProcessChangeLists(const SdfLayerChangeListVec &);
 
     // Update stage contents in response to changes to the asset resolver.
     void _HandleResolverDidChange(const ArNotice::ResolverChanged &);
 
     // Process stage change information stored in _pendingChanges.
     // _pendingChanges will be set to nullptr by the end of the function.
-    void _ProcessPendingChanges();
+    // This function will return true if UsdNotice::ObjectsChanged and 
+    // UsdNotice::StageContentsChanged notices were sent during execution.
+    bool _ProcessPendingChanges();
 
     // Remove scene description for the prim at \p fullPath in the current edit
     // target.
