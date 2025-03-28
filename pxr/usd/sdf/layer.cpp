@@ -1582,6 +1582,47 @@ SdfLayer::GetComment() const
     return _GetValue<string>(SdfFieldKeys->Comment);
 }
 
+/*static*/
+SdfPath 
+SdfLayer::ConvertDefaultPrimTokenToPath(const TfToken &defaultPrim)
+{
+    const std::string &pathString = defaultPrim.GetString();
+    if (!SdfPath::IsValidPathString(pathString)) {
+        return SdfPath();
+    }
+    const SdfPath path(pathString);
+    return path.IsPrimPath()
+        ? path.IsAbsolutePath()
+            ? path
+            : path.MakeAbsolutePath(SdfPath::AbsoluteRootPath())
+        : SdfPath();
+}
+
+/*static*/
+TfToken 
+SdfLayer::ConvertDefaultPrimPathToToken(const SdfPath &defaultPrimPath) 
+{
+    // For root prims we use the root relative path, which
+    // is just the prim name, because this allows the layer to be 
+    // backwards compatible with earlier versions of USD which 
+    // expected the defaultPrim field to only be the name token of a root prim.
+    // For non-root prims, we use the absolute path as it's more
+    // clear than a root relative path (which would be just the path 
+    // without the initial forward slash).
+    if (!defaultPrimPath.IsPrimPath()) {
+        return TfToken();
+    }
+    if (defaultPrimPath.GetPathElementCount() == 1) {
+        return defaultPrimPath.GetNameToken();
+    }
+    if (defaultPrimPath.IsAbsolutePath()) {
+        return defaultPrimPath.GetAsToken();
+
+    }
+    return defaultPrimPath.MakeAbsolutePath(
+        SdfPath::AbsoluteRootPath()).GetAsToken();
+}
+
 void
 SdfLayer::SetDefaultPrim(const TfToken &name)
 {
@@ -1597,16 +1638,8 @@ SdfLayer::GetDefaultPrim() const
 SdfPath
 SdfLayer::GetDefaultPrimAsPath() const
 {
-    std::string pathString = 
-        _GetValue<TfToken>(SdfFieldKeys->DefaultPrim).GetString();
-    SdfPath path = SdfPath::IsValidPathString(pathString)
-        ? SdfPath(pathString)
-        : SdfPath();
-    return path.IsPrimPath()
-        ? path.IsAbsolutePath()
-            ? path
-            : path.MakeAbsolutePath(SdfPath::AbsoluteRootPath())
-        : SdfPath();
+    return ConvertDefaultPrimTokenToPath(
+        _GetValue<TfToken>(SdfFieldKeys->DefaultPrim));
 }
 
 void

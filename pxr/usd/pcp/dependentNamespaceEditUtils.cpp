@@ -716,20 +716,11 @@ _PrimIndexDependentNodeEditProcessor::_AddSpecMoveEdits(
                     {layer, SdfPath::AbsoluteRootPath(), 
                      SdfFieldKeys->DefaultPrim, VtValue()});
             } else {
-                // Get the new defaultPrim path and set it. We set the field
-                // differently depending on whether the path is a root prim
-                // or not. For root prims we use the root relative path, which
-                // is just the prim name, because this allows the layer to be 
-                // backwards compatible with earlier versions of USD which 
-                // expected this field to only be the name token of a root prim.
-                // For non-root prims, we use the absolute path as it's more
-                // clear than a root relative path (which would be just the path 
-                // without the initial forward slash).
+                // Get the new defaultPrim path and set it.
                 const SdfPath newDefaultPrimPath = 
                     defaultPrimPath.ReplacePrefix(oldSpecPath, newSpecPath);
-                TfToken newDefaultPrim = newDefaultPrimPath.IsRootPrimPath() ?
-                    newDefaultPrimPath.GetNameToken() :
-                    newDefaultPrimPath.GetAsToken();
+                TfToken newDefaultPrim = 
+                    SdfLayer::ConvertDefaultPrimPathToToken(newDefaultPrimPath);
                 _edits->compositionFieldEdits.push_back(
                     {layer, SdfPath::AbsoluteRootPath(), 
                     SdfFieldKeys->DefaultPrim, VtValue::Take(newDefaultPrim)});

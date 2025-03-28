@@ -884,20 +884,50 @@ PcpChanges::DidChange(const PcpCache* cache,
 
                 // Treat a change to DefaultPrim as a resync
                 // of that root prim path.
+                //
+                // XXX: This a bit of heavy hammer when the default prim
+                // change only affects prim indexes that have a reference or
+                // payload dependency on the layer's default prim. Treating
+                // the change as a resync of the path causes ANY dependencies
+                // on the old default prim path to be resynced. We really should
+                // handle this in a more efficient manner that only resyncs 
+                // prim indexes that truly depend on the defaultPrim change.
                 auto i = entry.FindInfoChange(SdfFieldKeys->DefaultPrim);
                 if (i != entry.infoChanged.end()) {
-                    // old value.
-                    TfToken token = i->second.first.GetWithDefault<TfToken>();
-                    pathsWithSignificantChanges.insert(
-                        SdfPath::IsValidIdentifier(token)
-                        ? SdfPath::AbsoluteRootPath().AppendChild(token)
-                        : SdfPath::AbsoluteRootPath());
-                    // new value.
-                    token = i->second.second.GetWithDefault<TfToken>();
-                    pathsWithSignificantChanges.insert(
-                        SdfPath::IsValidIdentifier(token)
-                        ? SdfPath::AbsoluteRootPath().AppendChild(token)
-                        : SdfPath::AbsoluteRootPath());
+                    SdfPath oldDefaultPrimPath = 
+                        SdfLayer::ConvertDefaultPrimTokenToPath(
+                            i->second.first.GetWithDefault<TfToken>());
+                    SdfPath newDefaultPrimPath = 
+                        SdfLayer::ConvertDefaultPrimTokenToPath(
+                            i->second.second.GetWithDefault<TfToken>());
+
+                    // Skip if no effective change.
+                    if (newDefaultPrimPath == oldDefaultPrimPath) {
+                        continue;
+                    }
+                    if (!oldDefaultPrimPath.IsEmpty()) {
+                        pathsWithSignificantChanges.insert(
+                            std::move(oldDefaultPrimPath));
+                    } 
+                    // When the old path is empty we mark absolute root path as
+                    // a significant change because prim indexes that have 
+                    // references or payloads that depend on this default prim
+                    // log the dependency to the layer using the absolute root
+                    // path. Thus we have to notify the absolute root path as a
+                    // significant change so that we know that those prim 
+                    // indexes can/need to be rebuilt with the new default prim.
+                    //
+                    // XXX: Note that due to the reasons detailed in the XXX 
+                    // above, this is a pretty drastic measure to mark the 
+                    // root of the layer as a significant change just for the
+                    // default prim metadata change as this can cause all the
+                    // prim indexes in this cache with any dependency on this 
+                    // layer to have to be rebuilt even if none of those 
+                    // dependencies rely on the default prim at all.
+                    else {
+                        pathsWithSignificantChanges.insert(
+                            SdfPath::AbsoluteRootPath());
+                    }
                 }
 
                 // Handle changes that require blowing the layer stack.
