@@ -208,7 +208,7 @@ VdfNetwork::Connect(
     const VdfMask &mask,
     int            atIndex)
 {
-    if (!TF_VERIFY(output)) {
+    if (!TF_VERIFY(output) || !TF_VERIFY(inputNode)) {
         return nullptr;
     }
 
