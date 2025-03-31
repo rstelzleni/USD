@@ -1224,7 +1224,7 @@ def InstallPNG(context, force, buildArgs):
         # 8fc13a8. We explicitly disable this to maintain legacy behavior
         # from v1.6.38, which is what this script used previously.
         # OpenImageIO v2.5.16.0 runs into linker issues otherwise.
-        macArgs = ["-DPNG_FRAMEWORK=OFF"]]
+        macArgs = ["-DPNG_FRAMEWORK=OFF"]
 
         if MacOS() and apple_utils.IsTargetArm(context):
             # Ensure libpng's build doesn't erroneously activate inappropriate
