@@ -1216,20 +1216,20 @@ TIFF = Dependency("TIFF", InstallTIFF, "include/tiff.h")
 ############################################################
 # PNG
 
-PNG_URL = "https://github.com/glennrp/libpng/archive/refs/tags/v1.6.47.zip"
+PNG_URL = "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.47.zip"
 
 def InstallPNG(context, force, buildArgs):
     with CurrentWorkingDirectory(DownloadURL(PNG_URL, context, force)):
-        macArgs = []
+        # Framework builds were enabled by default in v1.6.41 in commit
+        # 8fc13a8. We explicitly disable this to maintain legacy behavior
+        # from v1.6.38, which is what this script used previously.
+        # OpenImageIO v2.5.16.0 runs into linker issues otherwise.
+        macArgs = ["-DPNG_FRAMEWORK=OFF"]]
+
         if MacOS() and apple_utils.IsTargetArm(context):
             # Ensure libpng's build doesn't erroneously activate inappropriate
             # Neon extensions
-            macArgs = ["-DCMAKE_C_FLAGS=\"-DPNG_ARM_NEON_OPT=0\""]
-
-            if context.targetUniversal:
-                PatchFile("scripts/genout.cmake.in",
-                [("CMAKE_OSX_ARCHITECTURES",
-                  "CMAKE_OSX_INTERNAL_ARCHITECTURES")])
+            macArgs += ["-DCMAKE_C_FLAGS=\"-DPNG_ARM_NEON_OPT=0\""]
 
         RunCMake(context, force, buildArgs + macArgs)
 
