@@ -2992,6 +2992,34 @@ pxr_register_test(testUsdImagingGLPreviewSurface_TextureWithToken
         HGIGL_ENABLE_BINDLESS_TEXTURE=1
 )
 
+pxr_register_test(testUsdImagingGLPreviewSurface_OpacityModeTransparent
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage testPreviewSurfaceOpacityModeTransparent.usda -write testPreviewSurfaceOpacityModeTransparent.png"
+    IMAGE_DIFF_COMPARE
+        testPreviewSurfaceOpacityModeTransparent.png
+    FAIL 0.02
+    FAIL_PERCENT 0.01
+    WARN 0.01
+    WARN_PERCENT 0.005
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLPreviewSurface
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+)
+
+pxr_register_test(testUsdImagingGLPreviewSurface_OpacityModePresence
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage testPreviewSurfaceOpacityModePresence.usda -write testPreviewSurfaceOpacityModePresence.png"
+    IMAGE_DIFF_COMPARE
+        testPreviewSurfaceOpacityModePresence.png
+    FAIL 0.02
+    FAIL_PERCENT 0.01
+    WARN 0.01
+    WARN_PERCENT 0.005
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLPreviewSurface
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=1
+)
+
 pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_Fallback
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceFallback.usda -write testPreviewSurfaceFallback.png"
     IMAGE_DIFF_COMPARE
@@ -3284,6 +3312,34 @@ pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_TextureWithToken
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testPreviewSurfaceTextureWithToken.usda -write testPreviewSurfaceTextureWithToken.png"
     IMAGE_DIFF_COMPARE
         testPreviewSurfaceTextureWithToken.png
+    FAIL 0.02
+    FAIL_PERCENT 0.01
+    WARN 0.01
+    WARN_PERCENT 0.005
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLPreviewSurface
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=0
+)
+
+pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_OpacityModeTransparent
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage testPreviewSurfaceOpacityModeTransparent.usda -write testPreviewSurfaceOpacityModeTransparent.png"
+    IMAGE_DIFF_COMPARE
+        testPreviewSurfaceOpacityModeTransparent.png
+    FAIL 0.02
+    FAIL_PERCENT 0.01
+    WARN 0.01
+    WARN_PERCENT 0.005
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLPreviewSurface
+    ENV
+        HGIGL_ENABLE_BINDLESS_TEXTURE=0
+)
+
+pxr_register_test(testUsdImagingGLPreviewSurfaceNonBindless_OpacityModePresence
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage testPreviewSurfaceOpacityModePresence.usda -write testPreviewSurfaceOpacityModePresence.png"
+    IMAGE_DIFF_COMPARE
+        testPreviewSurfaceOpacityModePresence.png
     FAIL 0.02
     FAIL_PERCENT 0.01
     WARN 0.01
