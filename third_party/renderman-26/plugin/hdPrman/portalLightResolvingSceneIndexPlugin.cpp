@@ -27,6 +27,7 @@
 #include "pxr/imaging/hd/visibilitySchema.h"
 #include "pxr/imaging/hd/xformSchema.h"
 #include "pxr/usd/sdf/assetPath.h"
+#include "hdPrman/tokens.h"
 
 #if PXR_VERSION <= 2308
 #include <boost/functional/hash.hpp>
@@ -87,8 +88,6 @@ TF_DEFINE_PRIVATE_TOKENS(
     ((visibleInRefractionPath, "ri:light:visibleInRefractionPath"))
 );
 
-static const char* const _pluginDisplayName = "Prman";
-
 TF_REGISTRY_FUNCTION(TfType)
 {
     HdSceneIndexPluginRegistry::Define<
@@ -100,13 +99,17 @@ TF_REGISTRY_FUNCTION(HdSceneIndexPlugin)
     // We need an insertion point that's *after* general material resolve.
     const HdSceneIndexPluginRegistry::InsertionPhase insertionPhase = 115;
 
-    HdSceneIndexPluginRegistry::GetInstance().RegisterSceneIndexForRenderer(
-        _pluginDisplayName,
-        _tokens->sceneIndexPluginName,
-        nullptr,
-        insertionPhase,
-        HdSceneIndexPluginRegistry::InsertionOrderAtStart);
+    for(const auto& pluginDisplayName : HdPrman_GetPluginDisplayNames()) {
+        HdSceneIndexPluginRegistry::GetInstance().RegisterSceneIndexForRenderer(
+            pluginDisplayName,
+            _tokens->sceneIndexPluginName,
+            nullptr,
+            insertionPhase,
+            HdSceneIndexPluginRegistry::InsertionOrderAtStart);
+    }
 }
+
+#if PXR_VERSION >= 2502 // only from H21
 
 namespace {
 
@@ -726,6 +729,8 @@ _PortalLightResolvingSceneIndex::_RemoveMappingsForDome(
 
 } // anonymous namespace
 
+#endif
+
 //
 // HdPrman_PortalLightResolvingSceneIndexPlugin
 //
@@ -738,7 +743,11 @@ HdPrman_PortalLightResolvingSceneIndexPlugin::_AppendSceneIndex(
     const HdSceneIndexBaseRefPtr& inputScene,
     const HdContainerDataSourceHandle& inputArgs)
 {
+#if PXR_VERSION >= 2502
     return _PortalLightResolvingSceneIndex::New(inputScene);
+#else
+    return inputScene;
+#endif
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
