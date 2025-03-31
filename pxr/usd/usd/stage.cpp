@@ -4243,12 +4243,14 @@ _AddAffectedStagePaths(const SdfLayerHandle &layer, const SdfPath &path,
     const bool filterForExistingCachesOnly = false;
 
     // If this site is in the cache's layerStack, we always add it here.
+    // unless the path contains a variant selection as variant selections
+    // are never part of a valid namespace path.
     // We do this instead of including PcpDependencyTypeRoot in depTypes
     // because we do not want to include root deps on those sites, just
     // the other kinds of inbound deps.
-    if (cache.GetLayerStack()->HasLayer(layer)) {
-        const SdfPath depPath = path.StripAllVariantSelections();
-        _AddToChangedPaths(changedPaths, depPath, extraData...);
+    if (cache.GetLayerStack()->HasLayer(layer) && 
+            !path.ContainsPrimVariantSelection()) {
+        _AddToChangedPaths(changedPaths, path, extraData...);
     }
 
     for (const PcpDependency& dep:
@@ -4553,6 +4555,50 @@ bool UsdStage::_ProcessChangeLists(
             if (!willRecompose) {
                 _AddAffectedStagePaths(layer, sdfPath, 
                         *_cache, &otherInfoChanges, &entry);
+
+                // In the special case where a variant spec was added or 
+                // deleted, but no prim index in the cache depends on the
+                // particular variant selection, we need to notify that the
+                // parent prim may have had its composed variant options
+                // changed. We do this by spoofing a "variantChildren" info
+                // changed entry for the parent prim which to reflect that
+                // that it has composed info change that doesn't affect its
+                // actual composition.
+                if (sdfPath.IsPrimVariantSelectionPath() && 
+                    (entry.flags.didAddInertPrim || 
+                     entry.flags.didAddNonInertPrim || 
+                     entry.flags.didRemoveInertPrim ||
+                     entry.flags.didRemoveNonInertPrim))  {
+
+                    // Create a spoofed entry that just indicates that
+                    // variantChildren has changed but has no info about the
+                    // old or new values. This is sufficient to provide the
+                    // ObjectsChanged notice with info needed to notify clients
+                    // that its composed variants may have changed.
+                    static SdfChangeList::Entry variantEntry = [](){
+                        SdfChangeList::Entry entry;
+                        entry.infoChanged.emplace_back(
+                            SdfChildrenKeys->VariantChildren,
+                            std::make_pair(VtValue(), VtValue()));
+                        return entry;
+                    }();
+                        
+                    // If the changed layer is in the caches root layer stack
+                    // log this as info change on the equivalent namespace path
+                    // of the variant selection path. This is similar to finding
+                    // the "root" dependency.
+                    if (_cache->GetLayerStack()->HasLayer(layer)) {
+                        _AddToChangedPaths(&otherInfoChanges, 
+                            sdfPath.GetPrimPath().StripAllVariantSelections(), 
+                            &variantEntry);
+                    }
+
+                    // Add any paths that depend on the prim path of the variant
+                    // selection as these will have their composed variants 
+                    // potentially changed.
+                    _AddAffectedStagePaths(layer, sdfPath.GetPrimPath(), 
+                        *_cache, &otherInfoChanges, &variantEntry);
+                }
             }
         }
     }
