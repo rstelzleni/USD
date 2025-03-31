@@ -72,17 +72,11 @@ EfDependencyCache::WillDeleteConnection(
             continue;
         }
 
-        // If this entry is not being incrementally updated, drop it entirely.
-        //
-        // XXX: We should only do this if the source node is contained in the
-        //      traversal cache entry.
-        if (!entry.updateIncrementally) {
-            entry.Invalidate();
-            continue;
-        }
-
-        // If the traversal contains both the source and target nodes, the
-        // entire traversal has become invalid.
+        // If the traversal contains both the source and target nodes, we always
+        // have to entirely invalidate the entry, since we can't incrementally
+        // update in response to deleting connections. Otherwise, the connection
+        // to be deleted isn't in the cached traversal and therefore we can
+        // ignore it.
         if (entry.ContainsNode(connection.GetSourceNode()) &&
             entry.ContainsNode(connection.GetTargetNode())) {
             entry.Invalidate();
@@ -113,20 +107,23 @@ EfDependencyCache::DidConnect(const VdfConnection &connection)
             continue;
         }
 
-        // If this entry is not being incrementally updated, drop it entirely.
-        //
-        // XXX: We should only do this if the source node is contained in the
-        //      traversal cache entry.
+        // If the traversal doesn't contain the source node, then the addition
+        // of this connection can't affect the cached traversal.
+        if (!entry.ContainsNode(connection.GetSourceNode())) {
+            continue;
+        }
+
+        // If this entry is not being incrementally updated, invalidated it
+        // entirely.
         if (!entry.updateIncrementally) {
             entry.Invalidate();
             continue;
         }
 
-        // If the connection source node is in the cached traversal, note the
-        // newly added connection, since we need to consider it when we do a
-        // lazy incremental update.
-        if (connection.GetMask().IsAnySet() &&
-            entry.ContainsNode(connection.GetSourceNode())) {
+        // Otherwise, we can incrementally update the cached traversal for the
+        // added connection. We do that update lazily, so here we just record
+        // information that identifies the new connection.
+        if (connection.GetMask().IsAnySet()) {
             entry.newConnections.emplace_back(
                 connection.GetSourceNode().GetId(),
                 connection.GetSourceOutput().GetName(),
