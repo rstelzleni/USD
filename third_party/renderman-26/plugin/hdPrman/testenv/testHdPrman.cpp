@@ -74,7 +74,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     ((pixelVariance, "ri:Ri:PixelVariance"))
 );
 
-TF_DEFINE_ENV_SETTING(TEST_HD_PRMAN_ENABLE_SCENE_INDEX, false,
+TF_DEFINE_ENV_SETTING(TEST_HD_PRMAN_ENABLE_SCENE_INDEX, true,
                       "Use Scene Index API for testHdPrman.");
 
 TF_DEFINE_ENV_SETTING(TEST_HD_PRMAN_USE_RENDER_SETTINGS_PRIM, true,
