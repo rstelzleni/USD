@@ -48,15 +48,10 @@ struct Exec_UncompilationRule
     TfToken inputName;
     EsfEditReason reasons;
 
-    /// The default constructor emits a TF_VERIFY error.
+    /// The default constructor is deleted because there is no reasonable
+    /// default value for nodeId.
     ///
-    /// There is no reasonable default VdfId value for nodeId, which makes
-    /// default-constructed uncompilation rules problematic. We cannot delete
-    /// this constructor, because it must be defined to support
-    /// tbb::concurrent_vector::resize. We only call resize to shrink the vector
-    /// (never to grow it), so this default constructor should never be called.
-    ///
-    Exec_UncompilationRule();
+    Exec_UncompilationRule() = delete;
 
     /// Constructs a rule for uncompiling a node.
     Exec_UncompilationRule(VdfId nodeId_, EsfEditReason reasons_)

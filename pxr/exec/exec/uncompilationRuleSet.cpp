@@ -6,19 +6,13 @@
 //
 #include "pxr/exec/exec/uncompilationRuleSet.h"
 
-#include "pxr/base/tf/diagnosticLite.h"
+#include "pxr/exec/esf/editReason.h"
 #include "pxr/exec/vdf/node.h"
 
 #include <iterator>
 #include <sstream>
 
 PXR_NAMESPACE_OPEN_SCOPE
-
-Exec_UncompilationRule::Exec_UncompilationRule()
-    : nodeId(0)
-{
-    TF_VERIFY(false, "Exec_UncompilationRule has no reasonable default");
-}
 
 Exec_UncompilationRuleSet::iterator
 Exec_UncompilationRuleSet::erase(
@@ -28,7 +22,13 @@ Exec_UncompilationRuleSet::erase(
     if (it != last) {
         std::swap(*it, *last);
     }
-    _rules.resize(_rules.size() - 1);
+
+    // To handle the case of growing the vector, resize needs a value to
+    // initialize new elements. However, we are only shrinking the vector, so
+    // this value will never be used.
+    _rules.resize(
+        _rules.size() - 1,
+        Exec_UncompilationRule(0, EsfEditReason::None));
     return it;
 }
 
