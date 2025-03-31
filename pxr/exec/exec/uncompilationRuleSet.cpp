@@ -6,12 +6,19 @@
 //
 #include "pxr/exec/exec/uncompilationRuleSet.h"
 
+#include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/exec/vdf/node.h"
 
 #include <iterator>
 #include <sstream>
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+Exec_UncompilationRule::Exec_UncompilationRule()
+    : nodeId(0)
+{
+    TF_VERIFY(false, "Exec_UncompilationRule has no reasonable default");
+}
 
 Exec_UncompilationRuleSet::iterator
 Exec_UncompilationRuleSet::erase(

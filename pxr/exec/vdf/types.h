@@ -21,7 +21,6 @@
 #include "pxr/base/tf/smallVector.h"
 
 #include <functional>
-#include <limits>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -106,9 +105,6 @@ typedef
 
 /// The unique identifier type for Vdf objects.
 typedef uint64_t VdfId;
-
-/// Value representing an invalid VdfId.
-constexpr VdfId VDF_ID_UNKNOWN = std::numeric_limits<VdfId>::max();
 
 /// The index type for Vdf objects.
 typedef uint32_t VdfIndex;

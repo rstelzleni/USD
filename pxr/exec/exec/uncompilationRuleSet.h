@@ -20,7 +20,6 @@
 #include "tbb/concurrent_vector.h"
 
 #include <initializer_list>
-#include <limits>
 #include <string>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -49,12 +48,15 @@ struct Exec_UncompilationRule
     TfToken inputName;
     EsfEditReason reasons;
 
-    /// Default constructed rules refer to a non-existing node.
+    /// The default constructor emits a TF_VERIFY error.
     ///
-    /// The default constructor is necessary to support
-    /// tbb::concurrent_vector::resize.
+    /// There is no reasonable default VdfId value for nodeId, which makes
+    /// default-constructed uncompilation rules problematic. We cannot delete
+    /// this constructor, because it must be defined to support
+    /// tbb::concurrent_vector::resize. We only call resize to shrink the vector
+    /// (never to grow it), so this default constructor should never be called.
     ///
-    Exec_UncompilationRule() : nodeId(VDF_ID_UNKNOWN) {}
+    Exec_UncompilationRule();
 
     /// Constructs a rule for uncompiling a node.
     Exec_UncompilationRule(VdfId nodeId_, EsfEditReason reasons_)
