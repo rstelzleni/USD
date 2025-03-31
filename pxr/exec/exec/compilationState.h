@@ -54,9 +54,15 @@ public:
         return _compiledOutputs;
     }
 
+    class OutputTasksAccess {
+        friend class Exec_CompilationTask;
+
+        static Exec_CompilerTaskSync &_Get(Exec_CompilationState *state) {
+            return state->_outputTasks;
+        }
+    };
+
 private:
-    // Exec_CompilationTask needs access to _outputTasks
-    friend class Exec_CompilationTask;
 
     const EsfStage &_stage;
     Exec_CompilerTaskSync _outputTasks;

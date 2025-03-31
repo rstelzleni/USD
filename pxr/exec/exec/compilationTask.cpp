@@ -14,7 +14,8 @@ Exec_CompilerTaskSync::ClaimResult
 Exec_CompilationTask::TaskDependencies::ClaimSubtask(const Exec_OutputKey &key)
 {
     const Exec_CompilerTaskSync::ClaimResult result =
-        _compilationState._outputTasks.Claim(key, _successor);
+        Exec_CompilationState::OutputTasksAccess::_Get(&_compilationState)
+            .Claim(key, _successor);
     if (result == Exec_CompilerTaskSync::ClaimResult::Wait) {
         _hasDependencies = true;
     }
@@ -32,7 +33,8 @@ Exec_CompilationTask::execute()
 void
 Exec_CompilationTask::_MarkDone(const Exec_OutputKey &key)
 {
-    _compilationState._outputTasks.MarkDone(key);
+    Exec_CompilationState::OutputTasksAccess::_Get(&_compilationState)
+        .MarkDone(key);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
