@@ -568,6 +568,11 @@ void HdPrman_RenderSettings::_Sync(
         *dirtyBits & HdRenderSettings::DirtyNamespacedSettings) {
         _UpdateFrame(terminalSi, &_settingsOptions);
     }
+#else
+        // Ignore the frame here for older usd versions.
+        // It doesn't get updated properly, but if we leave it here,
+        // it will win in composition in HdPrman_RenderParam::SetRileyOptions().
+        _settingsOptions.Remove(RixStr.k_Ri_Frame);
 #endif
 
     // XXX Preserve existing data flow for clients that don't populate the
