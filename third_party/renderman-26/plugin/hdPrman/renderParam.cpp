@@ -3658,7 +3658,7 @@ HdPrman_RenderParam::_CreateRileyDisplay(
     {
         HdPrman_RenderViewDesc::DisplayDesc displayDesc;
         displayDesc.name = productName;
-        if ((productName == RixStr.k_framebuffer) && !isXpu && _useQN)
+        if ((productName == RixStr.k_framebuffer) && _useQN)
         {
             // interactive denoiser is turned on
             std::string hdPrmanPath;
