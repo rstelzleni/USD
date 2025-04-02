@@ -28,6 +28,7 @@
 #include "pxr/imaging/hd/utils.h"
 #include "pxr/imaging/hdsi/primTypePruningSceneIndex.h"
 #include "pxr/imaging/hdsi/legacyDisplayStyleOverrideSceneIndex.h"
+#include "pxr/imaging/hdsi/prefixPathPruningSceneIndex.h"
 #include "pxr/imaging/hdsi/sceneGlobalsSceneIndex.h"
 #include "pxr/imaging/hdx/pickTask.h"
 #include "pxr/imaging/hdx/task.h"
@@ -1172,6 +1173,15 @@ UsdImagingGLEngine::_AppendOverridesSceneIndices(
     HdSceneIndexBaseRefPtr const &inputScene)
 {
     HdSceneIndexBaseRefPtr sceneIndex = inputScene;
+
+    const HdContainerDataSourceHandle prefixPathPruningInputArgs =
+        HdRetainedContainerDataSource::New(
+            HdsiPrefixPathPruningSceneIndexTokens->excludePathPrefixes,
+            HdRetainedTypedSampledDataSource<SdfPathVector>::New(
+                _excludedPrimPaths));
+    
+    sceneIndex = HdsiPrefixPathPruningSceneIndex::New(
+        sceneIndex, prefixPathPruningInputArgs);
 
     static HdContainerDataSourceHandle const materialPruningInputArgs =
         HdRetainedContainerDataSource::New(
