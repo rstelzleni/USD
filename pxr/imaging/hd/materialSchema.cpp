@@ -90,19 +90,31 @@ HdMaterialSchema::GetLocatorTerminal(
         HdDataSourceLocator const& locator, TfTokenVector const& contexts)
 {
     if (locator.GetElementCount() >= 4) {
-        static const HdDataSourceLocator terminalsLocator(
-            HdMaterialSchema::GetSchemaToken(), 
+
+        // Always check the universal render context
+        static const HdDataSourceLocator universalTerminalLocator(
+            HdMaterialSchema::GetSchemaToken(),
+            HdMaterialSchemaTokens->universalRenderContext,
             HdMaterialSchemaTokens->terminals
         );
-        if (locator.Intersects(terminalsLocator)) {
-            // Notify all renderer's of universalRenderContext
-            if (locator.GetElement(1) == HdMaterialSchemaTokens->universalRenderContext
-            // Notify if context matches renderer's
-            ||  std::find(contexts.begin(), contexts.end(), locator.GetElement(1)) != contexts.end()) {
+        if (locator.Intersects(universalTerminalLocator)) {
+            return locator.GetElement(3);
+        }
+
+        // Check the render specific contexts
+        for (const TfToken& context : contexts) {
+            const HdDataSourceLocator terminalLocator(
+                HdMaterialSchema::GetSchemaToken(),
+                context,
+                HdMaterialSchemaTokens->terminals
+            );
+            if (locator.Intersects(terminalLocator)) {
                 return locator.GetElement(3);
             }
         }
+
     }
+
     return TfToken();
 }
 
