@@ -1,3 +1,8 @@
+[rmanUsdValidators:PxrRenderTerminalsAPIRelationships]:
+	Doc: Ensures that RenderSettings prims with PxrRenderTerminalsAPI do not define connection attributes for terminal displayFilters, sampleFilters, and integrators. Relationships should be used instead.
+	Keywords: RmanUsdValidators
+	SchemaTypes: UsdRiPxrRenderTerminalsAPI
+	isSuite: False
 [usdGeomValidators:StageMetadataChecker]:
 	Doc: All stages must declare their 'upAxis' and 'metersPerUnit'.
 	Keywords: UsdGeomValidators
