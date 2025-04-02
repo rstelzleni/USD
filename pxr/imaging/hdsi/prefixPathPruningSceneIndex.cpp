@@ -55,31 +55,32 @@ bool
 _IsPrunedImpl(
     const SdfPath &primPath, const SdfPathVector &sortedExcludePaths)
 {
-    // Since the exclude paths are sorted and stripped of descendents,
-    // it suffices to check the lower bound for equality and optionally just
-    // the previous element for a prefix match.
-    // The previous element can be:
-    // (a) a sibling or a sibling descendent prim
-    // (b) an ancestor prim
-    // (c) a prim from a disjoint subtree
+    // Recall that sortedExcludePaths is sorted and stripped of descendents.
+    // For primPath to be pruned, sortedExcludePaths must either contain
+    // primPath or a prefix of primPath.
     //
-    // Only (b) prunes the primPath.
+    // If a prefix of primPath exists, it will be the first element
+    // that is less-than primPath. Thus, what we want here is the first
+    // element that is less-than-or-equal-to primPath.
     //
-    auto it = std::lower_bound(
-        sortedExcludePaths.begin(), sortedExcludePaths.end(), primPath);
-    
-    if (it != sortedExcludePaths.end() && *it == primPath) {
-        return true;
-    }
-    
-    if (it != sortedExcludePaths.begin()) {
-        --it;
-        if (primPath.HasPrefix(*it)) {
-            return true;
-        }
-    }
-    
-    return false;
+    // With the default std::less_than comparator,
+    // lower_bound gives us the first element that is not less than
+    // (i.e. greater-than-or-equal-to) primPath, and
+    // upper_bound gives us the first element that is greater than 
+    // (i.e. not less-than-or-equal-to) primPath.
+    // 
+    // We would need to inspect the element(s) before the returned iterator
+    // to determine if primPath is pruned.
+    // 
+    // Using lower_bound with reverse iterators and the std::greater_than
+    // comparator gives us the first element that is not greater than
+    // (i.e. less-than-or-equal-to) primPath, which is what we want.
+    //
+    auto rit = std::lower_bound(
+        sortedExcludePaths.rbegin(), sortedExcludePaths.rend(), primPath,
+        std::greater<SdfPath>());
+
+    return rit != sortedExcludePaths.rend() && primPath.HasPrefix(*rit);
 }
 
 /// Returns prefix paths in \p a that are not covered by prefix paths in \p b.
