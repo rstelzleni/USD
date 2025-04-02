@@ -2548,6 +2548,8 @@ pxr_register_test(testUsdImagingGLCards
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLCards
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=false
 )
 
 pxr_register_test(testUsdImagingGLCards_anim
@@ -2561,6 +2563,8 @@ pxr_register_test(testUsdImagingGLCards_anim
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLCards
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=false
 )
 
 pxr_register_test(testUsdImagingGLCards_bounds
@@ -2573,6 +2577,22 @@ pxr_register_test(testUsdImagingGLCards_bounds
     WARN_PERCENT 0.05
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLCards
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=false
+)
+
+pxr_register_test(testUsdImagingGLCards_basic
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testCardsBasic.usda -camera /MainCamera -write testCardsBasic.png"
+    IMAGE_DIFF_COMPARE
+        testCardsBasic.png
+    FAIL 0.1
+    FAIL_PERCENT 0.1
+    WARN 0.2
+    WARN_PERCENT 0.05
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLCards
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=false
 )
 
 # XXX: Commenting out while failures are being investigated.
@@ -2588,7 +2608,7 @@ pxr_register_test(testUsdImagingGLCards_bounds
 #     EXPECTED_RETURN_CODE 0
 #     TESTENV testUsdImagingGLCards
 #     ENV
-#         USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+#         USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true
 # )
 
 pxr_register_test(testUsdImagingGLCards_SceneIndex_anim
@@ -2603,7 +2623,7 @@ pxr_register_test(testUsdImagingGLCards_SceneIndex_anim
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLCards
     ENV
-        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true
 )
 
 pxr_register_test(testUsdImagingGLCards_SceneIndex_bounds
@@ -2617,7 +2637,21 @@ pxr_register_test(testUsdImagingGLCards_SceneIndex_bounds
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLCards
     ENV
-        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true
+)
+
+pxr_register_test(testUsdImagingGLCards_SceneIndex_basic
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -shading smooth -frameAll -stage testCardsBasic.usda -camera /MainCamera -write testCardsBasic.png"
+    IMAGE_DIFF_COMPARE
+        testCardsBasic.png
+    FAIL 0.1
+    FAIL_PERCENT 0.1
+    WARN 0.2
+    WARN_PERCENT 0.05
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLCards
+    ENV
+        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true
 )
 
 pxr_register_test(testUsdImagingGLMeshQuadrangulation
