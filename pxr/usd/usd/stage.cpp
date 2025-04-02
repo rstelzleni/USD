@@ -378,7 +378,46 @@ public:
     using PathsToChangesMap = UsdNotice::ObjectsChanged::_PathsToChangesMap;
     PathsToChangesMap recomposeChanges, otherResyncChanges, otherInfoChanges;
     PathsToChangesMap primTypeInfoChanges, assetPathResyncChanges;
+
+    // When a _NamespaceEditsChangeBlock is opened by a UsdNamespaceEditor this
+    // will be populated with the edits we expect to be able to process as 
+    // namespace edits for notice handling.
+    _NamespaceEditsChangeBlock::ExpectedNamespaceEditChangeVector 
+        expectedNamespaceEditChanges;
 };
+
+UsdStage::_NamespaceEditsChangeBlock::_NamespaceEditsChangeBlock(
+    const UsdStagePtr &stage,
+    ExpectedNamespaceEditChangeVector &&expectedChanges) 
+    : _stage(stage)
+    , _localPendingChanges(std::make_unique<_PendingChanges>())
+{
+    if (_stage->_pendingChanges) {
+        TF_CODING_ERROR("Cannot open a namespace editing change block while "
+            "a stage still has pending changes to process.");
+        return;
+    }
+
+    // Opening the change block creates pending changes for the stage and pre-
+    // populates it with expected namespace edit changes.
+    _stage->_pendingChanges = _localPendingChanges.get();
+    _stage->_pendingChanges->expectedNamespaceEditChanges = 
+        std::move(expectedChanges);
+}
+
+UsdStage::_NamespaceEditsChangeBlock::_NamespaceEditsChangeBlock(
+    _NamespaceEditsChangeBlock &&other) = default;
+
+UsdStage::_NamespaceEditsChangeBlock::~_NamespaceEditsChangeBlock() 
+{
+    // It's possible that we end up closing this change block without the stage
+    // having received any change notifications. In that case, the stage will 
+    // not have cleared the pending changes we created for it when opening the
+    // block so we have to make sure to do it here.
+    if (_stage && _stage->_pendingChanges == _localPendingChanges.get()) {
+        _stage->_pendingChanges = nullptr;
+    }
+}
 
 // Object containing information used when resolving an asset path value.
 class Usd_AssetPathContext
@@ -4666,6 +4705,8 @@ UsdStage::_ProcessPendingChanges()
     _PathsToChangesMap& primTypeInfoChanges = _pendingChanges->primTypeInfoChanges;
     _PathsToChangesMap& assetPathResyncChanges = _pendingChanges->assetPathResyncChanges;
 
+    UsdNotice::ObjectsChanged::_PrimResyncInfoMap primResyncsInfo;
+
     _Recompose(changes, &recomposeChanges);
 
     // Filter out all changes to objects beneath instances and remap
@@ -4792,6 +4833,63 @@ UsdStage::_ProcessPendingChanges()
         _editTargetIsLocalLayer = HasLocalLayer(_editTarget.GetLayer());
     }
 
+    // If the UsdNamespaceEditor triggered the changes, there will be expected
+    // namespace edit changes that we have to process before sending notices. We 
+    // process them to generate a map of resync classifications that we add
+    // to the ObjectsChanged notice that downstream clients can use to parse
+    // determine the nature of the resyncs they receive.
+    for (const auto &namespaceChange : 
+            _pendingChanges->expectedNamespaceEditChanges) {
+        // Skip deletes.
+        if (namespaceChange.newPath.IsEmpty()) {
+            continue;
+        }
+
+        // Get the recomposed prim at the new path and compare its prim 
+        // stack with the original prim stack at the old path (which we cached).
+        // The prim not existing or a differing prim stack indicates that we
+        // weren't able to completely perform the namespace edit as desired. 
+        // Skip this change as we can't classify the resyncs of the prims in 
+        // this case.
+        const UsdPrim newPrim = GetPrimAtPath(namespaceChange.newPath);
+        if (!newPrim ||
+            newPrim.GetPrimStack() != namespaceChange.oldPrimStack) {
+            continue;
+        }
+
+        using PrimResyncType = UsdNotice::ObjectsChanged::PrimResyncType;
+        using _PrimResyncInfo = UsdNotice::ObjectsChanged::_PrimResyncInfo;
+
+        if (namespaceChange.oldPath == namespaceChange.newPath) {
+            // If the old and new prim paths match we have an effective no-op
+            // resync.
+            primResyncsInfo.emplace(namespaceChange.oldPath, 
+                _PrimResyncInfo({PrimResyncType::UnchangedPrimStack, SdfPath()}));
+        } else {
+            // Otherwise figure out the actual type of namespace edit we have.
+            // We classify and store both the source and destination resync 
+            // types resulting from the edit, providing the complementary
+            // destination and source paths respectively.
+            PrimResyncType sourceType, destType;
+            if (namespaceChange.oldPath.GetNameToken() == 
+                    namespaceChange.newPath.GetNameToken()) {
+                sourceType = PrimResyncType::ReparentSource;
+                destType = PrimResyncType::ReparentDestination;
+            } else if (namespaceChange.oldPath.GetParentPath() == 
+                        namespaceChange.newPath.GetParentPath()) {
+                sourceType = PrimResyncType::RenameSource;
+                destType = PrimResyncType::RenameDestination;
+            } else {
+                sourceType = PrimResyncType::RenameAndReparentSource;
+                destType = PrimResyncType::RenameAndReparentDestination;
+            }
+            primResyncsInfo.emplace(namespaceChange.oldPath, 
+                _PrimResyncInfo({sourceType, namespaceChange.newPath}));
+            primResyncsInfo.emplace(namespaceChange.newPath, 
+                _PrimResyncInfo({destType, namespaceChange.oldPath}));
+        }
+    }
+
     // Reset _pendingChanges before sending notices so that any changes to
     // this stage that happen in response to the notices are handled
     // properly. The object that _pendingChanges referred to should remain
@@ -4805,7 +4903,8 @@ UsdStage::_ProcessPendingChanges()
 
         // Notify about changed objects.
         UsdNotice::ObjectsChanged(
-            self, &recomposeChanges, &otherInfoChanges, &assetPathResyncChanges)
+            self, &recomposeChanges, &otherInfoChanges, &assetPathResyncChanges,
+            &primResyncsInfo)
             .Send(self);
 
         // Receivers can now refresh their caches... or just dirty them
