@@ -10,6 +10,7 @@
 #include "pxr/base/ts/splineData.h"
 #include "pxr/base/ts/raii.h"
 #include "pxr/base/ts/regressionPreventer.h"
+#include "pxr/base/ts/sample.h"
 
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/tf/diagnostic.h"
@@ -41,6 +42,7 @@ bool TsSpline::IsSupportedValueType(const TfType valueType)
         false);
 #undef _CHECK_TYPE
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Construction and value semantics
@@ -344,6 +346,7 @@ bool TsSpline::DoSidesDiffer(
     return (value == preValue);
 }
 
+
 template <>
 bool TsSpline::_Eval(
     const TsTime time,
@@ -374,6 +377,64 @@ bool TsSpline::_Eval(
 
     return false;
 }
+
+template <typename SampleHolder>
+bool
+TsSpline::_Sample(
+    const GfInterval& timeInterval,
+    const double timeScale,
+    const double valueScale,
+    const double tolerance,
+    SampleHolder* splineSamples) const
+{
+    if (timeInterval.IsEmpty() ||
+        timeScale <= 0.0 ||
+        valueScale <= 0.0 ||
+        tolerance <= 0.0)
+    {
+        TF_CODING_ERROR(
+            "The time interval must not be empty and the values of timeScale,"
+            " valueScale, and tolerance must all be greater than 0 when"
+            " sampling a spline.");
+        return false;
+    }
+
+    Ts_SampleData<SampleHolder> sampleData(splineSamples);
+
+    // Make sure that splineSamples is empty.
+    sampleData.Clear();
+
+    // Do not bother to sample empty data.
+    if (_data || !_data->times.empty()) {
+
+        Ts_Sample(_data.get(), timeInterval,
+                  timeScale, valueScale, tolerance,
+                  &sampleData);
+    }
+    return true;
+}
+
+// Instantiate Sample for both spline samples classes and for
+// each supported sample data type.
+#define _INSTANTIATE_SAMPLE_METHOD(sampleData, tuple)                   \
+    template                                                            \
+    TS_API                                                              \
+    bool                                                                \
+    TsSpline::_Sample(                                                  \
+        const GfInterval& timeInterval,                                 \
+        const double timeScale,                                         \
+        const double valueScale,                                        \
+        const double tolerance,                                         \
+        sampleData< TS_SPLINE_VALUE_CPP_TYPE(tuple) >* splineSamples) const;
+
+TF_PP_SEQ_FOR_EACH(_INSTANTIATE_SAMPLE_METHOD,
+                   TsSplineSamples,
+                   TS_SPLINE_SAMPLE_VERTEX_TYPES)
+TF_PP_SEQ_FOR_EACH(_INSTANTIATE_SAMPLE_METHOD,
+                   TsSplineSamplesWithSources,
+                   TS_SPLINE_SAMPLE_VERTEX_TYPES)
+
+#undef _INSTANTIATE_SAMPLE_METHOD
 
 
 ////////////////////////////////////////////////////////////////////////////////
