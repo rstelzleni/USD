@@ -10,6 +10,7 @@
 #include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/compilerTaskSync.h"
 #include "pxr/exec/exec/outputProvidingCompilationTask.h"
+#include "pxr/exec/exec/program.h"
 
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/ef/leafNode.h"
@@ -26,7 +27,8 @@ Exec_LeafCompilationTask::_Compile(
 
     // Look up the cached output.
     const auto &[output, hasOutput] =
-        compilationState.GetCompiledOutputCache()->Find(_outputKey);
+        compilationState.GetProgram()->GetCompiledOutputCache()->Find(
+            _outputKey);
 
     taskStages.Invoke(
     // Determine if the output dependency has been compiled, and if not
@@ -61,15 +63,24 @@ Exec_LeafCompilationTask::_Compile(
 
         TRACE_FUNCTION_SCOPE("leaf node creation");
 
-        VdfNetwork *const network = compilationState.GetNetwork();
-        VdfNode *const leafNode = new EfLeafNode(
-            network, output.GetOutput()->GetSpec().GetType());
+        // TODO: Journaling
+        EsfJournal nodeJournal;
+        EsfJournal inputJournal;
+
+        EfLeafNode *const leafNode =
+            compilationState.GetProgram()->CreateNode<EfLeafNode>(
+                nodeJournal,
+                output.GetOutput()->GetSpec().GetType());
 
         leafNode->SetDebugNameCallback([outputKey = _outputKey]{
             return outputKey.GetDebugName();
         });
 
-        network->Connect(output, leafNode, EfLeafTokens->in);
+        compilationState.GetProgram()->Connect(
+            inputJournal,
+            Exec_Program::SourceOutputs{output},
+            leafNode,
+            EfLeafTokens->in);
     }
     );
 }

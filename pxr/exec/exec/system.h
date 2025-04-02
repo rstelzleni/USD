@@ -20,8 +20,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-class Exec_CompiledOutputCache;
 class Exec_RequestImpl;
+class Exec_Program;
 class ExecRequest;
 class ExecValueKey;
 
@@ -30,7 +30,6 @@ class EfTimeInputNode;
 template <typename> class TfSpan;
 class VdfExecutorInterface;
 class VdfMaskedOutput;
-class VdfNetwork;
 
 /// A system to procedurally compute values based on scene description and
 /// computation definitions.
@@ -64,11 +63,9 @@ private:
 private:
     EsfStage _stage;
 
-    std::unique_ptr<Exec_CompiledOutputCache> _compiledOutputCache;
+    std::unique_ptr<Exec_Program> _program;
+    
     std::unique_ptr<EfLeafNodeCache> _leafNodeCache;
-
-    std::unique_ptr<VdfNetwork> _network;
-    EfTimeInputNode *_timeInput;
 
     class _EditMonitor;
     std::unique_ptr<_EditMonitor> _editMonitor;

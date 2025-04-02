@@ -7,7 +7,6 @@
 #include "pxr/exec/exec/compiler.h"
 
 #include "pxr/exec/exec/compilationState.h"
-#include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/leafCompilationTask.h"
 #include "pxr/exec/exec/outputKey.h"
 #include "pxr/exec/exec/valueKey.h"
@@ -22,11 +21,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_Compiler::Exec_Compiler(
     const EsfStage &stage,
-    Exec_CompiledOutputCache *compiledOutputs,
-    VdfNetwork *network) :
+    Exec_Program *program) :
     _stage(stage),
-    _compiledOutputs(compiledOutputs),
-    _network(network),
+    _program(program),
     _rootTask(nullptr),
     _taskGroupContext(
         tbb::task_group_context::isolated,
@@ -54,7 +51,7 @@ Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
     std::vector<VdfMaskedOutput> leafOutputs(valueKeys.size());
 
     // Compiler state shared between all compilation tasks.
-    Exec_CompilationState state(_stage, _network, _compiledOutputs);
+    Exec_CompilationState state(_stage, _program);
 
     // Process requested value keys in parallel and spawn compilation tasks.
     WorkWithScopedParallelism(

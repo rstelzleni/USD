@@ -13,6 +13,7 @@
 #include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
+#include "pxr/exec/exec/program.h"
 
 #include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
@@ -116,22 +117,29 @@ Exec_OutputProvidingCompilationTask::_Compile(
         VdfOutputSpecs outputSpecs;
         outputSpecs.Connector(definition->GetResultType(), VdfTokens->out);
 
-        VdfNetwork *const network = compilationState.GetNetwork();
-        VdfNode *const callbackNode = new Exec_CallbackNode(
-            network, inputSpecs, outputSpecs, definition->GetCallback());
+        // TODO: Journaling
+        EsfJournal nodeJournal;
+
+        VdfNode *const callbackNode =
+            compilationState.GetProgram()->CreateNode<Exec_CallbackNode>(
+                nodeJournal,
+                inputSpecs,
+                outputSpecs,
+                definition->GetCallback());
 
         callbackNode->SetDebugNameCallback([outputKey = _outputKey]{
             return outputKey.GetDebugName();
         });
 
         for (size_t i = 0; i < _inputSources.size(); ++i) {
-            for (const VdfMaskedOutput &sourceOutput : _inputSources[i]) {
-                // Optional outputs may not be available, and that's okay.
-                if (sourceOutput) {
-                    network->Connect(
-                        sourceOutput, callbackNode, inputKeys[i].inputName);
-                }
-            }
+            // TODO: Journaling
+            EsfJournal inputJournal;
+
+            compilationState.GetProgram()->Connect(
+                inputJournal,
+                _inputSources[i],
+                callbackNode,
+                inputKeys[i].inputName);
         }
 
         // Return the compiled output to the calling task.
@@ -141,7 +149,7 @@ Exec_OutputProvidingCompilationTask::_Compile(
 
         // Then publish it to the compiled outputs cache.
         Exec_CompiledOutputCache *compiledOutputs =
-            compilationState.GetCompiledOutputCache();
+            compilationState.GetProgram()->GetCompiledOutputCache();
         compiledOutputs->Insert(_outputKey, compiledOutput);
 
         // Then indicate that the task identified by _outputKey is done. This

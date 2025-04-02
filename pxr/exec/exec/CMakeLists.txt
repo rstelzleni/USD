@@ -46,6 +46,7 @@ pxr_library(exec
         leafCompilationTask
         outputKey
         outputProvidingCompilationTask
+        program
         requestImpl
         uncompilationRuleSet
         uncompilationTable

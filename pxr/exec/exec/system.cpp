@@ -8,6 +8,7 @@
 
 #include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/compiler.h"
+#include "pxr/exec/exec/program.h"
 #include "pxr/exec/exec/request.h"
 #include "pxr/exec/exec/requestImpl.h"
 
@@ -54,20 +55,18 @@ private:
 
 ExecSystem::ExecSystem(EsfStage &&stage) :
     _stage(std::move(stage)),
-    _compiledOutputCache(std::make_unique<Exec_CompiledOutputCache>()),
+    _program(std::make_unique<Exec_Program>()),
     _leafNodeCache(std::make_unique<EfLeafNodeCache>()),
-    _network(std::make_unique<VdfNetwork>()),
-    _timeInput(new EfTimeInputNode(_network.get())),
     _editMonitor(std::make_unique<_EditMonitor>(_leafNodeCache.get())),
     _executor(std::make_unique<EfExecutor<
                   VdfParallelExecutorEngine, VdfParallelDataManagerVector>>())
 {
-    _network->RegisterEditMonitor(_editMonitor.get());
+    _program->GetNetwork().RegisterEditMonitor(_editMonitor.get());
 }
 
 ExecSystem::~ExecSystem()
 {
-    _network->UnregisterEditMonitor(_editMonitor.get());
+    _program->GetNetwork().UnregisterEditMonitor(_editMonitor.get());
 }
 
 ExecRequest
@@ -90,13 +89,13 @@ ExecSystem::PrepareRequest(const ExecRequest &request)
 void
 ExecSystem::GraphNetwork(const char *filename) const
 {
-    VdfGrapher::GraphToFile(*_network, filename);
+    VdfGrapher::GraphToFile(_program->GetNetwork(), filename);
 }
 
 std::vector<VdfMaskedOutput>
 ExecSystem::_Compile(TfSpan<const ExecValueKey> valueKeys)
 {
-    Exec_Compiler compiler(_stage, _compiledOutputCache.get(), _network.get());
+    Exec_Compiler compiler(_stage, _program.get());
     return compiler.Compile(valueKeys);
 }
 

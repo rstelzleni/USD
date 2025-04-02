@@ -19,6 +19,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 class EsfStage;
 class Exec_CompiledOutputCache;
+class Exec_Program;
 class ExecValueKey;
 template <typename> class TfSpan;
 class VdfMaskedOutput;
@@ -32,8 +33,7 @@ class Exec_Compiler
 public:
     Exec_Compiler(
         const EsfStage &stage,
-        Exec_CompiledOutputCache *compiledOutputs,
-        VdfNetwork *network);
+        Exec_Program *program);
 
     ~Exec_Compiler();
 
@@ -44,8 +44,7 @@ public:
 
 private:
     const EsfStage &_stage;
-    Exec_CompiledOutputCache *_compiledOutputs;
-    VdfNetwork * const _network;
+    Exec_Program *_program;
 
     tbb::empty_task *_rootTask;
     tbb::task_group_context _taskGroupContext;

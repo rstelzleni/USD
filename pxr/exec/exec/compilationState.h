@@ -9,16 +9,13 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/exec/exec/api.h"
-
 #include "pxr/exec/exec/compilerTaskSync.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 class EsfStage;
 class Exec_CompilationTask;
-class Exec_CompiledOutputCache;
-class VdfNetwork;
+class Exec_Program;
 
 /// Data shared between all compilation tasks.
 /// 
@@ -32,26 +29,21 @@ class Exec_CompilationState
 public:
     Exec_CompilationState(
         const EsfStage &stage,
-        VdfNetwork * const network,
-        Exec_CompiledOutputCache * const compiledOutputs) :
+        Exec_Program *program) :
         _stage(stage),
-        _network(network),
-        _compiledOutputs(compiledOutputs)
-    {}
+        _program(program)
+    {
+        TF_VERIFY(_program);
+    }
 
     /// The scene adapter stage.
     const EsfStage &GetStage() const {
         return _stage;
     }
 
-    /// The Vdf network populated by compilation.
-    VdfNetwork *GetNetwork() {
-        return _network;
-    }
-
-    /// This cache stores the compiled outputs.
-    Exec_CompiledOutputCache *GetCompiledOutputCache() {
-        return _compiledOutputs;
+    /// The program being compiled.
+    Exec_Program *GetProgram() {
+        return _program;
     }
 
     class OutputTasksAccess {
@@ -66,9 +58,7 @@ private:
 
     const EsfStage &_stage;
     Exec_CompilerTaskSync _outputTasks;
-    VdfNetwork * const _network;
-    Exec_CompiledOutputCache * const _compiledOutputs;
-
+    Exec_Program *_program;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

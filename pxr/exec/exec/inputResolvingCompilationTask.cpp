@@ -11,6 +11,7 @@
 #include "pxr/exec/exec/computationDefinition.h"
 #include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/outputProvidingCompilationTask.h"
+#include "pxr/exec/exec/program.h"
 
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
@@ -64,7 +65,8 @@ Exec_InputResolvingCompilationTask::_Compile(
             VdfMaskedOutput *const resultOutput = &(*_resultOutputs)[i];
 
             const auto &[output, hasOutput] =
-                compilationState.GetCompiledOutputCache()->Find(outputKey);
+                compilationState.GetProgram()->GetCompiledOutputCache()->Find(
+                    outputKey);
             if (hasOutput) {
                 *resultOutput = output;
                 continue;
@@ -100,7 +102,8 @@ Exec_InputResolvingCompilationTask::_Compile(
             }
 
             const auto &[output, hasOutput] =
-                compilationState.GetCompiledOutputCache()->Find(outputKey);
+                compilationState.GetProgram()->GetCompiledOutputCache()->Find(
+                    outputKey);
             if (!output) {
                 TF_VERIFY(_inputKey.optional);
                 continue;
