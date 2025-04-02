@@ -59,6 +59,7 @@ GfColorSpace::GfColorSpace(const TfToken& name,
 {
     NcColorSpaceDescriptor desc;
     desc.shortName = name.GetString().c_str();
+    desc.descriptiveName = name.GetString().c_str();
     desc.redPrimary.x = redChroma[0];
     desc.redPrimary.y = redChroma[1];
     desc.greenPrimary.x = greenChroma[0];
