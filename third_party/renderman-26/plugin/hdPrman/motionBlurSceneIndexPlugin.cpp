@@ -43,8 +43,8 @@ static const int     _defaultNonlinearSampleCount = 3;
 static const float   _defaultBlurScale            = 1.0f;
 // There is no canonical source for these defaults. They were previously hard-
 // coded in renderParam.cpp.
-static const int     _defaultXformSamples         = 2;
-static const int     _defaultGeoSamples           = 2;
+static const int     _defaultXformSamples         = -1;
+static const int     _defaultGeoSamples           = -1;
 static const bool    _defaultMblur                = true;
 static const TfToken _defaultVblur                = _tokens->ablur_on;
 
@@ -462,8 +462,12 @@ _MotionBlurHelper::_GetContributingSampleTimesForInterval(
     }
 
     // Check if motion blur is disabled by ri:object:{geo|xform}samples < 2
+    // XXX: We only care about this value if it's authored. We want to use
+    // the number of samples suggested by the underlying source when this
+    // has no authored value. We use -1 as a default to signal that there is
+    // no authored value.
     int numSamples = _GetLinearSampleCount();
-    if (numSamples < 2) {
+    if (numSamples > -1 && numSamples < 2) {
         TF_DEBUG(HDPRMAN_MOTION_BLUR).Msg(
             "<%s.%s> (%s): linear sample count < 2\n",
             _primPath.GetText(), _key.GetText(), _primType.GetText());
@@ -500,6 +504,10 @@ _MotionBlurHelper::_GetContributingSampleTimesForInterval(
                         sourceCount <= _GetAccelerations().GetArraySize())) {
                     numSamples = std::max(numSamples,
                         _GetNonlinearSampleCount());
+                } else if (numSamples == -1) {
+                    // For linear velocity motion, we use at least 2 samples,
+                    // even when ri:object:geosamples is unauthored.
+                    numSamples = 2;
                 }
                 // Generate sample times unaffected by blurScale.
                 // XXX: blurScale is applied in GetValue when doing velocity
@@ -529,10 +537,10 @@ _MotionBlurHelper::_GetContributingSampleTimesForInterval(
             }
         }
     }
-    
+
     float startTime = _shutterOpen;
     float endTime = _shutterClose;
-    
+
     // No velocity blur. Fall back to ordinary sampling.
     // Scale start and end times by blurScale
     if (blurScale != 1.0f) {
@@ -575,8 +583,16 @@ _MotionBlurHelper::_GetContributingSampleTimesForInterval(
         }
     }
 
-    // If more samples are requested than are authored, re-interpolate times
-    if (static_cast<int>(outSampleTimes->size()) < numSamples) {
+    // If object:ri:{geo|xform}samples was unauthored, use source sample count
+    if (numSamples == -1) {
+        numSamples = int(outSampleTimes->size());
+    }
+
+    // Generate more or fewer sample times if requested. Note that asking for
+    // a different number of sample times than reported by the underlying source
+    // may move those times off of authored time samples and thereby fail to
+    // accurately capture the underlying motion!
+    if (static_cast<int>(outSampleTimes->size()) != numSamples) {
         const Time first = outSampleTimes->front();
         const Time last = outSampleTimes->back();
         const float m(numSamples - 1);
