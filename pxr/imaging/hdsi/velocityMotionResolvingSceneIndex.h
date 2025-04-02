@@ -35,7 +35,7 @@ TF_DEBUG_CODES(
     ((velocityMotionMode, "__velocityMotionMode"))
 
 TF_DECLARE_PUBLIC_TOKENS(HdsiVelocityMotionResolvingSceneIndexTokens,
-    HDSI_VELOCITY_MOTION_RESOLVING_SCENE_INDEX_TOKENS);
+    HDSI_API, HDSI_VELOCITY_MOTION_RESOLVING_SCENE_INDEX_TOKENS);
 
 TF_DECLARE_REF_PTRS(HdsiVelocityMotionResolvingSceneIndex);
 
