@@ -12,6 +12,7 @@
 #include "pxr/exec/exec/outputProvidingCompilationTask.h"
 
 #include "pxr/base/trace/trace.h"
+#include "pxr/exec/ef/leafNode.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -58,7 +59,17 @@ Exec_LeafCompilationTask::_Compile(
             return;
         }
 
-        // TODO: Compile the leaf node here.
+        TRACE_FUNCTION_SCOPE("leaf node creation");
+
+        VdfNetwork *const network = compilationState.GetNetwork();
+        VdfNode *const leafNode = new EfLeafNode(
+            network, output.GetOutput()->GetSpec().GetType());
+
+        leafNode->SetDebugNameCallback([outputKey = _outputKey]{
+            return outputKey.GetDebugName();
+        });
+
+        network->Connect(output, leafNode, EfLeafTokens->in);
     }
     );
 }

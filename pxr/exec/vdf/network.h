@@ -16,6 +16,7 @@
 
 #include "pxr/base/tf/hash.h"
 #include "pxr/base/tf/hashset.h"
+#include "pxr/base/tf/smallVector.h"
 #include "pxr/base/tf/span.h"
 
 #include "tbb/concurrent_queue.h"
@@ -415,7 +416,7 @@ private:
     tbb::concurrent_queue<VdfId> _freeOutputIds;
 
     // The list of static edit monitors registered with this network.
-    using _EditMonitorVector = std::vector<EditMonitor *>;
+    using _EditMonitorVector = TfSmallVector<EditMonitor *, 1>;
     _EditMonitorVector _monitors;
 
     // Helper class for invalidating schedules after topological changes.

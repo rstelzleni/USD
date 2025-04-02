@@ -48,6 +48,7 @@ pxr_build_test(testEfDependencyCache
     LIBRARIES
         ef
         tf
+        work
     
     CPPFILES
         testenv/testEfDependencyCache.cpp
@@ -55,6 +56,21 @@ pxr_build_test(testEfDependencyCache
 
 pxr_register_test(testEfDependencyCache
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testEfDependencyCache"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_build_test(testEfLeafNodeCache
+    LIBRARIES
+        ef
+        tf
+        work
+    
+    CPPFILES
+        testenv/testEfLeafNodeCache.cpp
+)
+
+pxr_register_test(testEfLeafNodeCache
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testEfLeafNodeCache"
     EXPECTED_RETURN_CODE 0
 )
 

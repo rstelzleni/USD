@@ -25,6 +25,7 @@ class Exec_RequestImpl;
 class ExecRequest;
 class ExecValueKey;
 
+class EfLeafNodeCache;
 class EfTimeInputNode;
 template <typename> class TfSpan;
 class VdfExecutorInterface;
@@ -56,6 +57,7 @@ public:
     void GraphNetwork(const char *filename) const;
 
 private:
+    // Requires access to _Compile
     friend class Exec_RequestImpl;
     std::vector<VdfMaskedOutput> _Compile(TfSpan<const ExecValueKey> valueKeys);
 
@@ -63,9 +65,13 @@ private:
     EsfStage _stage;
 
     std::unique_ptr<Exec_CompiledOutputCache> _compiledOutputCache;
+    std::unique_ptr<EfLeafNodeCache> _leafNodeCache;
 
     std::unique_ptr<VdfNetwork> _network;
     EfTimeInputNode *_timeInput;
+
+    class _EditMonitor;
+    std::unique_ptr<_EditMonitor> _editMonitor;
 
     std::unique_ptr<VdfExecutorInterface> _executor;
     tbb::concurrent_vector<std::shared_ptr<Exec_RequestImpl>> _requests;

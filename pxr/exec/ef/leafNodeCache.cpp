@@ -49,6 +49,7 @@ EfLeafNodeCache_DependencyPredicate(
 
 EfLeafNodeCache::EfLeafNodeCache() :
     _version(0),
+    _cachesAreInvalid(false),
     _dependencyCache(&EfLeafNodeCache_DependencyPredicate)
 {
 }
@@ -56,8 +57,11 @@ EfLeafNodeCache::EfLeafNodeCache() :
 const VdfOutputToMaskMap &
 EfLeafNodeCache::FindOutputs(
     const VdfMaskedOutputVector &outputs,
-    bool updateIncrementally) const
+    bool updateIncrementally)
 {
+    // Make sure the caches are cleared if they are invalid.
+    _ClearCachesIfInvalid();
+
     if (const _SparseCacheEntry *e = TfMapLookupPtr(_sparseCache, outputs)) {
         return e->outputs;
     }
@@ -68,8 +72,11 @@ EfLeafNodeCache::FindOutputs(
 const std::vector<const VdfNode *> &
 EfLeafNodeCache::FindNodes(
     const VdfMaskedOutputVector &outputs,
-    bool updateIncrementally) const
+    bool updateIncrementally)
 {
+    // Make sure the caches are cleared if they are invalid.
+    _ClearCachesIfInvalid();
+
     if (const _SparseCacheEntry *e = TfMapLookupPtr(_sparseCache, outputs)) {
         return e->nodes;
     }
@@ -121,6 +128,9 @@ EfLeafNodeCache::FindNodes(
     TRACE_FUNCTION();
     TfAutoMallocTag2 tag("Ef", "EfLeafNodeCache::FindNodes");
 
+    // Make sure the caches are cleared if they are invalid.
+    _ClearCachesIfInvalid();
+
     // Lookup the cached traversal, if any.
     _VectorizedCacheEntry *vectorized =
         TfMapLookupPtr(_vectorizedCache, outputs);
@@ -162,10 +172,13 @@ EfLeafNodeCache::FindNodes(
 }
 
 void
-EfLeafNodeCache::Invalidate()
+EfLeafNodeCache::Clear()
 {
     // Increment the edit version.
     ++_version;
+
+    // Caches are now cleared, but in a valid state.
+    _cachesAreInvalid.store(false, std::memory_order_relaxed);
 
     // Clear all internal state.
     _dependencyCache.Invalidate();
@@ -178,32 +191,50 @@ EfLeafNodeCache::Invalidate()
 void
 EfLeafNodeCache::WillDeleteConnection(const VdfConnection &connection)
 {
-    // Increment the edit version.
-    ++_version;
+    // If the caches are already invalid there is no need to write to the
+    // atomics again.
+    if (!_cachesAreInvalid.load(std::memory_order_relaxed)) {
+        // Increment the edit version.
+        ++_version;
+
+        // Internal state related to vectorized and sparse caches is invalid.
+        _cachesAreInvalid.store(true, std::memory_order_relaxed);
+    }
 
     // Propagate changes to the dependency cache and leaf node indexer.
     _dependencyCache.WillDeleteConnection(connection);
     _indexer.DidDisconnect(connection);
-
-    // Clear internal state related to vectorized and sparse caches.
-    if (!_vectorizedCache.empty()) {
-        _vectorizedCache.clear();
-        _sparseCache.clear();
-        _traverser.Invalidate();
-    }
 }
 
 void
 EfLeafNodeCache::DidConnect(const VdfConnection &connection)
 {
-    // Increment the edit version.
-    ++_version;
+    // If the caches are already invalid there is no need to write to the
+    // atomics again.
+    if (!_cachesAreInvalid.load(std::memory_order_relaxed)) {
+        // Increment the edit version.
+        ++_version;
+
+        // Internal state related to vectorized and sparse caches is invalid.
+        _cachesAreInvalid.store(true, std::memory_order_relaxed);
+    }
 
     // Propagate changes to the dependency cache and leaf node indexer.
     _dependencyCache.DidConnect(connection);
     _indexer.DidConnect(connection);
+}
 
-    // Clear internal state related to vectorized and sparse caches.
+void
+EfLeafNodeCache::_ClearCachesIfInvalid()
+{
+    if (!_cachesAreInvalid.load(std::memory_order_relaxed)) {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    _cachesAreInvalid.store(false, std::memory_order_relaxed);
+
     if (!_vectorizedCache.empty()) {
         _vectorizedCache.clear();
         _sparseCache.clear();

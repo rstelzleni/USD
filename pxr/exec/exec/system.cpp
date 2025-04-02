@@ -12,6 +12,7 @@
 #include "pxr/exec/exec/requestImpl.h"
 
 #include "pxr/exec/ef/executor.h"
+#include "pxr/exec/ef/leafNodeCache.h"
 #include "pxr/exec/ef/timeInputNode.h"
 #include "pxr/exec/vdf/grapher.h"
 #include "pxr/exec/vdf/network.h"
@@ -25,17 +26,49 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class ExecSystem::_EditMonitor final : public VdfNetwork::EditMonitor {
+public:
+    explicit _EditMonitor(EfLeafNodeCache *const leafNodeCache) :
+        _leafNodeCache(leafNodeCache)
+    {}
+
+    void WillClear() override {
+        _leafNodeCache->Clear();
+    }
+
+    void DidConnect(const VdfConnection *connection) override {
+        _leafNodeCache->DidConnect(*connection);
+    }
+
+    void DidAddNode(const VdfNode *node) override {}
+
+    void WillDelete(const VdfConnection *connection) override {
+        _leafNodeCache->WillDeleteConnection(*connection);
+    }
+
+    void WillDelete(const VdfNode *node) override {}
+
+private:
+    EfLeafNodeCache *const _leafNodeCache;
+};
+
 ExecSystem::ExecSystem(EsfStage &&stage) :
     _stage(std::move(stage)),
     _compiledOutputCache(std::make_unique<Exec_CompiledOutputCache>()),
+    _leafNodeCache(std::make_unique<EfLeafNodeCache>()),
     _network(std::make_unique<VdfNetwork>()),
     _timeInput(new EfTimeInputNode(_network.get())),
+    _editMonitor(std::make_unique<_EditMonitor>(_leafNodeCache.get())),
     _executor(std::make_unique<EfExecutor<
                   VdfParallelExecutorEngine, VdfParallelDataManagerVector>>())
 {
+    _network->RegisterEditMonitor(_editMonitor.get());
 }
 
-ExecSystem::~ExecSystem() = default;
+ExecSystem::~ExecSystem()
+{
+    _network->UnregisterEditMonitor(_editMonitor.get());
+}
 
 ExecRequest
 ExecSystem::BuildRequest(std::vector<ExecValueKey> &&valueKeys)

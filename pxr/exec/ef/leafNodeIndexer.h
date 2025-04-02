@@ -11,28 +11,25 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/exec/vdf/connection.h"
-#include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/node.h"
 #include "pxr/exec/vdf/types.h"
 
-#include <vector>
+#include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class VdfConnection;
 class VdfMask;
 class VdfOutput;
 
-///////////////////////////////////////////////////////////////////////////////
-///
-/// \class Ef_LeafNodeIndexer
-/// 
 /// The leaf node indexer tracks leaf nodes added and removed from the network,
-/// and associates each leaf node with a unique index. The indexer also
-/// maintains a list of the source outputs, each individual leaf node is
-/// connected to. The size of the index space is relative to the number of leaf
-/// nodes, rather than all nodes in the network.
-///
+/// and associates each leaf node with a unique index.
+/// 
+/// The indexer also maintains a list of the source outputs, each individual
+/// leaf node is connected to. The size of the index space is relative to the
+/// number of leaf nodes, rather than all nodes in the network.
 ///
 class Ef_LeafNodeIndexer
 {
@@ -43,7 +40,7 @@ public:
 
     /// Sentinel for an invalid index.
     ///
-    static const Index InvalidIndex;
+    static constexpr Index InvalidIndex = Index(-1);
 
     /// Returns the capacity of the indexer, i.e. the high water mark of
     /// tracked leaf nodes.
@@ -84,9 +81,13 @@ public:
 
     /// Call this to notify the cache of connections that have been deleted.
     ///
+    /// \note It is safe to call DidDisconnect() and DidConnect() concurrently.
+    ///
     void DidDisconnect(const VdfConnection &connection);
 
     /// Call this to notify the cache of newly added connections.
+    /// 
+    /// \note It is safe to call DidDisconnect() and DidConnect() concurrently.
     ///
     void DidConnect(const VdfConnection &connection);
 
@@ -98,26 +99,25 @@ private:
         const VdfMask *mask;
     };
 
-    // Vector of indices. The vector is indexed with the node index. If a given
-    // node does not have an index, InvalidIndex will be stored at the
-    // corresponding location.
-    std::vector<Index> _indices;
+    // Map from VdfNode index to leaf node index. If a given node does not have
+    // an index, InvalidIndex will be stored at the corresponding location.
+    tbb::concurrent_unordered_map<VdfIndex, Index> _indices;
 
     // The tightly packed vector of leaf node data. The vector is indexed with
     // the leaf node index.
-    std::vector<_LeafNode> _nodes;
+    tbb::concurrent_vector<_LeafNode> _nodes;
 
     // Free list of leaf node data. New indices are assigned by pulling from
     // this list first.
-    std::vector<size_t> _freeList;
+    tbb::concurrent_queue<Index> _freeList;
 };
 
 inline
 Ef_LeafNodeIndexer::Index
 Ef_LeafNodeIndexer::GetIndex(const VdfNode &node) const
 {
-    const VdfIndex nodeIndex = VdfNode::GetIndexFromId(node.GetId());
-    return nodeIndex < _indices.size() ? _indices[nodeIndex] : InvalidIndex;
+    const auto it = _indices.find(VdfNode::GetIndexFromId(node.GetId()));
+    return it != _indices.end() ? it->second : InvalidIndex;
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

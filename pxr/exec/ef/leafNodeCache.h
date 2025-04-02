@@ -23,6 +23,7 @@
 #include "pxr/exec/vdf/sparseVectorizedOutputTraverser.h"
 #include "pxr/exec/vdf/types.h"
 
+#include <atomic>
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -55,7 +56,7 @@ public:
     /// equal, leaf node dependencies have not changed.
     ///
     size_t GetVersion() const {
-        return _version;
+        return _version.load(std::memory_order_relaxed);
     }
 
     /// Find outputs dependent on the given \p outputs.
@@ -63,14 +64,14 @@ public:
     EF_API
     const VdfOutputToMaskMap &FindOutputs(
         const VdfMaskedOutputVector &outputs,
-        bool updateIncrementally) const;
+        bool updateIncrementally);
 
     /// Find leaf nodes dependent on the given \p outputs
     ///
     EF_API
     const std::vector<const VdfNode *> &FindNodes(
         const VdfMaskedOutputVector &outputs,
-        bool updateIncrementally) const;
+        bool updateIncrementally);
 
     /// Find all leaf nodes dependent on the given \p outputs, but only return
     /// the nodes dependent on the requested outputs not filtered out by the
@@ -82,17 +83,23 @@ public:
         const VdfMaskedOutputVector &outputs,
         const TfBits &outputsMask);
 
-    /// Invalidate the entire cache.
+    /// Clear the entire cache.
     ///
     EF_API
-    void Invalidate();
+    void Clear();
 
     /// Call this to notify the cache of connections that have been deleted.
+    ///
+    /// \note It is safe to call WillDeleteConnection() and DidConnect()
+    /// concurrently.
     ///
     EF_API
     void WillDeleteConnection(const VdfConnection &connection);
 
     /// Call this to notify the cache of newly added connections.
+    ///     
+    /// \note It is safe to call WillDeleteConnection() and DidConnect()
+    /// concurrently.
     ///
     EF_API
     void DidConnect(const VdfConnection &connection);
@@ -112,6 +119,11 @@ private:
         VdfOutputToMaskMap outputs;
     };
 
+    // Clears the vectorized and sparse caches along with the traverser used to
+    // populate those caches, if their internal state has been flagged as being
+    // invalid.
+    void _ClearCachesIfInvalid();
+
     // Combine separate sets of leaf nodes into a single set.
     TfBits _CombineLeafNodes(
         const TfBits &outputsMask,
@@ -128,7 +140,11 @@ private:
         const TfBits &leafNodes);
 
     // The version of the cache. Incremented with every edit.
-    size_t _version;
+    std::atomic<size_t> _version;
+
+    // Indicates that the internal state pertaining to vectorized and sparse
+    // caches is invalid and that those caches be cleared.
+    std::atomic<bool> _cachesAreInvalid;
 
     // The dependency cache used for fast lookups of input-to-output
     // dependencies.
