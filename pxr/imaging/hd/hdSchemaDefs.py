@@ -565,6 +565,10 @@
         EXTRA_TOKENS = [
             '(universalRenderContext, "")',
             '(all, "__all")',
+            'terminals',
+            'surface',
+            'displacement',
+            'volume'
         ],
         ADD_DEFAULT_LOCATOR = True,
 

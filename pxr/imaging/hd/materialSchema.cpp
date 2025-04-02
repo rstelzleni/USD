@@ -70,6 +70,42 @@ HdMaterialSchema::GetMaterialNetwork(TfTokenVector const &contexts)
                 HdMaterialSchemaTokens->universalRenderContext));
 }
 
+/*static*/
+TfToken
+HdMaterialSchema::GetLocatorTerminal(HdDataSourceLocator const& locator)
+{
+    return GetLocatorTerminal(locator, TfTokenVector());
+}
+
+/*static*/
+TfToken
+HdMaterialSchema::GetLocatorTerminal(HdDataSourceLocator const& locator, TfToken const &context)
+{
+    return GetLocatorTerminal(locator, TfTokenVector({context}));
+}
+
+/*static*/
+TfToken
+HdMaterialSchema::GetLocatorTerminal(
+        HdDataSourceLocator const& locator, TfTokenVector const& contexts)
+{
+    if (locator.GetElementCount() >= 4) {
+        static const HdDataSourceLocator terminalsLocator(
+            HdMaterialSchema::GetSchemaToken(), 
+            HdMaterialSchemaTokens->terminals
+        );
+        if (locator.Intersects(terminalsLocator)) {
+            // Notify all renderer's of universalRenderContext
+            if (locator.GetElement(1) == HdMaterialSchemaTokens->universalRenderContext
+            // Notify if context matches renderer's
+            ||  std::find(contexts.begin(), contexts.end(), locator.GetElement(1)) != contexts.end()) {
+                return locator.GetElement(3);
+            }
+        }
+    }
+    return TfToken();
+}
+
 // --(END CUSTOM CODE: Schema Methods)--
 
 /*static*/

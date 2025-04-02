@@ -801,7 +801,9 @@ HdDirtyBitsTranslator::RprimLocatorSetToDirtyBits(
 /*static*/
 HdDirtyBits
 HdDirtyBitsTranslator::SprimLocatorSetToDirtyBits(
-    TfToken const& primType, HdDataSourceLocatorSet const& set)
+    TfToken const& primType,
+    HdDataSourceLocatorSet const& set,
+    const TfTokenVector& renderContexts)
 {
     HdDataSourceLocatorSet::const_iterator it = set.begin();
 
@@ -820,7 +822,26 @@ HdDirtyBitsTranslator::SprimLocatorSetToDirtyBits(
 
     if (primType == HdPrimTypeTokens->material) {
         if (_FindLocator(HdMaterialSchema::GetDefaultLocator(), end, &it)) {
-            bits |= HdMaterial::AllDirty;
+            bits |= HdMaterial::DirtyParams | HdMaterial::DirtyResource;
+            for (const auto& locator : set) {
+                static const HdDataSourceLocator materialLocator(
+                    HdMaterialSchema::GetDefaultLocator());
+                if (locator == materialLocator) {
+                    bits |= HdMaterial::AllDirty;
+                } else {
+                    TfToken terminal = HdMaterialSchema::GetLocatorTerminal(
+                        locator, renderContexts);
+                    if (terminal == HdMaterialSchemaTokens->surface) {
+                        bits |= HdMaterial::DirtySurface;
+                    }
+                    else if (terminal == HdMaterialSchemaTokens->displacement) {
+                        bits |= HdMaterial::DirtyDisplacement;
+                    }
+                    else if (terminal == HdMaterialSchemaTokens->volume) {
+                        bits |= HdMaterial::DirtyVolume;
+                    }
+                }
+            }
         }
     } else if (primType == HdPrimTypeTokens->coordSys) {
         static const HdDataSourceLocator nameLocator =

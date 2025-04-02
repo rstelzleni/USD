@@ -28,6 +28,14 @@ const std::vector<std::string>& HdPrman_GetPluginDisplayNames() {
     return *_pluginDisplayNameTokens;
 }
 
+TF_MAKE_STATIC_DATA(TfTokenVector, _renderContextsTokens) {
+    _renderContextsTokens->push_back(TfToken("ri"));
+    _renderContextsTokens->push_back(TfToken("mtlx"));
+}
+
+const TfTokenVector& HdPrman_GetRenderContexts() {
+    return *_renderContextsTokens;
+}
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

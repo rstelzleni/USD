@@ -67,6 +67,7 @@ TF_DECLARE_PUBLIC_TOKENS(HdPrmanRenderParamTokens,
 TF_DECLARE_PUBLIC_TOKENS(HdPrmanPluginTokens, HD_PRMAN_PLUGIN_TOKENS);
 
 const std::vector<std::string>& HdPrman_GetPluginDisplayNames();
+const TfTokenVector& HdPrman_GetRenderContexts();
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

@@ -313,9 +313,11 @@ HdSceneIndexAdapterSceneDelegate::_PrimAdded(
             GetRenderIndex().GetChangeTracker().
                 _MarkRprimDirty(indexPath, allDirtyRprim);
         } else if (GetRenderIndex().IsSprimTypeSupported(primType)) {
+            const TfTokenVector renderContexts =
+                GetRenderIndex().GetRenderDelegate()->GetMaterialRenderContexts();    
             HdDirtyBits allDirtySprim =
                 HdDirtyBitsTranslator::SprimLocatorSetToDirtyBits(
-                    primType, allDirty);
+                    primType, allDirty, renderContexts);
             GetRenderIndex().GetChangeTracker().
                 _MarkSprimDirty(indexPath, allDirtySprim);
         } else if (GetRenderIndex().IsBprimTypeSupported(primType)) {
@@ -457,9 +459,11 @@ HdSceneIndexAdapterSceneDelegate::PrimsDirtied(
                     indexPath, dirtyBits);
             }
         } else if (GetRenderIndex().IsSprimTypeSupported(primType)) {
+            const TfTokenVector renderContexts =
+                GetRenderIndex().GetRenderDelegate()->GetMaterialRenderContexts();    
             HdDirtyBits dirtyBits =
                 HdDirtyBitsTranslator::SprimLocatorSetToDirtyBits(
-                        primType, entry.dirtyLocators);
+                        primType, entry.dirtyLocators, renderContexts);
             if (dirtyBits != HdChangeTracker::Clean) {
                 GetRenderIndex().GetChangeTracker()._MarkSprimDirty(
                     indexPath, dirtyBits);
