@@ -5776,4 +5776,40 @@ PcpPrimIndex::ComputePrimPropertyNames( TfTokenVector *nameOrder ) const
         *this, GetRootNode(), IsUsd(), nameOrder, &nameSet);
 }
 
+SdfPrimSpecHandleVector
+PcpComputePrimStackForPrimIndex(const PcpPrimIndex &primIndex) 
+{
+    SdfPrimSpecHandleVector primStack;
+
+    if (primIndex.IsUsd()) {
+        // Prim ranges are not cached in USD so GetPrimRange will always 
+        // be empty. But, on demand, we can build the prim stack that matches
+        // what the prim range would be if we computed and cached it.
+        const PcpNodeRange nodeRange = primIndex.GetNodeRange();
+        for (auto it = nodeRange.first; it != nodeRange.second; ++it) {
+            const PcpNodeRef &node = *it;
+            if (!node.CanContributeSpecs()) {
+                continue;
+            }
+            const SdfLayerRefPtrVector &layers = 
+                node.GetLayerStack()->GetLayers();
+            for (const auto &layer : layers) {
+                if (SdfPrimSpecHandle primSpec = 
+                        layer->GetPrimAtPath(node.GetPath())) {
+                    primStack.push_back(std::move(primSpec));
+                }
+            }
+        }
+    } else {
+        const PcpPrimRange primRange = primIndex.GetPrimRange();
+
+        primStack.reserve(std::distance(primRange.first, primRange.second));
+        for(const auto &site : primRange) {
+            primStack.push_back(site.layer->GetPrimAtPath(site.path));
+        }
+    }
+
+    return primStack;    
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE
