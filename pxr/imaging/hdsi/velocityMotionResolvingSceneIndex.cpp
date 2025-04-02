@@ -6,12 +6,14 @@
 //
 #include "pxr/imaging/hdsi/velocityMotionResolvingSceneIndex.h"
 
+#include "pxr/imaging/hd/containerDataSourceEditor.h"
 #include "pxr/imaging/hd/dataSource.h"
 #include "pxr/imaging/hd/dataSourceLocator.h"
 #include "pxr/imaging/hd/filteringSceneIndex.h"
 #include "pxr/imaging/hd/primvarSchema.h"
 #include "pxr/imaging/hd/primvarsSchema.h"
 #include "pxr/imaging/hd/sceneIndex.h"
+#include "pxr/imaging/hd/sceneGlobalsSchema.h"
 #include "pxr/imaging/hd/sceneIndexObserver.h"
 #include "pxr/imaging/hd/tokens.h"
 
@@ -49,28 +51,27 @@ TF_DEFINE_PUBLIC_TOKENS(HdsiVelocityMotionResolvingSceneIndexTokens,
 
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
-    (fps));
+    (timeCodesPerSecond));
 
 namespace {
 
-// XXX: We need to encode the fps in the scene index (in a standard
-// place). Note that fps is called timeCodesPerSecond in USD.
-const float _fps = 24.0f;
+const double _defaultTimeCodesPerSecond = 24.0f;
 
-float _GetFps(const HdContainerDataSourceHandle& inputArgs)
+double _GetTimeCodesPerSecond(const HdContainerDataSourceHandle& inputArgs)
 {
     if (!inputArgs) {
-        return _fps;
+        return _defaultTimeCodesPerSecond;
     }
-    const auto source = HdSampledDataSource::Cast(inputArgs->Get(_tokens->fps));
+    const auto source =
+        HdSampledDataSource::Cast(inputArgs->Get(_tokens->timeCodesPerSecond));
     if (!source) {
-        return _fps;
+        return _defaultTimeCodesPerSecond;
     }
     const VtValue &value = source->GetValue(0.0f);
-    if (!value.IsHolding<float>()) {
-        return _fps;
+    if (!value.IsHolding<double>()) {
+        return _defaultTimeCodesPerSecond;
     }
-    return value.UncheckedGet<float>();
+    return value.UncheckedGet<double>();
 }
 
 bool
@@ -245,8 +246,10 @@ protected:
             return _source->GetValue(sampleTime);
         }
 
-        const float fps = _GetFps(_inputArgs);
-        const Time scaledTime = (shutterOffset - sampleTime) / fps;
+        // USD defines timeCodesPerSecond as double; convert to float.
+        const float timeCodesPerSecond = _GetTimeCodesPerSecond(_inputArgs);
+        const Time scaledTime =
+            (shutterOffset - sampleTime) / timeCodesPerSecond;
 
         // rotations
         if (_name == HdInstancerTokens->instanceRotations) {
@@ -804,7 +807,19 @@ HdsiVelocityMotionResolvingSceneIndex::HdsiVelocityMotionResolvingSceneIndex(
     const HdContainerDataSourceHandle& inputArgs)
  : HdSingleInputFilteringSceneIndexBase(inputSceneIndex)
  , _inputArgs(inputArgs)
-{ }
+{
+    // Update inputArgs with timeCodesPerSecond from HdSceneGlobalsSchema.
+    HdSceneGlobalsSchema sgSchema =
+        HdSceneGlobalsSchema::GetFromSceneIndex(inputSceneIndex);
+    if (HdDoubleDataSourceHandle tcpsDataSource =
+        sgSchema.GetTimeCodesPerSecond()) {
+        _inputArgs =
+            HdContainerDataSourceEditor(_inputArgs)
+            .Set( HdDataSourceLocator(_tokens->timeCodesPerSecond),
+                  tcpsDataSource )
+            .Finish();
+    }
+}
 
 bool
 HdsiVelocityMotionResolvingSceneIndex::PrimTypeSupportsVelocityMotion(

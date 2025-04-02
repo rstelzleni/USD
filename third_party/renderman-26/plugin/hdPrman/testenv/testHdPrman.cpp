@@ -797,6 +797,9 @@ HydraSetupAndRender(
         fprintf(stdout, "Setting the active render settings prim path to <%s>.\n",
                 renderSettingsPrimPath.GetText());
         sgsi->SetActiveRenderSettingsPrimPath(renderSettingsPrimPath);
+        if (cameraInfo) {
+            sgsi->SetPrimaryCameraPrimPath(cameraInfo->cameraPath);
+        }
     } else {
         renderTags.push_back(HdRenderTagTokens->geometry);
     }

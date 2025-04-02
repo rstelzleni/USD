@@ -228,49 +228,57 @@ UsdImagingGLEngine::PrepareBatch(
 
     HD_TRACE_FUNCTION();
 
-    if (_CanPrepare(root)) {
-        if (!_isPopulated) {
-            auto stage = root.GetStage();
-            if (_GetUseSceneIndices()) {
-                TF_VERIFY(_stageSceneIndex);
-                _stageSceneIndex->SetStage(stage);
+    if (!_CanPrepare(root)) {
+        return;
+    }
+    if (!_isPopulated) {
+        auto stage = root.GetStage();
+        if (_GetUseSceneIndices()) {
+            TF_VERIFY(_stageSceneIndex);
+            _stageSceneIndex->SetStage(stage);
 
-                // XXX(USD-7113): Add pruning based on _rootPath,
-                // _excludedPrimPaths
-
-                // XXX(USD-7114): Add draw mode support based on
-                // params.enableUsdDrawModes.
-
-                // XXX(USD-7115): Add invis overrides from _invisedPrimPaths.
-            } else {
-                TF_VERIFY(_sceneDelegate);
-                _sceneDelegate->SetUsdDrawModesEnabled(
-                    params.enableUsdDrawModes);
-                _sceneDelegate->Populate(
-                    stage->GetPrimAtPath(_rootPath),
-                    _excludedPrimPaths);
-                _sceneDelegate->SetInvisedPrimPaths(_invisedPrimPaths);
-
-                // This is only necessary when using the legacy scene delegate.
-                // The stage scene index provides this functionality.
-                _SetActiveRenderSettingsPrimFromStageMetadata(stage);
+            // Set timeCodesPerSecond in HdsiSceneGlobalsSceneIndex.
+            if (_appSceneIndices) {
+                if (auto &sgsi = _appSceneIndices->sceneGlobalsSceneIndex) {
+                    sgsi->SetTimeCodesPerSecond(stage->GetTimeCodesPerSecond());
+                }
             }
 
-            _isPopulated = true;
-        }
+            // XXX(USD-7113): Add pruning based on _rootPath,
+            // _excludedPrimPaths
 
-        _PreSetTime(params);
+            // XXX(USD-7114): Add draw mode support based on
+            // params.enableUsdDrawModes.
 
-        // SetTime will only react if time actually changes.
-        if (_GetUseSceneIndices()) {
-            _stageSceneIndex->SetTime(params.frame);
+            // XXX(USD-7115): Add invis overrides from _invisedPrimPaths.
         } else {
-            _sceneDelegate->SetTime(params.frame);
+            TF_VERIFY(_sceneDelegate);
+            _sceneDelegate->SetUsdDrawModesEnabled(
+                params.enableUsdDrawModes);
+            _sceneDelegate->Populate(
+                stage->GetPrimAtPath(_rootPath),
+                _excludedPrimPaths);
+            _sceneDelegate->SetInvisedPrimPaths(_invisedPrimPaths);
+
+            // This is only necessary when using the legacy scene delegate.
+            // The stage scene index provides this functionality.
+            _SetActiveRenderSettingsPrimFromStageMetadata(stage);
         }
 
-        _SetSceneGlobalsCurrentFrame(params.frame);
-        _PostSetTime(params);
+        _isPopulated = true;
     }
+
+    _PreSetTime(params);
+
+    // SetTime will only react if time actually changes.
+    if (_GetUseSceneIndices()) {
+        _stageSceneIndex->SetTime(params.frame);
+    } else {
+        _sceneDelegate->SetTime(params.frame);
+    }
+
+    _SetSceneGlobalsCurrentFrame(params.frame);
+    _PostSetTime(params);
 }
 
 void
@@ -581,7 +589,14 @@ UsdImagingGLEngine::SetCameraPath(SdfPath const& id)
     // The camera that is set for viewing will also be used for
     // time sampling.
     // XXX(HYD-2304): motion blur shutter window.
-    if (!_GetUseSceneIndices()) {
+    if (_GetUseSceneIndices()) {
+        // Set camera path on HdsiSceneGlobalsSceneIndex.
+        if (_appSceneIndices) {
+            if (auto &sgsi = _appSceneIndices->sceneGlobalsSceneIndex) {
+                sgsi->SetPrimaryCameraPrimPath(id);
+            }
+        }
+    } else {
         _sceneDelegate->SetCameraForSampling(id);
     }
 }
