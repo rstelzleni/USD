@@ -63,6 +63,7 @@ TF_DECLARE_REF_PTRS(HdsiLegacyDisplayStyleOverrideSceneIndex);
 TF_DECLARE_REF_PTRS(HdsiPrimTypePruningSceneIndex);
 TF_DECLARE_REF_PTRS(HdsiSceneGlobalsSceneIndex);
 TF_DECLARE_REF_PTRS(HdSceneIndexBase);
+TF_DECLARE_REF_PTRS(HdxTaskControllerSceneIndex);
 
 using UsdStageWeakPtr = TfWeakPtr<class UsdStage>;
 
@@ -773,6 +774,7 @@ protected:
     SdfPath const _sceneDelegateId;
 
     std::unique_ptr<HdxTaskController> _taskController;
+    HdxTaskControllerSceneIndexRefPtr _taskControllerSceneIndex;
 
     HdxSelectionTrackerSharedPtr _selTracker;
     HdRprimCollection _renderCollection;
