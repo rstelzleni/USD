@@ -32,6 +32,7 @@ TF_DEBUG_CODES(
     (enable) \
     (ignore) \
     (noAcceleration) \
+    (timeCodesPerSecond) \
     ((velocityMotionMode, "__velocityMotionMode"))
 
 TF_DECLARE_PUBLIC_TOKENS(HdsiVelocityMotionResolvingSceneIndexTokens,
@@ -72,11 +73,6 @@ TF_DECLARE_REF_PTRS(HdsiVelocityMotionResolvingSceneIndex);
 /// (Downstream consumers should still check nonlinearSampleCount in the
 /// case of instanceRotations.)
 ///
-/// The scene index takes the following optional input arguments:
-///
-/// - float fps [default: 24.0]
-///   Current frame rate
-///
 /// Additionally, to support certain established workflows, the behavior of the
 /// scene index may be controlled by the prim-level Hydra parameter
 /// "__velocityMotionMode". This is never read from usd and must instead be
@@ -104,7 +100,7 @@ public:
     static HdsiVelocityMotionResolvingSceneIndexRefPtr
     New(
         const HdSceneIndexBaseRefPtr& inputSceneIndex,
-        const HdContainerDataSourceHandle& inputArgs);
+        const HdContainerDataSourceHandle& inputArgs = nullptr);
 
     HDSI_API
     HdSceneIndexPrim
@@ -121,7 +117,7 @@ public:
 protected:
     HdsiVelocityMotionResolvingSceneIndex(
         const HdSceneIndexBaseRefPtr& inputSceneIndex,
-        const HdContainerDataSourceHandle& inputArgs);
+        const HdContainerDataSourceHandle& inputArgs = nullptr);
 
     void
     _PrimsAdded(
@@ -137,9 +133,6 @@ protected:
     _PrimsDirtied(
         const HdSceneIndexBase& sender,
         const HdSceneIndexObserver::DirtiedPrimEntries& entries) override;
-
-private:
-    HdContainerDataSourceHandle _inputArgs;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
