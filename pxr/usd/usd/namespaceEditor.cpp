@@ -439,7 +439,7 @@ UsdNamespaceEditor::ApplyEdits()
     std::vector<UsdStage::_NamespaceEditsChangeBlock> namespaceEditChangeBlocks;
     namespaceEditChangeBlocks.reserve(_dependentStages.size() + 1);
 
-    auto addChangesForStage = [&](const UsdStageRefPtr &stage) {
+    auto addPrimChangesForStage = [&](const UsdStageRefPtr &stage) {
         // The expected namespace changes to prim index paths are stored per
         // PcpCache in the dependent namespace edits so we look up the expected
         // changes for this stage's cache.
@@ -472,9 +472,28 @@ UsdNamespaceEditor::ApplyEdits()
             stage, std::move(changeBlockExpectedChanges));
     };
 
-    addChangesForStage(_stage);
-    for (const auto &stage : _dependentStages) {
-        addChangesForStage(stage);
+    if (_processedEdit->editDescription.IsPropertyEdit()) {
+        // For property edits we only edit the primary stage's root layer stack
+        // so we only have to log the expected property path change in a change
+        // block for that stage. Note that we don't need to compute and add
+        // a prim stack for properties as the change handling in UsdStage 
+        // doesn't need it.
+        // 
+        // XXX: WE don't currently look for downstream dependencies in dependent
+        // stages for property edits. This is something that will likely be
+        // needed so and we'll accordingly need to change block property changes
+        // for the affected dependent stages as well.
+        UsdStage::_NamespaceEditsChangeBlock::ExpectedNamespaceEditChangeVector
+            changeBlockExpectedChanges({
+                {_processedEdit->editDescription.oldPath, 
+                 _processedEdit->editDescription.newPath}});
+        namespaceEditChangeBlocks.emplace_back(
+            _stage, std::move(changeBlockExpectedChanges));
+    } else {
+        addPrimChangesForStage(_stage);
+        for (const auto &stage : _dependentStages) {
+            addPrimChangesForStage(stage);
+        }
     }
 
     const bool success = _processedEdit->Apply();

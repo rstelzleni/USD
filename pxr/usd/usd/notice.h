@@ -153,6 +153,10 @@ public:
             Invalid
         };
 
+        /// Value type holding a list of property paths that have been renamed
+        /// via the UsdNamespaceEditor paired with the new name of the property.
+        using RenamedProperties = std::vector<std::pair<SdfPath, TfToken>>;      
+
     private:
         using _PathsToChangesMap = 
             std::map<SdfPath, std::vector<const SdfChangeList::Entry*>>;
@@ -163,20 +167,25 @@ public:
         };
         using _PrimResyncInfoMap = std::map<SdfPath, _PrimResyncInfo>;
 
+        struct _NamespaceEditsInfo {
+            _PrimResyncInfoMap primResyncsInfo;
+            RenamedProperties renamedProperties;
+        };
+
         static const _PathsToChangesMap& _GetEmptyChangesMap();
-        static const _PrimResyncInfoMap& _GetEmptyPrimResyncInfoMap();
-        
+        static const _NamespaceEditsInfo& _GetEmptyNamespaceEditsInfo();
+
         friend class UsdStage;
         ObjectsChanged(const UsdStageWeakPtr &stage,
                        const _PathsToChangesMap *resyncChanges,
                        const _PathsToChangesMap *infoChanges,
                        const _PathsToChangesMap *assetPathChanges,
-                       const _PrimResyncInfoMap *primResyncsInfo)
+                       const _NamespaceEditsInfo *namespaceEditsInfo)
             : StageNotice(stage)
             , _resyncChanges(resyncChanges)
             , _infoChanges(infoChanges)
             , _assetPathChanges(assetPathChanges)
-            , _primResyncsInfo(primResyncsInfo) {}
+            , _namespaceEditsInfo(namespaceEditsInfo) {}
 
         ObjectsChanged(const UsdStageWeakPtr &stage,
                        const _PathsToChangesMap *resyncChanges);
@@ -440,11 +449,19 @@ public:
             const SdfPath &primPath,
             SdfPath *associatedPrimPath = nullptr) const;       
 
+        /// Return the list of property paths that have been renamed via a 
+        /// UsdNamespaceEditor ApplyEdits operation along with the new names of
+        /// those properties. When multiple properties have been edited, this
+        /// list will contain them in no particular order.
+        const RenamedProperties &GetRenamedProperties() const {
+            return _namespaceEditsInfo->renamedProperties;
+        }
+
     private:
         const _PathsToChangesMap *_resyncChanges;
         const _PathsToChangesMap *_infoChanges;
         const _PathsToChangesMap *_assetPathChanges;
-        const _PrimResyncInfoMap *_primResyncsInfo;
+        const _NamespaceEditsInfo *_namespaceEditsInfo;
     };
 
     /// \class StageEditTargetChanged

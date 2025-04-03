@@ -97,10 +97,10 @@ UsdNotice::ObjectsChanged::_GetEmptyChangesMap()
     return empty;
 }
 
-const UsdNotice::ObjectsChanged::_PrimResyncInfoMap&
-UsdNotice::ObjectsChanged::_GetEmptyPrimResyncInfoMap()
+const UsdNotice::ObjectsChanged::_NamespaceEditsInfo&
+UsdNotice::ObjectsChanged::_GetEmptyNamespaceEditsInfo()
 {
-    static const _PrimResyncInfoMap empty;
+    static const _NamespaceEditsInfo empty;
     return empty;
 }
 
@@ -109,7 +109,7 @@ UsdNotice::ObjectsChanged::ObjectsChanged(
     const _PathsToChangesMap *resyncChanges)
     : ObjectsChanged(
         stage, resyncChanges, &_GetEmptyChangesMap(), &_GetEmptyChangesMap(), 
-        &_GetEmptyPrimResyncInfoMap())
+        &_GetEmptyNamespaceEditsInfo())
 {
 }
 
@@ -231,8 +231,8 @@ UsdNotice::ObjectsChanged::GetPrimResyncType(
 
     // Successful namespace edits done through the UsdNamespaceEditor will have
     // a resync info
-    const _PrimResyncInfo *resyncInfo = _primResyncsInfo ? 
-        TfMapLookupPtr(*_primResyncsInfo, primPath) : nullptr;
+    const _PrimResyncInfo *resyncInfo = _namespaceEditsInfo ? 
+        TfMapLookupPtr(_namespaceEditsInfo->primResyncsInfo, primPath) : nullptr;
     if (resyncInfo) {
         if (associateObjectPath) {
             *associateObjectPath = resyncInfo->associatePath;

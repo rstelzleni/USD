@@ -7,6 +7,7 @@
 #include "pxr/pxr.h"
 #include "pxr/usd/usd/notice.h"
 #include "pxr/base/tf/pyEnum.h"
+#include "pxr/base/tf/pyContainerConversions.h"
 #include "pxr/base/tf/pyNoticeWrapper.h"
 #include "pxr/base/tf/pyResultConversions.h"
 #include "pxr/external/boost/python.hpp"
@@ -90,10 +91,19 @@ void wrapUsdNotice()
             .def("HasChangedFields",
                  (bool (UsdNotice::ObjectsChanged::*)(const SdfPath&) const)
                  &UsdNotice::ObjectsChanged::HasChangedFields)
-            .def("GetPrimResyncType", &_ObjectsChangedGetResyncNotice);
+            .def("GetPrimResyncType", &_ObjectsChangedGetResyncNotice)
+            .def("GetRenamedProperties", 
+                &UsdNotice::ObjectsChanged::GetRenamedProperties,
+                return_value_policy<TfPySequenceToList>())
             ;
             
         TfPyWrapEnum<UsdNotice::ObjectsChanged::PrimResyncType>();
+
+        // We need a to python converter for the value type of RenamedProperties
+        using ValueType = 
+            UsdNotice::ObjectsChanged::RenamedProperties::value_type;
+        to_python_converter<
+            ValueType, TfPyContainerConversions::to_tuple<ValueType>>();    
     }
     TfPyNoticeWrapper<
         UsdNotice::StageEditTargetChanged, UsdNotice::StageNotice>::Wrap()
