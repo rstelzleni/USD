@@ -381,8 +381,6 @@ _ColorizeSelectionTaskParams()
     params.enableLocateHighlight    = true;
     params.selectionColor  = GfVec4f(0.2f, 1.0f, 0.4f, 1.0f);
     params.locateColor     = GfVec4f(0.0f, 0.0f, 1.0f, 1.0f);
-    params.enableOutline   = true;
-    params.outlineRadius   = 10;
     return params;
 }
 
