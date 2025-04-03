@@ -40,6 +40,8 @@ class VdfSchedule;
 class Vdf_ScheduleInvalidator 
 {
 public:
+    Vdf_ScheduleInvalidator() : _nodeFilterState(0) {}
+
     /// All the registered schedules are invalidated when the manager is
     /// destructed.
     ///
@@ -75,6 +77,9 @@ public:
     void Unregister(VdfSchedule *schedule);
 
 private:
+    // If needed, grows the _nodeFilter array to accommodate at least newSize
+    // entries.
+    void _GrowNodeFilter(size_t newSize);
 
     // Union schedule's nodes into the node filter.
     void _MergeScheduleIntoNodeFilter(const VdfSchedule &schedule);
@@ -90,6 +95,12 @@ private:
     // Holds a prefilter that lets us know if we have any schedule that
     // could be affected by the node at the corresponding index.
     tbb::concurrent_vector<std::atomic<uint32_t>> _nodeFilter;
+
+    // Stores the size of _nodeFilter along with a bit that indicates whether
+    // the concurrent_vector is currently growing. If the vector is currently
+    // growing, we need to synchronize on construction of the newly added
+    // entries.
+    std::atomic<size_t> _nodeFilterState;
 
     // Represents a schedule entry in the map
     struct _ScheduleEntry {
