@@ -95,18 +95,22 @@ static double _FilterZeroes(
     const std::vector<double> &candidates)
 {
     double result = 0;
-    int numFound = 0;
+    bool found = false;
 
     for (double c : candidates)
     {
         if (c >= 0 && c <= 1)
         {
-            result = c;
-            numFound++;
+            if (TF_VERIFY(!found || result == c,
+                          "Multiple zeros found!"))
+            {
+                result = c;
+                found = true;
+            }
         }
     }
 
-    TF_VERIFY(numFound == 1);
+    TF_VERIFY(found, "No zeros found!");
     return result;
 }
 

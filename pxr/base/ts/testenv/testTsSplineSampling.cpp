@@ -22,6 +22,145 @@ PXR_NAMESPACE_USING_DIRECTIVE
 static int testCase = 0;
 
 static
+bool
+VerifySampleError(std::ostream& out,
+                  const TsSpline& spline,
+                  const std::vector<std::vector<GfVec2d>> & polylines,
+                  double timeScale,
+                  double valueScale,
+                  double tolerance)
+{
+    const double toleranceSq = tolerance * tolerance;
+    const GfVec2d toleranceScales(timeScale, valueScale);
+
+    for (size_t i = 0; i < polylines.size(); ++i) {
+        const std::vector<GfVec2d>& polyline = polylines[i];
+        for (size_t j = 0; j < polyline.size() - 1; ++j) {
+            const GfVec2d& prev = polyline[j];
+            const GfVec2d& next = polyline[j + 1];
+
+            GfVec2d samplePts[5];
+            GfVec2d splinePts[5];
+            for (int k = 0; k < 5; ++k) {
+                const double u = k / 4.0;
+                samplePts[k] = GfLerp(u, prev, next);
+                splinePts[k] = samplePts[k];
+                if (!spline.Eval(splinePts[k][0], &splinePts[k][1])) {
+                    // Output to both out and cerr so the message is both
+                    // in context and highlighted.
+                    std::ostringstream msg;
+                    msg << "Error: Failed to eval spline at time "
+                        << samplePts[k][0];
+                    out << msg.str() << std::endl;
+                    std::cerr << msg.str() << std::endl;
+
+                    // Give up, we failed
+                    return false;
+                }
+            }
+
+            // Measure the error to each point
+            //
+            // It's tempting to just check the "vertical" distance in the values
+            // at the same time, but that's not the error tolerance contract.
+            // What we may need to find is the closest point on the spline,
+            // not the point vertically above or below the sampled polyline.
+            //
+            // Finding the perpendicular distance from the line segment
+            // to the spline involves changing coordinate systems and
+            // root finding. We don't need to find the exact match, just
+            // verify that the curve is within the error tolerance of
+            // the polyline. So we can start with the vertical distance,
+            // but we may need to fall back to an iterative approach.
+
+            for (size_t k = 0; k < 5; ++k) {
+                const GfVec2d sampled = GfCompMult(samplePts[k],
+                                                   toleranceScales);
+                GfVec2d evaluated = GfCompMult(splinePts[k],
+                                               toleranceScales);
+                if (GfIsClose(evaluated, sampled, tolerance)) {
+                    // It's already close enough
+                    continue;
+                }
+
+                // Vertical distance was outside of tolerance, see if we can
+                // find a closer point. Because of the way we subdivide, the
+                // endpoints of each polyline segment are on the spline.
+                GfVec2d testPts[5] =
+                {
+                    prev,
+                    GfLerp(0.5, prev, samplePts[k]),
+                    samplePts[k],
+                    GfLerp(0.5, next, samplePts[k]),
+                    next
+                };
+
+                double minErrorSq = std::numeric_limits<double>::infinity();
+                while (minErrorSq >= toleranceSq) {
+                    // Correct the values of the intermediate points
+                    spline.Eval(testPts[1][0], &testPts[1][1]);
+                    spline.Eval(testPts[3][0], &testPts[3][1]);
+
+                    int errIndex = -1;
+                    for (int n = 0; n < 5; ++n) {
+                        GfVec2d tmpPt = GfCompMult(testPts[n], toleranceScales);
+                        double errorSq = (sampled - tmpPt).GetLengthSq();
+                        if (errorSq < minErrorSq) {
+                            minErrorSq = errorSq;
+                            errIndex = n;
+                        }
+                    }
+
+                    if (minErrorSq < toleranceSq) {
+                        // We're already close enough
+                        continue;
+                    }
+
+                    // Not close enough yet. See if we can get some closer
+                    // points
+                    if (errIndex < 0) {
+                        // We could not find a closer error. Fail
+                        std::ostringstream msg;
+                        msg.precision(std::numeric_limits<double>::digits10+1);
+                        msg << "Error: Sample evaluation exceeds tolerance:\n"
+                            << "    time        = " << samplePts[k][0] << "\n"
+                            << "    sampleValue = " << samplePts[k][1] << "\n"
+                            << "    evalValue   = " << splinePts[k][1] << "\n"
+                            << "    valueScale  = " << valueScale << "\n"
+                            << "    tolerance   = " << tolerance << "\n"
+                            << "    error       = " << std::sqrt(minErrorSq);
+                        
+                        out << msg.str() << std::endl;
+                        std::cerr << msg.str() << std::endl;
+
+                        // Give up on this spline, it failed.
+                        return false;
+
+                    } else if (errIndex < 2) {
+                        testPts[4] = testPts[2];
+                        testPts[2] = testPts[1];
+
+                    } else if (errIndex == 2) {
+                        testPts[0] = testPts[1];
+                        testPts[4] = testPts[3];
+
+                    } else {
+                        testPts[0] = testPts[2];
+                        testPts[2] = testPts[3];
+                    }
+
+                    testPts[1][0] = GfLerp(0.5, testPts[0][0], testPts[2][0]);
+                    testPts[3][0] = GfLerp(0.5, testPts[2][0], testPts[4][0]);
+                }
+            }
+        }
+    }
+
+    return true;
+}
+                
+            
+static
 void
 DoOneSample(std::ostream& out,
             const TsSpline& spline,
@@ -32,7 +171,7 @@ DoOneSample(std::ostream& out,
             double tolerance)
 {
     ++testCase;
-    
+
     // Sample the spline and output the results
     out << "Test Case " << testCase << ": "
         << sampleFunc << "("
@@ -59,10 +198,17 @@ DoOneSample(std::ostream& out,
                     out << "    " << vertex << "\n";
                 }
             }
+
+            TF_AXIOM(VerifySampleError(out,
+                                       spline,
+                                       samples.polylines,
+                                       timeScale,
+                                       valueScale,
+                                       tolerance));
         }
     } else {
         TsSplineSamplesWithSources<GfVec2d> samples;
-         
+
         result = spline.Sample(timeInterval,
                                timeScale,
                                valueScale,
@@ -76,14 +222,22 @@ DoOneSample(std::ostream& out,
                     << ": ("
                     << TfEnum::GetName(samples.sources[n])
                     << ")\n";
-                
+
                 for (const auto& vertex : samples.polylines[n]) {
                     out << "    " << vertex << "\n";
                 }
             }
+
+            TF_AXIOM(VerifySampleError(out,
+                                       spline,
+                                       samples.polylines,
+                                       timeScale,
+                                       valueScale,
+                                       tolerance));
         }
+
     }
-    
+
     out << std::endl;
 }
 
@@ -100,7 +254,7 @@ void DoTest(std::ostream& out, const std::string& sampleFunc)
         << "Testing " << sampleFunc << "\n"
         << std::string(72, '=')
         << std::endl;
-    
+
     for (const std::string& name : names) {
         const TsTest_SplineData data = TsTest_Museum::GetDataByName(name);
 
@@ -159,7 +313,7 @@ void DoTest(std::ostream& out, const std::string& sampleFunc)
         // Sample the extended range but with less rigor
         DoOneSample(out, spline, sampleFunc,
                     longSpan, timeScale, valueScale, 10.0);
-        
+
         // Sample the short range but more rigor
         DoOneSample(out, spline, sampleFunc,
                     shortSpan, timeScale, valueScale, 0.5);

@@ -534,6 +534,8 @@ _Sampler::_ExtrapLoop(
     const GfInterval knotInterval(_firstTime, _lastTime);
     const TsTime knotSpan = knotInterval.GetSize();
 
+    // Do not use pre-value for the last knot. If the last knot is dual valued
+    // we want to include that discontinuity in valueOffset.
     const double valueOffset =
         (extrap->mode == TsExtrapLoopRepeat ? last.value - first.value : 0.0);
     const bool oscillate = (extrap->mode == TsExtrapLoopOscillate);
@@ -772,8 +774,8 @@ _Sampler::_SampleSegment(
     double v1 = prevKnot->value;
     TsTime t2 = nextKnot->time;
     double v2 = (prevKnot->nextInterp == TsInterpHeld
-                 ? prevKnot->value
-                 : nextKnot->value);  // TsInterpLinear
+                 ? prevKnot->value            // held value
+                 : nextKnot->GetPreValue());  // linear value
 
     // Adjust for sampling just part of the segment.
     TsTime t = segmentInterval.GetMin();
@@ -825,7 +827,7 @@ _Sampler::_SampleCurveSegment(
             GfVec2d cp[4];
 
             cp[0] = GfVec2d(prevKnot->time, prevKnot->value);
-            cp[3] = GfVec2d(nextKnot->time, nextKnot->value);
+            cp[3] = GfVec2d(nextKnot->time, nextKnot->GetPreValue());
             cp[1] = cp[0] + GfVec2d(prevKnot->GetPostTanWidth(),
                                     prevKnot->GetPostTanHeight());
             cp[2] = cp[3] + GfVec2d(-nextKnot->GetPreTanWidth(),
