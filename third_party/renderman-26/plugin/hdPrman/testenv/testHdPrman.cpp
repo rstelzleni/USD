@@ -339,10 +339,9 @@ PopulateFallbackRenderSettings(
 
     // Set the Integrator
     {
-        UsdAttribute riIntegratorAttr = stage->GetAttributeAtPath(
-            settings->GetPath().AppendProperty(
-                TfToken("outputs:ri:integrator")));
-        if (!riIntegratorAttr.HasAuthoredConnections()) {
+        UsdRelationship riIntegratorRel =
+            settings->GetPrim().GetRelationship(TfToken("ri:integrator"));
+        if (!riIntegratorRel.HasAuthoredTargets()) {
             fprintf(stdout, "   Add an Integrator Prim.\n");
 
             UsdPrim pxrIntegrator;
@@ -363,13 +362,7 @@ PopulateFallbackRenderSettings(
                         TfToken("inputs:ri:style")));
                 styleAttr.Set(VtValue(TfToken(visualizerStyle)));
             }
-            UsdAttribute integratorOutputAttr = stage->GetAttributeAtPath(
-                pxrIntegrator.GetPath().AppendProperty(
-                    TfToken("outputs:result")));
-
-            const SdfPathVector integratorOutputPath = 
-                { integratorOutputAttr.GetPath() };
-            riIntegratorAttr.SetConnections(integratorOutputPath);
+            riIntegratorRel.SetTargets({pxrIntegrator.GetPath()});
         }
     }
 
@@ -480,7 +473,7 @@ AddVisualizerStyle(
 
         // Note that this can now be represented as an integrator prim that 
         // is connected to the RenderSettings prim through the 
-        // 'outputs:ri:integrator' terminal 
+        // 'ri:integrator' terminal 
         (*settingsMap)[HdPrmanRenderSettingsTokens->integratorName] =
             integratorName;
 

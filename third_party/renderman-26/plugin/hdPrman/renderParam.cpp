@@ -4475,26 +4475,26 @@ HdPrman_RenderParam::SetRenderSettingsIntegratorNode(
 #endif
 
 void
-HdPrman_RenderParam::SetConnectedSampleFilterPaths(
+HdPrman_RenderParam::SetSampleFilterPaths(
     HdSceneDelegate *sceneDelegate,
-    SdfPathVector const &connectedSampleFilterPaths)
+    SdfPathVector const &sampleFilterPaths)
 {
-    if (_connectedSampleFilterPaths != connectedSampleFilterPaths) {
-        // Reset the Filter Shading Nodes and update the Connected Paths
+    if (_sampleFilterPaths != sampleFilterPaths) {
+        // Reset the Filter Shading Nodes and update the paths
         _sampleFilterNodes.clear();
-        _connectedSampleFilterPaths = connectedSampleFilterPaths;
+        _sampleFilterPaths = sampleFilterPaths;
 
         if (! HdRenderIndex::IsSceneIndexEmulationEnabled()) {
             // Mark the SampleFilter Prims Dirty
-            for (const SdfPath &path : connectedSampleFilterPaths) {
+            for (const SdfPath &path : sampleFilterPaths) {
                 sceneDelegate->GetRenderIndex().GetChangeTracker()
                     .MarkSprimDirty(path, HdChangeTracker::DirtyParams);
             }
         }
     }
 
-    // If there are no connected SampleFilters, delete the riley SampleFilter
-    if (_connectedSampleFilterPaths.size() == 0) {
+    // If there are no SampleFilters, delete the riley SampleFilter
+    if (_sampleFilterPaths.size() == 0) {
         if (_sampleFiltersId != riley::SampleFilterId::InvalidId()) {
             AcquireRiley()->DeleteSampleFilter(_sampleFiltersId);
             _sampleFiltersId = riley::SampleFilterId::InvalidId();
@@ -4503,26 +4503,26 @@ HdPrman_RenderParam::SetConnectedSampleFilterPaths(
 }
 
 void
-HdPrman_RenderParam::SetConnectedDisplayFilterPaths(
+HdPrman_RenderParam::SetDisplayFilterPaths(
     HdSceneDelegate *sceneDelegate,
-    SdfPathVector const &connectedDisplayFilterPaths)
+    SdfPathVector const &displayFilterPaths)
 {
-    if (_connectedDisplayFilterPaths != connectedDisplayFilterPaths) {
-        // Reset the Filter Shading Nodes and update the Connected Paths
+    if (_displayFilterPaths != displayFilterPaths) {
+        // Reset the Filter Shading Nodes and update the paths
         _displayFilterNodes.clear();
-        _connectedDisplayFilterPaths = connectedDisplayFilterPaths;
+        _displayFilterPaths = displayFilterPaths;
 
         if (! HdRenderIndex::IsSceneIndexEmulationEnabled()) {
             // Mark the DisplayFilter prims Dirty
-            for (const SdfPath &path : connectedDisplayFilterPaths) {
+            for (const SdfPath &path : displayFilterPaths) {
                 sceneDelegate->GetRenderIndex().GetChangeTracker()
                     .MarkSprimDirty(path, HdChangeTracker::DirtyParams);
             }
         }
     }
 
-    // If there are no connected DisplayFilters, delete the riley DisplayFilter
-    if (_connectedDisplayFilterPaths.size() == 0) {
+    // If there are no DisplayFilters, delete the riley DisplayFilter
+    if (_displayFilterPaths.size() == 0) {
         if (_displayFiltersId != riley::DisplayFilterId::InvalidId()) {
             AcquireRiley()->DeleteDisplayFilter(_displayFiltersId);
             _displayFiltersId = riley::DisplayFilterId::InvalidId();
@@ -4536,10 +4536,10 @@ HdPrman_RenderParam::CreateSampleFilterNetwork(HdSceneDelegate *sceneDelegate)
     std::vector<riley::ShadingNode> shadingNodes;
     std::vector<RtUString> filterRefs;
 
-    // Gather shading nodes and reference paths (for combiner) for all connected
-    // and visible SampleFilters. The filterRefs order needs to match the order
+    // Gather shading nodes and reference paths (for combiner) for all
+    // visible SampleFilters. The filterRefs order needs to match the order
     // of SampleFilters specified in the RenderSettings connection.
-    for (const auto& path : _connectedSampleFilterPaths) {
+    for (const SdfPath& path : _sampleFilterPaths) {
         if (sceneDelegate->GetVisible(path)) {
             const auto it = _sampleFilterNodes.find(path);
             if (!TF_VERIFY(it != _sampleFilterNodes.end())) {
@@ -4593,10 +4593,10 @@ HdPrman_RenderParam::CreateDisplayFilterNetwork(HdSceneDelegate *sceneDelegate)
     std::vector<riley::ShadingNode> shadingNodes;
     std::vector<RtUString> filterRefs;
 
-    // Gather shading nodes and reference paths (for combiner) for all connected
-    // and visible DisplayFilters. The filterRefs order needs to match the order
-    // of DisplayFilters specified in the RenderSettings connection.
-    for (const auto& path : _connectedDisplayFilterPaths) {
+    // Gather shading nodes and reference paths (for combiner) for all
+    // visible DisplayFilters. The filterRefs order needs to match the order
+    // of DisplayFilters specified in the RenderSettings.
+    for (const SdfPath& path : _displayFilterPaths) {
         if (sceneDelegate->GetVisible(path)) {
             const auto it = _displayFilterNodes.find(path);
             if (!TF_VERIFY(it != _displayFilterNodes.end())) {
@@ -4657,7 +4657,7 @@ HdPrman_RenderParam::AddSampleFilter(
     }
 
     // If we have all the Shading Nodes, create the SampleFilters in Riley
-    if (_sampleFilterNodes.size() == _connectedSampleFilterPaths.size()) {
+    if (_sampleFilterNodes.size() == _sampleFilterPaths.size()) {
         CreateSampleFilterNetwork(sceneDelegate);
     }
 }
@@ -4675,7 +4675,7 @@ HdPrman_RenderParam::AddDisplayFilter(
     }
 
     // If we have all the Shading Nodes, creat the DisplayFilters in Riley
-    if (_displayFilterNodes.size() == _connectedDisplayFilterPaths.size()) {
+    if (_displayFilterNodes.size() == _displayFilterPaths.size()) {
         CreateDisplayFilterNetwork(sceneDelegate);
     }
 }
