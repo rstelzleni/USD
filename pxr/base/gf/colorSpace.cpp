@@ -38,6 +38,7 @@ GfColorSpace::GfColorSpace(const TfToken& name)
         // hashing.
         NcColorSpaceM33Descriptor identity;
         identity.shortName = name.GetString().c_str();
+        identity.descriptiveName = identity.shortName;
         identity.rgbToXYZ = { 1.0f, 0.0f, 0.0f,
                               0.0f, 1.0f, 0.0f,
                               0.0f, 0.0f, 1.0f };
@@ -82,6 +83,7 @@ GfColorSpace::GfColorSpace(const TfToken& name,
 {
     NcColorSpaceM33Descriptor desc;
     desc.shortName = name.GetString().c_str();
+    desc.descriptiveName = desc.shortName;
     desc.rgbToXYZ.m[0] = rgbToXYZ[0][0];
     desc.rgbToXYZ.m[1] = rgbToXYZ[0][1];
     desc.rgbToXYZ.m[2] = rgbToXYZ[0][2];
