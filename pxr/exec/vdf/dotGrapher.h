@@ -25,7 +25,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 ///
 /// \class Vdf_DotGrapher
 ///
-/// This is a grapher class that produces .dot files (see http://graphviz.org)
+/// This is a grapher class that produces .dot files.
 ///
 class Vdf_DotGrapher 
 {

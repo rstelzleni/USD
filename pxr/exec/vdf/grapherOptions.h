@@ -185,10 +185,6 @@ public:
     /// Color must be in a format that is understood by dot.  Lowercase English
     /// color names usually work, (e.g. "red", "green", "blue").
     ///
-    /// A complete list can be found here:
-    ///
-    ///           http://www.graphviz.org/doc/info/colors.html
-    ///
     void SetColor(const VdfObjectPtr &object, const TfToken &color) {
 
         if (!color.IsEmpty())

@@ -48,12 +48,6 @@ class VdfNode;
 /// \code
 /// acroread <out.pdf>
 /// \endcode
-/// 
-/// For more information about graphviz, see:
-///
-/// \code
-///     http://www.graphviz.org
-/// \endcode
 ///
 class VdfGrapher 
 {
