@@ -134,6 +134,31 @@ _AreTasksConverged(HdRenderIndex * const renderIndex,
     return true;
 }
 
+// Convert UsdImagingGLCullStyle to a HdCullStyleTokens value.
+static TfToken
+_CullStyleEnumToToken(UsdImagingGLCullStyle cullStyle)
+{
+    switch(cullStyle) {
+    case UsdImagingGLCullStyle::CULL_STYLE_NO_OPINION:
+        return TfToken();
+    case UsdImagingGLCullStyle::CULL_STYLE_NOTHING:
+        return HdCullStyleTokens->nothing;
+    case UsdImagingGLCullStyle::CULL_STYLE_BACK:
+        return HdCullStyleTokens->back;
+    case UsdImagingGLCullStyle::CULL_STYLE_FRONT:
+        return HdCullStyleTokens->front;
+    case UsdImagingGLCullStyle::CULL_STYLE_BACK_UNLESS_DOUBLE_SIDED:
+        return HdCullStyleTokens->backUnlessDoubleSided;
+    default:
+        // XXX There is currently no UsdImagingGLCullStyle enum value
+        // equivalent to HdCullStyleTokens->frontUnlessDoubleSided,
+        // but if we add it in the future we need to handle it here.
+        TF_CODING_ERROR("UsdImagingGLEngine: Unrecognzied enum value %i",
+                        int(cullStyle));
+        return TfToken();
+    }
+}
+
 } // anonymous namespace
 
 //----------------------------------------------------------------------------
@@ -336,7 +361,6 @@ UsdImagingGLEngine::_PrepareRender(const UsdImagingGLRenderParams &params)
         TF_CODING_ERROR("No task controller or task controller scene index.");
     }
 
-    // Forward scene materials enable option.
     if (_GetUseSceneIndices()) {
         if (_materialPruningSceneIndex) {
             _materialPruningSceneIndex->SetEnabled(
@@ -345,6 +369,10 @@ UsdImagingGLEngine::_PrepareRender(const UsdImagingGLRenderParams &params)
         if (_lightPruningSceneIndex) {
             _lightPruningSceneIndex->SetEnabled(
                 !params.enableSceneLights);
+        }
+        if (_displayStyleSceneIndex) {
+            _displayStyleSceneIndex->SetCullStyleFallback(
+                _CullStyleEnumToToken(params.cullStyle));
         }
     } else {
         _sceneDelegate->SetSceneMaterialsEnabled(params.enableSceneMaterials);

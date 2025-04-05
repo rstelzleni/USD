@@ -27,6 +27,7 @@
 #include "pxr/imaging/hd/version.h"
 
 #include "pxr/imaging/hdsi/sceneGlobalsSceneIndex.h"
+#include "pxr/imaging/hdsi/legacyDisplayStyleOverrideSceneIndex.h"
 
 #include "pxr/usdImaging/usdImaging/delegate.h"
 #include "pxr/usdImaging/usdImaging/sceneIndices.h"
@@ -695,8 +696,21 @@ HydraSetupAndRender(
         UsdImagingSceneIndices sceneIndices =
             UsdImagingCreateSceneIndices(createInfo);
         sceneIndices.stageSceneIndex->SetTime(frameNum);
+
+        HdSceneIndexBaseRefPtr sceneIndex =
+            sceneIndices.finalSceneIndex;
+
+        // Add a displayStyle scene index.
+        if (!cullStyle.empty()) {
+            HdsiLegacyDisplayStyleOverrideSceneIndexRefPtr
+                displayStyleSceneIndex =
+                HdsiLegacyDisplayStyleOverrideSceneIndex::New(sceneIndex);
+            sceneIndex = displayStyleSceneIndex;
+            displayStyleSceneIndex->SetCullStyleFallback(TfToken(cullStyle));
+        }
+            
         hdRenderIndex->InsertSceneIndex(
-            sceneIndices.finalSceneIndex, SdfPath::AbsoluteRootPath());
+            sceneIndex, SdfPath::AbsoluteRootPath());
     } else {
         hdUsdFrontend = std::make_unique<UsdImagingDelegate>(
             hdRenderIndex.get(),
