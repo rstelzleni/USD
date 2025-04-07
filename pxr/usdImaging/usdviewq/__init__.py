@@ -27,6 +27,16 @@ class InvalidUsdviewOption(Exception):
     pass
 
 
+def _AbsoluteFilePath(argStr):
+    """This should be used for args that are meant to absolute file paths (as
+    opposed to ones that may get resolved.  This is especially useful if you
+    have an app that uses this launcher but also changes the dir.
+    """
+    if argStr is None:
+        return None
+    return os.path.abspath(argStr)
+
+
 class Launcher(object):
     '''
     Base class for argument parsing, validation, and initialization for UsdView
@@ -178,7 +188,7 @@ class Launcher(object):
                             help='Enable asynchronous hydra scene processing')
 
         parser.add_argument('--traceToFile', action='store',
-                            type=str,
+                            type=_AbsoluteFilePath,
                             dest='traceToFile',
                             default=None,
                             help='Start tracing at application startup and '
