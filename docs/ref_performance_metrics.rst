@@ -116,9 +116,11 @@ Windows platforms (as described in :ref:`perf_environments`).
     so use the below results with caution. We are investigating these sources
     of variation.
 
-    Additionally, there are known issues with obtaining the create_first_image
+    There are known issues with obtaining the create_first_image
     metric on macOS. We will update published metrics when this issue is
     resolved.
+
+    We are investigating the 25.05 Moore Lane performance regression on linux.
 
 .. image:: performance/linux.svg
     :width: 500
