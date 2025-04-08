@@ -981,8 +981,16 @@ NdrRegistry::_InstantiateParserPlugins(
     const std::set<TfType>& parserPluginTypes)
 {
     // Allow plugins to be disabled.
-    const std::string disabledPluginsStr = TfGetEnvSetting(PXR_NDR_DISABLE_PLUGINS);
-    const std::set<std::string> disabledPlugins = TfStringTokenizeToSet(disabledPluginsStr, ",");
+    const std::string disabledPluginsStr =
+        TfGetEnvSetting(PXR_SDR_DISABLE_PLUGINS);
+    std::set<std::string> disabledPlugins =
+        TfStringTokenizeToSet(disabledPluginsStr, ",");
+    const std::string legacyDisabledPluginsStr =
+        TfGetEnvSetting(PXR_NDR_DISABLE_PLUGINS);
+    const std::set<std::string> legacyDisabledPlugins =
+        TfStringTokenizeToSet(legacyDisabledPluginsStr, ",");
+    disabledPlugins.insert(legacyDisabledPlugins.begin(),
+                           legacyDisabledPlugins.end());
 
     // Ensure this list is in a consistent order to ensure stable behavior.
     // TfType's operator< is not stable across runs, so we sort based on
