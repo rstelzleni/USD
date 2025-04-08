@@ -13,6 +13,7 @@
 #include "pxr/exec/exec/types.h"
 
 #include "pxr/base/tf/type.h"
+#include "pxr/base/tf/token.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -28,13 +29,14 @@ class Exec_ComputationDefinition
 {
 public:
 
-    /// Creates a definiton for a computation.
+    /// Creates a definition for a computation.
     ///
     /// The computation's evaluation-time behavior is implemented in \p
     /// callback. The \p inputKeys indicate how to source the input values that
-    /// are required at evalution time.
+    /// are required at evaluation time.
     Exec_ComputationDefinition(
         TfType resultType,
+        const TfToken &computationName,
         ExecCallbackFn &&callback,
         Exec_InputKeyVector &&inputKeys);
 
@@ -46,6 +48,11 @@ public:
     /// Returns the result type of this computation.
     TfType GetResultType() const {
         return _resultType;
+    }
+
+    /// Returns the token name of the computation.
+    const TfToken &GetComputationName() const {
+        return _computationName;
     }
 
     /// Returns the callback function that implements the logic for the
@@ -63,6 +70,7 @@ public:
 private:
     
     const TfType _resultType;
+    const TfToken _computationName;
     const ExecCallbackFn _callback;
     const Exec_InputKeyVector _inputKeys;
 };

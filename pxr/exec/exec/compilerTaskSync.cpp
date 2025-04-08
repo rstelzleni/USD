@@ -11,7 +11,9 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_CompilerTaskSync::ClaimResult
-Exec_CompilerTaskSync::Claim(const Exec_OutputKey &key, tbb::task *successor)
+Exec_CompilerTaskSync::Claim(
+    const Exec_OutputKey::Identity &key,
+    tbb::task *successor)
 {
     // Add the key to the map. If another task got to claiming it first, it's
     // expected and safe for the key to already have an entry.
@@ -46,7 +48,7 @@ Exec_CompilerTaskSync::Claim(const Exec_OutputKey &key, tbb::task *successor)
 }
 
 void
-Exec_CompilerTaskSync::MarkDone(const Exec_OutputKey &key)
+Exec_CompilerTaskSync::MarkDone(const Exec_OutputKey::Identity &key)
 {
     // Note, some of these TF_VERIFYs can be safely relaxed if we later
     // want to mark tasks done from tasks that aren't the original claimaints.

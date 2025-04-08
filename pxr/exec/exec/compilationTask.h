@@ -55,7 +55,7 @@ protected:
     /// Called from the _Compile method in the derived class to indicate that
     /// the task identified by \c key has been completed. This must be called
     /// *after* the task published its results.
-    void _MarkDone(const Exec_OutputKey &key);
+    void _MarkDone(const Exec_OutputKey::Identity &key);
 
 private:
     // State persistent to one round of compilation
@@ -80,7 +80,8 @@ public:
     /// calling task will establish a dependency on the subtask and the _Compile
     /// method will automatically be re-executed once all dependencies have been
     /// fulfilled.
-    Exec_CompilerTaskSync::ClaimResult ClaimSubtask(const Exec_OutputKey &key);
+    Exec_CompilerTaskSync::ClaimResult ClaimSubtask(
+        const Exec_OutputKey::Identity &key);
 
 private:
     friend class Exec_CompilationTask::TaskStages;

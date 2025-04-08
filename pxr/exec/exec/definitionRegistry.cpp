@@ -77,6 +77,7 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
             std::forward_as_tuple(schemaType, computationName),
             std::forward_as_tuple(
                 resultType,
+                computationName,
                 std::move(callback),
                 std::move(inputKeys))).second;
 

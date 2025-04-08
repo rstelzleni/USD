@@ -10,32 +10,17 @@
 #include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/computationDefinition.h"
-#include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
 #include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
-#include "pxr/exec/esf/attribute.h"
 #include "pxr/exec/esf/journal.h"
-#include "pxr/exec/esf/prim.h"
-#include "pxr/exec/esf/stage.h"
 #include "pxr/exec/vdf/connectorSpecs.h"
 #include "pxr/exec/vdf/tokens.h"
-#include "pxr/usd/sdf/path.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
-
-static const Exec_ComputationDefinition *
-_GetAttributeComputationDefinition(
-    TfType schemaType,
-    const TfToken &attributeName,
-    const TfToken &computationName)
-{
-    // TODO: attribute computation definitions are not yet implemented
-    return nullptr;
-}
 
 void
 Exec_OutputProvidingCompilationTask::_Compile(
@@ -44,53 +29,14 @@ Exec_OutputProvidingCompilationTask::_Compile(
 {
     TRACE_FUNCTION();
 
-    // TODO: Journaling
-    EsfJournal *journal = nullptr;
-
-    const EsfStage &stage = compilationState.GetStage();
-
-    const SdfPath &providerObjectPath =
-        _outputKey.GetValueKey().GetProviderPath();
-    const EsfObject providerObject =
-        stage->GetObjectAtPath(providerObjectPath, journal);
-
-    const EsfPrim prim = providerObject->GetPrim(journal);
-    const TfType primSchemaType = prim->GetType(journal);
-
-    const EsfAttribute attribute =
-        stage->GetAttributeAtPath(providerObjectPath, journal);
-
-    const TfToken &computationName =
-        _outputKey.GetValueKey().GetComputationToken();
-
-    const Exec_DefinitionRegistry &registry =
-        Exec_DefinitionRegistry::GetInstance();
-    const Exec_ComputationDefinition *const definition =
-        attribute->IsValid(journal)
-        ? _GetAttributeComputationDefinition(
-            primSchemaType,
-            attribute->GetName(journal),
-            computationName)
-        : registry.GetPrimComputationDefinition(
-            primSchemaType,
-            computationName);
-
-    // TODO: Lookup builtin computation definition
-
-    // We were unable to find a registered or builtin computation for this
-    // output key. Mark the task done, but it won't have a compiled output
-    // key.
-    if (!definition) {
-        _MarkDone(_outputKey);
-        return;
-    }
-
-    const Exec_InputKeyVector &inputKeys = definition->GetInputKeys();
+    const Exec_ComputationDefinition *const computationDefinition =
+        _outputKey.GetComputationDefinition();
+    const Exec_InputKeyVector &inputKeys =
+        computationDefinition->GetInputKeys();
 
     taskStages.Invoke(
     // Make sure input dependencies are fulfilled
-    [this, &compilationState, &providerObjectPath, &inputKeys](
-        TaskDependencies &deps) {
+    [this, &compilationState, &inputKeys](TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("input tasks");
 
         _inputSources.resize(inputKeys.size());
@@ -99,13 +45,14 @@ Exec_OutputProvidingCompilationTask::_Compile(
             deps.NewSubtask<Exec_InputResolvingCompilationTask>(
                 compilationState,
                 inputKey,
-                providerObjectPath,
+                _outputKey.GetProviderObject(),
                 sourceOutputs++);
         }
     },
 
     // Compile and connect the callback node
-    [this, &compilationState, definition, &inputKeys](TaskDependencies &deps) {
+    [this, &compilationState, computationDefinition, &inputKeys](
+        TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("node creation");
 
         VdfInputSpecs inputSpecs;
@@ -115,7 +62,8 @@ Exec_OutputProvidingCompilationTask::_Compile(
         }
 
         VdfOutputSpecs outputSpecs;
-        outputSpecs.Connector(definition->GetResultType(), VdfTokens->out);
+        outputSpecs.Connector(
+            computationDefinition->GetResultType(), VdfTokens->out);
 
         // TODO: Journaling
         EsfJournal nodeJournal;
@@ -125,10 +73,11 @@ Exec_OutputProvidingCompilationTask::_Compile(
                 nodeJournal,
                 inputSpecs,
                 outputSpecs,
-                definition->GetCallback());
+                computationDefinition->GetCallback());
 
-        callbackNode->SetDebugNameCallback([outputKey = _outputKey]{
-            return outputKey.GetDebugName();
+        const Exec_OutputKey::Identity keyIdentity = _outputKey.MakeIdentity();
+        callbackNode->SetDebugNameCallback([keyIdentity]{
+            return keyIdentity.GetDebugName();
         });
 
         for (size_t i = 0; i < _inputSources.size(); ++i) {
@@ -150,11 +99,11 @@ Exec_OutputProvidingCompilationTask::_Compile(
         // Then publish it to the compiled outputs cache.
         Exec_CompiledOutputCache *compiledOutputs =
             compilationState.GetProgram()->GetCompiledOutputCache();
-        compiledOutputs->Insert(_outputKey, compiledOutput);
+        compiledOutputs->Insert(_outputKey.MakeIdentity(), compiledOutput);
 
         // Then indicate that the task identified by _outputKey is done. This
         // notifies all other tasks with a dependency on this _outputKey.
-        _MarkDone(_outputKey);
+        _MarkDone(_outputKey.MakeIdentity());
     }
     );
 }

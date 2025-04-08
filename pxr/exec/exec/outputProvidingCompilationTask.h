@@ -46,6 +46,7 @@ private:
         Exec_CompilationState &compilationState,
         TaskStages &taskStages) override;
 
+    // The output key indicating which output and node must be compiled.
     const Exec_OutputKey _outputKey;
 
     // Some nodes only have one input, and many inputs only source from one

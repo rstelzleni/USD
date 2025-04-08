@@ -8,7 +8,6 @@
 
 #include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/leafCompilationTask.h"
-#include "pxr/exec/exec/outputKey.h"
 #include "pxr/exec/exec/valueKey.h"
 
 #include "pxr/base/tf/span.h"
@@ -63,9 +62,7 @@ Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
                 tbb::task *requestedOutputTask =
                     new (tbb::task::allocate_additional_child_of(*rootTask))
                         Exec_LeafCompilationTask(
-                            state,
-                            Exec_OutputKey(valueKeys[i]),
-                            &leafOutputs[i]);
+                            state, valueKeys[i], &leafOutputs[i]);
                 tbb::task::spawn(*requestedOutputTask);
             }
         });

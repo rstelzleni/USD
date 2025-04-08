@@ -17,10 +17,10 @@
 
 #include "pxr/base/tf/smallVector.h"
 #include "pxr/exec/vdf/maskedOutput.h"
-#include "pxr/usd/sdf/path.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EsfObject;
 class Exec_CompilationState;
 
 /// Compilation task that resolves an input key to the source VdfMaskedOutput
@@ -38,7 +38,7 @@ public:
     Exec_InputResolvingCompilationTask(
         Exec_CompilationState &compilationState,
         const Exec_InputKey &inputKey,
-        const SdfPath &originObject,
+        const EsfObject &originObject,
         TfSmallVector<VdfMaskedOutput, 1> *resultOutputs) :
         Exec_CompilationTask(compilationState),
         _inputKey(inputKey),
@@ -54,9 +54,9 @@ private:
     // The input key to resolve to output keys providing said input value.
     const Exec_InputKey _inputKey;
 
-    // Path to the scene object at which the scene traversal is started for the
+    // The scene object at which the scene traversal is started for the
     // specified provider resolution mode.
-    const SdfPath &_originObject;
+    const EsfObject &_originObject;
 
     // The output keys populated as a result of the scene traversal.
     Exec_OutputKeyVector _outputKeys;

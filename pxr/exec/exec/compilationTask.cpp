@@ -11,7 +11,8 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_CompilerTaskSync::ClaimResult
-Exec_CompilationTask::TaskDependencies::ClaimSubtask(const Exec_OutputKey &key)
+Exec_CompilationTask::TaskDependencies::ClaimSubtask(
+    const Exec_OutputKey::Identity &key)
 {
     const Exec_CompilerTaskSync::ClaimResult result =
         Exec_CompilationState::OutputTasksAccess::_Get(&_compilationState)
@@ -31,7 +32,7 @@ Exec_CompilationTask::execute()
 }
 
 void
-Exec_CompilationTask::_MarkDone(const Exec_OutputKey &key)
+Exec_CompilationTask::_MarkDone(const Exec_OutputKey::Identity &key)
 {
     Exec_CompilationState::OutputTasksAccess::_Get(&_compilationState)
         .MarkDone(key);

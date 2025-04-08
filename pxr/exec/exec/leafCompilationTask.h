@@ -12,7 +12,9 @@
 #include "pxr/exec/exec/api.h"
 
 #include "pxr/exec/exec/compilationTask.h"
-#include "pxr/exec/exec/outputKey.h"
+#include "pxr/exec/exec/valueKey.h"
+
+#include "pxr/base/tf/smallVector.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -29,11 +31,11 @@ class Exec_LeafCompilationTask : public Exec_CompilationTask
 public:
     Exec_LeafCompilationTask(
         Exec_CompilationState &compilationState,
-        const Exec_OutputKey &outputKey,
-        VdfMaskedOutput *resultOutput) :
+        const ExecValueKey &valueKey,
+        VdfMaskedOutput *leafOutput) :
         Exec_CompilationTask(compilationState),
-        _outputKey(outputKey),
-        _resultOutput(resultOutput)
+        _valueKey(valueKey),
+        _leafOutput(leafOutput)
     {}
 
 private:
@@ -41,11 +43,14 @@ private:
         Exec_CompilationState &compilationState,
         TaskStages &taskStages) override;
 
-    // The output key for the requested output.
-    const Exec_OutputKey _outputKey;
+    // The value key for the requested output.
+    const ExecValueKey _valueKey;
 
-    // Pointer to the result to be populated by this task.
-    VdfMaskedOutput *const _resultOutput;
+    // The array of outputs populated by the input resolving task.
+    TfSmallVector<VdfMaskedOutput, 1> _resultOutputs;
+
+    // Pointer to the leaf output to be populated by this task.
+    VdfMaskedOutput *const _leafOutput;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

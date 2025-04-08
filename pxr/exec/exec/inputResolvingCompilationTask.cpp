@@ -13,31 +13,42 @@
 #include "pxr/exec/exec/outputProvidingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/base/trace/trace.h"
+#include "pxr/exec/esf/attribute.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/prim.h"
 #include "pxr/exec/esf/stage.h"
-#include "pxr/base/trace/trace.h"
+#include "pxr/usd/sdf/path.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_OutputKeyVector
 static _GenerateOutputKeys(
     const EsfStage &stage,
-    const SdfPath &originObjectPath,
-    const Exec_InputKey &inputKey);
+    const EsfObject &originObject,
+    const Exec_InputKey &inputKey,
+    EsfJournal *journal);
 
 Exec_OutputKeyVector
 static _GenerateLocalOutputKeys(
     const EsfStage &stage,
-    const SdfPath &originObjectPath,
-    const Exec_InputKey &inputKey);
+    const EsfObject &originObject,
+    const Exec_InputKey &inputKey,
+    EsfJournal *journal);
 
 Exec_OutputKeyVector
 static _GenerateNamespaceAncestorOutputKeys(
     const EsfStage &stage,
-    const SdfPath &originObjectPath,
-    const Exec_InputKey &inputKey);
+    const EsfObject &originObject,
+    const Exec_InputKey &inputKey,
+    EsfJournal *journal);
+
+static const Exec_ComputationDefinition *
+_GetAttributeComputationDefinition(
+    TfType schemaType,
+    const TfToken &attributeName,
+    const TfToken &computationName);
 
 void
 Exec_InputResolvingCompilationTask::_Compile(
@@ -53,9 +64,15 @@ Exec_InputResolvingCompilationTask::_Compile(
     [this, &compilationState](TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("compile sources");
 
+        // TODO: Journaling
+        EsfJournal inputJournal;
+
         // Generate the output keys for all the inputs.
         _outputKeys = _GenerateOutputKeys(
-            compilationState.GetStage(), _originObject, _inputKey);
+            compilationState.GetStage(),
+            _originObject,
+            _inputKey,
+            &inputJournal);
         _resultOutputs->resize(_outputKeys.size());
 
         // For every output key, make sure it's either already available or
@@ -64,9 +81,11 @@ Exec_InputResolvingCompilationTask::_Compile(
             const Exec_OutputKey &outputKey = _outputKeys[i];
             VdfMaskedOutput *const resultOutput = &(*_resultOutputs)[i];
 
+            const Exec_OutputKey::Identity outputKeyIdentity =
+                outputKey.MakeIdentity();
             const auto &[output, hasOutput] =
                 compilationState.GetProgram()->GetCompiledOutputCache()->Find(
-                    outputKey);
+                    outputKeyIdentity);
             if (hasOutput) {
                 *resultOutput = output;
                 continue;
@@ -74,7 +93,7 @@ Exec_InputResolvingCompilationTask::_Compile(
 
             // Claim the task for producing the missing output.
             const Exec_CompilerTaskSync::ClaimResult claimResult =
-                deps.ClaimSubtask(outputKey);
+                deps.ClaimSubtask(outputKeyIdentity);
             if (claimResult == Exec_CompilerTaskSync::ClaimResult::Claimed) {
                 // Run the task that produces the output.
                 deps.NewSubtask<Exec_OutputProvidingCompilationTask>(
@@ -103,7 +122,7 @@ Exec_InputResolvingCompilationTask::_Compile(
 
             const auto &[output, hasOutput] =
                 compilationState.GetProgram()->GetCompiledOutputCache()->Find(
-                    outputKey);
+                    outputKey.MakeIdentity());
             if (!output) {
                 TF_VERIFY(_inputKey.optional);
                 continue;
@@ -118,19 +137,20 @@ Exec_InputResolvingCompilationTask::_Compile(
 Exec_OutputKeyVector
 static _GenerateOutputKeys(
     const EsfStage &stage,
-    const SdfPath &originObjectPath,
-    const Exec_InputKey &inputKey)
+    const EsfObject &originObject,
+    const Exec_InputKey &inputKey,
+    EsfJournal *journal)
 {
     TRACE_FUNCTION();
 
     switch(inputKey.providerResolution.dynamicTraversal) {
         case ExecProviderResolution::DynamicTraversal::Local:
             return _GenerateLocalOutputKeys(
-                stage, originObjectPath, inputKey);
+                stage, originObject, inputKey, journal);
 
         case ExecProviderResolution::DynamicTraversal::NamespaceAncestor:
             return _GenerateNamespaceAncestorOutputKeys(
-                stage, originObjectPath, inputKey);
+                stage, originObject, inputKey, journal);
     }
 
     TF_CODING_ERROR("Unhandled provider resolution mode");
@@ -140,17 +160,18 @@ static _GenerateOutputKeys(
 Exec_OutputKeyVector
 static _GenerateLocalOutputKeys(
     const EsfStage &stage,
-    const SdfPath &originObjectPath,
-    const Exec_InputKey &inputKey)
+    const EsfObject &originObject,
+    const Exec_InputKey &inputKey,
+    EsfJournal *journal)
 {
     TRACE_FUNCTION();
 
-    // TODO: Journaling
-    EsfJournal *journal = nullptr;
+    const Exec_DefinitionRegistry &registry =
+        Exec_DefinitionRegistry::GetInstance();
 
     const SdfPath providerPath =
         inputKey.providerResolution.localTraversal.MakeAbsolutePath(
-            originObjectPath);
+            originObject->GetPath(journal));
 
     const EsfObject providerObject =
         stage->GetObjectAtPath(providerPath, journal);
@@ -158,28 +179,43 @@ static _GenerateLocalOutputKeys(
         return {};
     }
 
+    const EsfPrim prim = providerObject->GetPrim(journal);
+    const TfType primSchemaType = prim->GetType(journal);
+    const EsfAttribute attribute =
+        stage->GetAttributeAtPath(providerPath, journal);
+
+    const Exec_ComputationDefinition *const definition =
+        attribute->IsValid(journal)
+        ? _GetAttributeComputationDefinition(
+            primSchemaType,
+            attribute->GetName(journal),
+            inputKey.computationName)
+        : registry.GetPrimComputationDefinition(
+            primSchemaType,
+            inputKey.computationName);
+    if (!definition) {
+        return {};
+    }
+
+    // TODO: Lookup builtin computation definition
+
     return { 
-        Exec_OutputKey(ExecValueKey(
-            providerObject->GetPath(journal), inputKey.computationName))
+        Exec_OutputKey(providerObject, definition)
     };
 }
 
 Exec_OutputKeyVector
 static _GenerateNamespaceAncestorOutputKeys(
     const EsfStage &stage,
-    const SdfPath &originObjectPath,
-    const Exec_InputKey &inputKey)
+    const EsfObject &originObject,
+    const Exec_InputKey &inputKey,
+    EsfJournal *journal)
 {
     TRACE_FUNCTION();
-
-    // TODO: Journaling
-    EsfJournal *journal = nullptr;
 
     const Exec_DefinitionRegistry &registry =
         Exec_DefinitionRegistry::GetInstance();
 
-    const EsfObject originObject =
-        stage->GetObjectAtPath(originObjectPath, journal);
     const EsfPrim originPrim = originObject->GetPrim(journal);
     EsfPrim parentPrim = originPrim->GetParent(journal);
 
@@ -189,10 +225,11 @@ static _GenerateNamespaceAncestorOutputKeys(
                 parentPrim->GetType(journal),
                 inputKey.computationName);
         if (definition && definition->GetResultType() == inputKey.resultType) {
+            // TODO: EsfPrim::AsObject()
+            const EsfObject parentObject =
+                stage->GetObjectAtPath(parentPrim->GetPath(journal), journal);
             return {
-                Exec_OutputKey(ExecValueKey(
-                    parentPrim->GetPath(journal),
-                    inputKey.computationName))
+                Exec_OutputKey(parentObject, definition)
             };
         }
 
@@ -203,6 +240,16 @@ static _GenerateNamespaceAncestorOutputKeys(
 
     // We were unable to find the computation on any of the ancestors.
     return {};
+}
+
+static const Exec_ComputationDefinition *
+_GetAttributeComputationDefinition(
+    TfType schemaType,
+    const TfToken &attributeName,
+    const TfToken &computationName)
+{
+    // TODO: attribute computation definitions are not yet implemented
+    return nullptr;
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

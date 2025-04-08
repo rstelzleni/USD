@@ -65,7 +65,9 @@ public:
     /// notified by decrementing its reference count, and if it reaches zero the
     /// \p successor will automatically be spawned.
     ///
-    ClaimResult Claim(const Exec_OutputKey &key, tbb::task *successor);
+    ClaimResult Claim(
+        const Exec_OutputKey::Identity &key,
+        tbb::task *successor);
 
     /// Marks the task associated with the output \p key done.
     /// 
@@ -73,7 +75,7 @@ public:
     /// their reference counts, and spawning them if their reference count
     /// reaches 0.
     ///
-    void MarkDone(const Exec_OutputKey &key);
+    void MarkDone(const Exec_OutputKey::Identity &key);
 
 private:
     // The various states a task can be in.
@@ -94,7 +96,7 @@ private:
     // The map of tasks that have been claimed during this round of
     // compilation.
     using _ClaimedTasks =
-        tbb::concurrent_unordered_map<Exec_OutputKey, _Entry, TfHash>;
+        tbb::concurrent_unordered_map<Exec_OutputKey::Identity, _Entry, TfHash>;
     _ClaimedTasks _claimedTasks;
 
     // Manages the waitlists in the _claimedTasks entries.

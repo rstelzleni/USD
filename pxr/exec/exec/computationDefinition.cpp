@@ -12,9 +12,11 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_ComputationDefinition::Exec_ComputationDefinition(
     TfType resultType,
+    const TfToken &computationName,
     ExecCallbackFn &&callback,
     Exec_InputKeyVector &&inputKeys)
     : _resultType(resultType)
+    , _computationName(computationName)
     , _callback(std::move(callback))
     , _inputKeys(std::move(inputKeys))
 {        
