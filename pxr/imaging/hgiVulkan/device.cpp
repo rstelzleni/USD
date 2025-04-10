@@ -232,6 +232,11 @@ HgiVulkanDevice::HgiVulkanDevice(HgiVulkanInstance* instance)
         extensions.push_back(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     }
 
+    // Allow use of line rasterization ext
+    if (IsSupportedExtension(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME)) {
+        extensions.push_back(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME);
+    }
+
     // This extension is needed to allow the viewport to be flipped in Y so that
     // shaders and vertex data can remain the same between opengl and vulkan.
     extensions.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
@@ -301,6 +306,16 @@ HgiVulkanDevice::HgiVulkanDevice(HgiVulkanInstance* instance)
             _capabilities->vkBarycentricFeatures.fragmentShaderBarycentric;
         barycentricFeatures.pNext = features2.pNext;
         features2.pNext = &barycentricFeatures;
+    }
+
+    // Line rasterization features needed for Bresenham line rasterization
+    VkPhysicalDeviceLineRasterizationFeaturesKHR lineRasterFeatures {
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_KHR };
+    if (IsSupportedExtension(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME)) {
+        lineRasterFeatures.bresenhamLines =
+            _capabilities->vkLineRasterizationFeatures.bresenhamLines;
+        lineRasterFeatures.pNext = features2.pNext;
+        features2.pNext = &lineRasterFeatures;
     }
 
     VkDeviceCreateInfo createInfo = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};

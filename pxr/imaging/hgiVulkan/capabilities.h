@@ -50,6 +50,7 @@ public:
         vkVertexAttributeDivisorFeatures {};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR
         vkBarycentricFeatures {};
+    VkPhysicalDeviceLineRasterizationFeaturesKHR vkLineRasterizationFeatures {};
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

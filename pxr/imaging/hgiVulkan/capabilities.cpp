@@ -83,6 +83,16 @@ HgiVulkanCapabilities::HgiVulkanCapabilities(HgiVulkanDevice* device)
         vkDeviceFeatures2.pNext =  &vkBarycentricFeatures;
     }
     
+    // Line rasterization features
+    const bool lineRasterizationExtSupported = device->IsSupportedExtension(
+        VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME);
+    if (lineRasterizationExtSupported) {
+        vkLineRasterizationFeatures.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_KHR;
+        vkLineRasterizationFeatures.pNext = vkDeviceFeatures2.pNext;
+        vkDeviceFeatures2.pNext =  &vkLineRasterizationFeatures;
+    }
+
     // Query device features
     vkGetPhysicalDeviceFeatures2(physicalDevice, &vkDeviceFeatures2);
 
