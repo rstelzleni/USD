@@ -12,10 +12,12 @@
 #include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
-#include "pxr/base/tf/smallVector.h"
+#include "pxr/base/tf/span.h"
+#include "pxr/exec/ef/leafNodeCache.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/network.h"
 
+#include <memory>
 #include <type_traits>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -29,8 +31,8 @@ class VdfNode;
 ///
 /// The VdfNetwork describes the toplogical structure of nodes and connections,
 /// but does not prescribe any meaning to the organization of the network. In
-/// order to efficiently compile, update, and evaluate the network, Exec
-/// requires additional metadata to facilitate common access patterns.
+/// order to compile, update, and evaluate the network, Exec requires additional
+/// metadata to facilitate common access patterns.
 ///
 /// Generally, the data structures contained by this class are those that must
 /// have exactly one instance per-network. The responsibilities of these data
@@ -39,6 +41,8 @@ class VdfNode;
 ///   - Tracking which VdfOutput provides the value of a given Exec_OutputKey.
 ///   - Tracking the conditions when specific nodes and connections should be
 ///     deleted from the network.
+///   - Tracking the leaf nodes dependent on any particular output in the
+///     network.
 ///
 /// Some of these data structures must be modified when the network is modified.
 /// Therefore, compilation never directly accesses the VdfNetwork, but does so
@@ -61,8 +65,7 @@ public:
     /// Exec_Program, and the remaining arguments are forwarded from
     /// \p nodeCtorArgs.
     ///
-    /// Uncompilation rules for the new node are added from the \p journal
-    /// entries.
+    /// Uncompilation rules for the new node are added from the \p journal.
     ///
     /// \return a pointer to the newly constructed node. This pointer is owned
     /// by the network.
@@ -71,13 +74,6 @@ public:
     NodeType *CreateNode(
         const EsfJournal &journal,
         NodeCtorArgs... nodeCtorArgs);
-
-    /// Collection of VdfMaskedOutputs that feed into a VdfInput.
-    ///
-    /// Most inputs only source from one output, hence the choice of
-    /// TfSmallVector.
-    //
-    using SourceOutputs = TfSmallVector<VdfMaskedOutput, 1>;
 
     /// Makes connections between nodes in the VdfNetwork.
     ///
@@ -90,30 +86,55 @@ public:
     ///
     void Connect(
         const EsfJournal &journal,
-        const SourceOutputs &outputs,
+        TfSpan<const VdfMaskedOutput> outputs,
         VdfNode *inputNode,
         const TfToken &inputName);
 
-    /// Returns the mapping from Exec_OutputKey to VdfMaskedOutputs for the
-    /// network.
+    /// Gets the VdfMaskedOutput provided by \p outputKeyIdentity.
     ///
-    Exec_CompiledOutputCache *GetCompiledOutputCache()
+    /// \return a pair containing the matching VdfMaskedOutput and a bool
+    /// indicating whether there exists an output for the given
+    /// \p outputKeyIdentity.
+    ///
+    /// \note
+    /// If the returned boolean is true, the returned VdfMaskedOutput may still
+    /// contain a null VdfOutput. This indicates that the given output key is
+    /// *already known* to not have a corresponding output.
+    ///
+    std::tuple<const VdfMaskedOutput &, bool> GetCompiledOutput(
+        const Exec_OutputKey::Identity &outputKeyIdentity) const
     {
-        return &_compiledOutputCache;
+        return _compiledOutputCache.Find(outputKeyIdentity);
     }
 
-    /// Gets the underlying VdfNetwork.
-    VdfNetwork &GetNetwork() { return _network; }
-    const VdfNetwork &GetNetwork() const { return _network; }
+    /// Establishes that \p outputKeyIdentity is provided by \p maskedOutput.
+    ///
+    /// If \p outputKeyIdentity has not yet been mapped to a masked output,
+    /// insert the new mapping and return true. Otherwise, the existing mapping
+    /// is not modified, and this returns false.
+    ///
+    bool SetCompiledOutput(
+        const Exec_OutputKey::Identity &outputKeyIdentity,
+        const VdfMaskedOutput &maskedOutput)
+    {
+        return _compiledOutputCache.Insert(outputKeyIdentity, maskedOutput);
+    }
+
+    /// Writes the compiled network to a file at \p filename.
+    void GraphNetwork(const char *filename) const;
 
 private:
     // Updates data strucutres for a newly-added node.
     void _AddNode(const EsfJournal &journal, const VdfNode *node);
 
+    class _EditMonitor;
+
     VdfNetwork _network;
-    EfTimeInputNode *_timeInputNode;
+    EfTimeInputNode *const _timeInputNode;
     Exec_CompiledOutputCache _compiledOutputCache;
     Exec_UncompilationTable _uncompilationTable;
+    EfLeafNodeCache _leafNodeCache;
+    std::unique_ptr<_EditMonitor> _editMonitor;
 };
 
 

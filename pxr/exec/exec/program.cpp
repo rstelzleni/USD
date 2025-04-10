@@ -8,22 +8,54 @@
 
 #include "pxr/base/tf/token.h"
 #include "pxr/exec/ef/timeInputNode.h"
+#include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/node.h"
+#include "pxr/exec/vdf/grapher.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class Exec_Program::_EditMonitor final : public VdfNetwork::EditMonitor {
+public:
+    explicit _EditMonitor(EfLeafNodeCache *const leafNodeCache)
+        : _leafNodeCache(leafNodeCache)
+    {}
+
+    void WillClear() override {
+        _leafNodeCache->Clear();
+    }
+
+    void DidConnect(const VdfConnection *connection) override {
+        _leafNodeCache->DidConnect(*connection);
+    }
+
+    void DidAddNode(const VdfNode *node) override {}
+
+    void WillDelete(const VdfConnection *connection) override {
+        _leafNodeCache->WillDeleteConnection(*connection);
+    }
+
+    void WillDelete(const VdfNode *node) override {}
+
+private:
+    EfLeafNodeCache *const _leafNodeCache;
+};
+
 Exec_Program::Exec_Program()
+    : _timeInputNode(new EfTimeInputNode(&_network))
+    , _editMonitor(std::make_unique<_EditMonitor>(&_leafNodeCache))
 {
-    // This is not a memory leak. The allocated node becomes owned by the
-    // VdfNetwork.
-    _timeInputNode = new EfTimeInputNode(&_network);
+    _network.RegisterEditMonitor(_editMonitor.get());
 }
 
-Exec_Program::~Exec_Program() = default;
+Exec_Program::~Exec_Program()
+{
+    _network.UnregisterEditMonitor(_editMonitor.get());
+}
 
-void Exec_Program::Connect(
+void
+Exec_Program::Connect(
     const EsfJournal &journal,
-    const SourceOutputs &outputs,
+    const TfSpan<const VdfMaskedOutput> outputs,
     VdfNode *inputNode,
     const TfToken &inputName)
 {
@@ -44,9 +76,16 @@ void Exec_Program::Connect(
         inputNode->GetId(), inputName, journal);
 }
 
-void Exec_Program::_AddNode(const EsfJournal &journal, const VdfNode *node)
+void
+Exec_Program::_AddNode(const EsfJournal &journal, const VdfNode *node)
 {
     _uncompilationTable.AddRulesForNode(node->GetId(), journal);
+}
+
+void
+Exec_Program::GraphNetwork(const char *const filename) const
+{
+    VdfGrapher::GraphToFile(_network, filename);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -8,7 +8,6 @@
 
 #include "pxr/exec/exec/callbackNode.h"
 #include "pxr/exec/exec/compilationState.h"
-#include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/computationDefinition.h"
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
@@ -97,9 +96,8 @@ Exec_OutputProvidingCompilationTask::_Compile(
         *_resultOutput = compiledOutput;
 
         // Then publish it to the compiled outputs cache.
-        Exec_CompiledOutputCache *compiledOutputs =
-            compilationState.GetProgram()->GetCompiledOutputCache();
-        compiledOutputs->Insert(_outputKey.MakeIdentity(), compiledOutput);
+        TF_VERIFY(compilationState.GetProgram()->SetCompiledOutput(
+            _outputKey.MakeIdentity(), compiledOutput));
 
         // Then indicate that the task identified by _outputKey is done. This
         // notifies all other tasks with a dependency on this _outputKey.

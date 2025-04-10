@@ -25,8 +25,6 @@ class Exec_Program;
 class ExecRequest;
 class ExecValueKey;
 
-class EfLeafNodeCache;
-class EfTimeInputNode;
 template <typename> class TfSpan;
 class VdfExecutorInterface;
 class VdfMaskedOutput;
@@ -64,11 +62,6 @@ private:
     EsfStage _stage;
 
     std::unique_ptr<Exec_Program> _program;
-    
-    std::unique_ptr<EfLeafNodeCache> _leafNodeCache;
-
-    class _EditMonitor;
-    std::unique_ptr<_EditMonitor> _editMonitor;
 
     std::unique_ptr<VdfExecutorInterface> _executor;
     tbb::concurrent_vector<std::shared_ptr<Exec_RequestImpl>> _requests;

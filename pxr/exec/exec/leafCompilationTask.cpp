@@ -87,7 +87,7 @@ Exec_LeafCompilationTask::_Compile(
 
         compilationState.GetProgram()->Connect(
             inputJournal,
-            Exec_Program::SourceOutputs{sourceOutput},
+            TfSpan<const VdfMaskedOutput>(&sourceOutput, 1),
             leafNode,
             EfLeafTokens->in);
     }

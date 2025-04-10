@@ -7,7 +7,6 @@
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 
 #include "pxr/exec/exec/compilationState.h"
-#include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/computationDefinition.h"
 #include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/outputProvidingCompilationTask.h"
@@ -84,7 +83,7 @@ Exec_InputResolvingCompilationTask::_Compile(
             const Exec_OutputKey::Identity outputKeyIdentity =
                 outputKey.MakeIdentity();
             const auto &[output, hasOutput] =
-                compilationState.GetProgram()->GetCompiledOutputCache()->Find(
+                compilationState.GetProgram()->GetCompiledOutput(
                     outputKeyIdentity);
             if (hasOutput) {
                 *resultOutput = output;
@@ -121,7 +120,7 @@ Exec_InputResolvingCompilationTask::_Compile(
             }
 
             const auto &[output, hasOutput] =
-                compilationState.GetProgram()->GetCompiledOutputCache()->Find(
+                compilationState.GetProgram()->GetCompiledOutput(
                     outputKey.MakeIdentity());
             if (!output) {
                 TF_VERIFY(_inputKey.optional);
