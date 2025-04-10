@@ -2465,12 +2465,12 @@ if context.buildUsdview:
 if context.buildAnimXTests:
     requiredDependencies += [ANIMX]
 
-# Linux provides zlib. Skipping it here avoids issues where a host 
+# Linux and MacOS provide zlib. Skipping it here avoids issues where a host 
 # application loads a different version of zlib than the one we build against.
 # Building zlib is the default when a dependency requires it, although OpenUSD
 # itself does not require it. The --no-zlib flag can be passed to the build
 # script to allow the dependency to find zlib in the build environment.
-if (Linux() or not context.buildZlib) and ZLIB in requiredDependencies:
+if (Linux() or MacOS() or not context.buildZlib) and ZLIB in requiredDependencies:
     requiredDependencies = [r for r in requiredDependencies if r != ZLIB]
 
 # Error out if user is building monolithic library on windows with draco plugin
