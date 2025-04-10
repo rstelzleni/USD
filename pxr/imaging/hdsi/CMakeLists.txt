@@ -20,6 +20,7 @@ pxr_library(hdsi
         coordSysPrimSceneIndex
         debuggingSceneIndex
         debuggingSceneIndexPlugin
+        domeLightCameraVisibilitySceneIndex
         extComputationDependencySceneIndex
         extComputationPrimvarPruningSceneIndex
         implicitSurfaceSceneIndex
