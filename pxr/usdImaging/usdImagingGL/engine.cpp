@@ -238,11 +238,18 @@ UsdImagingGLEngine::UsdImagingGLEngine(
 void
 UsdImagingGLEngine::_DestroyHydraObjects()
 {
+    TRACE_FUNCTION();
+    
     // Destroy objects in opposite order of construction.
-    _engine = nullptr;
-    _taskController = nullptr;
-    _taskControllerSceneIndex = TfNullPtr;
+
+    {
+        TRACE_SCOPE("Engine and task controller");
+        _engine = nullptr;
+        _taskController = nullptr;
+        _taskControllerSceneIndex = TfNullPtr;
+    }
     if (_GetUseSceneIndices()) {
+        TRACE_SCOPE("UsdImaging scene indices");
         if (_renderIndex && _sceneIndex) {
             _renderIndex->RemoveSceneIndex(_sceneIndex);
             _stageSceneIndex = nullptr;
@@ -252,6 +259,7 @@ UsdImagingGLEngine::_DestroyHydraObjects()
             _sceneIndex = nullptr;
         }
     } else {
+        TRACE_SCOPE("UsdImaging delegate");
         _sceneDelegate = nullptr;
     }
 
@@ -271,6 +279,8 @@ UsdImagingGLEngine::_DestroyHydraObjects()
 
 UsdImagingGLEngine::~UsdImagingGLEngine()
 {
+    TRACE_FUNCTION();
+    
     TF_PY_ALLOW_THREADS_IN_SCOPE();
 
     _DestroyHydraObjects();

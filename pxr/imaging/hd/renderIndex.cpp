@@ -251,6 +251,8 @@ HdRenderIndex::InsertSceneIndex(
     SdfPath const& scenePathPrefix,
     bool needsPrefixing/* = true*/)
 {
+    TRACE_FUNCTION();
+
     if (!_IsEnabledSceneIndexEmulation()) {
         TF_WARN("Unable to add scene index at prefix %s because emulation is off.",
                 scenePathPrefix.GetText());
@@ -284,6 +286,8 @@ void
 HdRenderIndex::RemoveSceneIndex(
     const HdSceneIndexBaseRefPtr &inputScene)
 {
+    TRACE_FUNCTION();
+
     if (!_IsEnabledSceneIndexEmulation()) {
         return;
     }
