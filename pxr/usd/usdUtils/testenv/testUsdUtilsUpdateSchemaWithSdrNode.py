@@ -28,10 +28,10 @@ class TestUsdUpdateSchemaWithSdrNode(unittest.TestCase):
         stage = Usd.Stage.Open(assetFile)
         self.assertTrue(stage)
         shaderDef = UsdShade.Shader.Get(stage, shaderDefPrimPath)
-        results = UsdShade.ShaderDefUtils.GetNodeDiscoveryResults(shaderDef, 
+        results = UsdShade.ShaderDefUtils.GetDiscoveryResults(shaderDef, 
                 stage.GetRootLayer().realPath)
         self.assertEqual(len(results), 1)
-        node = UsdShade.ShaderDefParserPlugin().Parse(results[0])
+        node = UsdShade.ShaderDefParserPlugin().ParseShaderNode(results[0])
         self.assertTrue(node)
         return node
     
