@@ -21,7 +21,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-#define EXEC_BUILTIN_COMPUTATIONS  \
+#define EXEC_BUILTIN_COMPUTATIONS       \
+    (computeTime)                       \
     (computeValue)
 
 /// Declares tokens used to identify builtin computations.

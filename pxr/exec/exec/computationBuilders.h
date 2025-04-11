@@ -414,7 +414,7 @@ struct Exec_ComputationBuilderAttributeAccessor
 namespace exec_registration {
 
 
-/// Attribute accessor, valid on a prim computation
+/// Attribute accessor, valid on a prim computation.
 struct Attribute
     : public Exec_ComputationBuilderAttributeAccessor<
         Exec_ComputationBuilderProviderTypes::Prim>
@@ -448,6 +448,49 @@ struct Attribute
         : Exec_ComputationBuilderAttributeAccessor<
             Exec_ComputationBuilderProviderTypes::Prim>(
                 SdfPath::ReflexiveRelativePath().AppendProperty(attributeName))
+    {
+    }
+
+    /// @} // Accessors
+};
+
+
+/// Provides access to the stage pseudoroot.
+struct Stage
+    : public Exec_ComputationBuilderAccessor<
+        Exec_ComputationBuilderProviderTypes::Any>
+{
+    /// \addtogroup group_Exec_Accessors
+    /// @{
+
+    /// On any computation, provides access to the stage pseudoroot prim. This
+    /// accessor can be used to access stage-level builtin computations.
+    ///
+    /// > **Note:**
+    /// > The Stage() accessor must be the sole accessor in any input
+    /// > registration in which it appears.
+    ///
+    /// # Example
+    ///
+    /// ```{.cpp}
+    /// EXEC_REGISTER_SCHEMA(MySchemaType)
+    /// {
+    ///     // Register a prim computation that returns the current time.
+    ///     self.PrimComputation(_tokens->myComputation)
+    ///         .Callback<EfTime>(+[](const VdfContext &ctx) {
+    ///             return ctx.GetInputValue<EfTime>(
+    ///                 ExecBuiltinComputations->computeTime));
+    ///         })
+    ///         .Inputs(
+    ///             Stage().Computation<EfTime>(
+    ///                 ExecBuiltinComputations->computeTime).Required());
+    /// }
+    /// ```
+    ///
+    Stage()
+        : Exec_ComputationBuilderAccessor<
+            Exec_ComputationBuilderProviderTypes::Any>(
+                SdfPath::AbsoluteRootPath())
     {
     }
 

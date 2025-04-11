@@ -11,12 +11,15 @@
 #include "pxr/exec/exec/registerSchema.h"
 #include "pxr/exec/exec/tokens.h"
 
+#include "pxr/exec/ef/time.h"
+
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/registryManager.h"
 #include "pxr/base/tf/smallVector.h"
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/tf/type.h"
+#include "pxr/usd/usd/timeCode.h"
 
 #include <iostream>
 
@@ -32,6 +35,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (namespaceAncestorInput)
     (noInputsComputation)
     (primComputation)
+    (stageAccessComputation)
 );
 
 // A type that is not registered with TfType.
@@ -68,6 +72,16 @@ EXEC_REGISTER_SCHEMA(TestSchemaType)
                 .Required(),
             NamespaceAncestor<bool>(_tokens->primComputation)
                 .InputName(_tokens->namespaceAncestorInput)
+        );
+
+    self.PrimComputation(_tokens->stageAccessComputation)
+        .Callback<EfTime>([](const VdfContext &ctx) {
+            ctx.SetOutput(EfTime());
+        })
+        .Inputs(
+            Stage()
+                .Computation<EfTime>(ExecBuiltinComputations->computeTime)
+                .Required()
         );
 }
 
@@ -237,6 +251,30 @@ TestComputationRegistration()
                           NamespaceAncestor);
             ASSERT_EQ(key.optional, true);
         }
+    }
+
+    {
+        // Look up a computation with one input.
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetPrimComputationDefinition(
+                schemaType, _tokens->stageAccessComputation);
+        TF_AXIOM(primCompDef);
+
+        TF_AXIOM(primCompDef->GetCallback());
+
+        const auto inputKeys = primCompDef->GetInputKeys();
+        ASSERT_EQ(inputKeys.size(), 1);
+
+        _PrintInputKeys(inputKeys);
+
+        const Exec_InputKey &key = inputKeys[0];
+        ASSERT_EQ(key.inputName, ExecBuiltinComputations->computeTime);
+        ASSERT_EQ(key.computationName, ExecBuiltinComputations->computeTime);
+        ASSERT_EQ(key.resultType, TfType::Find<EfTime>());
+        ASSERT_EQ(key.providerResolution.localTraversal, SdfPath("/"));
+        ASSERT_EQ(key.providerResolution.dynamicTraversal,
+                  ExecProviderResolution::DynamicTraversal::Local);
+        ASSERT_EQ(key.optional, false);
     }
 }
 
