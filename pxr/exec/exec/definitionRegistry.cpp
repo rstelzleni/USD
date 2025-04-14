@@ -57,6 +57,19 @@ Exec_DefinitionRegistry::GetPrimComputationDefinition(
     return it == _primComputationDefinitions.end() ? nullptr : &it->second;
 }
 
+const Exec_ComputationDefinition *
+Exec_DefinitionRegistry::GetAttributeComputationDefinition(
+    TfType primSchemaType,
+    const TfToken &attributeName,
+    const TfToken &computationName) const
+{
+    // XXX: Attribute computations not implemented yet.
+    (void)primSchemaType;
+    (void)attributeName;
+    (void)computationName;
+    return nullptr;
+}
+
 void
 Exec_DefinitionRegistry::_RegisterPrimComputation(
     TfType schemaType,

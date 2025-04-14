@@ -36,6 +36,7 @@ private:
     EsfAttribute _GetAttribute(const TfToken &attrName) const final;
     EsfPrim _GetParent() const final;
     TfType _GetType() const final;
+    bool IsPseudoRoot() const final;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -36,13 +36,10 @@ Exec_LeafCompilationTask::_Compile(
     (TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("input compilation");
 
-        // TODO: Journaling
-        EsfJournal inputJournal;
-
         // Get the provider object from the value key
         const EsfStage &stage = compilationState.GetStage();
-        const EsfObject providerObject =
-            stage->GetObjectAtPath(_valueKey.GetProviderPath(), &inputJournal);
+        _originObject =
+            stage->GetObjectAtPath(_valueKey.GetProviderPath(), &_journal);
 
         // Make an input key from the value key
         const Exec_InputKey inputKey = _MakeInputKey(_valueKey);
@@ -51,8 +48,9 @@ Exec_LeafCompilationTask::_Compile(
         deps.NewSubtask<Exec_InputResolvingCompilationTask>(
             compilationState,
             inputKey,
-            providerObject,
-            &_resultOutputs);
+            *_originObject,
+            &_resultOutputs,
+            &_journal);
     },
 
     // Compile and connect the leaf node.
@@ -72,9 +70,8 @@ Exec_LeafCompilationTask::_Compile(
         // Return the compiled source output as the requested leaf output
         *_leafOutput = sourceOutput;
 
-        // TODO: Journaling
-        EsfJournal nodeJournal;
-        EsfJournal inputJournal;
+        // TODO: Determine what journals need to be used to create leaf nodes.
+        const EsfJournal nodeJournal;
 
         EfLeafNode *const leafNode =
             compilationState.GetProgram()->CreateNode<EfLeafNode>(
@@ -86,7 +83,7 @@ Exec_LeafCompilationTask::_Compile(
         });
 
         compilationState.GetProgram()->Connect(
-            inputJournal,
+            _journal,
             TfSpan<const VdfMaskedOutput>(&sourceOutput, 1),
             leafNode,
             EfLeafTokens->in);

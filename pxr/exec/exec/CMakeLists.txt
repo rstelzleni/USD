@@ -42,6 +42,7 @@ pxr_library(exec
         compilerTaskSync
         computationDefinition
         definitionRegistry
+        inputResolver
         inputResolvingCompilationTask
         leafCompilationTask
         outputKey
@@ -64,6 +65,24 @@ pxr_build_test(testExecComputationRegistration
 
 pxr_register_test(testExecComputationRegistration
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecComputationRegistration"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_build_test(testExecInputResolver
+    LIBRARIES
+        exec
+        execUsd
+    CPPFILES
+        testenv/testExecInputResolver.cpp
+)
+
+pxr_install_test_dir(
+    SRC testenv/testExecInputResolver
+    DEST testExecInputResolver
+)
+
+pxr_register_test(testExecInputResolver
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecInputResolver"
     EXPECTED_RETURN_CODE 0
 )
 

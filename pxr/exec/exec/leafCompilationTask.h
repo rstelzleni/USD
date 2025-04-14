@@ -15,6 +15,9 @@
 #include "pxr/exec/exec/valueKey.h"
 
 #include "pxr/base/tf/smallVector.h"
+#include "pxr/exec/esf/journal.h"
+
+#include <optional>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -46,8 +49,16 @@ private:
     // The value key for the requested output.
     const ExecValueKey _valueKey;
 
+    // The origin object on which input resolution is performed. EsfObjects are
+    // not default-constructible, but construction must be deferred until
+    // _Compile. Therefore, the EsfObject is held by a std::optional.
+    std::optional<EsfObject> _originObject;
+
     // The array of outputs populated by the input resolving task.
     TfSmallVector<VdfMaskedOutput, 1> _resultOutputs;
+
+    // The journal used while resolving the input to the leaf node.
+    EsfJournal _journal;
 
     // Pointer to the leaf output to be populated by this task.
     VdfMaskedOutput *const _leafOutput;

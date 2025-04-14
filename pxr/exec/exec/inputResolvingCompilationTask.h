@@ -20,6 +20,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EsfJournal;
 class EsfObject;
 class Exec_CompilationState;
 
@@ -39,10 +40,12 @@ public:
         Exec_CompilationState &compilationState,
         const Exec_InputKey &inputKey,
         const EsfObject &originObject,
-        TfSmallVector<VdfMaskedOutput, 1> *resultOutputs) :
+        TfSmallVector<VdfMaskedOutput, 1> *resultOutputs,
+        EsfJournal *journal) :
         Exec_CompilationTask(compilationState),
         _inputKey(inputKey),
         _originObject(originObject),
+        _journal(journal),
         _resultOutputs(resultOutputs)
     {}
 
@@ -57,6 +60,9 @@ private:
     // The scene object at which the scene traversal is started for the
     // specified provider resolution mode.
     const EsfObject &_originObject;
+
+    // The journal that records the traversal performed by the resolution.
+    EsfJournal *_journal;
 
     // The output keys populated as a result of the scene traversal.
     Exec_OutputKeyVector _outputKeys;

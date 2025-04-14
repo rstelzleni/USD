@@ -13,7 +13,6 @@
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
-#include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/vdf/connectorSpecs.h"
@@ -39,13 +38,15 @@ Exec_OutputProvidingCompilationTask::_Compile(
         TRACE_FUNCTION_SCOPE("input tasks");
 
         _inputSources.resize(inputKeys.size());
-        _SourceOutputs *sourceOutputs = _inputSources.data();
-        for (const Exec_InputKey &inputKey : inputKeys) {
+        _inputJournals.resize(inputKeys.size());
+        const size_t numInputKeys = inputKeys.size();
+        for (size_t i = 0; i < numInputKeys; ++i) {
             deps.NewSubtask<Exec_InputResolvingCompilationTask>(
                 compilationState,
-                inputKey,
+                inputKeys[i],
                 _outputKey.GetProviderObject(),
-                sourceOutputs++);
+                &_inputSources[i],
+                &_inputJournals[i]);
         }
     },
 
@@ -80,11 +81,8 @@ Exec_OutputProvidingCompilationTask::_Compile(
         });
 
         for (size_t i = 0; i < _inputSources.size(); ++i) {
-            // TODO: Journaling
-            EsfJournal inputJournal;
-
             compilationState.GetProgram()->Connect(
-                inputJournal,
+                _inputJournals[i],
                 _inputSources[i],
                 callbackNode,
                 inputKeys[i].inputName);

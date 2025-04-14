@@ -88,7 +88,7 @@ public:
 
     /// Return a human-readable description of this value key for diagnostic
     /// purposes.
-    std::string GetDebugName() const;
+    EXEC_API std::string GetDebugName() const;
 
 private:
     SdfPath _providerPath;

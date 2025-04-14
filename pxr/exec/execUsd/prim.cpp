@@ -40,4 +40,9 @@ TfType ExecUsd_Prim::_GetType() const
     return _GetWrapped().GetPrimTypeInfo().GetSchemaType();
 }
 
+bool ExecUsd_Prim::IsPseudoRoot() const
+{
+    return _GetWrapped().IsPseudoRoot();
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE

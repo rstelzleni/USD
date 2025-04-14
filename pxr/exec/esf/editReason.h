@@ -61,6 +61,11 @@ public:
         return _bits == other._bits;
     }
 
+    constexpr bool operator!=(EsfEditReason other) const
+    {
+        return _bits != other._bits;
+    }
+
     constexpr EsfEditReason& operator&=(EsfEditReason other)
     {
         _bits &= other._bits;

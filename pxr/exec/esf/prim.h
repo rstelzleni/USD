@@ -53,6 +53,9 @@ public:
     /// \see UsdPrimTypeInfo::GetSchemaType
     ESF_API TfType GetType(EsfJournal *journal) const;
 
+    /// \see UsdPrim::IsPseudoRoot
+    virtual bool IsPseudoRoot() const = 0;
+
 protected:
     /// This constructor may only be called by the scene adapter implementation.
     EsfPrimInterface(const SdfPath &path) : EsfObjectInterface(path) {}

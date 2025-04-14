@@ -15,6 +15,7 @@
 #include "pxr/exec/exec/outputKey.h"
 
 #include "pxr/base/tf/smallVector.h"
+#include "pxr/exec/esf/journal.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -59,6 +60,10 @@ private:
     // to one input on the new node, and each input can source data from any
     // number of source outputs, each resulting in one input connection.
     _InputSources _inputSources;
+    
+    // Input resolving tasks created by this task record their resolution
+    // traversals into these journals. One journal is created for each input.
+    TfSmallVector<EsfJournal, 1> _inputJournals;
 
     // Pointer to the resulting masked output to be populated by this task.
     VdfMaskedOutput *const _resultOutput;

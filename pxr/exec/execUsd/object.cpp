@@ -6,6 +6,7 @@
 //
 #include "pxr/exec/execUsd/object.h"
 
+#include "pxr/exec/execUsd/attribute.h"
 #include "pxr/exec/execUsd/prim.h"
 
 #include "pxr/base/tf/token.h"
@@ -45,6 +46,46 @@ template <class InterfaceType, class UsdObjectType>
 EsfPrim ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetPrim() const
 {
     return {std::in_place_type<ExecUsd_Prim>, _GetWrapped().GetPrim()};
+}
+
+template <class InterfaceType, class UsdObjectType>
+bool ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsPrim() const
+{
+    return _GetWrapped().template Is<UsdPrim>();
+}
+
+template <class InterfaceType, class UsdObjectType>
+bool ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsAttribute() const
+{
+    return _GetWrapped().template Is<UsdAttribute>();
+}
+
+template <class InterfaceType, class UsdObjectType>
+EsfObject ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsObject() const
+{
+    return {
+        std::in_place_type<ExecUsd_Object>,
+        _GetWrapped().template As<UsdObject>()
+    };
+}
+
+template <class InterfaceType, class UsdObjectType>
+EsfPrim ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsPrim() const
+{
+    return {
+        std::in_place_type<ExecUsd_Prim>,
+        _GetWrapped().template As<UsdPrim>()
+    };
+}
+
+template <class InterfaceType, class UsdObjectType>
+EsfAttribute
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsAttribute() const
+{
+    return {
+        std::in_place_type<ExecUsd_Attribute>,
+        _GetWrapped().template As<UsdAttribute>()
+    };
 }
 
 // Explicit template instantiations.

@@ -48,6 +48,14 @@ public:
         TfType schemaType,
         const TfToken &computationName) const;
 
+    /// Returns the definition for the attribute computation named
+    /// \p computationName registered for schema \p schemaType for attributes
+    /// named \p attributeName.
+    const Exec_ComputationDefinition *GetAttributeComputationDefinition(
+        TfType primSchemaType,
+        const TfToken &attributeName,
+        const TfToken &computationName) const;
+
     // Only computation builders can register prim computations.
     class RegisterComputationAccess
     {
