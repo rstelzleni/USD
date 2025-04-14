@@ -23,10 +23,10 @@ pxr_library(exec
         types.h
 
     PUBLIC_CLASSES
+        builtinComputations
         computationBuilders
         request
         system
-        tokens
         typeRegistry
         valueKey
 

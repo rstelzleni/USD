@@ -6,10 +6,10 @@
 //
 #include "pxr/pxr.h"
 
+#include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/computationDefinition.h"
 #include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/registerSchema.h"
-#include "pxr/exec/exec/tokens.h"
 
 #include "pxr/exec/ef/time.h"
 

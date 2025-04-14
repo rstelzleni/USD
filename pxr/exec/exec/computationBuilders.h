@@ -19,8 +19,8 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/api.h"
+#include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/providerResolution.h"
-#include "pxr/exec/exec/tokens.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
@@ -455,7 +455,7 @@ struct Attribute
 };
 
 
-/// Provides access to the stage pseudoroot.
+/// Provides access to the stage.
 struct Stage
     : public Exec_ComputationBuilderAccessor<
         Exec_ComputationBuilderProviderTypes::Any>
@@ -463,8 +463,8 @@ struct Stage
     /// \addtogroup group_Exec_Accessors
     /// @{
 
-    /// On any computation, provides access to the stage pseudoroot prim. This
-    /// accessor can be used to access stage-level builtin computations.
+    /// On any computation, provides access to the stage. This accessor can be
+    /// used to access stage-level builtin computations.
     ///
     /// > **Note:**
     /// > The Stage() accessor must be the sole accessor in any input
