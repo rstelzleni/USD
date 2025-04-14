@@ -284,7 +284,6 @@ _AddToSelection(
             resultMutex);
     }    
 }    
-    
 
 HdSelectionSharedPtr
 HdxSelectionSceneIndexObserver::_ComputeSelection()
@@ -301,13 +300,23 @@ HdxSelectionSceneIndexObserver::_ComputeSelection()
 
     _dirtiedPrims.insert(prims.begin(), prims.end());
 
-    std::mutex resultMutex;
-    for (const SdfPath &path : _dirtiedPrims) {
-        _AddToSelection(_sceneIndex, path, result, resultMutex);
+    if (!_dirtiedPrims.empty()) {
+        std::mutex resultMutex;
+
+        // On comparison with using WorkParallelForN with both a path set and
+        // path vector, WorkParallelForEach seems to perform best even though
+        // each worker thread processes just one element at a time, rather than
+        // a range.
+        //
+        WorkParallelForEach(
+            _dirtiedPrims.begin(), _dirtiedPrims.end(),
+            [&](SdfPath const& path) {
+                _AddToSelection(_sceneIndex, path, result, resultMutex);
+            });
+
+        _dirtiedPrims.clear();
     }
 
-    _dirtiedPrims.clear();
-                     
     return result;
 }
 
