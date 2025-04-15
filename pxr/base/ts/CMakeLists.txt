@@ -194,6 +194,7 @@ pxr_build_test(
 pxr_test_scripts(
     testenv/testTsDerivatives.py
     testenv/testTsRegressionPreventer.py
+    testenv/testTsSplineValueBlock.py
     testenv/tsTest_TsFramework.py
     testenv/tsTest_TsVsBezier.py
 )
@@ -223,6 +224,12 @@ pxr_register_test(
     testTsRegressionPreventer
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testTsRegressionPreventer"
+)
+
+pxr_register_test(
+    testTsSplineValueBlock
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testTsSplineValueBlock"
 )
 
 pxr_register_test(

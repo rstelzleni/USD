@@ -1062,6 +1062,11 @@ _Interpolate(
     const TsTime time,
     const Ts_EvalAspect aspect)
 {
+    // Special-case value blocks
+    if (beginData.nextInterp == TsInterpValueBlock) {
+        return std::nullopt;
+    }
+    
     // Special-case held evaluation.
     if (aspect == Ts_EvalHeldValue)
     {
@@ -1161,10 +1166,30 @@ _EvalMain(
             || aspect == Ts_EvalHeldValue)
         {
             // Pre-value after held segment = previous knot value.
-            if (location == Ts_EvalPre
-                    && !atFirst && prevData.nextInterp == TsInterpHeld)
-            {
-                return prevData.value;
+            if (location == Ts_EvalPre) {
+                if (atFirst) {
+                    if (data->preExtrapolation.mode == TsExtrapValueBlock) {
+                        return std::nullopt;
+                    }
+                } else {
+                    if (prevData.nextInterp == TsInterpValueBlock) {
+                        return std::nullopt;
+                    } else if (prevData.nextInterp == TsInterpHeld
+                               || aspect == Ts_EvalHeldValue)
+                    {
+                        return prevData.value;
+                    }
+                }
+            } else {
+                if (atLast) {
+                    if (data->postExtrapolation.mode == TsExtrapValueBlock) {
+                        return std::nullopt;
+                    }
+                } else {
+                    if (knotData.nextInterp == TsInterpValueBlock) {
+                        return std::nullopt;
+                    }
+                }
             }
 
             // Not a special case.  Return what's stored in the knot.
@@ -1186,20 +1211,19 @@ _EvalMain(
                         data->curveType, Ts_EvalPre);
                 }
 
-                // Derivative in held segment = zero.
-                if (prevData.nextInterp == TsInterpHeld)
-                {
+                switch (prevData.nextInterp) {
+                  case TsInterpValueBlock:
+                    return std::nullopt;
+
+                  case TsInterpHeld:
                     return 0.0;
-                }
 
-                // Derivative in linear segment = slope to adjacent knot.
-                if (prevData.nextInterp == TsInterpLinear)
-                {
+                  case TsInterpLinear:
                     return _GetSegmentSlope(prevData, knotData);
-                }
 
-                // Not a special case.  Return what's stored in the knot.
-                return knotData.preTanSlope;
+                  case TsInterpCurve:
+                    return knotData.preTanSlope;
+                }
             }
             else
             {
@@ -1212,20 +1236,19 @@ _EvalMain(
                         data->curveType, Ts_EvalPost);
                 }
 
-                // Derivative in held segment = zero.
-                if (knotData.nextInterp == TsInterpHeld)
-                {
+                switch (knotData.nextInterp) {
+                  case TsInterpValueBlock:
+                    return std::nullopt;
+
+                  case TsInterpHeld:
                     return 0.0;
-                }
 
-                // Derivative in linear segment = slope to adjacent knot.
-                if (knotData.nextInterp == TsInterpLinear)
-                {
+                  case TsInterpLinear:
                     return _GetSegmentSlope(knotData, nextData);
-                }
 
-                // Not a special case.  Return what's stored in the knot.
-                return knotData.postTanSlope;
+                  case TsInterpCurve:
+                    return knotData.postTanSlope;
+                }
             }
         }
     }
@@ -1233,6 +1256,10 @@ _EvalMain(
     // Extrapolate before first knot.
     if (beforeStart)
     {
+        if (data->preExtrapolation.mode == TsExtrapValueBlock) {
+            return std::nullopt;
+        }
+
         // nextData is the first knot.  We also need the knot after that, if
         // there is one.
         Ts_TypedKnotData<double> nextData2;
@@ -1246,6 +1273,9 @@ _EvalMain(
         // Special-case held evaluation.
         if (aspect == Ts_EvalHeldValue)
         {
+            // XXX: There's really no reasonable value to return as the held
+            // pre-extrapolation value. This answer is similar to the post-
+            // extrapolation answer.
             return nextData.GetPreValue();
         }
 
@@ -1275,6 +1305,10 @@ _EvalMain(
     // Extrapolate after last knot.
     if (afterEnd)
     {
+        if (data->postExtrapolation.mode == TsExtrapValueBlock) {
+            return std::nullopt;
+        }
+
         // prevData is the last knot.  We also need the knot before that, if
         // there is one.
         Ts_TypedKnotData<double> prevData2;
