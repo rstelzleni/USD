@@ -1,0 +1,85 @@
+#usda 1.0
+(
+    upAxis = "Y"
+    """
+    This test file exercises several features in combination:
+    - native instancing
+    - point instancing
+    - UsdGeomModelAPI drawMode
+    """
+)
+
+over "SpherePrototype"
+{
+    def Sphere "Sphere"
+    {
+        double radius = 0.5
+    }
+}
+
+def Xform "Set" (
+    apiSchemas = ["GeomModelAPI"]
+    kind = "set"
+)
+{
+    uniform token model:cardGeometry = "cross"
+
+    def Xform "Group" (
+        kind = "group"
+    )
+    {
+        def Xform "DrawableSiblingPrototype" (
+            active = true
+            apiSchemas = ["GeomModelAPI"]
+            instanceable = true
+            kind = "prop"
+            add references = </SpherePrototype>
+        )
+        {
+            # This prim draws independently as a sphere. This is expected. But
+            # the instance of this prototype also renders as a sphere. We
+            # expect it to render as cards because the point instancer sets
+            # drawMode = cards, and we expect that to be applied to all its
+            # instances. Looks like this prototype isn't being propagated into
+            # a child of the point instancer. Instead, it is propagated to
+            # a child of itself, so it never gets the opportunity to inherit
+            # from the point instancer.
+        }
+
+        def PointInstancer "PointInstancer" (
+            apiSchemas = ["GeomModelAPI"]
+            kind = "dress_group"
+        )
+        {
+            uniform token model:drawMode = "cards"
+            point3f[] positions = [(-1, 1, 0), (1, 1, 0)]
+            int[] protoIndices = [0, 1]
+            rel prototypes = [
+                </Set/Group/PointInstancer/prototypes/ChildPrototype>,
+                </Set/Group/DrawableSiblingPrototype>
+            ]
+
+            def "prototypes" (
+                kind = "group"
+            )
+            {
+                def Xform "ChildPrototype" (
+                    active = true
+                    apiSchemas = ["GeomModelAPI"]
+                    instanceable = true
+                    kind = "prop"
+                    add references = </SpherePrototype>
+                )
+                {
+                    # In scene index mode, the instance of this prototype
+                    # does not render at all.
+                    # PIPRototypePropagatingSceneIndex adds the propagated
+                    # prototype as a child of this prim, then DrawModeSceneIndex
+                    # replaces this prim's children with draw mode standin
+                    # mesh and materials. The point instancer still points to
+                    # the now-clobbered propagated prototype.
+                }
+            }
+        }
+    }
+}
