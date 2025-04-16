@@ -3702,14 +3702,28 @@ CrateFile::_ReadCompressedPaths(Reader reader,
     cr.Read(reader, pathIndexes.data(), numPaths);
 
 #ifdef PXR_PREFER_SAFETY_OVER_SPEED
-    // Range check the pathIndexes, which index into _paths.
-    for (const uint32_t pathIndex: pathIndexes) {
-        if (pathIndex >= _paths.size()) {
-            TF_RUNTIME_ERROR("Corrupt path index in crate file (%u >= %zu)",
-                             pathIndex, _paths.size());
-            return;
+    // Range check the pathIndexes, which index into _paths, and also ensure
+    // there are no duplicates in pathIndexes.  If there are this file is
+    // corrupt, and if we were to continue we could data-race while mutating the
+    // same SdfPath object in _paths concurrently in
+    // _BuildDecompressedPathsImpl.  It's a delightful occasion to use C++'s
+    // collectio non grata: vector<bool>.
+    {
+        vector<bool> seenIndexes(_paths.size());
+        for (const uint32_t pathIndex: pathIndexes) {
+            if (pathIndex >= _paths.size() || seenIndexes[pathIndex]) {
+                TF_RUNTIME_ERROR(
+                    "Corrupt path index in crate file (%u %s)",
+                    pathIndex,
+                    pathIndex >= _paths.size()
+                    ? TfStringPrintf(">= %zu", _paths.size()).c_str()
+                    : "repeated");
+                return;
+            }
+            seenIndexes[pathIndex] = true;
         }
     }
+    
 #endif // PXR_PREFER_SAFETY_OVER_SPEED
 
     // elementTokenIndexes.
@@ -3717,7 +3731,7 @@ CrateFile::_ReadCompressedPaths(Reader reader,
     cr.Read(reader, elementTokenIndexes.data(), numPaths);
 
 #ifdef PXR_PREFER_SAFETY_OVER_SPEED
-    // Range check the pathIndexes, which index (by absolute value) into
+    // Range check the elementTokenIndexes, which index (by absolute value) into
     // _tokens.
     for (const int32_t elementTokenIndex: elementTokenIndexes) {
         if (static_cast<size_t>(
