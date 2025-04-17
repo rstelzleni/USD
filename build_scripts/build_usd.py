@@ -1380,6 +1380,9 @@ def InstallOpenImageIO(context, force, buildArgs):
         # Make sure to use boost installed by the build script and not any
         # system installed boost
         extraArgs.append('-DBoost_NO_SYSTEM_PATHS=ON')
+        # OIIO 2.5.16 requires Boost_NO_BOOST_CMAKE to be explicitly defined,
+        # else it sets it to ON.
+        extraArgs.append('-DBoost_NO_BOOST_CMAKE=OFF')
 
         # OpenImageIO 2.3.5 changed the default postfix for debug library
         # names from "" to "_d". USD's build system currently does not support
