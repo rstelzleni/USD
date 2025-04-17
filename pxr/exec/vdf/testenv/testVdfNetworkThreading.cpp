@@ -32,6 +32,8 @@ TF_DEFINE_PRIVATE_TOKENS(
     ((pool, ".pool"))
 );
 
+static constexpr size_t poolSize = 2;
+
 namespace {
 
 class TestRNode : public VdfNode {
@@ -61,6 +63,7 @@ public:
             VdfOutputSpecs()
                 .Connector<int>(_tokens->pool))
     {
+        GetOutput()->SetAffectsMask(VdfMask::AllOnes(poolSize));
         TF_AXIOM(Vdf_IsPoolOutput(*GetOutput()));
     }
 
@@ -141,7 +144,7 @@ main(int, char **)
                     const VdfConnection * const connection = network.Connect(
                         sourceNode->GetOutput(),
                         targetNode, _tokens->pool,
-                        VdfMask::AllOnes(1));
+                        VdfMask::AllOnes(poolSize));
                     TF_AXIOM(connection);
                 }
 
