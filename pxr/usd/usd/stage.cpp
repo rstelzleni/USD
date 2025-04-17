@@ -2305,17 +2305,12 @@ UsdStage::GetObjectAtPath(const SdfPath &path) const
         return UsdObject();
     }
 
-    const bool isPrimPath = path.IsPrimPath();
-    const bool isPropPath = !isPrimPath && path.IsPropertyPath();
-    if (!isPrimPath && !isPropPath) {
-        return UsdObject();
+    if (path.IsAbsoluteRootOrPrimPath()) {
+        return GetPrimAtPath(path);
     }
 
-    // A valid prim must be found to return either a prim or prop
-    if (isPrimPath) {
-        return GetPrimAtPath(path);
-    } else if (isPropPath) {
-        if (auto prim = GetPrimAtPath(path.GetPrimPath())) {
+    if (path.IsPrimPropertyPath()) {
+        if (const auto prim = GetPrimAtPath(path.GetPrimPath())) {
             return prim.GetProperty(path.GetNameToken());
         }
     }
