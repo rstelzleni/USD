@@ -97,8 +97,8 @@ Exec_PrimComputationBuilder::Exec_PrimComputationBuilder(
 
 Exec_PrimComputationBuilder::~Exec_PrimComputationBuilder()
 {
-    Exec_DefinitionRegistry::RegisterComputationAccess::_RegisterPrimComputation(
-        Exec_DefinitionRegistry::GetInstance(),
+    Exec_DefinitionRegistry::RegisterPluginComputationAccess::
+    _RegisterPrimComputation(
         _data->schemaType,
         _data->computationName,
         _data->resultType,

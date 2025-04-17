@@ -65,9 +65,9 @@ Exec_Program::Connect(
         // This can happen if the input depends on output keys that could not
         // be compiled (e.g. requesting a computation on a prim which does not
         // have a registered computation of that name). This can be re-visited
-        // if output keys contain Exec_ComputationDefinition pointers, as that
-        // requires we find a matching computation in order to form that output
-        // key.
+        // if output keys contain Exec_ComputationDefinition pointers, as
+        // that requires we find a matching computation in order to form that
+        // output key.
         if (output) {
             _network.Connect(output, inputNode, inputName);
         }

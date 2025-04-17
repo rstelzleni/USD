@@ -33,6 +33,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 ///
 struct Exec_BuiltinComputations
 {
+    EXEC_API
+    Exec_BuiltinComputations();
+
     /// \defgroup group_Mf_ExecBuiltinComputations_Stage Stage Computations
     /// 
     /// Builtin computations for computing information about the provider's
@@ -60,8 +63,7 @@ struct Exec_BuiltinComputations
     /// ```
     ///
     /// \hideinitializer
-    const TfToken computeTime =
-        _RegisterBuiltin("computeTime");
+    const TfToken computeTime;
 
     /// @}
 
@@ -94,24 +96,27 @@ struct Exec_BuiltinComputations
     /// ```
     ///
     /// \hideinitializer
-    const TfToken computeValue =
-        _RegisterBuiltin("computeValue");
+    const TfToken computeValue;
 
     /// @}
+
 
     /// Returns all builtin computation tokens.
     const std::vector<TfToken> &GetComputationTokens();
 
+    class PopulateBuiltinComputationsAccess {
+        friend class Exec_DefinitionRegistry;
+
+        static void _Populate() {
+            Exec_BuiltinComputations::_PopulateBuiltinComputations();
+        }
+    };
+
 private:
 
-    // Returns a token that is the given name string with a double-underscore
-    // prefix, to be used as the computation token for a built-in with the given
-    // name. This also registers the builtin in the vector returned by
-    // GetComputations.
-    EXEC_API
-    TfToken _RegisterBuiltin(const std::string &name);
-
-    static constexpr char _computationNamePrefix[] = "__";
+    // Populates the Exec_DefinitionRegistry with computation definitions for
+    // all builtin computations.
+    static void _PopulateBuiltinComputations();
 };
 
 // Used to publicly access builtin computation tokens.

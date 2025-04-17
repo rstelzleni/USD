@@ -190,6 +190,17 @@ TestComputationRegistration()
     }
 
     {
+        // Look up a bultin computation.
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetPrimComputationDefinition(
+                TfType::GetUnknownType(), ExecBuiltinComputations->computeTime);
+        TF_AXIOM(primCompDef);
+
+        TF_AXIOM(!primCompDef->GetCallback());
+        ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
+    }
+
+    {
         // Look up a computation with multiple inputs.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetPrimComputationDefinition(

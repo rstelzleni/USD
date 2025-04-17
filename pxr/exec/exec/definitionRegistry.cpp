@@ -6,6 +6,7 @@
 //
 #include "pxr/exec/exec/definitionRegistry.h"
 
+#include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
@@ -32,6 +33,9 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
     // likely call GetInstance().
     TfSingleton<Exec_DefinitionRegistry>::SetInstanceConstructed(*this);
 
+    // Populate the registry with builtin computation definitions.
+    Exec_BuiltinComputations::PopulateBuiltinComputationsAccess::_Populate();
+
     // Now initialize the registry.
     //
     // We use ExecDefinitionRegistryTag to identify registry functions, rather
@@ -52,9 +56,19 @@ Exec_DefinitionRegistry::GetPrimComputationDefinition(
     TfType schemaType,
     const TfToken &computationName) const
 {
-    const auto it = _primComputationDefinitions.find(
+    // First look for a matching builtin computation.
+    const auto builtinIt = _builtinComputationDefinitions.find(
+        computationName);
+    if (builtinIt != _builtinComputationDefinitions.end()) {
+        return builtinIt->second.get();
+    }
+
+    // If we didn't find a builtin computation, look for a plugin computation.
+    const auto pluginIt = _pluginPrimComputationDefinitions.find(
         {schemaType, computationName});
-    return it == _primComputationDefinitions.end() ? nullptr : &it->second;
+    return pluginIt == _pluginPrimComputationDefinitions.end()
+        ? nullptr
+        : &pluginIt->second;
 }
 
 const Exec_ComputationDefinition *
@@ -85,7 +99,7 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
     }
 
     const bool emplaced =
-        _primComputationDefinitions.emplace(
+        _pluginPrimComputationDefinitions.emplace(
             std::piecewise_construct, 
             std::forward_as_tuple(schemaType, computationName),
             std::forward_as_tuple(
@@ -100,6 +114,24 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
             "'%s' on schema %s",
             computationName.GetText(),
             schemaType.GetTypeName().c_str());
+    }
+}
+
+void
+Exec_DefinitionRegistry::_RegisterBuiltinComputation(
+    const TfToken &computationName,
+    Exec_ComputationDefinition *definition)
+{
+    const bool emplaced =
+        _builtinComputationDefinitions.emplace(
+            computationName,
+            definition).second;
+
+    if (!emplaced) {
+        TF_CODING_ERROR(
+            "Duplicate builtin computation registration for computation named "
+            "'%s'",
+            computationName.GetText());
     }
 }
 

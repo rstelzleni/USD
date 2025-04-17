@@ -144,7 +144,13 @@ NodeType *Exec_Program::CreateNode(
     NodeCtorArgs... nodeCtorArgs)
 {
     static_assert(std::is_base_of_v<VdfNode, NodeType>);
-    NodeType *node = new NodeType(
+
+    // The time node is a special case.
+    if constexpr (std::is_same_v<EfTimeInputNode, NodeType>) {
+        return _timeInputNode;
+    }
+
+    NodeType *const node = new NodeType(
         &_network, std::forward<NodeCtorArgs>(nodeCtorArgs)...);
     _AddNode(journal, node);
     return node;

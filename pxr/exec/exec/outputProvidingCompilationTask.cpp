@@ -13,12 +13,22 @@
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/exec/ef/timeInputNode.h"
+
+#include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/vdf/connectorSpecs.h"
 #include "pxr/exec/vdf/tokens.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+static VdfNode *
+_CompileCallbackNode(
+    Exec_CompilationState &compilationState,
+    const Exec_ComputationDefinition *const computationDefinition,
+    const Exec_InputKeyVector &inputKeys,
+    const EsfJournal &nodeJournal);
 
 void
 Exec_OutputProvidingCompilationTask::_Compile(
@@ -55,28 +65,30 @@ Exec_OutputProvidingCompilationTask::_Compile(
         TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("node creation");
 
-        VdfInputSpecs inputSpecs;
-        inputSpecs.Reserve(inputKeys.size());
-        for (const Exec_InputKey &inputKey : inputKeys) {
-            inputSpecs.ReadConnector(inputKey.resultType, inputKey.inputName);
-        }
-
-        VdfOutputSpecs outputSpecs;
-        outputSpecs.Connector(
-            computationDefinition->GetResultType(), VdfTokens->out);
-
         // TODO: Journaling
         EsfJournal nodeJournal;
 
-        VdfNode *const callbackNode =
-            compilationState.GetProgram()->CreateNode<Exec_CallbackNode>(
-                nodeJournal,
-                inputSpecs,
-                outputSpecs,
-                computationDefinition->GetCallback());
+        VdfNode *node = nullptr;
+
+        switch (computationDefinition->GetNodeKind()) {
+        case Exec_NodeKind::Callback:
+            node = _CompileCallbackNode(
+                compilationState, computationDefinition, inputKeys,
+                nodeJournal);
+            break;
+
+        case Exec_NodeKind::TimeNode:
+            node = compilationState.GetProgram()->CreateNode<EfTimeInputNode>(
+                nodeJournal);
+            break;
+        }
+
+        if (!TF_VERIFY(node)) {
+            return;
+        }
 
         const Exec_OutputKey::Identity keyIdentity = _outputKey.MakeIdentity();
-        callbackNode->SetDebugNameCallback([keyIdentity]{
+        node->SetDebugNameCallback([keyIdentity]{
             return keyIdentity.GetDebugName();
         });
 
@@ -84,13 +96,12 @@ Exec_OutputProvidingCompilationTask::_Compile(
             compilationState.GetProgram()->Connect(
                 _inputJournals[i],
                 _inputSources[i],
-                callbackNode,
+                node,
                 inputKeys[i].inputName);
         }
 
         // Return the compiled output to the calling task.
-        VdfMaskedOutput compiledOutput(
-            callbackNode->GetOutput(), VdfMask::AllOnes(1));
+        VdfMaskedOutput compiledOutput(node->GetOutput(), VdfMask::AllOnes(1));
         *_resultOutput = compiledOutput;
 
         // Then publish it to the compiled outputs cache.
@@ -102,6 +113,31 @@ Exec_OutputProvidingCompilationTask::_Compile(
         _MarkDone(_outputKey.MakeIdentity());
     }
     );
+}
+
+static VdfNode *
+_CompileCallbackNode(
+    Exec_CompilationState &compilationState,
+    const Exec_ComputationDefinition *const computationDefinition,
+    const Exec_InputKeyVector &inputKeys,
+    const EsfJournal &nodeJournal)
+{
+    VdfInputSpecs inputSpecs;
+    inputSpecs.Reserve(inputKeys.size());
+    for (const Exec_InputKey &inputKey : inputKeys) {
+        inputSpecs.ReadConnector(
+            inputKey.resultType, inputKey.inputName);
+    }
+
+    VdfOutputSpecs outputSpecs;
+    outputSpecs.Connector(
+        computationDefinition->GetResultType(), VdfTokens->out);
+
+    return compilationState.GetProgram()->CreateNode<Exec_CallbackNode>(
+        nodeJournal,
+        inputSpecs,
+        outputSpecs,
+        computationDefinition->GetCallback());
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -56,19 +56,31 @@ public:
         const TfToken &attributeName,
         const TfToken &computationName) const;
 
-    // Only computation builders can register prim computations.
-    class RegisterComputationAccess
+    // Only computation builders can register plugin computations.
+    class RegisterPluginComputationAccess
     {
         friend class Exec_PrimComputationBuilder;
 
         // Registers a prim computation for \p schemaType.
         inline static void _RegisterPrimComputation(
-            Exec_DefinitionRegistry &registry,
             TfType schemaType,
             const TfToken &computationName,
             TfType resultType,
             ExecCallbackFn &&callback,
             Exec_InputKeyVector &&inputKeys);
+    };
+
+    class RegisterBuiltinComputationAccess
+    {
+        friend class Exec_BuiltinComputations;
+
+        // Registers a builtin computation named \p computationName.
+        static void _Register(
+            const TfToken &computationName,
+            Exec_ComputationDefinition *definition) {
+            GetInstance().
+                _RegisterBuiltinComputation(computationName, definition);
+        }
     };
 
 private:
@@ -85,26 +97,39 @@ private:
         ExecCallbackFn &&callback,
         Exec_InputKeyVector &&inputKeys);
 
+    void _RegisterBuiltinComputation(
+        const TfToken &computationName,
+        Exec_ComputationDefinition *definition);
+
 private:
 
-    // Map from (schemaType, computationName) to prim computation definition.
+    // Map from (schemaType, computationName) to plugin prim computation
+    // definition.
     std::unordered_map<
         std::tuple<TfType, TfToken>,
-        Exec_ComputationDefinition,
+        Exec_PluginComputationDefinition,
         TfHash>
-        _primComputationDefinitions;
+        _pluginPrimComputationDefinitions;
+
+    // Map from computationName to builtin computation
+    // definition.
+    std::unordered_map<
+        TfToken,
+        std::unique_ptr<Exec_ComputationDefinition>,
+        TfHash>
+        _builtinComputationDefinitions;
 };
 
 void
-Exec_DefinitionRegistry::RegisterComputationAccess::_RegisterPrimComputation(
-    Exec_DefinitionRegistry &registry,
+Exec_DefinitionRegistry::RegisterPluginComputationAccess::
+_RegisterPrimComputation(
     TfType schemaType,
     const TfToken &computationName,
     TfType resultType,
     ExecCallbackFn &&callback,
     Exec_InputKeyVector &&inputKeys)
 {
-    registry._RegisterPrimComputation(
+    GetInstance()._RegisterPrimComputation(
         schemaType,
         computationName,
         resultType,
