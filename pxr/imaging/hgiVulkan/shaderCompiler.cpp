@@ -67,6 +67,9 @@ HgiVulkanCompileGLSL(
     options.SetTargetEnvironment(shaderc_target_env_vulkan,
                                  shaderc_env_version_vulkan_1_0);
     options.SetTargetSpirv(shaderc_spirv_version_1_0);
+    if (HgiVulkanIsDebugEnabled()) {
+        options.SetGenerateDebugInfo();
+    }
 
     shaderc_shader_kind const kind = _GetShaderStage(stage);
 
