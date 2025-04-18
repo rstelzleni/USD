@@ -2439,8 +2439,7 @@ struct TextParserAction<SplineKnotTime>
         const std::pair<bool, Sdf_ParserHelpers::Value> result =
             _HelperGetNumericValueFromString(in, context);
         context.splineKnot = TsKnot(
-                context.spline.GetValueType(), 
-                context.spline.GetCurveType());
+                context.spline.GetValueType());
         context.splineKnot.SetTime(result.second.Get<double>());
         // We should get SplineKnotValue next;
         context.splineKnotValue = Sdf_ParserHelpers::Value();

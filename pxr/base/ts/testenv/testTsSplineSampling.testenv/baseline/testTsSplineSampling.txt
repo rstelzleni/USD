@@ -10,7 +10,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -20,7 +19,6 @@ Knot:
   post-tan slope 1
 Knot:
   value type double
-  curve type Bezier
   time 5
   value 2
   next interp Curve
@@ -84,7 +82,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Linear
@@ -94,7 +91,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 5
   value 2
   next interp Linear
@@ -130,7 +126,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -140,7 +135,6 @@ Knot:
   post-tan slope -0.25
 Knot:
   value type double
-  curve type Bezier
   time 2
   value 2
   next interp Curve
@@ -150,7 +144,6 @@ Knot:
   post-tan slope 0.25
 Knot:
   value type double
-  curve type Bezier
   time 3
   value 1
   next interp Curve
@@ -160,7 +153,6 @@ Knot:
   post-tan slope -0.25
 Knot:
   value type double
-  curve type Bezier
   time 4
   value 2
   next interp Curve
@@ -283,7 +275,6 @@ Loop:
   start 137, end 155, numPreLoops 1, numPostLoops 1, valueOffset 20.2
 Knot:
   value type double
-  curve type Bezier
   time 112
   value 8.8
   next interp Curve
@@ -293,7 +284,6 @@ Knot:
   post-tan slope 15
 Knot:
   value type double
-  curve type Bezier
   time 137
   value 0
   next interp Curve
@@ -303,7 +293,6 @@ Knot:
   post-tan slope -5.3
 Knot:
   value type double
-  curve type Bezier
   time 145
   value 8.5
   next interp Curve
@@ -313,7 +302,6 @@ Knot:
   post-tan slope 12.5
 Knot:
   value type double
-  curve type Bezier
   time 155
   value 20.2
   next interp Curve
@@ -323,7 +311,6 @@ Knot:
   post-tan slope -15.7
 Knot:
   value type double
-  curve type Bezier
   time 181
   value 38.2
   next interp Curve
@@ -553,7 +540,6 @@ Loop:
   start 100, end 110, numPreLoops 2, numPostLoops 2, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -563,7 +549,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -821,7 +806,6 @@ Loop:
   start 100, end 110, numPreLoops 2, numPostLoops 0, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 70
   value 8.8
   next interp Curve
@@ -831,7 +815,6 @@ Knot:
   post-tan slope -1
 Knot:
   value type double
-  curve type Bezier
   time 85
   value 35
   next interp Curve
@@ -841,7 +824,6 @@ Knot:
   post-tan slope -5.3
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -851,7 +833,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -861,7 +842,6 @@ Knot:
   post-tan slope 1.5
 Knot:
   value type double
-  curve type Bezier
   time 120
   value 15
   next interp Curve
@@ -1095,7 +1075,6 @@ Loop:
   start 100, end 110, numPreLoops 0, numPostLoops 2, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 90
   value 8.8
   next interp Curve
@@ -1105,7 +1084,6 @@ Knot:
   post-tan slope -1
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -1115,7 +1093,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -1125,7 +1102,6 @@ Knot:
   post-tan slope 1.5
 Knot:
   value type double
-  curve type Bezier
   time 125
   value 35
   next interp Curve
@@ -1135,7 +1111,6 @@ Knot:
   post-tan slope -5.3
 Knot:
   value type double
-  curve type Bezier
   time 140
   value 15
   next interp Curve
@@ -1357,7 +1332,6 @@ Spline:
   post extrap LoopRepeat
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 10
   next interp Curve
@@ -1367,7 +1341,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 20
   next interp Linear
@@ -1377,7 +1350,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 110
   value 15
   next interp Held
@@ -1472,7 +1444,6 @@ Spline:
   post extrap LoopReset
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 10
   next interp Curve
@@ -1482,7 +1453,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 20
   next interp Linear
@@ -1492,7 +1462,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 110
   value 15
   next interp Held
@@ -1595,7 +1564,6 @@ Spline:
   post extrap LoopOscillate
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 10
   next interp Curve
@@ -1605,7 +1573,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 20
   next interp Linear
@@ -1615,7 +1582,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 110
   value 15
   next interp Held
@@ -1702,7 +1668,6 @@ Loop:
   start 100, end 110, numPreLoops 2, numPostLoops 2, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -1712,7 +1677,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -2048,7 +2012,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 156
   value 0
   next interp Curve
@@ -2058,7 +2021,6 @@ Knot:
   post-tan slope -1.3
 Knot:
   value type double
-  curve type Bezier
   time 167
   value 28.8
   next interp Curve
@@ -2145,7 +2107,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 156
   value 0
   next interp Curve
@@ -2155,7 +2116,6 @@ Knot:
   post-tan slope -1.3
 Knot:
   value type double
-  curve type Bezier
   time 167
   value 28.8
   next interp Curve
@@ -2264,7 +2224,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2274,7 +2233,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2381,7 +2339,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2391,7 +2348,6 @@ Knot:
   post-tan slope 0.5
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2457,7 +2413,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2467,7 +2422,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2533,7 +2487,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2543,7 +2496,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2650,7 +2602,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2660,7 +2611,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2752,7 +2702,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2762,7 +2711,6 @@ Knot:
   post-tan slope 0.6
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2854,7 +2802,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2864,7 +2811,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2925,7 +2871,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -2935,7 +2880,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -2996,7 +2940,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3006,7 +2949,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3094,7 +3036,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3104,7 +3045,6 @@ Knot:
   post-tan slope 0.57
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3192,7 +3132,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3202,7 +3141,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3264,7 +3202,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3274,7 +3211,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3336,7 +3272,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3346,7 +3281,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3412,7 +3346,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3422,7 +3355,6 @@ Knot:
   post-tan slope 0.5
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 0
   next interp Curve
@@ -3499,7 +3431,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3509,7 +3440,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3616,7 +3546,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3626,7 +3555,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3721,7 +3649,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3731,7 +3658,6 @@ Knot:
   post-tan slope 0.5
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3797,7 +3723,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3807,7 +3732,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3872,7 +3796,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3882,7 +3805,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -3947,7 +3869,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -3957,7 +3878,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4018,7 +3938,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -4028,7 +3947,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4089,7 +4007,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -4099,7 +4016,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4162,7 +4078,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -4172,7 +4087,6 @@ Knot:
   post-tan slope 1000000000000
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4275,7 +4189,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -4285,7 +4198,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4321,7 +4233,6 @@ Spline:
   post extrap Sloped 0.57
 Knot:
   value type double
-  curve type Bezier
   time 7
   value 7.21
   next interp Held
@@ -4332,7 +4243,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 15
   value 8.18
   next interp Curve
@@ -4342,7 +4252,6 @@ Knot:
   post-tan slope 1.17
 Knot:
   value type double
-  curve type Bezier
   time 20
   value 14.72
   next interp Curve
@@ -4425,7 +4334,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4435,7 +4343,6 @@ Knot:
   post-tan slope 1
 Knot:
   value type double
-  curve type Bezier
   time 5
   value 2
   next interp Curve
@@ -4503,7 +4410,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Linear
@@ -4513,7 +4419,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 5
   value 2
   next interp Linear
@@ -4553,7 +4458,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -4563,7 +4467,6 @@ Knot:
   post-tan slope -0.25
 Knot:
   value type double
-  curve type Bezier
   time 2
   value 2
   next interp Curve
@@ -4573,7 +4476,6 @@ Knot:
   post-tan slope 0.25
 Knot:
   value type double
-  curve type Bezier
   time 3
   value 1
   next interp Curve
@@ -4583,7 +4485,6 @@ Knot:
   post-tan slope -0.25
 Knot:
   value type double
-  curve type Bezier
   time 4
   value 2
   next interp Curve
@@ -4710,7 +4611,6 @@ Loop:
   start 137, end 155, numPreLoops 1, numPostLoops 1, valueOffset 20.2
 Knot:
   value type double
-  curve type Bezier
   time 112
   value 8.8
   next interp Curve
@@ -4720,7 +4620,6 @@ Knot:
   post-tan slope 15
 Knot:
   value type double
-  curve type Bezier
   time 137
   value 0
   next interp Curve
@@ -4730,7 +4629,6 @@ Knot:
   post-tan slope -5.3
 Knot:
   value type double
-  curve type Bezier
   time 145
   value 8.5
   next interp Curve
@@ -4740,7 +4638,6 @@ Knot:
   post-tan slope 12.5
 Knot:
   value type double
-  curve type Bezier
   time 155
   value 20.2
   next interp Curve
@@ -4750,7 +4647,6 @@ Knot:
   post-tan slope -15.7
 Knot:
   value type double
-  curve type Bezier
   time 181
   value 38.2
   next interp Curve
@@ -5004,7 +4900,6 @@ Loop:
   start 100, end 110, numPreLoops 2, numPostLoops 2, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -5014,7 +4909,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -5288,7 +5182,6 @@ Loop:
   start 100, end 110, numPreLoops 2, numPostLoops 0, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 70
   value 8.8
   next interp Curve
@@ -5298,7 +5191,6 @@ Knot:
   post-tan slope -1
 Knot:
   value type double
-  curve type Bezier
   time 85
   value 35
   next interp Curve
@@ -5308,7 +5200,6 @@ Knot:
   post-tan slope -5.3
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -5318,7 +5209,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -5328,7 +5218,6 @@ Knot:
   post-tan slope 1.5
 Knot:
   value type double
-  curve type Bezier
   time 120
   value 15
   next interp Curve
@@ -5580,7 +5469,6 @@ Loop:
   start 100, end 110, numPreLoops 0, numPostLoops 2, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 90
   value 8.8
   next interp Curve
@@ -5590,7 +5478,6 @@ Knot:
   post-tan slope -1
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -5600,7 +5487,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -5610,7 +5496,6 @@ Knot:
   post-tan slope 1.5
 Knot:
   value type double
-  curve type Bezier
   time 125
   value 35
   next interp Curve
@@ -5620,7 +5505,6 @@ Knot:
   post-tan slope -5.3
 Knot:
   value type double
-  curve type Bezier
   time 140
   value 15
   next interp Curve
@@ -5860,7 +5744,6 @@ Spline:
   post extrap LoopRepeat
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 10
   next interp Curve
@@ -5870,7 +5753,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 20
   next interp Linear
@@ -5880,7 +5762,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 110
   value 15
   next interp Held
@@ -5979,7 +5860,6 @@ Spline:
   post extrap LoopReset
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 10
   next interp Curve
@@ -5989,7 +5869,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 20
   next interp Linear
@@ -5999,7 +5878,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 110
   value 15
   next interp Held
@@ -6102,7 +5980,6 @@ Spline:
   post extrap LoopOscillate
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 10
   next interp Curve
@@ -6112,7 +5989,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 20
   next interp Linear
@@ -6122,7 +5998,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 110
   value 15
   next interp Held
@@ -6209,7 +6084,6 @@ Loop:
   start 100, end 110, numPreLoops 2, numPostLoops 2, valueOffset -5
 Knot:
   value type double
-  curve type Bezier
   time 100
   value 20
   next interp Curve
@@ -6219,7 +6093,6 @@ Knot:
   post-tan slope 2
 Knot:
   value type double
-  curve type Bezier
   time 105
   value 10
   next interp Curve
@@ -6569,7 +6442,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 156
   value 0
   next interp Curve
@@ -6579,7 +6451,6 @@ Knot:
   post-tan slope -1.3
 Knot:
   value type double
-  curve type Bezier
   time 167
   value 28.8
   next interp Curve
@@ -6670,7 +6541,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 156
   value 0
   next interp Curve
@@ -6680,7 +6550,6 @@ Knot:
   post-tan slope -1.3
 Knot:
   value type double
-  curve type Bezier
   time 167
   value 28.8
   next interp Curve
@@ -6793,7 +6662,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -6803,7 +6671,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -6914,7 +6781,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -6924,7 +6790,6 @@ Knot:
   post-tan slope 0.5
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -6994,7 +6859,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7004,7 +6868,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7074,7 +6937,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7084,7 +6946,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7195,7 +7056,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7205,7 +7065,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7301,7 +7160,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7311,7 +7169,6 @@ Knot:
   post-tan slope 0.6
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7407,7 +7264,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7417,7 +7273,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7482,7 +7337,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7492,7 +7346,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7557,7 +7410,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7567,7 +7419,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7659,7 +7510,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7669,7 +7519,6 @@ Knot:
   post-tan slope 0.57
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7761,7 +7610,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7771,7 +7619,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7837,7 +7684,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7847,7 +7693,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7913,7 +7758,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -7923,7 +7767,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -7993,7 +7836,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8003,7 +7845,6 @@ Knot:
   post-tan slope 0.5
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 0
   next interp Curve
@@ -8084,7 +7925,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8094,7 +7934,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8205,7 +8044,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8215,7 +8053,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8314,7 +8151,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8324,7 +8160,6 @@ Knot:
   post-tan slope 0.5
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8394,7 +8229,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8404,7 +8238,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8473,7 +8306,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8483,7 +8315,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8552,7 +8383,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8562,7 +8392,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8627,7 +8456,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8637,7 +8465,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8702,7 +8529,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8712,7 +8538,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8779,7 +8604,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8789,7 +8613,6 @@ Knot:
   post-tan slope 1000000000000
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8896,7 +8719,6 @@ Spline:
   post extrap Held
 Knot:
   value type double
-  curve type Bezier
   time 0
   value 0
   next interp Curve
@@ -8906,7 +8728,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 1
   value 1
   next interp Curve
@@ -8946,7 +8767,6 @@ Spline:
   post extrap Sloped 0.57
 Knot:
   value type double
-  curve type Bezier
   time 7
   value 7.21
   next interp Held
@@ -8957,7 +8777,6 @@ Knot:
   post-tan slope 0
 Knot:
   value type double
-  curve type Bezier
   time 15
   value 8.18
   next interp Curve
@@ -8967,7 +8786,6 @@ Knot:
   post-tan slope 1.17
 Knot:
   value type double
-  curve type Bezier
   time 20
   value 14.72
   next interp Curve

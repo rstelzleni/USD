@@ -324,7 +324,6 @@ _GetExtrapolationSlope(
     const bool haveMultipleKnots,
     const Ts_TypedKnotData<double> &endKnotData,
     const Ts_TypedKnotData<double> &adjacentData,
-    const TsCurveType curveType,
     const Ts_EvalLocation location)
 {
     // None, Held, and Sloped have simple answers.
@@ -1060,13 +1059,14 @@ _Interpolate(
     const Ts_TypedKnotData<double> &beginData,
     const Ts_TypedKnotData<double> &endData,
     const TsTime time,
-    const Ts_EvalAspect aspect)
+    const Ts_EvalAspect aspect,
+    const TsCurveType curveType)
 {
     // Special-case value blocks
     if (beginData.nextInterp == TsInterpValueBlock) {
         return std::nullopt;
     }
-    
+
     // Special-case held evaluation.
     if (aspect == Ts_EvalHeldValue)
     {
@@ -1076,7 +1076,7 @@ _Interpolate(
     // Curved segment: Bezier/Hermite math.
     if (beginData.nextInterp == TsInterpCurve)
     {
-        if (beginData.curveType == TsCurveTypeBezier)
+        if (curveType == TsCurveTypeBezier)
         {
             return _EvalBezier(beginData, endData, time, aspect);
         }
@@ -1104,12 +1104,6 @@ _Interpolate(
         return _ExtrapolateLinear(beginData, slope, time, Ts_EvalPost);
     }
 
-    // Disabled interpolation -> no value.
-    if (beginData.nextInterp == TsInterpValueBlock)
-    {
-        return std::nullopt;
-    }
-
     // Should be unreachable.
     TF_CODING_ERROR("Unexpected interpolation type");
     return std::nullopt;
@@ -1131,8 +1125,8 @@ _EvalMain(
     // Figure out where we are in the sequence.  Find the bracketing knots, the
     // knot we're at, if any, and what type of position (before start, after
     // end, at first knot, at last knot, at another knot, between knots).
-    const auto prevIt = (lbIt != times.begin() ? lbIt - 1 : times.end());
     const bool atKnot = (lbIt != times.end() && *lbIt == time);
+    const auto prevIt = (lbIt != times.begin() ? lbIt - 1 : times.end());
     const auto knotIt = (atKnot ? lbIt : times.end());
     const auto nextIt = (atKnot ? lbIt + 1 : lbIt);
     const bool beforeStart = (nextIt == times.begin());
@@ -1208,7 +1202,7 @@ _EvalMain(
                     return _GetExtrapolationSlope(
                         data->preExtrapolation,
                         haveMultipleKnots, knotData, nextData,
-                        data->curveType, Ts_EvalPre);
+                        Ts_EvalPre);
                 }
 
                 switch (prevData.nextInterp) {
@@ -1233,7 +1227,7 @@ _EvalMain(
                     return _GetExtrapolationSlope(
                         data->postExtrapolation,
                         haveMultipleKnots, knotData, prevData,
-                        data->curveType, Ts_EvalPost);
+                        Ts_EvalPost);
                 }
 
                 switch (knotData.nextInterp) {
@@ -1273,7 +1267,7 @@ _EvalMain(
         // Special-case held evaluation.
         if (aspect == Ts_EvalHeldValue)
         {
-            // XXX: There's really no reasonable value to return as the held
+            // There's really no reasonable value to return as the held
             // pre-extrapolation value. This answer is similar to the post-
             // extrapolation answer.
             return nextData.GetPreValue();
@@ -1284,7 +1278,7 @@ _EvalMain(
             _GetExtrapolationSlope(
                 data->preExtrapolation,
                 haveMultipleKnots, nextData, nextData2,
-                data->curveType, Ts_EvalPre);
+                Ts_EvalPre);
 
         // No slope -> no extrapolation.
         if (!slope)
@@ -1330,7 +1324,7 @@ _EvalMain(
             _GetExtrapolationSlope(
                 data->postExtrapolation,
                 haveMultipleKnots, prevData, prevData2,
-                data->curveType, Ts_EvalPost);
+                Ts_EvalPost);
 
         // No slope -> no extrapolation.
         if (!slope)
@@ -1354,7 +1348,7 @@ _EvalMain(
     loopRes.ReplaceBoundaryKnots(&prevData, &nextData);
 
     // Interpolate.
-    return _Interpolate(prevData, nextData, time, aspect);
+    return _Interpolate(prevData, nextData, time, aspect, data->curveType);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
