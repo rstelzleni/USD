@@ -27,7 +27,6 @@ pxr_library(usd
         collectionMembershipQuery
         collectionPredicateLibrary
         common
-        crateInfo
         debugCodes
         editContext
         editTarget
@@ -78,11 +77,8 @@ pxr_library(usd
         clipCache
         clipSet
         clipSetDefinition
-        crateData
-        crateFile
         instanceCache
         instanceKey
-        integerCoding
         interpolators
         primTypeInfoCache
         usdzResolver
@@ -90,10 +86,9 @@ pxr_library(usd
 
     PUBLIC_HEADERS
         api.h
+        crateInfo.h
 
     PRIVATE_HEADERS
-        crateDataTypes.h
-        crateValueInliners.h
         listEditImpl.h
         wrapUtils.h
         testenv/TestUsdResolverChangedResolver.h
@@ -342,13 +337,6 @@ pxr_build_test(testUsdHardToReach
         usd
     CPPFILES
         testenv/testUsdHardToReach.cpp
-)
-
-pxr_build_test(testUsdIntegerCoding
-    LIBRARIES
-        usd
-    CPPFILES
-        testenv/testUsdIntegerCoding.cpp
 )
 
 pxr_build_test(testUsdMetadataCpp
@@ -964,11 +952,6 @@ pxr_register_test(testUsdInstancing
 pxr_register_test(testUsdInstanceProxy
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdInstanceProxy"
-    EXPECTED_RETURN_CODE 0
-)
-
-pxr_register_test(testUsdIntegerCoding
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdIntegerCoding"
     EXPECTED_RETURN_CODE 0
 )
 

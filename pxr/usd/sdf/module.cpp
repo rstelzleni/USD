@@ -20,6 +20,7 @@ TF_WRAP_MODULE
     TF_WRAP( ChangeBlock );
     TF_WRAP( CleanupEnabler );
     TF_WRAP( CopyUtils );
+    TF_WRAP( CrateInfo );
     TF_WRAP( FileFormat );
     TF_WRAP( Layer );
     TF_WRAP( LayerOffset );
@@ -38,6 +39,7 @@ TF_WRAP_MODULE
     TF_WRAP( Types );
     TF_WRAP( ValueType );
     TF_WRAP( VariableExpression );
+    TF_WRAP( UsdFileFormat );
 
     TF_WRAP( Spec );
     TF_WRAP( VariantSpec );

@@ -108,8 +108,8 @@ int main(int argc, char** argv) {
 
     // Compress.
     std::unique_ptr<char[]> compressed(
-        new char[Usd_IntegerCompression::GetCompressedBufferSize(ints.size())]);
-    size_t compressedSize = Usd_IntegerCompression::CompressToBuffer(
+        new char[Sdf_IntegerCompression::GetCompressedBufferSize(ints.size())]);
+    size_t compressedSize = Sdf_IntegerCompression::CompressToBuffer(
         ints.data(), ints.size(), compressed.get());
     printf("Compressed %zu 32-bit ints to %zu bytes\n", ints.size(),
            compressedSize);
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     // Decompress.
     std::vector<uint32_t> decoded;
     decoded.resize(ints.size());
-    Usd_IntegerCompression::DecompressFromBuffer(
+    Sdf_IntegerCompression::DecompressFromBuffer(
         compressed.get(), compressedSize, decoded.data(), ints.size());
 
     TF_AXIOM(decoded == ints);
@@ -130,9 +130,9 @@ int main(int argc, char** argv) {
 
     // Compress.
     std::unique_ptr<char[]> compressed64(
-        new char[Usd_IntegerCompression64::
+        new char[Sdf_IntegerCompression64::
                  GetCompressedBufferSize(ints64.size())]);
-    size_t compressedSize64 = Usd_IntegerCompression64::CompressToBuffer(
+    size_t compressedSize64 = Sdf_IntegerCompression64::CompressToBuffer(
         ints64.data(), ints64.size(), compressed64.get());
     printf("Compressed %zu 64-bit ints to %zu bytes\n", ints64.size(),
            compressedSize64);
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
     // Decompress.
     std::vector<uint64_t> decoded64;
     decoded64.resize(ints64.size());
-    Usd_IntegerCompression64::DecompressFromBuffer(
+    Sdf_IntegerCompression64::DecompressFromBuffer(
         compressed64.get(), compressedSize64, decoded64.data(), ints64.size());
 
     TF_AXIOM(decoded64 == ints64);

@@ -31,6 +31,7 @@ pxr_library(sdf
         childrenView
         cleanupEnabler
         copyUtils
+        crateInfo
         data
         declareHandles
         fileFormat
@@ -75,6 +76,9 @@ pxr_library(sdf
         timeCode
         tokens
         types
+        usdFileFormat
+        usdaFileFormat
+        usdcFileFormat
         valueTypeName
         variableExpression
         variantSetSpec
@@ -105,10 +109,13 @@ pxr_library(sdf
         changeManager
         cleanupTracker
         connectionListEditor
+        crateData
+        crateFile
         debugCodes
         fileFormatRegistry
         fileIO
         fileIO_Common
+        integerCoding
         layerRegistry
         listOpListEditor
         parserHelpers
@@ -124,7 +131,10 @@ pxr_library(sdf
         vectorListEditor
 
     PRIVATE_HEADERS
+        crateDataTypes.h
+        crateValueInliners.h
         instantiatePool.h
+        shared.h
         valueTypePrivate.h
 
     PYMODULE_CPPFILES
@@ -138,6 +148,7 @@ pxr_library(sdf
         wrapChangeBlock.cpp
         wrapCleanupEnabler.cpp
         wrapCopyUtils.cpp
+        wrapCrateInfo.cpp
         wrapFileFormat.cpp
         wrapLayer.cpp
         wrapLayerOffset.cpp
@@ -160,6 +171,7 @@ pxr_library(sdf
         wrapVariableExpression.cpp
         wrapTimeCode.cpp
         wrapTypes.cpp
+        wrapUsdFileFormat.cpp
         wrapValueTypeName.cpp
         wrapVariantSpec.cpp
         wrapVariantSetSpec.cpp
@@ -281,13 +293,20 @@ pxr_build_test(testSdfAttributeBlocking_Cpp
         sdf
     CPPFILES
         testenv/testSdfAttributeBlocking.cpp
-) 
+)
 
 pxr_build_test(testSdfHardToReach
     LIBRARIES
         sdf
     CPPFILES
         testenv/testSdfHardToReach.cpp
+)
+
+pxr_build_test(testSdfIntegerCoding
+    LIBRARIES
+        sdf
+    CPPFILES
+        testenv/testSdfIntegerCoding.cpp
 )
 
 pxr_build_test(testSdfLayerHints
@@ -450,6 +469,11 @@ pxr_register_test(testSdfFileFormat
 pxr_register_test(testSdfFileFormatCapabilities
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfFileFormatCapabilities"
+)
+
+pxr_register_test(testSdfIntegerCoding
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfIntegerCoding"
+    EXPECTED_RETURN_CODE 0
 )
 
 pxr_register_test(testSdfLayer

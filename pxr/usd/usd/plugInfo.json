@@ -113,42 +113,6 @@
                         "schemaIdentifier": "Typed", 
                         "schemaKind": "abstractBase"
                     }, 
-                    "UsdUsdFileFormat": {
-                        "bases": [
-                            "SdfFileFormat"
-                        ], 
-                        "displayName": "USD File Format", 
-                        "extensions": [
-                            "usd"
-                        ], 
-                        "formatId": "usd", 
-                        "primary": true, 
-                        "target": "usd"
-                    }, 
-                    "UsdUsdaFileFormat": {
-                        "bases": [
-                            "SdfTextFileFormat"
-                        ], 
-                        "displayName": "USD Text File Format", 
-                        "extensions": [
-                            "usda"
-                        ], 
-                        "formatId": "usda", 
-                        "primary": true, 
-                        "target": "usd"
-                    }, 
-                    "UsdUsdcFileFormat": {
-                        "bases": [
-                            "SdfFileFormat"
-                        ], 
-                        "displayName": "USD Crate File Format", 
-                        "extensions": [
-                            "usdc"
-                        ], 
-                        "formatId": "usdc", 
-                        "primary": true, 
-                        "target": "usd"
-                    }, 
                     "UsdUsdzFileFormat": {
                         "bases": [
                             "SdfFileFormat"

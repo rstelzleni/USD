@@ -7,7 +7,7 @@
 #include "pxr/pxr.h"
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/fastCompression.h"
-#include "pxr/usd/usd/integerCoding.h"
+#include "pxr/usd/sdf/integerCoding.h"
 #include "pxr/base/tf/pxrTslRobinMap/robin_map.h"
 
 #include <cstdint>
@@ -397,47 +397,47 @@ size_t _DecompressIntegers(char const *compressed, size_t compressedSize,
 // 32 bit.
 
 size_t
-Usd_IntegerCompression::GetCompressedBufferSize(size_t numInts)
+Sdf_IntegerCompression::GetCompressedBufferSize(size_t numInts)
 {
     return TfFastCompression::GetCompressedBufferSize(
         _GetEncodedBufferSize<int32_t>(numInts));
 }
 
 size_t
-Usd_IntegerCompression::GetDecompressionWorkingSpaceSize(size_t numInts)
+Sdf_IntegerCompression::GetDecompressionWorkingSpaceSize(size_t numInts)
 {
     return _GetEncodedBufferSize<int32_t>(numInts);
 }
 
 size_t
-Usd_IntegerCompression::CompressToBuffer(
+Sdf_IntegerCompression::CompressToBuffer(
     int32_t const *ints, size_t numInts, char *compressed)
 {
     return _CompressIntegers(ints, numInts, compressed);
 }
 
 size_t
-Usd_IntegerCompression::CompressToBuffer(
+Sdf_IntegerCompression::CompressToBuffer(
     uint32_t const *ints, size_t numInts, char *compressed)
 {
     return _CompressIntegers(ints, numInts, compressed);
 }
 
 size_t
-Usd_IntegerCompression::DecompressFromBuffer(
+Sdf_IntegerCompression::DecompressFromBuffer(
     char const *compressed, size_t compressedSize,
     int32_t *ints, size_t numInts, char *workingSpace)
 {
-    return _DecompressIntegers<Usd_IntegerCompression>(
+    return _DecompressIntegers<Sdf_IntegerCompression>(
         compressed, compressedSize, ints, numInts, workingSpace);
 }
 
 size_t
-Usd_IntegerCompression::DecompressFromBuffer(
+Sdf_IntegerCompression::DecompressFromBuffer(
     char const *compressed, size_t compressedSize,
     uint32_t *ints, size_t numInts, char *workingSpace)
 {
-    return _DecompressIntegers<Usd_IntegerCompression>(
+    return _DecompressIntegers<Sdf_IntegerCompression>(
         compressed, compressedSize, ints, numInts, workingSpace);
 }
 
@@ -445,47 +445,47 @@ Usd_IntegerCompression::DecompressFromBuffer(
 // 64 bit.
 
 size_t
-Usd_IntegerCompression64::GetCompressedBufferSize(size_t numInts)
+Sdf_IntegerCompression64::GetCompressedBufferSize(size_t numInts)
 {
     return TfFastCompression::GetCompressedBufferSize(
         _GetEncodedBufferSize<int64_t>(numInts));
 }
 
 size_t
-Usd_IntegerCompression64::GetDecompressionWorkingSpaceSize(size_t numInts)
+Sdf_IntegerCompression64::GetDecompressionWorkingSpaceSize(size_t numInts)
 {
     return _GetEncodedBufferSize<int64_t>(numInts);
 }
 
 size_t
-Usd_IntegerCompression64::CompressToBuffer(
+Sdf_IntegerCompression64::CompressToBuffer(
     int64_t const *ints, size_t numInts, char *compressed)
 {
     return _CompressIntegers(ints, numInts, compressed);
 }
 
 size_t
-Usd_IntegerCompression64::CompressToBuffer(
+Sdf_IntegerCompression64::CompressToBuffer(
     uint64_t const *ints, size_t numInts, char *compressed)
 {
     return _CompressIntegers(ints, numInts, compressed);
 }
 
 size_t
-Usd_IntegerCompression64::DecompressFromBuffer(
+Sdf_IntegerCompression64::DecompressFromBuffer(
     char const *compressed, size_t compressedSize,
     int64_t *ints, size_t numInts, char *workingSpace)
 {
-    return _DecompressIntegers<Usd_IntegerCompression64>(
+    return _DecompressIntegers<Sdf_IntegerCompression64>(
         compressed, compressedSize, ints, numInts, workingSpace);
 }
 
 size_t
-Usd_IntegerCompression64::DecompressFromBuffer(
+Sdf_IntegerCompression64::DecompressFromBuffer(
     char const *compressed, size_t compressedSize,
     uint64_t *ints, size_t numInts, char *workingSpace)
 {
-    return _DecompressIntegers<Usd_IntegerCompression64>(
+    return _DecompressIntegers<Sdf_IntegerCompression64>(
         compressed, compressedSize, ints, numInts, workingSpace);
 }
 

@@ -99,13 +99,13 @@ static const uint64_t CRATE_PAGEMASK =
 static const unsigned int CRATE_PAGESHIFT = _GetPageShift(CRATE_PAGEMASK);
 
 TF_REGISTRY_FUNCTION(TfType) {
-    TfType::Define<Usd_CrateFile::TimeSamples>();
+    TfType::Define<Sdf_CrateFile::TimeSamples>();
 }
 
 #define DEFAULT_NEW_VERSION "0.8.0"
 TF_DEFINE_ENV_SETTING(
     USD_WRITE_NEW_USDC_FILES_AS_VERSION, DEFAULT_NEW_VERSION,
-    "When writing new Usd Crate files, write them as this version.  "
+    "When writing new Sdf Crate files, write them as this version.  "
     "This must have the same major version as the software and have less or "
     "equal minor and patch versions.  This is only for new files; saving "
     "edits to an existing file preserves its version.");
@@ -174,22 +174,22 @@ WriteToAsset(ArWritableAsset* asset,
     return nwritten;
 }
 
-/// \class UsdReadOutOfBoundsError
+/// \class SdfReadOutOfBoundsError
 ///
-/// Usd throws this exception when code attempts to read
+/// Sdf throws this exception when code attempts to read
 /// memory outside of the allocated range.
-class UsdReadOutOfBoundsError : public TfBaseException
+class SdfReadOutOfBoundsError : public TfBaseException
 {
 public:
     using TfBaseException::TfBaseException;
-    USD_API virtual ~UsdReadOutOfBoundsError() override;
+    SDF_API virtual ~SdfReadOutOfBoundsError() override;
 };
 
-UsdReadOutOfBoundsError::~UsdReadOutOfBoundsError()
+SdfReadOutOfBoundsError::~SdfReadOutOfBoundsError()
 {
 }
 
-namespace Usd_CrateFile
+namespace Sdf_CrateFile
 {
 // Metafunction that determines if a T instance can be read/written by simple
 // bitwise copy.
@@ -205,7 +205,7 @@ struct _IsBitwiseReadWrite {
         GfIsGfQuat<T>::value ||
         std::is_base_of<Index, T>::value;
 };
-} // Usd_CrateFile
+} // Sdf_CrateFile
 
 namespace {
 
@@ -214,7 +214,7 @@ namespace {
 // https://llvm.org/bugs/show_bug.cgi?id=18350.
 typedef std::unique_ptr<char, std::default_delete<char[]> > RawDataPtr;
 
-using namespace Usd_CrateFile;
+using namespace Sdf_CrateFile;
 
 // To add a new section, add a name here and add that name to _KnownSections
 // below, then add handling for it in _Write and _ReadStructuralSections.
@@ -307,7 +307,7 @@ struct _LocalUnpackRecursionGuard
 } // anon
 
 
-namespace Usd_CrateFile {
+namespace Sdf_CrateFile {
 
 // XXX: These checks ensure VtValue can hold ValueRep in the lightest
 // possible way -- WBN not to rely on internal knowledge of that.
@@ -316,7 +316,7 @@ static_assert(std::is_trivially_copyable_v<ValueRep>);
 static_assert(std::is_trivially_copy_assignable_v<ValueRep>);
 static_assert(std::is_trivially_destructible_v<ValueRep>);
 
-using namespace Usd_CrateValueInliners;
+using namespace Sdf_CrateValueInliners;
 
 using std::make_pair;
 using std::string;
@@ -586,7 +586,7 @@ struct _MmapStream {
             
             if (ARCH_UNLIKELY(!inRange)) {
                 ptrdiff_t offset = _cur - mapStart;
-                TF_THROW(UsdReadOutOfBoundsError, TfStringPrintf(
+                TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
                     "Read out-of-bounds: %zd bytes at offset %td in "
                     "a mapping of length %zd",
                     nBytes, offset, mapLen));
@@ -1275,7 +1275,7 @@ public:
                 // upgrading.
                 lock.upgrade_to_writer();
                 auto iresult =
-                    crate->_sharedTimes.emplace(timesRep, Usd_EmptySharedTag);
+                    crate->_sharedTimes.emplace(timesRep, Sdf_EmptySharedTag);
                 if (iresult.second) {
                     // We get to do the population.
                     auto sharedTimes = TimeSamples::SharedTimes();
@@ -1752,8 +1752,8 @@ _WriteCompressedInts(Writer w, Int const *begin, size_t size)
     // Make a buffer to compress to, compress, and write.
     using Compressor = typename std::conditional<
         sizeof(Int) == 4,
-        Usd_IntegerCompression,
-        Usd_IntegerCompression64>::type;
+        Sdf_IntegerCompression,
+        Sdf_IntegerCompression64>::type;
     std::unique_ptr<char[]> compBuffer(
         new char[Compressor::GetCompressedBufferSize(size)]);
     size_t compSize =
@@ -1956,8 +1956,8 @@ struct _CompressedIntsReader
     void Read(Reader &reader, Int *out, size_t numInts) {
         using Compressor = typename std::conditional<
             sizeof(Int) == 4,
-            Usd_IntegerCompression,
-            Usd_IntegerCompression64>::type;
+            Sdf_IntegerCompression,
+            Sdf_IntegerCompression64>::type;
         
         _AllocateBufferAndWorkingSpace<Compressor>(numInts);
         auto compressedSize = reader.template Read<uint64_t>();
@@ -2172,7 +2172,7 @@ std::unique_ptr<CrateFile>
 CrateFile::Open(string const &assetPath,
                 bool detached)
 {
-    TfAutoMallocTag tag("Usd_CrateFile::CrateFile::Open");
+    TfAutoMallocTag tag("Sdf_CrateFile::CrateFile::Open");
     return Open(
         assetPath, ArGetResolver().OpenAsset(ArResolvedPath(assetPath)),
         detached);
@@ -2182,7 +2182,7 @@ std::unique_ptr<CrateFile>
 CrateFile::Open(string const &assetPath, ArAssetSharedPtr const &srcAsset,
                 bool detached)
 {
-    TfAutoMallocTag tag("Usd_CrateFile::CrateFile::Open");
+    TfAutoMallocTag tag("Sdf_CrateFile::CrateFile::Open");
 
     std::unique_ptr<CrateFile> result;
 
@@ -2851,10 +2851,10 @@ CrateFile::_WriteFields(_Writer &w)
                        tokenIndexVals.begin(),
                        [](Field const &f) { return f.tokenIndex.value; });
         std::unique_ptr<char[]> compBuffer(
-            new char[Usd_IntegerCompression::
+            new char[Sdf_IntegerCompression::
                      GetCompressedBufferSize(tokenIndexVals.size())]);
 
-        size_t tokenIndexesSize = Usd_IntegerCompression::CompressToBuffer(
+        size_t tokenIndexesSize = Sdf_IntegerCompression::CompressToBuffer(
             tokenIndexVals.data(), tokenIndexVals.size(), compBuffer.get());
         w.WriteAs<uint64_t>(tokenIndexesSize);
         w.WriteContiguous(compBuffer.get(), tokenIndexesSize);
@@ -2889,12 +2889,12 @@ CrateFile::_WriteFieldSets(_Writer &w)
                        fieldSetsVals.begin(),
                        [](FieldIndex fi) { return fi.value; });
         std::unique_ptr<char[]> compBuffer(
-            new char[Usd_IntegerCompression::
+            new char[Sdf_IntegerCompression::
                      GetCompressedBufferSize(fieldSetsVals.size())]);
         // Total # of fieldSetVals.
         w.WriteAs<uint64_t>(fieldSetsVals.size());
 
-        size_t fsetsSize = Usd_IntegerCompression::CompressToBuffer(
+        size_t fsetsSize = Sdf_IntegerCompression::CompressToBuffer(
             fieldSetsVals.data(), fieldSetsVals.size(), compBuffer.get());
         w.WriteAs<uint64_t>(fsetsSize);
         w.WriteContiguous(compBuffer.get(), fsetsSize);
@@ -2947,7 +2947,7 @@ CrateFile::_WriteSpecs(_Writer &w)
         // Version 0.4.0 introduces compressed specs.  We write three lists of
         // integers here, pathIndexes, fieldSetIndexes, specTypes.
         std::unique_ptr<char[]> compBuffer(
-            new char[Usd_IntegerCompression::
+            new char[Sdf_IntegerCompression::
                      GetCompressedBufferSize(_specs.size())]);
         vector<uint32_t> tmp(_specs.size());
         
@@ -2957,7 +2957,7 @@ CrateFile::_WriteSpecs(_Writer &w)
         // pathIndexes.
         std::transform(_specs.begin(), _specs.end(), tmp.begin(),
                        [](Spec const &s) { return s.pathIndex.value; });
-        size_t pathIndexesSize = Usd_IntegerCompression::CompressToBuffer(
+        size_t pathIndexesSize = Sdf_IntegerCompression::CompressToBuffer(
             tmp.data(), tmp.size(), compBuffer.get());
         w.WriteAs<uint64_t>(pathIndexesSize);
         w.WriteContiguous(compBuffer.get(), pathIndexesSize);
@@ -2965,7 +2965,7 @@ CrateFile::_WriteSpecs(_Writer &w)
         // fieldSetIndexes.
         std::transform(_specs.begin(), _specs.end(), tmp.begin(),
                        [](Spec const &s) { return s.fieldSetIndex.value; });
-        size_t fsetIndexesSize = Usd_IntegerCompression::CompressToBuffer(
+        size_t fsetIndexesSize = Sdf_IntegerCompression::CompressToBuffer(
             tmp.data(), tmp.size(), compBuffer.get());
         w.WriteAs<uint64_t>(fsetIndexesSize);
         w.WriteContiguous(compBuffer.get(), fsetIndexesSize);
@@ -2973,7 +2973,7 @@ CrateFile::_WriteSpecs(_Writer &w)
         // specTypes.
         std::transform(_specs.begin(), _specs.end(), tmp.begin(),
                        [](Spec const &s) { return s.specType; });
-        size_t specTypesSize = Usd_IntegerCompression::CompressToBuffer(
+        size_t specTypesSize = Sdf_IntegerCompression::CompressToBuffer(
             tmp.data(), tmp.size(), compBuffer.get());
         w.WriteAs<uint64_t>(specTypesSize);
         w.WriteContiguous(compBuffer.get(), specTypesSize);
@@ -3159,24 +3159,24 @@ CrateFile::_WriteCompressedPathData(_Writer &w, Container const &pathVec)
 
     // Compress and store the arrays.
     std::unique_ptr<char[]> compBuffer(
-        new char[Usd_IntegerCompression::
+        new char[Sdf_IntegerCompression::
                  GetCompressedBufferSize(pathVec.size())]);
 
     // pathIndexes.
-    uint64_t pathIndexesSize = Usd_IntegerCompression::CompressToBuffer(
+    uint64_t pathIndexesSize = Sdf_IntegerCompression::CompressToBuffer(
         pathIndexes.data(), pathIndexes.size(), compBuffer.get());
     w.WriteAs<uint64_t>(pathIndexesSize);
     w.WriteContiguous(compBuffer.get(), pathIndexesSize);
 
     // elementTokenIndexes.
-    uint64_t elemToksSize = Usd_IntegerCompression::CompressToBuffer(
+    uint64_t elemToksSize = Sdf_IntegerCompression::CompressToBuffer(
         elementTokenIndexes.data(), elementTokenIndexes.size(),
         compBuffer.get());
     w.WriteAs<uint64_t>(elemToksSize);
     w.WriteContiguous(compBuffer.get(), elemToksSize);
 
     // jumps.
-    uint64_t jumpsSize = Usd_IntegerCompression::CompressToBuffer(
+    uint64_t jumpsSize = Sdf_IntegerCompression::CompressToBuffer(
         jumps.data(), jumps.size(), compBuffer.get());
     w.WriteAs<uint64_t>(jumpsSize);
     w.WriteContiguous(compBuffer.get(), jumpsSize);
@@ -3300,12 +3300,12 @@ CrateFile::_ReadBootStrap(ByteStream src, int64_t fileSize)
     src.Read(&b, sizeof(b));
     // Sanity check.
     if (memcmp(b.ident, USDC_IDENT, sizeof(b.ident))) {
-        TF_RUNTIME_ERROR("Usd crate bootstrap section corrupt");
+        TF_RUNTIME_ERROR("Sdf crate bootstrap section corrupt");
     }
     // Check version.
     else if (!_SoftwareVersion.CanRead(Version(b))) {
         TF_RUNTIME_ERROR(
-            "Usd crate file version mismatch -- file is %s, "
+            "Sdf crate file version mismatch -- file is %s, "
             "software supports %s", Version(b).AsString().c_str(),
             _SoftwareVersion.AsString().c_str());
     }
@@ -3313,7 +3313,7 @@ CrateFile::_ReadBootStrap(ByteStream src, int64_t fileSize)
     // catches some cases where a file was corrupted by truncation.
     else if (fileSize <= b.tocOffset) {
         TF_RUNTIME_ERROR(
-            "Usd crate file corrupt, possibly truncated: table of contents "
+            "Sdf crate file corrupt, possibly truncated: table of contents "
             "at offset %" PRId64 " but file size is %" PRId64,
             b.tocOffset, fileSize);
     }
@@ -3666,8 +3666,8 @@ CrateFile::_ReadPathsImpl(Reader reader,
                      siblingOffset, &dispatcher, parentPath]() {
                         // XXX Remove these tags when bug #132031 is addressed
                         TfAutoMallocTag tag(
-                            "Usd", "Usd_CrateDataImpl::Open",
-                            "Usd_CrateFile::CrateFile::Open", "_ReadPaths");
+                            "Sdf", "Sdf_CrateDataImpl::Open",
+                            "Sdf_CrateFile::CrateFile::Open", "_ReadPaths");
                         auto readerCopy = reader;
                         readerCopy.Seek(siblingOffset);
                         _ReadPathsImpl<Header>(readerCopy, dispatcher, parentPath);
@@ -3817,8 +3817,8 @@ CrateFile::_BuildDecompressedPathsImpl(
                      siblingIndex, &dispatcher, parentPath]()  {
                         // XXX Remove these tags when bug #132031 is addressed
                         TfAutoMallocTag tag(
-                            "Usd", "Usd_CrateDataImpl::Open",
-                            "Usd_CrateFile::CrateFile::Open", "_ReadPaths");
+                            "Sdf", "Sdf_CrateDataImpl::Open",
+                            "Sdf_CrateFile::CrateFile::Open", "_ReadPaths");
                         _BuildDecompressedPathsImpl(
                             pathIndexes, elementTokenIndexes, jumps,
                             siblingIndex, parentPath, dispatcher);
@@ -4146,7 +4146,7 @@ CrateFile::_DoTypeRegistration() {
 // Functions that populate the value read/write functions.
 void
 CrateFile::_DoAllTypeRegistrations() {
-    TfAutoMallocTag tag("Usd_CrateFile::CrateFile::_DoAllTypeRegistrations");
+    TfAutoMallocTag tag("Sdf_CrateFile::CrateFile::_DoAllTypeRegistrations");
 #define xx(_unused1, _unused2, CPPTYPE, _unused3)       \
     _DoTypeRegistration<CPPTYPE>();
 
@@ -4263,7 +4263,7 @@ static_assert(sizeof(CrateFile::Spec_0_0_1) == 16, "");
 static_assert(sizeof(_PathItemHeader) == 12, "");
 static_assert(sizeof(_PathItemHeader_0_0_1) == 16, "");
 
-} // Usd_CrateFile
+} // Sdf_CrateFile
 
 
 

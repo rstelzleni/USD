@@ -4,14 +4,14 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_USD_USD_CRATE_FILE_H
-#define PXR_USD_USD_CRATE_FILE_H
+#ifndef PXR_USD_SDF_CRATE_FILE_H
+#define PXR_USD_SDF_CRATE_FILE_H
 
 #include "pxr/pxr.h"
-#include "pxr/usd/usd/crateData.h"
+#include "pxr/usd/sdf/crateData.h"
 
-#include "shared.h"
 #include "crateValueInliners.h"
+#include "shared.h"
 
 #include "pxr/base/arch/fileSystem.h"
 #include "pxr/base/tf/delegatedCountPtr.h"
@@ -42,7 +42,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-namespace Usd_CrateFile {
+namespace Sdf_CrateFile {
 
 using std::make_pair;
 using std::map;
@@ -141,7 +141,7 @@ private:
 template <> struct _IsBitwiseReadWrite<ValueRep> : std::true_type {};
 
 struct TimeSamples {
-    typedef Usd_Shared<vector<double>> SharedTimes;
+    typedef Sdf_Shared<vector<double>> SharedTimes;
 
     TimeSamples() : valueRep(0), valuesFileOffset(0) {}
 
@@ -1091,9 +1091,9 @@ template <>
 struct _IsBitwiseReadWrite<CrateFile::Spec_0_0_1> : std::true_type {};
 
 
-} // Usd_CrateFile
+} // Sdf_CrateFile
 
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // PXR_USD_USD_CRATE_FILE_H
+#endif // PXR_USD_SDF_CRATE_FILE_H

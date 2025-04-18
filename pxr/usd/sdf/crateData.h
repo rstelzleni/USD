@@ -4,8 +4,8 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_USD_USD_CRATE_DATA_H
-#define PXR_USD_USD_CRATE_DATA_H
+#ifndef PXR_USD_SDF_CRATE_DATA_H
+#define PXR_USD_SDF_CRATE_DATA_H
 
 #include "pxr/pxr.h"
 #include "pxr/usd/sdf/abstractData.h"
@@ -22,14 +22,14 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 class ArAsset;
 
-/// \class Usd_CrateData
+/// \class Sdf_CrateData
 ///
-class Usd_CrateData : public SdfAbstractData
+class Sdf_CrateData : public SdfAbstractData
 {
 public:
 
-    explicit Usd_CrateData(bool detached);
-    virtual ~Usd_CrateData(); 
+    explicit Sdf_CrateData(bool detached);
+    virtual ~Sdf_CrateData(); 
 
     static TfToken const &GetSoftwareVersionToken();
 
@@ -124,11 +124,11 @@ private:
     // SdfAbstractData overrides
     virtual void _VisitSpecs(SdfAbstractDataSpecVisitor* visitor) const;
 
-    friend class Usd_CrateDataImpl;
-    std::unique_ptr<class Usd_CrateDataImpl> _impl;
+    friend class Sdf_CrateDataImpl;
+    std::unique_ptr<class Sdf_CrateDataImpl> _impl;
 };
 
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // PXR_USD_USD_CRATE_DATA_H
+#endif // PXR_USD_SDF_CRATE_DATA_H

@@ -5,25 +5,25 @@
 // https://openusd.org/license.
 //
 #include "pxr/pxr.h"
-#include "pxr/usd/usd/crateInfo.h"
+#include "pxr/usd/sdf/crateInfo.h"
 
 #include "crateFile.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 
-using namespace Usd_CrateFile;
+using namespace Sdf_CrateFile;
 
-struct UsdCrateInfo::_Impl
+struct SdfCrateInfo::_Impl
 {
     std::unique_ptr<CrateFile> crateFile;
 };
 
 /*static*/
-UsdCrateInfo
-UsdCrateInfo::Open(std::string const &fileName)
+SdfCrateInfo
+SdfCrateInfo::Open(std::string const &fileName)
 {
-    UsdCrateInfo result;
+    SdfCrateInfo result;
     if (auto newCrate = CrateFile::Open(fileName)) { 
         result._impl.reset(new _Impl);
         result._impl->crateFile = std::move(newCrate);
@@ -31,12 +31,12 @@ UsdCrateInfo::Open(std::string const &fileName)
     return result;
 }
 
-UsdCrateInfo::SummaryStats
-UsdCrateInfo::GetSummaryStats() const
+SdfCrateInfo::SummaryStats
+SdfCrateInfo::GetSummaryStats() const
 {
     SummaryStats stats;
     if (!*this) {
-        TF_CODING_ERROR("Invalid UsdCrateInfo object");
+        TF_CODING_ERROR("Invalid SdfCrateInfo object");
     }
     else {
         stats.numSpecs = _impl->crateFile->GetSpecs().size();
@@ -49,12 +49,12 @@ UsdCrateInfo::GetSummaryStats() const
     return stats;
 }
 
-vector<UsdCrateInfo::Section>
-UsdCrateInfo::GetSections() const
+vector<SdfCrateInfo::Section>
+SdfCrateInfo::GetSections() const
 {
     vector<Section> result;
     if (!*this) {
-        TF_CODING_ERROR("Invalid UsdCrateInfo object");
+        TF_CODING_ERROR("Invalid SdfCrateInfo object");
     }
     else {
         auto secs = _impl->crateFile->GetSectionsNameStartSize();
@@ -66,17 +66,17 @@ UsdCrateInfo::GetSections() const
 }
 
 TfToken
-UsdCrateInfo::GetFileVersion() const
+SdfCrateInfo::GetFileVersion() const
 {
     if (!*this) {
-        TF_CODING_ERROR("Invalid UsdCrateInfo object");
+        TF_CODING_ERROR("Invalid SdfCrateInfo object");
         return TfToken();
     }
     return _impl->crateFile->GetFileVersionToken();
 }
 
 TfToken
-UsdCrateInfo::GetSoftwareVersion() const
+SdfCrateInfo::GetSoftwareVersion() const
 {
     return CrateFile::GetSoftwareVersionToken();
 }

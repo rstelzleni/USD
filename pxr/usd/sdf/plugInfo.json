@@ -23,6 +23,42 @@
                             "sdf"
                         ],
                         "formatId": "sdf"
+                    },
+                    "SdfUsdFileFormat": {
+                        "bases": [
+                            "SdfFileFormat"
+                        ], 
+                        "displayName": "USD File Format", 
+                        "extensions": [
+                            "usd"
+                        ], 
+                        "formatId": "usd", 
+                        "primary": true, 
+                        "target": "usd"
+                    }, 
+                    "SdfUsdaFileFormat": {
+                        "bases": [
+                            "SdfTextFileFormat"
+                        ], 
+                        "displayName": "USD Text File Format", 
+                        "extensions": [
+                            "usda"
+                        ], 
+                        "formatId": "usda", 
+                        "primary": true, 
+                        "target": "usd"
+                    }, 
+                    "SdfUsdcFileFormat": {
+                        "bases": [
+                            "SdfFileFormat"
+                        ], 
+                        "displayName": "USD Crate File Format", 
+                        "extensions": [
+                            "usdc"
+                        ], 
+                        "formatId": "usdc", 
+                        "primary": true, 
+                        "target": "usd"
                     }
                 }
             },

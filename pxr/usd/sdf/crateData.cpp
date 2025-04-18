@@ -5,7 +5,7 @@
 // https://openusd.org/license.
 //
 #include "pxr/pxr.h"
-#include "pxr/usd/usd/crateData.h"
+#include "pxr/usd/sdf/crateData.h"
 
 #include "crateFile.h"
 
@@ -50,7 +50,7 @@ using std::vector;
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-using namespace Usd_CrateFile;
+using namespace Sdf_CrateFile;
 
 static inline bool
 _GetBracketingTimes(const vector<double> &times,
@@ -80,19 +80,19 @@ _GetBracketingTimes(const vector<double> &times,
     return true;
 }
 
-class Usd_CrateDataImpl
+class Sdf_CrateDataImpl
 {
-    friend class Usd_CrateData;
+    friend class Sdf_CrateData;
 
     struct _SpecData;
 
 public:
 
-    Usd_CrateDataImpl(bool detached) 
+    Sdf_CrateDataImpl(bool detached) 
         : _lastSet(_data.end())
         , _crateFile(CrateFile::CreateNew(detached)) {}
     
-    ~Usd_CrateDataImpl() {
+    ~Sdf_CrateDataImpl() {
         // Close file synchronously.  We don't want a race condition
         // on Windows due to the file being open for an indeterminate
         // amount of time.
@@ -105,7 +105,7 @@ public:
     string const &GetAssetPath() const { return _crateFile->GetAssetPath(); }
 
     bool Save(string const &fileName) {
-        TfAutoMallocTag tag("Usd_CrateDataImpl::Save");
+        TfAutoMallocTag tag("Sdf_CrateDataImpl::Save");
 
         TF_DESCRIBE_SCOPE("Saving usd binary file @%s@", fileName.c_str());
         
@@ -153,7 +153,7 @@ public:
 
     template <class ...Args>
     bool Open(string const& assetPath, Args&&... args) {
-        TfAutoMallocTag tag("Usd_CrateDataImpl::Open");
+        TfAutoMallocTag tag("Sdf_CrateDataImpl::Open");
 
         TF_DESCRIBE_SCOPE("Opening usd binary asset @%s@", assetPath.c_str());
         
@@ -197,7 +197,7 @@ public:
     }
     
     inline bool _HasTargetOrConnectionSpec(SdfPath const &path) const {
-        // We don't store target specs to save space, since in Usd we don't have
+        // We don't store target specs to save space, since in sdf we don't have
         // any fields that may be set on them.  Their presence is determined by
         // whether or not they appear in their owning relationship's Added or
         // Explicit items.
@@ -289,7 +289,7 @@ public:
             return;
         }
         if (path.IsTargetPath()) {
-            // Do nothing, we do not store relationship target specs in usd.
+            // Do nothing, we do not store relationship target specs in sdf.
             return;
         }
         // Need to blow/reset the _lastSet cache here, since inserting
@@ -731,10 +731,10 @@ private:
         // consume.
         vector<CrateFile::Spec> specs;
         vector<CrateFile::Field> fields;
-        vector<Usd_CrateFile::FieldIndex> fieldSets;
+        vector<Sdf_CrateFile::FieldIndex> fieldSets;
         _crateFile->RemoveStructuralData(specs, fields, fieldSets);
                 
-        // Remove any target specs, we do not store target specs in Usd, but old
+        // Remove any target specs, we do not store target specs in Sdf, but old
         // files could contain them.  We stopped writing target specs in version
         // 0.1.0, so skip this step if the version is newer or equal to that.
         if (_crateFile->GetFileVersion() < CrateFile::Version(0, 1, 0)) {
@@ -754,8 +754,8 @@ private:
         // that upfront as a task and overlap it with building up all the live
         // field sets.
         dispatcher.Run([this, &specs, crateFile]() {
-            TfAutoMallocTag tag("Usd", "Usd_CrateDataImpl::Open",
-                                "Usd_CrateDataImpl main hash table");
+            TfAutoMallocTag tag("Sdf", "Sdf_CrateDataImpl::Open",
+                                "Sdf_CrateDataImpl main hash table");
             // over-reserve by 25% to help ensure no rehashes.
             _data.reserve(specs.size() + (specs.size() >> 2));
             
@@ -763,12 +763,12 @@ private:
             // references.
             for (size_t i = 0; i != specs.size(); ++i) {
                 _data.emplace(crateFile->GetPath(specs[i].pathIndex),
-                              Usd_EmptySharedTag);
+                              Sdf_EmptySharedTag);
             }
         });
 
         // XXX robin_map ?
-        typedef Usd_Shared<_FieldValuePairVector> SharedFieldValuePairVector;
+        typedef Sdf_Shared<_FieldValuePairVector> SharedFieldValuePairVector;
         unordered_map<
             FieldSetIndex, SharedFieldValuePairVector, _Hasher> liveFieldSets;
 
@@ -789,7 +789,7 @@ private:
                         // XXX Won't need first two tags when bug #132031 is
                         // addressed
                         TfAutoMallocTag tag(
-                            "Usd", "Usd_CrateDataImpl::Open", "field data");
+                            "Sdf", "Sdf_CrateDataImpl::Open", "field data");
                         auto &pairs = fieldValuePairs.GetMutable();
                         pairs.resize(fsEnd-fsBegin);
                         for (size_t i = 0; i < size_t(std::distance(fsBegin,fsEnd)); ++i) {
@@ -1024,8 +1024,8 @@ private:
 
     struct _SpecData {
         _SpecData() = default;
-        explicit _SpecData(Usd_EmptySharedTagType) noexcept
-            : fields(Usd_EmptySharedTag) {}
+        explicit _SpecData(Sdf_EmptySharedTagType) noexcept
+            : fields(Sdf_EmptySharedTag) {}
         inline void DetachIfNotUnique() { fields.MakeUnique(); }
 
         friend inline void swap(_SpecData &l, _SpecData &r) {
@@ -1033,7 +1033,7 @@ private:
             l.fields.swap(r.fields);
         }
         
-        Usd_Shared<_FieldValuePairVector> fields;
+        Sdf_Shared<_FieldValuePairVector> fields;
         SdfSpecType specType;
     };
 
@@ -1053,41 +1053,41 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////
-// Usd_CrateData
+// Sdf_CrateData
 
-Usd_CrateData::Usd_CrateData(bool detached) 
-    : _impl(new Usd_CrateDataImpl(detached))
+Sdf_CrateData::Sdf_CrateData(bool detached) 
+    : _impl(new Sdf_CrateDataImpl(detached))
 {
 }
 
-Usd_CrateData::~Usd_CrateData()
+Sdf_CrateData::~Sdf_CrateData()
 {
 }
 
 /* static */
 TfToken const &
-Usd_CrateData::GetSoftwareVersionToken()
+Sdf_CrateData::GetSoftwareVersionToken()
 {
     return CrateFile::GetSoftwareVersionToken();
 }
 
 /* static */
 bool
-Usd_CrateData::CanRead(string const &assetPath)
+Sdf_CrateData::CanRead(string const &assetPath)
 {
     return CrateFile::CanRead(assetPath);
 }
 
 /* static */
 bool
-Usd_CrateData::CanRead(string const &assetPath,
+Sdf_CrateData::CanRead(string const &assetPath,
                        std::shared_ptr<ArAsset> const &asset)
 {
     return CrateFile::CanRead(assetPath, asset);
 }
 
 bool
-Usd_CrateData::Save(string const &fileName)
+Sdf_CrateData::Save(string const &fileName)
 {
     if (fileName.empty()) {
         TF_CODING_ERROR("Tried to save to empty fileName");
@@ -1098,7 +1098,7 @@ Usd_CrateData::Save(string const &fileName)
 }
 
 bool
-Usd_CrateData::Export(string const &fileName)
+Sdf_CrateData::Export(string const &fileName)
 {
     if (fileName.empty()) {
         TF_CODING_ERROR("Tried to save to empty fileName");
@@ -1108,23 +1108,23 @@ Usd_CrateData::Export(string const &fileName)
     // To Export, we copy to a temporary data and save that, since we need this
     // CrateData object to stay associated with its existing backing store.
     //
-    // Usd_CrateData currently reloads the underlying asset to reinitialize its
-    // internal members after a save. We use a non-detached Usd_CrateData here
+    // Sdf_CrateData currently reloads the underlying asset to reinitialize its
+    // internal members after a save. We use a non-detached Sdf_CrateData here
     // to avoid any expense associated with detaching from the asset.
-    Usd_CrateData tmp(/* detached = */ false);
+    Sdf_CrateData tmp(/* detached = */ false);
     tmp.CopyFrom(SdfAbstractDataConstPtr(this));
     return tmp.Save(fileName);
 }
 
 bool
-Usd_CrateData::Open(const std::string &assetPath,
+Sdf_CrateData::Open(const std::string &assetPath,
                     bool detached)
 {
     return _impl->Open(assetPath, detached);
 }
 
 bool
-Usd_CrateData::Open(const std::string &assetPath,
+Sdf_CrateData::Open(const std::string &assetPath,
                     const std::shared_ptr<ArAsset> &asset,
                     bool detached)
 {
@@ -1136,50 +1136,50 @@ Usd_CrateData::Open(const std::string &assetPath,
 //
 
 bool
-Usd_CrateData::StreamsData() const
+Sdf_CrateData::StreamsData() const
 {
     return _impl->StreamsData();
 }
 
 bool
-Usd_CrateData::HasSpec(const SdfPath &path) const
+Sdf_CrateData::HasSpec(const SdfPath &path) const
 {
     return _impl->HasSpec(path);
 }
 
 void
-Usd_CrateData::EraseSpec(const SdfPath &path)
+Sdf_CrateData::EraseSpec(const SdfPath &path)
 {
     _impl->EraseSpec(path);
 }
 
 void
-Usd_CrateData::MoveSpec(const SdfPath& oldPath,
+Sdf_CrateData::MoveSpec(const SdfPath& oldPath,
                         const SdfPath& newPath)
 {
     return _impl->MoveSpec(oldPath, newPath);
 }
 
 SdfSpecType
-Usd_CrateData::GetSpecType(const SdfPath &path) const
+Sdf_CrateData::GetSpecType(const SdfPath &path) const
 {
     return _impl->GetSpecType(path);
 }
 
 void
-Usd_CrateData::CreateSpec(const SdfPath &path, SdfSpecType specType)
+Sdf_CrateData::CreateSpec(const SdfPath &path, SdfSpecType specType)
 {
     _impl->CreateSpec(path, specType);
 }
 
 void
-Usd_CrateData::_VisitSpecs(SdfAbstractDataSpecVisitor* visitor) const
+Sdf_CrateData::_VisitSpecs(SdfAbstractDataSpecVisitor* visitor) const
 {
     _impl->_VisitSpecs(*this, visitor);
 }
 
 bool
-Usd_CrateData::Has(const SdfPath& path,
+Sdf_CrateData::Has(const SdfPath& path,
                    const TfToken & field,
                    SdfAbstractDataValue* value) const
 {
@@ -1187,7 +1187,7 @@ Usd_CrateData::Has(const SdfPath& path,
 }
 
 bool
-Usd_CrateData::Has(const SdfPath& path,
+Sdf_CrateData::Has(const SdfPath& path,
                    const TfToken & field,
                    VtValue *value) const
 {
@@ -1195,7 +1195,7 @@ Usd_CrateData::Has(const SdfPath& path,
 }
 
 bool
-Usd_CrateData
+Sdf_CrateData
 ::HasSpecAndField(const SdfPath &path, const TfToken &field,
                   SdfAbstractDataValue *value, SdfSpecType *specType) const
 {
@@ -1203,7 +1203,7 @@ Usd_CrateData
 }
 
 bool
-Usd_CrateData
+Sdf_CrateData
 ::HasSpecAndField(const SdfPath &path, const TfToken &field,
                   VtValue *value, SdfSpecType *specType) const
 {
@@ -1211,39 +1211,39 @@ Usd_CrateData
 }
 
 VtValue
-Usd_CrateData::Get(const SdfPath& path, const TfToken & field) const
+Sdf_CrateData::Get(const SdfPath& path, const TfToken & field) const
 {
     return _impl->Get(path, field);
 }
 
 std::type_info const &
-Usd_CrateData::GetTypeid(const SdfPath& path, const TfToken& field) const
+Sdf_CrateData::GetTypeid(const SdfPath& path, const TfToken& field) const
 {
     return _impl->GetTypeid(path, field);
 }
 
 std::vector<TfToken>
-Usd_CrateData::List(const SdfPath& path) const
+Sdf_CrateData::List(const SdfPath& path) const
 {
     return _impl->List(path);
 }
 
 void
-Usd_CrateData::Set(const SdfPath& path, const TfToken& fieldName,
+Sdf_CrateData::Set(const SdfPath& path, const TfToken& fieldName,
                    const VtValue& value)
 {
     return _impl->Set(path, fieldName, value);
 }
 
 void
-Usd_CrateData::Set(const SdfPath& path, const TfToken& field,
+Sdf_CrateData::Set(const SdfPath& path, const TfToken& field,
                    const SdfAbstractDataConstValue& value)
 {
     return _impl->Set(path, field, value);
 }
 
 void
-Usd_CrateData::Erase(const SdfPath& path, const TfToken & field)
+Sdf_CrateData::Erase(const SdfPath& path, const TfToken & field)
 {
     return _impl->Erase(path, field);
 }
@@ -1252,32 +1252,32 @@ Usd_CrateData::Erase(const SdfPath& path, const TfToken & field)
 // Time Sample API.
 //
 std::set<double>
-Usd_CrateData::ListAllTimeSamples() const
+Sdf_CrateData::ListAllTimeSamples() const
 {
     return _impl->ListAllTimeSamples();
 }
 
 std::set<double>
-Usd_CrateData::ListTimeSamplesForPath(const SdfPath& path) const
+Sdf_CrateData::ListTimeSamplesForPath(const SdfPath& path) const
 {
     return _impl->ListTimeSamplesForPath(path);
 }
 
 bool
-Usd_CrateData::GetBracketingTimeSamples(
+Sdf_CrateData::GetBracketingTimeSamples(
     double time, double* tLower, double* tUpper) const
 {
     return _impl->GetBracketingTimeSamples(time, tLower, tUpper);
 }
 
 size_t
-Usd_CrateData::GetNumTimeSamplesForPath(const SdfPath& path) const
+Sdf_CrateData::GetNumTimeSamplesForPath(const SdfPath& path) const
 {
     return _impl->GetNumTimeSamplesForPath(path);
 }
 
 bool
-Usd_CrateData::GetBracketingTimeSamplesForPath(
+Sdf_CrateData::GetBracketingTimeSamplesForPath(
     const SdfPath& path,
     double time, double* tLower, double* tUpper) const
 {
@@ -1285,7 +1285,7 @@ Usd_CrateData::GetBracketingTimeSamplesForPath(
 }
 
 bool
-Usd_CrateData::GetPreviousTimeSampleForPath(
+Sdf_CrateData::GetPreviousTimeSampleForPath(
     const SdfPath& path, double time, double* tPrevious) const
 {
     vector<double> const &times = _impl->_ListTimeSamplesForPath(path);
@@ -1309,28 +1309,28 @@ Usd_CrateData::GetPreviousTimeSampleForPath(
 }
 
 bool
-Usd_CrateData::QueryTimeSample(const SdfPath& path,
+Sdf_CrateData::QueryTimeSample(const SdfPath& path,
                                double time, VtValue *value) const
 {
     return _impl->QueryTimeSample(path, time, value);
 }
 
 bool
-Usd_CrateData::QueryTimeSample(const SdfPath& path,
+Sdf_CrateData::QueryTimeSample(const SdfPath& path,
                                double time, SdfAbstractDataValue* value) const
 {
     return _impl->QueryTimeSample(path, time, value);
 }
 
 void
-Usd_CrateData::SetTimeSample(const SdfPath& path,
+Sdf_CrateData::SetTimeSample(const SdfPath& path,
                              double time, const VtValue &value)
 {
     return _impl->SetTimeSample(path, time, value);
 }
 
 void
-Usd_CrateData::EraseTimeSample(const SdfPath& path, double time)
+Sdf_CrateData::EraseTimeSample(const SdfPath& path, double time)
 {
     return _impl->EraseTimeSample(path, time);
 }

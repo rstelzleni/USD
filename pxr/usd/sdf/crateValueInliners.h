@@ -4,8 +4,8 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_USD_USD_CRATE_VALUE_INLINERS_H
-#define PXR_USD_USD_CRATE_VALUE_INLINERS_H
+#ifndef PXR_USD_SDF_CRATE_VALUE_INLINERS_H
+#define PXR_USD_SDF_CRATE_VALUE_INLINERS_H
 
 #include "pxr/pxr.h"
 #include "pxr/base/gf/traits.h"
@@ -18,7 +18,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 
-namespace Usd_CrateValueInliners
+namespace Sdf_CrateValueInliners
 {
 
 // Return true and set \p *dst if \p src can be exactly represented as a Dst
@@ -165,10 +165,10 @@ _DecodeInline(VtDictionary *dict, uint32_t ival) {
     *dict = VtDictionary();
 }
 
-} // Usd_CrateValueInliners
+} // Sdf_CrateValueInliners
 
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // PXR_USD_USD_CRATE_VALUE_INLINERS_H
+#endif // PXR_USD_SDF_CRATE_VALUE_INLINERS_H
 
