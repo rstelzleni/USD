@@ -7,52 +7,47 @@
 
 #include "pxr/pxr.h"
 #include "pxr/base/tf/token.h"
-#include "pxr/usd/ndr/sdfTypeIndicator.h"
+#include "pxr/usd/sdr/sdfTypeIndicator.h"
 #include "pxr/usd/sdf/types.h"
 #include "pxr/usd/sdf/valueTypeName.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-NdrSdfTypeIndicator::NdrSdfTypeIndicator()
+SdrSdfTypeIndicator::SdrSdfTypeIndicator()
     : _sdfType(SdfValueTypeNames->Token),
-      _ndrType(TfToken()),
+      _sdrType(TfToken()),
       _hasSdfTypeMapping(false) {}
 
-NdrSdfTypeIndicator::NdrSdfTypeIndicator(
+SdrSdfTypeIndicator::SdrSdfTypeIndicator(
     const SdfValueTypeName& sdfType,
-    const TfToken& ndrType,
+    const TfToken& sdrType,
     bool hasSdfTypeMapping)
     : _sdfType(sdfType),
-      _ndrType(ndrType),
+      _sdrType(sdrType),
       _hasSdfTypeMapping(hasSdfTypeMapping) {}
 
 TfToken
-NdrSdfTypeIndicator::GetNdrType() const {
-    return _ndrType;
-}
-
-TfToken
-NdrSdfTypeIndicator::GetSdrType() const {
-    return _ndrType;
+SdrSdfTypeIndicator::GetSdrType() const {
+    return _sdrType;
 }
 
 bool
-NdrSdfTypeIndicator::HasSdfType() const {
+SdrSdfTypeIndicator::HasSdfType() const {
     return _hasSdfTypeMapping;
 }
 
 SdfValueTypeName
-NdrSdfTypeIndicator::GetSdfType() const {
+SdrSdfTypeIndicator::GetSdfType() const {
     return _sdfType;
 }
 
 bool
-NdrSdfTypeIndicator::operator==(const NdrSdfTypeIndicator &rhs) const {
-    return _sdfType == rhs._sdfType && _ndrType == rhs._ndrType;
+SdrSdfTypeIndicator::operator==(const SdrSdfTypeIndicator &rhs) const {
+    return _sdfType == rhs._sdfType && _sdrType == rhs._sdrType;
 }
 
 bool
-NdrSdfTypeIndicator::operator!=(const NdrSdfTypeIndicator &rhs) const {
+SdrSdfTypeIndicator::operator!=(const SdrSdfTypeIndicator &rhs) const {
     return !operator==(rhs);
 }
 
