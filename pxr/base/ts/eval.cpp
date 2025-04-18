@@ -361,8 +361,9 @@ _GetExtrapolationSlope(
 
     if (location == Ts_EvalPre)
     {
-        // If the first segment is held, the slope is flat.
-        if (endKnotData.nextInterp == TsInterpHeld)
+        // If the first segment is held or value-blocked, the slope is flat.
+        if (endKnotData.nextInterp == TsInterpHeld
+            || endKnotData.nextInterp == TsInterpValueBlock)
         {
             return 0.0;
         }
@@ -380,8 +381,9 @@ _GetExtrapolationSlope(
     }
     else
     {
-        // If the last segment is held, the slope is flat.
-        if (adjacentData.nextInterp == TsInterpHeld)
+        // If the last segment is held or value-blocked, the slope is flat.
+        if (adjacentData.nextInterp == TsInterpHeld
+            || adjacentData.nextInterp == TsInterpValueBlock)
         {
             return 0.0;
         }

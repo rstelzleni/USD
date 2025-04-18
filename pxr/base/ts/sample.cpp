@@ -446,15 +446,11 @@ _Sampler::_ExtrapLinear(
 
       case TsExtrapLinear:
         // Extrapolate a straight line continuation using the slope at the
-        // interpolated side of the end knot. If the end knot is dual valued
-        // or the end segment is held (XXX: or value blocked) then the slope
-        // is flat. If the end segment is linear the use the slope to the
-        // next-to-end knot. And if the end segment is curved, use the slope
-        // specified by the end knot's interpolated tangent.
-        //
-        // XXX: extrapolation should probably also be flat if the last segment
-        // of the spline uses TsInterpValueBlock, but eval does not do that
-        // yet.
+        // interpolated side of the end knot. If the end knot is dual valued or
+        // the end segment is held or value blocked then the slope is flat. If
+        // the end segment is linear the use the slope to the next-to-end
+        // knot. And if the end segment is curved, use the slope specified by
+        // the end knot's interpolated tangent.
         slope = 0.0;
 
         // If we have multiple knots and the knot at the end is not dual valued.
