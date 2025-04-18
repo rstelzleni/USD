@@ -8,6 +8,7 @@
 
 #include "pxr/exec/exec/inputResolver.h"
 
+#include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/computationBuilders.h"
 #include "pxr/exec/exec/computationDefinition.h"
 #include "pxr/exec/exec/definitionRegistry.h"
@@ -22,6 +23,7 @@
 #include "pxr/base/plug/registry.h"
 #include "pxr/base/plug/plugin.h"
 #include "pxr/base/tf/staticTokens.h"
+#include "pxr/exec/ef/time.h"
 #include "pxr/exec/esf/editReason.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
@@ -140,6 +142,8 @@ public:
         const SdfPath &localTraversal,
         const ExecProviderResolution::DynamicTraversal dynamicTraversal)
     {
+        TF_AXIOM(origin->IsValid(nullptr));
+
         const Exec_InputKey inputKey {
             _tokens->inputName,
             computationName,
@@ -149,7 +153,7 @@ public:
                 dynamicTraversal
             }
         };
-        return Exec_ResolveInput(origin, inputKey, &journal);
+        return Exec_ResolveInput(*_esfStage, origin, inputKey, &journal);
     }
 
 private:
@@ -374,7 +378,6 @@ TestResolveToOwningPrim(Fixture &fixture)
         ExecProviderResolution::DynamicTraversal::Local);
 
     ASSERT_EQ(outputKeys.size(), 1);
-    ASSERT_EQ(outputKeys.size(), 1);
     ASSERT_OUTPUT_KEY(
         outputKeys[0], 
         fixture.GetObjectAtPath("/OwningPrim"), 
@@ -384,6 +387,41 @@ TestResolveToOwningPrim(Fixture &fixture)
     expectedJournal
         .Add(SdfPath("/OwningPrim.origin"), EsfEditReason::ResyncedObject)
         .Add(SdfPath("/OwningPrim"), EsfEditReason::ResyncedObject);
+    ASSERT_EQ(fixture.journal, expectedJournal);
+}
+
+static void
+TestResolveToStage(Fixture &fixture)
+{
+    // Test that Exec_ResolveInput finds a computation on the stage (i.e., on
+    // the pseudoroot prim), and the local traversal is "/".
+
+    fixture.NewStageFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Root" {
+        }
+    )usd");
+
+    const EsfObject root = fixture.GetObjectAtPath("/");
+
+    const Exec_OutputKeyVector outputKeys = fixture.ResolveInput(
+        fixture.GetObjectAtPath("/Root") /* origin */,
+        ExecBuiltinComputations->computeTime,
+        TfType::Find<EfTime>(),
+        SdfPath("/") /* localTraversal */,
+        ExecProviderResolution::DynamicTraversal::Local);
+
+    ASSERT_EQ(outputKeys.size(), 1);
+    ASSERT_OUTPUT_KEY(
+        outputKeys[0], 
+        fixture.GetObjectAtPath("/"), 
+        Exec_DefinitionRegistry::GetInstance()
+            .GetPrimComputationDefinition(
+                TfType(),
+                ExecBuiltinComputations->computeTime))
+
+    EsfJournal expectedJournal;
+    expectedJournal
+        .Add(SdfPath("/"), EsfEditReason::ResyncedObject);
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
@@ -403,6 +441,7 @@ int main()
         TestResolveToNamespaceAncestor_NoSuchAncestor,
         TestResolveToNamespaceAncestor_WrongResultType,
         TestResolveToOwningPrim,
+        TestResolveToStage,
     };
     for (const auto &test : tests) {
         Fixture fixture;

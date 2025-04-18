@@ -17,6 +17,7 @@
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/prim.h"
+#include "pxr/exec/esf/stage.h"
 #include "pxr/usd/sdf/path.h"
 
 #include <utility>
@@ -45,22 +46,27 @@ public:
     /// Implements the global Exec_ResolveInput function.
     static Exec_OutputKeyVector
     ResolveInput(
+        const EsfStage &stage,
         const EsfObject &origin,
         const Exec_InputKey &inputKey,
         EsfJournal *const journal)
     {
-        _InputResolver resolver(origin, journal);
+        _InputResolver resolver(stage, origin, journal);
         return resolver._ResolveInput(inputKey);
     }
 
 private:
     // Construct a new _InputResolver that begins at \p origin and logs
     // traversals to \p journal.
-    _InputResolver(const EsfObject &origin, EsfJournal *const journal)
+    _InputResolver(
+        const EsfStage &stage,
+        const EsfObject &origin,
+        EsfJournal *const journal)
         : _currentObject(nullptr)
         , _currentPrim(nullptr)
         , _currentAttribute(nullptr)
         , _journal(journal)
+        , _stage(stage.Get())
         , _definitionRegistry(Exec_DefinitionRegistry::GetInstance())
     {
         // Initialize the current object by casting the origin to the most
@@ -317,14 +323,29 @@ private:
     Exec_OutputKeyVector
     _ResolveInput(const Exec_InputKey &inputKey)
     {
-        if (!TF_VERIFY(_currentObject && _currentObject->IsValid(_journal))) {
+        if (!TF_VERIFY(_currentObject)) {
             return {};
         }
 
-        // Perform the local traversal.
-        if (!_TraverseToRelativePath(
-            inputKey.providerResolution.localTraversal)) {
-            return {};
+        const SdfPath &localTraversal =
+            inputKey.providerResolution.localTraversal;
+
+        // If the local traversal is the absolute root path, the stage
+        // pseudo-root is the provider.
+        if (localTraversal.IsAbsoluteRootPath()) {
+            _SetPrim(_stage->GetPrimAtPath(localTraversal, _journal));
+        }
+
+        // Otherwise, verify we have a valid current object (and thereby journal
+        // a dependency on it) and then perform the local traversal.
+        else {
+            if (!TF_VERIFY(_currentObject->IsValid(_journal))) {
+                return {};
+            }
+
+            if (!_TraverseToRelativePath(localTraversal)) {
+                return {};
+            }
         }
 
         const Exec_ComputationDefinition *computationDefinition = nullptr;
@@ -351,11 +372,9 @@ private:
             return {};
         }
 
-        Exec_OutputKeyVector outputKeys;
-        outputKeys.emplace_back(
-            _currentObject->AsObject(),
-            computationDefinition);
-        return outputKeys;
+        return {
+            {_currentObject->AsObject(), computationDefinition}
+        };
     }
 
     // The state of the resolution process is represented by the current scene
@@ -373,18 +392,20 @@ private:
 
     // Scene traversals log entries to this journal.
     EsfJournal *const _journal;
+    const EsfStageInterface *const _stage;
     const Exec_DefinitionRegistry &_definitionRegistry;
 };
 
 } // anonymous namespace
 
 Exec_OutputKeyVector Exec_ResolveInput(
+    const EsfStage &stage,
     const EsfObject &origin,
     const Exec_InputKey &inputKey,
     EsfJournal *const journal)
 {
     TRACE_FUNCTION();
-    return _InputResolver::ResolveInput(origin, inputKey, journal);
+    return _InputResolver::ResolveInput(stage, origin, inputKey, journal);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

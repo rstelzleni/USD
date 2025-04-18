@@ -35,7 +35,8 @@ Exec_InputResolvingCompilationTask::_Compile(
         TRACE_FUNCTION_SCOPE("compile sources");
 
         // Generate all the output keys for this input.
-        _outputKeys = Exec_ResolveInput(_originObject, _inputKey, _journal);
+        _outputKeys = Exec_ResolveInput(
+            compilationState.GetStage(), _originObject, _inputKey, _journal);
         _resultOutputs->resize(_outputKeys.size());
 
         // For every output key, make sure it's either already available or

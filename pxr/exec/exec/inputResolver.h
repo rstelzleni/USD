@@ -15,12 +15,13 @@
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/outputKey.h"
 
-#include "pxr/exec/esf/object.h"
-
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EsfObject;
+class EsfStage;
+
 /// Return output keys whose outputs connect to the input for \p inputKey on a
-/// computation provided by \p origin.
+/// computation provided by \p origin on \p stage.
 ///
 /// Determine the resulting output keys by traversing the scene graph, starting
 /// from \p origin, recording each step of the traversal into the \p journal.
@@ -30,6 +31,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 ///
 EXEC_API
 Exec_OutputKeyVector Exec_ResolveInput(
+    const EsfStage &stage,
     const EsfObject &origin,
     const Exec_InputKey &inputKey,
     EsfJournal *journal);

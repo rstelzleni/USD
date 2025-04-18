@@ -70,8 +70,12 @@ pxr_register_test(testExecComputationRegistration
 
 pxr_build_test(testExecInputResolver
     LIBRARIES
+        ef
+        esf
         exec
         execUsd
+        sdf
+        usd
     CPPFILES
         testenv/testExecInputResolver.cpp
 )
