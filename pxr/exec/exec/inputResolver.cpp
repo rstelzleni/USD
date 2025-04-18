@@ -240,9 +240,10 @@ private:
         while (!_currentPrim->IsPseudoRoot())
         {
             const Exec_ComputationDefinition *const computationDefinition =
-                _definitionRegistry.GetPrimComputationDefinition(
-                    _currentPrim->GetType(_journal),
-                    computationName);
+                _definitionRegistry.GetComputationDefinition(
+                    _currentPrim,
+                    computationName,
+                    _journal);
             
             if (computationDefinition &&
                 computationDefinition->GetResultType() == resultType) {
@@ -276,18 +277,18 @@ private:
 
         if (_currentPrim) {
             computationDefinition =
-                _definitionRegistry.GetPrimComputationDefinition(
-                    _currentPrim->GetType(_journal),
-                    computationName);
+                _definitionRegistry.GetComputationDefinition(
+                    _currentPrim,
+                    computationName,
+                    _journal);
         }
 
         else if (_currentAttribute) {
-            EsfPrim owningPrim = _currentAttribute->GetPrim(_journal);
             computationDefinition =
-                _definitionRegistry.GetAttributeComputationDefinition(
-                    owningPrim->GetType(_journal),
-                    _currentAttribute->GetName(_journal),
-                    computationName);
+                _definitionRegistry.GetComputationDefinition(
+                    _currentAttribute,
+                    computationName,
+                    _journal);
         }
 
         if (!computationDefinition) {

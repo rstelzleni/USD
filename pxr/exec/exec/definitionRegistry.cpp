@@ -11,8 +11,13 @@
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
+#include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/prim.h"
+
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/instantiateSingleton.h"
+
+#include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -51,18 +56,24 @@ Exec_DefinitionRegistry::GetInstance() {
 }
 
 const Exec_ComputationDefinition *
-Exec_DefinitionRegistry::GetPrimComputationDefinition(
-    TfType schemaType,
-    const TfToken &computationName) const
+Exec_DefinitionRegistry::GetComputationDefinition(
+    const EsfPrimInterface *const providerPrim,
+    const TfToken &computationName,
+    EsfJournal *const journal) const
 {
+    if (!providerPrim) {
+        TF_CODING_ERROR("Null providerPrim");
+        return nullptr;
+    }
+
     // First look for a matching builtin computation.
-    const auto builtinIt = _builtinComputationDefinitions.find(
-        computationName);
+    const auto builtinIt = _builtinComputationDefinitions.find(computationName);
     if (builtinIt != _builtinComputationDefinitions.end()) {
         return builtinIt->second.get();
     }
 
     // If we didn't find a builtin computation, look for a plugin computation.
+    const TfType schemaType = providerPrim->GetType(journal);
     const auto pluginIt = _pluginPrimComputationDefinitions.find(
         {schemaType, computationName});
     return pluginIt == _pluginPrimComputationDefinitions.end()
@@ -71,14 +82,23 @@ Exec_DefinitionRegistry::GetPrimComputationDefinition(
 }
 
 const Exec_ComputationDefinition *
-Exec_DefinitionRegistry::GetAttributeComputationDefinition(
-    TfType primSchemaType,
-    const TfToken &attributeName,
-    const TfToken &computationName) const
+Exec_DefinitionRegistry::GetComputationDefinition(
+    const EsfAttributeInterface *const providerAttribute,
+    const TfToken &computationName,
+    EsfJournal *const journal) const
 {
-    // XXX: Attribute computations not implemented yet.
+    if (!providerAttribute) {
+        TF_CODING_ERROR("Null providerAttribute");
+        return nullptr;
+    }
+
+    // TODO: Look up builtin attribute computations.
+
+    // TODO: Look up plugin attribute computations.
+    const EsfPrim owningPrim = providerAttribute->GetPrim(journal);
+    const TfType primSchemaType = owningPrim->GetType(journal);
+    (void)owningPrim;
     (void)primSchemaType;
-    (void)attributeName;
     (void)computationName;
     return nullptr;
 }

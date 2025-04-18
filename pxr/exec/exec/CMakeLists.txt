@@ -59,9 +59,21 @@ pxr_library(exec
 
 pxr_build_test(testExecComputationRegistration
     LIBRARIES
+        ef
+        esf
         exec
+        execUsd
+        plug
+        sdf
+        tf
+        usd
     CPPFILES
         testenv/testExecComputationRegistration.cpp
+)
+
+pxr_install_test_dir(
+    SRC testenv/testExecComputationRegistration
+    DEST testExecComputationRegistration
 )
 
 pxr_register_test(testExecComputationRegistration

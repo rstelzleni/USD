@@ -17,11 +17,10 @@
 #include "pxr/exec/exec/providerResolution.h"
 #include "pxr/exec/exec/registerSchema.h"
 
+#include "pxr/base/plug/plugin.h"
+#include "pxr/base/plug/registry.h"
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/base/tf/pathUtils.h"
-#include "pxr/base/plug/notice.h"
-#include "pxr/base/plug/registry.h"
-#include "pxr/base/plug/plugin.h"
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/exec/ef/time.h"
 #include "pxr/exec/esf/editReason.h"
@@ -29,13 +28,15 @@
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/stage.h"
 #include "pxr/exec/execUsd/sceneAdapter.h"
-#include "pxr/exec/vdf/context.h"
-#include "pxr/usd/usd/common.h"
 #include "pxr/usd/sdf/layer.h"
+#include "pxr/usd/usd/stage.h"
 
 #include <iostream>
+#include <memory>
 
 PXR_NAMESPACE_USING_DIRECTIVE;
+
+class VdfContext;
 
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
@@ -102,37 +103,50 @@ EXEC_REGISTER_SCHEMA(TestExecInputResolverCustomSchema)
 class Fixture
 {
 public:
-    const TfType customSchemaType;
     const Exec_ComputationDefinition *customComputationDefinition;
+    const Exec_ComputationDefinition *timeComputationDefinition;
     EsfJournal journal;
 
     Fixture()
-        : customSchemaType(
-            TfType::FindByName("TestExecInputResolverCustomSchema"))
-        , customComputationDefinition(
-            Exec_DefinitionRegistry::GetInstance()
-                .GetPrimComputationDefinition(
-                    customSchemaType,
-                    _tokens->customComputation))
     {
-        TF_AXIOM(!customSchemaType.IsUnknown());
+        EsfJournal *const nullJournal = nullptr;
+        const Exec_DefinitionRegistry &reg =
+            Exec_DefinitionRegistry::GetInstance();
+
+        // Instantiate a stage that we can use to get ahold of the computation
+        // definitions that we expect to find in the test cases.
+
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+            def CustomSchema "Prim" {
+            }
+        )usd");
+
+        const EsfPrim prim =
+            stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+        customComputationDefinition =
+            reg.GetComputationDefinition(
+                prim.Get(), _tokens->customComputation, nullJournal);
         TF_AXIOM(customComputationDefinition);
+
+        const EsfPrim pseudoRoot =
+            stage->GetPrimAtPath(SdfPath("/"), nullJournal);
+        TF_AXIOM(pseudoRoot->IsValid(nullJournal));
+        timeComputationDefinition =
+            reg.GetComputationDefinition(
+                pseudoRoot.Get(),
+                ExecBuiltinComputations->computeTime, nullJournal);
+        TF_AXIOM(timeComputationDefinition);
     }
 
     void NewStageFromLayer(const char *layerContents)
     {
-        _layer = SdfLayer::CreateAnonymous(".usda");
-        _layer->ImportFromString(layerContents);
-        TF_AXIOM(_layer);
-        _usdStage = UsdStage::Open(_layer);
-        TF_AXIOM(_usdStage);
-        _esfStage = std::make_unique<EsfStage>(
-            ExecUsdSceneAdapter::AdaptStage(_usdStage));
+        _stage = std::make_unique<EsfStage>(_NewStageFromLayer(layerContents));
     }
 
     EsfObject GetObjectAtPath(const char *pathString) const
     {
-        return _esfStage->Get()->GetObjectAtPath(SdfPath(pathString), nullptr);
+        return _stage->Get()->GetObjectAtPath(SdfPath(pathString), nullptr);
     }
 
     Exec_OutputKeyVector ResolveInput(
@@ -153,14 +167,24 @@ public:
                 dynamicTraversal
             }
         };
-        return Exec_ResolveInput(*_esfStage, origin, inputKey, &journal);
+        return Exec_ResolveInput(*_stage, origin, inputKey, &journal);
     }
 
 private:
-    SdfLayerRefPtr _layer;
-    UsdStageConstRefPtr _usdStage;
+
+    static EsfStage _NewStageFromLayer(const char *layerContents)
+    {
+        const SdfLayerRefPtr layer = SdfLayer::CreateAnonymous(".usda");
+        layer->ImportFromString(layerContents);
+        TF_AXIOM(layer);
+        UsdStageRefPtr usdStage = UsdStage::Open(layer);
+        TF_AXIOM(usdStage);
+        return ExecUsdSceneAdapter::AdaptStage(usdStage);
+    }
+
+private:
     // Hold an EsfStage by unique_ptr because it's not default-constructible.
-    std::unique_ptr<EsfStage> _esfStage;
+    std::unique_ptr<EsfStage> _stage;
 };
 
 static void
@@ -413,11 +437,8 @@ TestResolveToStage(Fixture &fixture)
     ASSERT_EQ(outputKeys.size(), 1);
     ASSERT_OUTPUT_KEY(
         outputKeys[0], 
-        fixture.GetObjectAtPath("/"), 
-        Exec_DefinitionRegistry::GetInstance()
-            .GetPrimComputationDefinition(
-                TfType(),
-                ExecBuiltinComputations->computeTime))
+        fixture.GetObjectAtPath("/"),
+        fixture.timeComputationDefinition);
 
     EsfJournal expectedJournal;
     expectedJournal
@@ -432,6 +453,10 @@ int main()
         .RegisterPlugins(TfAbsPath("resources"));
     TF_AXIOM(testPlugins.size() == 1);
     TF_AXIOM(testPlugins[0]->GetName() == "testExecInputResolver");
+
+    const TfType customSchemaType =
+        TfType::FindByName("TestExecInputResolverCustomSchema");
+    TF_AXIOM(!customSchemaType.IsUnknown());
 
     std::vector tests {
         TestResolveToComputationOrigin,

@@ -6,7 +6,7 @@
         {
             "Info": {
                 "Types": {
-                    "TestExecInputResolverCustomSchema": {
+                    "TestExecComputationRegistrationCustomSchema": {
                         "alias": {
                             "UsdSchemaBase": "CustomSchema"
                         }, 
@@ -19,7 +19,7 @@
                     }
                 }
             }, 
-            "Name": "testExecInputResolver", 
+            "Name": "testExecComputationRegistration", 
             "ResourcePath": ".", 
             "Type": "resource"
         }

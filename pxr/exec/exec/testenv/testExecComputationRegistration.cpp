@@ -12,13 +12,20 @@
 #include "pxr/exec/exec/registerSchema.h"
 
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/esf/stage.h"
+#include "pxr/exec/execUsd/sceneAdapter.h"
 
+#include "pxr/base/plug/plugin.h"
+#include "pxr/base/plug/registry.h"
 #include "pxr/base/tf/diagnostic.h"
+#include "pxr/base/tf/pathUtils.h"
 #include "pxr/base/tf/registryManager.h"
 #include "pxr/base/tf/smallVector.h"
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/tf/type.h"
+#include "pxr/usd/sdf/layer.h"
+#include "pxr/usd/usd/stage.h"
 #include "pxr/usd/usd/timeCode.h"
 
 #include <iostream>
@@ -39,23 +46,13 @@ TF_DEFINE_PRIVATE_TOKENS(
 );
 
 // A type that is not registered with TfType.
-struct TestUnknownType {};
-
 EXEC_REGISTER_SCHEMA(TestUnknownType)
 {
     self.PrimComputation(_tokens->noInputsComputation)
         .Callback<double>(+[](const VdfContext &) { return 1.0; });
 }
 
-// A "schema" type to register computations against.
-struct TestSchemaType {};
-
-TF_REGISTRY_FUNCTION(TfType)
-{
-    TfType::Define<TestSchemaType>();
-}
-
-EXEC_REGISTER_SCHEMA(TestSchemaType)
+EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
 {
     self.PrimComputation(_tokens->emptyComputation);
 
@@ -116,6 +113,18 @@ EXEC_REGISTER_SCHEMA(TestNamespacedSchemaType)
         }                                                               \
      }()
 
+static EsfStage
+_NewStageFromLayer(
+    const char *const layerContents)
+{
+    const SdfLayerRefPtr layer = SdfLayer::CreateAnonymous(".usda");
+    layer->ImportFromString(layerContents);
+    TF_AXIOM(layer);
+    const UsdStageRefPtr usdStage = UsdStage::Open(layer);
+    TF_AXIOM(usdStage);
+    return ExecUsdSceneAdapter::AdaptStage(usdStage);
+}
+
 static void
 _PrintInputKeys(
     const TfSmallVector<Exec_InputKey, 1> &inputKeys)
@@ -139,28 +148,38 @@ _PrintInputKeys(
 static void
 TestUnknownSchemaType()
 {
-    static const TfType schemaType = TfType::Find<TestUnknownType>();
-    TF_AXIOM(schemaType.IsUnknown());
-
+    EsfJournal *const nullJournal = nullptr;
     const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+    const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def TestUnknownType "Prim" {
+        }
+    )usd");
+    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+    TF_AXIOM(prim->IsValid(nullJournal));
 
     const Exec_ComputationDefinition *const primCompDef =
-        reg.GetPrimComputationDefinition(
-            schemaType, _tokens->noInputsComputation);
+        reg.GetComputationDefinition(
+            prim.Get(), _tokens->noInputsComputation, nullJournal);
     TF_AXIOM(!primCompDef);
 }
 
 static void
 TestComputationRegistration()
 {
-    static const TfType schemaType = TfType::Find<TestSchemaType>();
+    EsfJournal *const nullJournal = nullptr;
     const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+    const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Prim" {
+        }
+    )usd");
+    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+    TF_AXIOM(prim->IsValid(nullJournal));
 
     {
         // Look up a computation that wasn't registered.
         const Exec_ComputationDefinition *const primCompDef =
-            reg.GetPrimComputationDefinition(
-                schemaType, _tokens->missingComputation);
+            reg.GetComputationDefinition(
+                prim.Get(), _tokens->missingComputation, nullJournal);
         TF_AXIOM(!primCompDef);
     }
 
@@ -170,8 +189,8 @@ TestComputationRegistration()
         // (Once we support composition of computation definitions, we will
         // want some kind of validation to ensure we end up with a callback.)
         const Exec_ComputationDefinition *const primCompDef =
-            reg.GetPrimComputationDefinition(
-                schemaType, _tokens->emptyComputation);
+            reg.GetComputationDefinition(
+                prim.Get(), _tokens->emptyComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
@@ -180,8 +199,8 @@ TestComputationRegistration()
     {
         // Look up a computation with no inputs.
         const Exec_ComputationDefinition *const primCompDef =
-            reg.GetPrimComputationDefinition(
-                schemaType, _tokens->noInputsComputation);
+            reg.GetComputationDefinition(
+                prim.Get(), _tokens->noInputsComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
@@ -190,8 +209,8 @@ TestComputationRegistration()
     {
         // Look up a bultin computation.
         const Exec_ComputationDefinition *const primCompDef =
-            reg.GetPrimComputationDefinition(
-                TfType::GetUnknownType(), ExecBuiltinComputations->computeTime);
+            reg.GetComputationDefinition(
+                prim.Get(), ExecBuiltinComputations->computeTime, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
@@ -200,8 +219,8 @@ TestComputationRegistration()
     {
         // Look up a computation with multiple inputs.
         const Exec_ComputationDefinition *const primCompDef =
-            reg.GetPrimComputationDefinition(
-                schemaType, _tokens->primComputation);
+            reg.GetComputationDefinition(
+                prim.Get(), _tokens->primComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         const auto inputKeys = primCompDef->GetInputKeys();
@@ -262,8 +281,8 @@ TestComputationRegistration()
     {
         // Look up a computation with one input.
         const Exec_ComputationDefinition *const primCompDef =
-            reg.GetPrimComputationDefinition(
-                schemaType, _tokens->stageAccessComputation);
+            reg.GetComputationDefinition(
+                prim.Get(), _tokens->stageAccessComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         const auto inputKeys = primCompDef->GetInputKeys();
@@ -284,6 +303,16 @@ TestComputationRegistration()
 
 int main()
 {
+    // Load the custom schema.
+    const PlugPluginPtrVector testPlugins =
+        PlugRegistry::GetInstance().RegisterPlugins(TfAbsPath("resources"));
+    TF_AXIOM(testPlugins.size() == 1);
+    TF_AXIOM(testPlugins[0]->GetName() == "testExecComputationRegistration");
+
+    const TfType schemaType =
+        TfType::FindByName("TestExecComputationRegistrationCustomSchema");
+    TF_AXIOM(!schemaType.IsUnknown());
+
     TestUnknownSchemaType();
 
     TestComputationRegistration();

@@ -20,12 +20,15 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/weakBase.h"
 
-#include <memory>
 #include <unordered_map>
 #include <tuple>
-#include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+class EsfAttributeInterface;
+class EsfJournal;
+class EsfObjectInterface;
+class EsfPrimInterface;
 
 /// Singleton that stores computation definitions registered for schemas that
 /// define computations.
@@ -40,23 +43,33 @@ public:
 
     /// Provides access to the singleton instance, first ensuring it is
     /// constructed.
+    ///
     EXEC_API
     static Exec_DefinitionRegistry& GetInstance();
 
     /// Returns the definition for the prim computation named
-    /// \p computationName registered for schema \p schemaType.
+    /// \p computationName registered for \p providerPrim.
+    ///
+    /// Any scene access needed to determine the input keys is recorded in
+    /// \p journal.
+    ///
     EXEC_API
-    const Exec_ComputationDefinition *GetPrimComputationDefinition(
-        TfType schemaType,
-        const TfToken &computationName) const;
+    const Exec_ComputationDefinition *GetComputationDefinition(
+        const EsfPrimInterface *providerPrim,
+        const TfToken &computationName,
+        EsfJournal *journal) const;
 
     /// Returns the definition for the attribute computation named
-    /// \p computationName registered for schema \p schemaType for attributes
-    /// named \p attributeName.
-    const Exec_ComputationDefinition *GetAttributeComputationDefinition(
-        TfType primSchemaType,
-        const TfToken &attributeName,
-        const TfToken &computationName) const;
+    /// \p computationName registered for \p providerAttribute.
+    ///
+    /// Any scene access needed to determine the input keys is recorded in
+    /// \p journal.
+    ///
+    EXEC_API
+    const Exec_ComputationDefinition *GetComputationDefinition(
+        const EsfAttributeInterface *providerAttribute,
+        const TfToken &computationName,
+        EsfJournal *journal) const;
 
     // Only computation builders can register plugin computations.
     class RegisterPluginComputationAccess
