@@ -103,20 +103,6 @@ struct Exec_BuiltinComputations
 
     /// Returns all builtin computation tokens.
     const std::vector<TfToken> &GetComputationTokens();
-
-    class PopulateBuiltinComputationsAccess {
-        friend class Exec_DefinitionRegistry;
-
-        static void _Populate() {
-            Exec_BuiltinComputations::_PopulateBuiltinComputations();
-        }
-    };
-
-private:
-
-    // Populates the Exec_DefinitionRegistry with computation definitions for
-    // all builtin computations.
-    static void _PopulateBuiltinComputations();
 };
 
 // Used to publicly access builtin computation tokens.

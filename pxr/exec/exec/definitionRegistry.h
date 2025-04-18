@@ -20,8 +20,10 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/weakBase.h"
 
+#include <memory>
 #include <unordered_map>
 #include <tuple>
+#include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -70,19 +72,6 @@ public:
             Exec_InputKeyVector &&inputKeys);
     };
 
-    class RegisterBuiltinComputationAccess
-    {
-        friend class Exec_BuiltinComputations;
-
-        // Registers a builtin computation named \p computationName.
-        static void _Register(
-            const TfToken &computationName,
-            Exec_ComputationDefinition *definition) {
-            GetInstance().
-                _RegisterBuiltinComputation(computationName, definition);
-        }
-    };
-
 private:
 
     // Only TfSingleton can create instances.
@@ -99,7 +88,9 @@ private:
 
     void _RegisterBuiltinComputation(
         const TfToken &computationName,
-        Exec_ComputationDefinition *definition);
+        std::unique_ptr<Exec_ComputationDefinition> &&definition);
+
+    void _RegisterBuiltinComputations();
 
 private:
 

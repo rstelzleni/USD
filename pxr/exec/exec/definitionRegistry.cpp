@@ -7,13 +7,12 @@
 #include "pxr/exec/exec/definitionRegistry.h"
 
 #include "pxr/exec/exec/builtinComputations.h"
+#include "pxr/exec/exec/builtinsStage.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/instantiateSingleton.h"
-
-#include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -34,7 +33,7 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
     TfSingleton<Exec_DefinitionRegistry>::SetInstanceConstructed(*this);
 
     // Populate the registry with builtin computation definitions.
-    Exec_BuiltinComputations::PopulateBuiltinComputationsAccess::_Populate();
+    _RegisterBuiltinComputations();
 
     // Now initialize the registry.
     //
@@ -120,12 +119,12 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
 void
 Exec_DefinitionRegistry::_RegisterBuiltinComputation(
     const TfToken &computationName,
-    Exec_ComputationDefinition *definition)
+    std::unique_ptr<Exec_ComputationDefinition> &&definition)
 {
     const bool emplaced =
         _builtinComputationDefinitions.emplace(
             computationName,
-            definition).second;
+            std::move(definition)).second;
 
     if (!emplaced) {
         TF_CODING_ERROR(
@@ -133,6 +132,20 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputation(
             "'%s'",
             computationName.GetText());
     }
+}
+
+void
+Exec_DefinitionRegistry::_RegisterBuiltinComputations()
+{
+    _RegisterBuiltinComputation(
+        ExecBuiltinComputations->computeTime,
+        std::make_unique<Exec_TimeComputationDefinition>());
+
+//     // TODO: Register computeValue
+// 
+//     // Make sure we registered all builtins.
+//     TF_VERIFY(_builtinComputationDefinitions.size() ==
+//               ExecBuiltinComputations->GetComputationTokens().size());
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
