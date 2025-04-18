@@ -760,6 +760,8 @@ _PrimIndexDependentNodeEditProcessor::_HasUneditedUpstreamSpecConflicts(
     const PcpNodeRef &siteEditNode,
     const SdfPath &siteEditPath)
 {
+    TRACE_FUNCTION();
+
     PcpNodeRef firstConflictingNode;
 
     // In the specific case where a delete operation causes us to have to remove
@@ -812,6 +814,8 @@ _PrimIndexDependentNodeEditProcessor::_HasConflictingSpecsInUneditedNodes(
     const PcpNodeRef &siteEditNode,
     PcpNodeRef *firstConflictingNode)
 {
+    TRACE_FUNCTION();
+
     // We only propagate edits up to stronger nodes when handling downstream
     // dependent edits; we do not push edits back down into weaker nodes. Thus,
     // we're looking for any specs in the descendant nodes of the node we're 
@@ -862,6 +866,8 @@ _PrimIndexDependentNodeEditProcessor::_HasConflictingChildSpecsInUneditedNodes(
     const TfToken &childName,
     PcpNodeRef *firstConflictingNode)
 {
+    TRACE_FUNCTION();
+
     if (!TF_VERIFY(!childName.IsEmpty())) {
         return false;
     }
@@ -1027,6 +1033,8 @@ _PrimIndexDependentNodeEditProcessor::_ProcessNextNodeTask()
     if (_nodeTasks.empty()) {
         return false;
     }
+
+    TRACE_FUNCTION();
 
     // Pop the last task off the node tasks. This will be the task for the
     // weakest node we added a task for which is important for determining 
@@ -1259,6 +1267,8 @@ static _ImpliedNodeAndTransferFunction
 _GetNextImpliedSpecializes(
     const PcpNodeRef &propagatedSpecializesOriginNode)
 {
+    TRACE_FUNCTION();
+
     const PcpNodeRef &unpropagatedSpecializesOriginNode = 
         _GetUnpropagatedSpecializesNode(propagatedSpecializesOriginNode);
 
@@ -1338,6 +1348,8 @@ _FindClassNodeWithOriginInSubtree(
 static _ImpliedNodeAndTransferFunction
 _GetNextImpliedInherit(const PcpNodeRef &originNode)
 {
+    TRACE_FUNCTION();
+
     if (!TF_VERIFY(originNode.GetArcType() == PcpArcTypeInherit)) {
         return {};
     }
@@ -1413,6 +1425,8 @@ _GetNextImpliedInherit(const PcpNodeRef &originNode)
 void _PrimIndexDependentNodeEditProcessor::_ProcessNextImpliedClass(
     const _NodeTask &nodeTask)
 {
+    TRACE_FUNCTION();
+
     const PcpNodeRef &node = nodeTask.node;
     const SdfPath &oldPath = nodeTask.oldPath;
     const SdfPath &newPath = nodeTask.newPath;
@@ -1857,6 +1871,8 @@ PcpGatherLayersToEditForSpecMove(
     const SdfPath &newSpecPath,
     std::vector<std::string> *errors)
 {
+    TRACE_FUNCTION();
+
     SdfLayerHandleVector layersToEdit;
 
     // Get all the layers in the layer stack where the edits will be performed.

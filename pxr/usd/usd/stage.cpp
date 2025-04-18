@@ -4684,6 +4684,8 @@ bool UsdStage::_ProcessChangeLists(
 bool
 UsdStage::_ProcessPendingChanges()
 {
+    TRACE_FUNCTION();
+
     if (!TF_VERIFY(_pendingChanges)) {
         return false;
     }
@@ -4835,6 +4837,8 @@ UsdStage::_ProcessPendingChanges()
     // determine the nature of the resyncs they receive.
     for (const auto &namespaceChange : 
             _pendingChanges->expectedNamespaceEditChanges) {
+        TRACE_SCOPE("Process expected namespace edit changes");
+
         const SdfPath &oldPath = namespaceChange.oldPath;
         const SdfPath &newPath = namespaceChange.newPath;
 
