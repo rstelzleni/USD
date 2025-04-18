@@ -36,7 +36,7 @@ pxr_library(exec
         inputKey.h
 
     PRIVATE_CLASSES
-        builtinsStage
+        builtinStageComputations
         callbackNode
         compilationTask
         compiledOutputCache

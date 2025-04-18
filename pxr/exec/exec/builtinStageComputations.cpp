@@ -4,7 +4,7 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#include "pxr/exec/exec/builtinsStage.h"
+#include "pxr/exec/exec/builtinStageComputations.h"
 
 #include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/definitionRegistry.h"
@@ -15,6 +15,10 @@
 #include "pxr/exec/ef/timeInputNode.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+//
+// computeTime
+//
 
 Exec_TimeComputationDefinition::Exec_TimeComputationDefinition()
     : Exec_ComputationDefinition(

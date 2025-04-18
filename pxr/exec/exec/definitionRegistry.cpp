@@ -7,7 +7,7 @@
 #include "pxr/exec/exec/definitionRegistry.h"
 
 #include "pxr/exec/exec/builtinComputations.h"
-#include "pxr/exec/exec/builtinsStage.h"
+#include "pxr/exec/exec/builtinStageComputations.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
