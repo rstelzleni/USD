@@ -25,8 +25,13 @@ class Exec_TimeComputationDefinition final
 public:
     Exec_TimeComputationDefinition();
 
-    /// The time node requires no inputs.
+    ~Exec_TimeComputationDefinition() override;
+
     const Exec_InputKeyVector &GetInputKeys() const override;
+
+    VdfNode *CompileNode(
+        const EsfJournal &nodeJournal,
+        Exec_Program *program) const override;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

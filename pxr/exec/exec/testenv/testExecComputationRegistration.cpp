@@ -174,7 +174,6 @@ TestComputationRegistration()
                 schemaType, _tokens->emptyComputation);
         TF_AXIOM(primCompDef);
 
-        TF_AXIOM(!primCompDef->GetCallback());
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
     }
 
@@ -185,7 +184,6 @@ TestComputationRegistration()
                 schemaType, _tokens->noInputsComputation);
         TF_AXIOM(primCompDef);
 
-        TF_AXIOM(primCompDef->GetCallback());
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
     }
 
@@ -196,7 +194,6 @@ TestComputationRegistration()
                 TfType::GetUnknownType(), ExecBuiltinComputations->computeTime);
         TF_AXIOM(primCompDef);
 
-        TF_AXIOM(!primCompDef->GetCallback());
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
     }
 
@@ -206,8 +203,6 @@ TestComputationRegistration()
             reg.GetPrimComputationDefinition(
                 schemaType, _tokens->primComputation);
         TF_AXIOM(primCompDef);
-
-        TF_AXIOM(primCompDef->GetCallback());
 
         const auto inputKeys = primCompDef->GetInputKeys();
         ASSERT_EQ(inputKeys.size(), 4);
@@ -270,8 +265,6 @@ TestComputationRegistration()
             reg.GetPrimComputationDefinition(
                 schemaType, _tokens->stageAccessComputation);
         TF_AXIOM(primCompDef);
-
-        TF_AXIOM(primCompDef->GetCallback());
 
         const auto inputKeys = primCompDef->GetInputKeys();
         ASSERT_EQ(inputKeys.size(), 1);
