@@ -8,7 +8,6 @@
 
 #include "pxr/exec/exec/compiler.h"
 #include "pxr/exec/exec/program.h"
-#include "pxr/exec/exec/request.h"
 #include "pxr/exec/exec/requestImpl.h"
 
 #include "pxr/exec/ef/executor.h"
@@ -32,21 +31,10 @@ ExecSystem::ExecSystem(EsfStage &&stage) :
 
 ExecSystem::~ExecSystem() = default;
 
-ExecRequest
-ExecSystem::BuildRequest(std::vector<ExecValueKey> &&valueKeys)
-{
-    const std::shared_ptr<Exec_RequestImpl> &impl = *_requests.push_back(
-        std::make_shared<Exec_RequestImpl>(std::move(valueKeys)));
-    return ExecRequest(impl);
-}
-
 void
-ExecSystem::PrepareRequest(const ExecRequest &request)
+ExecSystem::_InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl)
 {
-    if (std::shared_ptr<Exec_RequestImpl> impl = request._impl.lock()) {
-        impl->Compile(this);
-        impl->Schedule();
-    }
+    _requests.push_back(std::move(impl));
 }
 
 void

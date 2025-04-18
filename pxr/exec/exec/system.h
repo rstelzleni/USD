@@ -20,38 +20,46 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-class Exec_RequestImpl;
 class Exec_Program;
-class ExecRequest;
+class Exec_RequestImpl;
 class ExecValueKey;
 
 template <typename> class TfSpan;
 class VdfExecutorInterface;
 class VdfMaskedOutput;
 
-/// A system to procedurally compute values based on scene description and
-/// computation definitions.
+/// Base implementation of a system to procedurally compute values based on
+/// scene description and computation definitions.
 ///
 /// ExecSystem owns all the structures necessary to compile, schedule and
-/// evaluate requested computation values.
+/// evaluate requested computation values.  Derived classes are responsible
+/// for interfacing with the underlying scene description.
 ///
 class ExecSystem
 {
 public:
     EXEC_API
+    void GraphNetwork(const char *filename) const;
+
+protected:
+    /// Construct an exec system for computing values on \p stage.
+    ///
+    EXEC_API
     explicit ExecSystem(EsfStage &&stage);
+
+    ExecSystem(const ExecSystem &) = delete;
+    ExecSystem& operator=(const ExecSystem &) = delete;
 
     EXEC_API
     ~ExecSystem();
 
+    /// Transfer ownership of a newly-created request impl to the system.
+    ///
+    /// The system is responsible for managing the lifetime of the impl in
+    /// response to scene changes that would affect it.
+    ///
     EXEC_API
-    ExecRequest BuildRequest(std::vector<ExecValueKey> &&valueKeys);
-
-    EXEC_API
-    void PrepareRequest(const ExecRequest &request);
-
-    EXEC_API
-    void GraphNetwork(const char *filename) const;
+    void _InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl);
 
 private:
     // Requires access to _Compile

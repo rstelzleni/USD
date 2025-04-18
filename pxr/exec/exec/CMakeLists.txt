@@ -24,8 +24,9 @@ pxr_library(exec
 
     PUBLIC_CLASSES
         builtinComputations
+        cacheView
         computationBuilders
-        request
+        requestImpl
         system
         typeRegistry
         valueKey
@@ -48,7 +49,6 @@ pxr_library(exec
         outputKey
         outputProvidingCompilationTask
         program
-        requestImpl
         uncompilationRuleSet
         uncompilationTable
 

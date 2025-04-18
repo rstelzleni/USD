@@ -6,13 +6,11 @@
 //
 #include "pxr/pxr.h"
 
-#include "pxr/exec/execUsd/sceneAdapter.h"
+#include "pxr/exec/execUsd/request.h"
+#include "pxr/exec/execUsd/system.h"
+#include "pxr/exec/execUsd/valueKey.h"
 
-#include "pxr/exec/esf/stage.h"
 #include "pxr/exec/exec/registerSchema.h"
-#include "pxr/exec/exec/request.h"
-#include "pxr/exec/exec/system.h"
-#include "pxr/exec/exec/valueKey.h"
 #include "pxr/exec/vdf/context.h"
 
 #include "pxr/base/gf/matrix4d.h"
@@ -88,13 +86,13 @@ TestCompiler()
     UsdStageConstRefPtr usdStage = UsdStage::Open(layer);
     TF_AXIOM(usdStage);
 
-    ExecSystem execSystem(ExecUsdSceneAdapter::AdaptStage(usdStage));
+    ExecUsdSystem execSystem(usdStage);
 
-    std::vector<ExecValueKey> valueKeys {
-        ExecValueKey(SdfPath("/Root/A1/B"), _tokens->computeXf)
+    std::vector<ExecUsdValueKey> valueKeys {
+        {usdStage->GetPrimAtPath(SdfPath("/Root/A1/B")), _tokens->computeXf}
     };
-    
-    ExecRequest request = execSystem.BuildRequest(std::move(valueKeys));
+
+    ExecUsdRequest request = execSystem.BuildRequest(std::move(valueKeys));
     TF_AXIOM(request.IsValid());
 
     execSystem.PrepareRequest(request);

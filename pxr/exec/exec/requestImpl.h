@@ -10,10 +10,6 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/api.h"
-#include "pxr/exec/exec/valueKey.h"
-
-#include "pxr/base/tf/bits.h"
-#include "pxr/exec/vdf/maskedOutput.h"
 
 #include <memory>
 #include <vector>
@@ -21,31 +17,37 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 class ExecSystem;
+class ExecValueKey;
+template <typename> class TfSpan;
+class VdfMaskedOutput;
 class VdfRequest;
 class VdfSchedule;
 
-// Contains data structures necessary to implement ExecRequest.
-//
+/// Contains data structures necessary to implement exec requests that are
+/// independent of scene description.
+///
+/// Concrete implementations inherit from Exec_RequestImpl to implement any
+/// functionality that is specific to the scene description system.
+///
 class Exec_RequestImpl
 {
     Exec_RequestImpl(const Exec_RequestImpl&) = delete;
     Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
 
-public:
-    explicit Exec_RequestImpl(std::vector<ExecValueKey> &&valueKeys);
+protected:
+    EXEC_API
+    Exec_RequestImpl();
+
+    EXEC_API
     ~Exec_RequestImpl();
 
-    void Compile(ExecSystem *system);
-    void Schedule();
+    EXEC_API
+    void _Compile(ExecSystem *system, TfSpan<const ExecValueKey> valueKeys);
+
+    EXEC_API
+    void _Schedule();
 
 private:
-    const std::vector<ExecValueKey> _valueKeys;
-
-    // As an optimization, requesting values that don't actually require
-    // evaluating any computations are satisfied directly from value
-    // resolution.
-    TfBits _requiresComputation;
-
     std::vector<VdfMaskedOutput> _leafOutputs;
 
     std::unique_ptr<VdfRequest> _computeRequest;

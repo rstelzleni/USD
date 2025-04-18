@@ -15,7 +15,6 @@
 #include "pxr/exec/ef/leafNode.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
-#include "pxr/exec/esf/stage.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -37,9 +36,7 @@ Exec_LeafCompilationTask::_Compile(
         TRACE_FUNCTION_SCOPE("input compilation");
 
         // Get the provider object from the value key
-        const EsfStage &stage = compilationState.GetStage();
-        _originObject =
-            stage->GetObjectAtPath(_valueKey.GetProviderPath(), &_journal);
+        _originObject = _valueKey.GetProvider();
 
         // Make an input key from the value key
         const Exec_InputKey inputKey = _MakeInputKey(_valueKey);
@@ -58,7 +55,10 @@ Exec_LeafCompilationTask::_Compile(
     (TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("leaf node creation");
 
-        if (!TF_VERIFY(_resultOutputs.size() == 1)) {
+        if (!TF_VERIFY(_resultOutputs.size() == 1,
+                "Expected exactly one output for value key '%s'; got '%zu'",
+                _valueKey.GetDebugName().c_str(),
+                _resultOutputs.size())) {
             return;
         }
 
@@ -78,9 +78,9 @@ Exec_LeafCompilationTask::_Compile(
                 nodeJournal,
                 sourceOutput.GetOutput()->GetSpec().GetType());
 
-        leafNode->SetDebugNameCallback([valueKey = _valueKey]{
-            return valueKey.GetDebugName();
-        });
+        // Value keys are not durable across scene changes so their debug name
+        // must be collected eagerly.
+        leafNode->SetDebugName(_valueKey.GetDebugName());
 
         compilationState.GetProgram()->Connect(
             _journal,
@@ -95,7 +95,7 @@ Exec_InputKey _MakeInputKey(const ExecValueKey &valueKey)
 {
     return {
         EfLeafTokens->in,
-        valueKey.GetComputationToken(),
+        valueKey.GetComputationName(),
         TfType(),
         {SdfPath::ReflexiveRelativePath(),
             ExecProviderResolution::DynamicTraversal::Local},
