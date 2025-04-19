@@ -66,7 +66,6 @@ pxr_library(usd
         usdcFileFormat
         usdzFileFormat
         variantSets
-        zipFile
 
     PYTHON_PUBLIC_CLASSES
         pyEditContext
@@ -81,12 +80,12 @@ pxr_library(usd
         instanceKey
         interpolators
         primTypeInfoCache
-        usdzResolver
         valueUtils
 
     PUBLIC_HEADERS
         api.h
         crateInfo.h
+        zipFile.h
 
     PRIVATE_HEADERS
         listEditImpl.h
@@ -278,7 +277,6 @@ pxr_test_scripts(
     testenv/testUsdVariantEditing.py
     testenv/testUsdVariantFallbacks.py
     testenv/testUsdVariants.py
-    testenv/testUsdZipFile.py
 )
 
 pxr_build_test_shared_lib(TestUsdProceduralExternalAssetsFileFormatPlugin
@@ -459,26 +457,6 @@ pxr_build_test(testUsdTimeValueAuthoringCpp
         usd
     CPPFILES
         testenv/testUsdTimeValueAuthoring.cpp
-)
-
-pxr_build_test(testUsdUsdzResolver
-    LIBRARIES
-        ar
-        arch
-        tf
-        usd
-    CPPFILES
-        testenv/testUsdUsdzResolver.cpp
-)
-
-pxr_build_test(testUsdZipFile_CPP
-    LIBRARIES
-        ar
-        arch
-        tf
-        usd
-    CPPFILES
-        testenv/testUsdZipFile.cpp
 )
 
 pxr_build_test(testUsdUsdzBugGHSA01
@@ -772,21 +750,6 @@ pxr_install_test_dir(
 pxr_install_test_dir(
     SRC testenv/testUsdUsdzFileFormat
     DEST testUsdUsdzFileFormat_pread
-)
-
-pxr_install_test_dir(
-    SRC testenv/testUsdUsdzResolver
-    DEST testUsdUsdzResolver
-)
-
-pxr_install_test_dir(
-    SRC testenv/testUsdZipFile.testenv
-    DEST testUsdZipFile
-)
-
-pxr_install_test_dir(
-    SRC testenv/testUsdZipFile.testenv
-    DEST testUsdZipFile_CPP
 )
 
 pxr_install_test_dir(
@@ -1387,22 +1350,6 @@ pxr_register_test(testUsdUsdzFileFormat_pread
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdUsdzFileFormat"
     ENV
         USDC_USE_PREAD=1
-    EXPECTED_RETURN_CODE 0
-)
-
-pxr_register_test(testUsdZipFile
-    PYTHON
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdZipFile"
-    EXPECTED_RETURN_CODE 0
-)
-
-pxr_register_test(testUsdZipFile_CPP
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdZipFile_CPP"
-    EXPECTED_RETURN_CODE 0
-)
-
-pxr_register_test(testUsdUsdzResolver
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdUsdzResolver"
     EXPECTED_RETURN_CODE 0
 )
 

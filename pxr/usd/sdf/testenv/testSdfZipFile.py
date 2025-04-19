@@ -9,9 +9,9 @@ import os
 import unittest
 import zipfile
 
-from pxr import Usd
+from pxr import Sdf
 
-class TestUsdZipFile(unittest.TestCase):
+class TestSdfZipFile(unittest.TestCase):
     def _ValidateSourceAndZippedFile(self, srcFile, zipFile, fileInZip, 
                                      fixLineEndings=False):
         with open(srcFile, "rb") as f:
@@ -20,18 +20,18 @@ class TestUsdZipFile(unittest.TestCase):
                 srcData = srcData.replace("\r\n".encode("utf-8"),
                                           "\n".encode("utf-8"))
 
-        if isinstance(zipFile, Usd.ZipFile):
+        if isinstance(zipFile, Sdf.ZipFile):
             self.assertEqual(
                 srcData, zipFile.GetFile(fileInZip))
         elif isinstance(zipFile, zipfile.ZipFile):
             self.assertEqual(srcData, zipFile.read(fileInZip))
 
     def test_Reader(self):
-        """Test Usd.ZipFileReader"""
-        zf = Usd.ZipFile.Open("nonexistent.usdz")
+        """Test Sdf.ZipFileReader"""
+        zf = Sdf.ZipFile.Open("nonexistent.usdz")
         self.assertIsNone(zf)
 
-        zf = Usd.ZipFile.Open("test_reader.usdz")
+        zf = Sdf.ZipFile.Open("test_reader.usdz")
         self.assertTrue(zf)
         self.assertEqual(
             zf.GetFileNames(), ["a.test", "b.png", "sub/c.png", "sub/d.txt"])
@@ -84,11 +84,11 @@ class TestUsdZipFile(unittest.TestCase):
             "src/sub/d.txt", zf, "sub/d.txt", fixLineEndings)
         
     def test_Writer(self):
-        """Test Usd.ZipFileWriter"""
+        """Test Sdf.ZipFileWriter"""
         if os.path.isfile("test_writer.usdz"):
             os.remove("test_writer.usdz")
 
-        with Usd.ZipFileWriter.CreateNew("test_writer.usdz") as zfw:
+        with Sdf.ZipFileWriter.CreateNew("test_writer.usdz") as zfw:
             self.assertTrue(zfw)
 
             # Zip file should not be created until Save() is called on file
@@ -103,8 +103,8 @@ class TestUsdZipFile(unittest.TestCase):
 
         self.assertTrue(os.path.isfile("test_writer.usdz"))
         
-        # Verify that the zip file can be read by Usd.ZipFile.
-        zf = Usd.ZipFile.Open("test_writer.usdz")
+        # Verify that the zip file can be read by Sdf.ZipFile.
+        zf = Sdf.ZipFile.Open("test_writer.usdz")
         self.assertEqual(zf.GetFileNames(), ["src/a.test", "b.png"])
 
         # Since we're writing files into a .usdz and then extracting
@@ -156,7 +156,7 @@ class TestUsdZipFile(unittest.TestCase):
         self._ValidateSourceAndZippedFile("src/b.png", zf, "b.png")
 
     def test_WriterAlignment(self):
-        """Test that Usd.ZipFileWriter writes files so that they're aligned
+        """Test that Sdf.ZipFileWriter writes files so that they're aligned
         according to the .usdz specification"""
         with open("test_align_2.txt", "wb") as f:
             f.write("This is a test file".encode("utf-8"))
@@ -168,11 +168,11 @@ class TestUsdZipFile(unittest.TestCase):
             with open("test_align_1.txt", "wb") as f:
                 f.write(("a" * i).encode("utf-8"))
 
-            with Usd.ZipFileWriter.CreateNew("test_align.usdz") as zfw:
+            with Sdf.ZipFileWriter.CreateNew("test_align.usdz") as zfw:
                 zfw.AddFile("test_align_1.txt")
                 zfw.AddFile("test_align_2.txt")
             
-            zf = Usd.ZipFile.Open("test_align.usdz")
+            zf = Sdf.ZipFile.Open("test_align.usdz")
             fi = zf.GetFileInfo("test_align_1.txt")
             self.assertEqual(fi.dataOffset % 64, 0)
 
@@ -183,7 +183,7 @@ class TestUsdZipFile(unittest.TestCase):
         if os.path.isfile("test_discard.usdz"):
             os.remove("test_discard.usdz")
 
-        with Usd.ZipFileWriter.CreateNew("test_discard.usdz") as zfw:
+        with Sdf.ZipFileWriter.CreateNew("test_discard.usdz") as zfw:
             self.assertTrue(zfw)
         
             # Zip file should not be written if Discard() is called.
@@ -194,16 +194,16 @@ class TestUsdZipFile(unittest.TestCase):
 
     def test_WriterEmptyArchive(self):
         """Test corner case writing an empty zip archive with 
-        Usd.ZipFileWriter"""
+        Sdf.ZipFileWriter"""
         if os.path.isfile("empty.usdz"):
             os.remove("empty.usdz")
 
-        with Usd.ZipFileWriter.CreateNew("empty.usdz"):
+        with Sdf.ZipFileWriter.CreateNew("empty.usdz"):
             pass
         self.assertTrue(os.path.isfile("empty.usdz"))
 
-        # Verify that zip file can be read by Usd.ZipFile
-        zf = Usd.ZipFile.Open("empty.usdz")
+        # Verify that zip file can be read by Sdf.ZipFile
+        zf = Sdf.ZipFile.Open("empty.usdz")
         self.assertTrue(zf)
         self.assertEqual(zf.GetFileNames(), [])
 

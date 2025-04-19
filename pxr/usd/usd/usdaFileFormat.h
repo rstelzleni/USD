@@ -8,6 +8,7 @@
 #define PXR_USD_USD_USDA_FILE_FORMAT_H
  
 #include "pxr/pxr.h"
+#include "pxr/usd/usd/api.h"
 #include "pxr/usd/sdf/usdaFileFormat.h"
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/staticTokens.h"

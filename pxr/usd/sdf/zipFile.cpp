@@ -5,7 +5,7 @@
 // https://openusd.org/license.
 //
 #include "pxr/pxr.h"
-#include "pxr/usd/usd/zipFile.h"
+#include "pxr/usd/sdf/zipFile.h"
 #include "pxr/usd/ar/asset.h"
 #include "pxr/usd/ar/resolvedPath.h"
 #include "pxr/usd/ar/resolver.h"
@@ -387,7 +387,7 @@ _WriteEndOfCentralDirectoryRecord(
 // ------------------------------------------------------------
 
 // Per usdz specifications, file data must be aligned to 64 byte boundaries.
-// UsdZipFileWriter adds padding bytes to the 'extra' extensible data field
+// SdfZipFileWriter adds padding bytes to the 'extra' extensible data field
 // described in section 4.5 of the zip specification to achieve this. This
 // is complicated by the requirement that each entry in the 'extra' field
 // be preceded by a 4 byte header.
@@ -450,7 +450,7 @@ _PrepareExtraFieldPadding(
 
 // ------------------------------------------------------------
 
-class UsdZipFile::_Impl
+class SdfZipFile::_Impl
 {
     std::shared_ptr<const char> storage;
 
@@ -458,10 +458,10 @@ class UsdZipFile::_Impl
     std::unordered_map<std::string, Iterator> _cachedPaths;
     // Iterator to start on when adding to the cached mapping
     std::unique_ptr<Iterator> _cachedPathIt;
-    // UsdZipFile::begin is called often, so might as well cache it too
+    // SdfZipFile::begin is called often, so might as well cache it too
     std::unique_ptr<Iterator> _cachedBeginIt;
     // Use a single mutex as there doesn't look to be much contention from
-    // calling through via UsdZipFile::begin() and UsdZipFile::Find()
+    // calling through via SdfZipFile::begin() and SdfZipFile::Find()
     std::shared_timed_mutex _rwMutex;
 
     void
@@ -546,51 +546,51 @@ public:
     }
 };
 
-UsdZipFile
-UsdZipFile::Open(const std::string& filePath)
+SdfZipFile
+SdfZipFile::Open(const std::string& filePath)
 {
     std::shared_ptr<ArAsset> asset = ArGetResolver().OpenAsset(
         ArResolvedPath(filePath));
     if (!asset) {
-        return UsdZipFile();
+        return SdfZipFile();
     }
 
     return Open(asset);
 }
 
-UsdZipFile
-UsdZipFile::Open(const std::shared_ptr<ArAsset>& asset)
+SdfZipFile
+SdfZipFile::Open(const std::shared_ptr<ArAsset>& asset)
 {
     if (!asset) {
         TF_CODING_ERROR("Invalid asset");
-        return UsdZipFile();
+        return SdfZipFile();
     }
 
     std::shared_ptr<const char> buffer = asset->GetBuffer();
     if (!buffer) {
         TF_RUNTIME_ERROR("Could not retrieve buffer from asset");
-        return UsdZipFile();
+        return SdfZipFile();
     }
 
-    return UsdZipFile(std::shared_ptr<_Impl>(
+    return SdfZipFile(std::shared_ptr<_Impl>(
         new _Impl(std::move(buffer), asset->GetSize())));
 }
 
-UsdZipFile::UsdZipFile(std::shared_ptr<_Impl>&& impl)
+SdfZipFile::SdfZipFile(std::shared_ptr<_Impl>&& impl)
     : _impl(std::move(impl))
 {
 }
 
-UsdZipFile::UsdZipFile()
+SdfZipFile::SdfZipFile()
 {
 }
 
-UsdZipFile::~UsdZipFile()
+SdfZipFile::~SdfZipFile()
 {
 }
 
 void 
-UsdZipFile::DumpContents() const
+SdfZipFile::DumpContents() const
 {
     printf("    Offset\t      Comp\t    Uncomp\tName\n");
     printf("    ------\t      ----\t    ------\t----\n");
@@ -607,25 +607,25 @@ UsdZipFile::DumpContents() const
     printf("%zu files total\n", n);
 }
 
-UsdZipFile::Iterator
-UsdZipFile::Find(const std::string& path) const
+SdfZipFile::Iterator
+SdfZipFile::Find(const std::string& path) const
 {
     return _impl ? _impl->Find(path) : end();
 }
 
-UsdZipFile::Iterator 
-UsdZipFile::begin() const
+SdfZipFile::Iterator 
+SdfZipFile::begin() const
 {
     return _impl ? _impl->CachedBegin() : end();
 }
 
-UsdZipFile::Iterator 
-UsdZipFile::end() const
+SdfZipFile::Iterator 
+SdfZipFile::end() const
 {
     return Iterator();
 }
 
-class UsdZipFile::Iterator::_IteratorData
+class SdfZipFile::Iterator::_IteratorData
 {
 public:
     const _Impl* impl = nullptr;
@@ -634,9 +634,9 @@ public:
     size_t nextHeaderOffset = 0;
 };
 
-UsdZipFile::Iterator::Iterator() = default;
+SdfZipFile::Iterator::Iterator() = default;
 
-UsdZipFile::Iterator::Iterator(const _Impl* impl, size_t offset)
+SdfZipFile::Iterator::Iterator(const _Impl* impl, size_t offset)
 {
     _InputStream src(impl->buffer, impl->size, offset);
     _LocalFileHeader fileHeader = _ReadLocalFileHeader(src);
@@ -649,28 +649,28 @@ UsdZipFile::Iterator::Iterator(const _Impl* impl, size_t offset)
     }
 }
 
-UsdZipFile::Iterator::Iterator(const Iterator& rhs)
+SdfZipFile::Iterator::Iterator(const Iterator& rhs)
     : _data(rhs._data ? new _IteratorData(*rhs._data) : nullptr)
 {
 }
 
-UsdZipFile::Iterator::Iterator(Iterator&& rhs) = default;
+SdfZipFile::Iterator::Iterator(Iterator&& rhs) = default;
 
-UsdZipFile::Iterator::~Iterator() = default;
+SdfZipFile::Iterator::~Iterator() = default;
 
-UsdZipFile::Iterator&
-UsdZipFile::Iterator::operator=(const Iterator& rhs)
+SdfZipFile::Iterator&
+SdfZipFile::Iterator::operator=(const Iterator& rhs)
 {
     Iterator rhsCopy(rhs);
     *this = std::move(rhsCopy);
     return *this;
 }
 
-UsdZipFile::Iterator&
-UsdZipFile::Iterator::operator=(Iterator&& rhs) = default;
+SdfZipFile::Iterator&
+SdfZipFile::Iterator::operator=(Iterator&& rhs) = default;
 
-UsdZipFile::Iterator::reference 
-UsdZipFile::Iterator::operator*() const
+SdfZipFile::Iterator::reference 
+SdfZipFile::Iterator::operator*() const
 {
     if (_data) {
         const _LocalFileHeader& h = _data->fileHeader;
@@ -679,14 +679,14 @@ UsdZipFile::Iterator::operator*() const
     return std::string();
 }
 
-UsdZipFile::Iterator::pointer
-UsdZipFile::Iterator::operator->() const
+SdfZipFile::Iterator::pointer
+SdfZipFile::Iterator::operator->() const
 {
     return _ArrowProxy(this->operator*());
 }
 
-UsdZipFile::Iterator& 
-UsdZipFile::Iterator::operator++()
+SdfZipFile::Iterator& 
+SdfZipFile::Iterator::operator++()
 {
     // See if we can read a header at the next header offset.
     // If not, we've hit the end.
@@ -706,8 +706,8 @@ UsdZipFile::Iterator::operator++()
     return *this;
 }
 
-UsdZipFile::Iterator
-UsdZipFile::Iterator::operator++(int)
+SdfZipFile::Iterator
+SdfZipFile::Iterator::operator++(int)
 {
     Iterator it(*this);
     ++*this;
@@ -715,7 +715,7 @@ UsdZipFile::Iterator::operator++(int)
 }
 
 bool 
-UsdZipFile::Iterator::operator==(const Iterator& rhs) const
+SdfZipFile::Iterator::operator==(const Iterator& rhs) const
 {
     if (!_data && !rhs._data) {
         return true;
@@ -727,19 +727,19 @@ UsdZipFile::Iterator::operator==(const Iterator& rhs) const
 }
     
 bool 
-UsdZipFile::Iterator::operator!=(const Iterator& rhs) const
+SdfZipFile::Iterator::operator!=(const Iterator& rhs) const
 {
     return !(*this == rhs);
 }
 
 const char*
-UsdZipFile::Iterator::GetFile() const
+SdfZipFile::Iterator::GetFile() const
 {
     return _data ? _data->fileHeader.dataStart : nullptr;
 }
 
-UsdZipFile::FileInfo 
-UsdZipFile::Iterator::GetFileInfo() const
+SdfZipFile::FileInfo 
+SdfZipFile::Iterator::GetFileInfo() const
 {
     FileInfo f;
     if (_data) {
@@ -867,7 +867,7 @@ _ZipFilePath(const std::string& filePath)
 
 } // end anonymous namespace
 
-class UsdZipFileWriter::_Impl
+class SdfZipFileWriter::_Impl
 {
 public:
     _Impl(TfSafeOutputFile&& out) 
@@ -886,35 +886,35 @@ public:
     std::vector<_Record> addedFiles;
 };
 
-UsdZipFileWriter
-UsdZipFileWriter::CreateNew(const std::string& filePath)
+SdfZipFileWriter
+SdfZipFileWriter::CreateNew(const std::string& filePath)
 {
     TfErrorMark mark;
     TfSafeOutputFile outputFile = TfSafeOutputFile::Replace(filePath);
     if (!mark.IsClean()) {
-        return UsdZipFileWriter();
+        return SdfZipFileWriter();
     }
 
-    return UsdZipFileWriter(std::unique_ptr<_Impl>(
+    return SdfZipFileWriter(std::unique_ptr<_Impl>(
         new _Impl(std::move(outputFile))));
 }
 
-UsdZipFileWriter::UsdZipFileWriter()
+SdfZipFileWriter::SdfZipFileWriter()
 {
 }
 
-UsdZipFileWriter::UsdZipFileWriter(std::unique_ptr<_Impl>&& impl)
+SdfZipFileWriter::SdfZipFileWriter(std::unique_ptr<_Impl>&& impl)
     : _impl(std::move(impl))
 {
 }
 
-UsdZipFileWriter::UsdZipFileWriter(UsdZipFileWriter&& rhs)
+SdfZipFileWriter::SdfZipFileWriter(SdfZipFileWriter&& rhs)
     : _impl(std::move(rhs._impl))
 {
 }
 
-UsdZipFileWriter& 
-UsdZipFileWriter::operator=(UsdZipFileWriter&& rhs)
+SdfZipFileWriter& 
+SdfZipFileWriter::operator=(SdfZipFileWriter&& rhs)
 {
     if (this != &rhs) {
         _impl = std::move(rhs._impl);
@@ -922,7 +922,7 @@ UsdZipFileWriter::operator=(UsdZipFileWriter&& rhs)
     return *this;
 }
 
-UsdZipFileWriter::~UsdZipFileWriter()
+SdfZipFileWriter::~SdfZipFileWriter()
 {
     if (_impl) {
         Save();
@@ -930,7 +930,7 @@ UsdZipFileWriter::~UsdZipFileWriter()
 }
 
 std::string
-UsdZipFileWriter::AddFile(
+SdfZipFileWriter::AddFile(
     const std::string& filePath,
     const std::string& filePathInArchiveIn)
 {
@@ -998,7 +998,7 @@ UsdZipFileWriter::AddFile(
 }
 
 bool 
-UsdZipFileWriter::Save()
+SdfZipFileWriter::Save()
 {
     if (!_impl) {
         TF_CODING_ERROR("File is not open for writing");
@@ -1069,7 +1069,7 @@ UsdZipFileWriter::Save()
 }
 
 void 
-UsdZipFileWriter::Discard()
+SdfZipFileWriter::Discard()
 {
     if (!_impl) {
         TF_CODING_ERROR("File is not open for writing");

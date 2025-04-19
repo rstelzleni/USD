@@ -59,6 +59,28 @@
                         "formatId": "usdc", 
                         "primary": true, 
                         "target": "usd"
+                    }, 
+                    "SdfUsdzFileFormat": {
+                        "bases": [
+                            "SdfFileFormat"
+                        ], 
+                        "displayName": "USDZ File Format", 
+                        "extensions": [
+                            "usdz"
+                        ], 
+                        "formatId": "usdz", 
+                        "primary": true, 
+                        "supportsEditing": false, 
+                        "supportsWriting": false, 
+                        "target": "usd"
+                    }, 
+                    "Sdf_UsdzResolver": {
+                        "bases": [
+                            "ArPackageResolver"
+                        ], 
+                        "extensions": [
+                            "usdz"
+                        ]
                     }
                 }
             },

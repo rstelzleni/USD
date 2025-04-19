@@ -7,7 +7,7 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/usd/usd/zipFile.h"
+#include "pxr/usd/sdf/zipFile.h"
 #include "pxr/base/tf/diagnosticLite.h"
 
 #include <string>
@@ -18,31 +18,31 @@ PXR_NAMESPACE_USING_DIRECTIVE
 static void
 TestIterators()
 {
-    UsdZipFile zipFile = UsdZipFile::Open("test_reader.usdz");
+    SdfZipFile zipFile = SdfZipFile::Open("test_reader.usdz");
     TF_AXIOM(zipFile);
 
     // Test various operators.
     {
-        UsdZipFile::Iterator i = zipFile.begin();
-        TF_AXIOM(i != UsdZipFile::Iterator());
+        SdfZipFile::Iterator i = zipFile.begin();
+        TF_AXIOM(i != SdfZipFile::Iterator());
 
-        UsdZipFile::Iterator j = i;
+        SdfZipFile::Iterator j = i;
         TF_AXIOM(i == j);
         ++j;
         TF_AXIOM(i != j);
         i++;
         TF_AXIOM(i == j);
 
-        UsdZipFile::Iterator k = std::move(i);
+        SdfZipFile::Iterator k = std::move(i);
         TF_AXIOM(j == k);
 
-        UsdZipFile::Iterator l(std::move(j));
+        SdfZipFile::Iterator l(std::move(j));
         TF_AXIOM(k == l);
     }
 
     // Test iterating over files in zip archive.
     {
-        UsdZipFile::Iterator i = zipFile.begin(), e = zipFile.end();
+        SdfZipFile::Iterator i = zipFile.begin(), e = zipFile.end();
         TF_AXIOM(std::distance(i, e) == 4);
 
         TF_AXIOM(*i == "a.test"); // Test operator*

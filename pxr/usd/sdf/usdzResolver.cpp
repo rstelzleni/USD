@@ -6,8 +6,8 @@
 //
 #include "pxr/pxr.h"
 
-#include "pxr/usd/usd/usdzResolver.h"
-#include "pxr/usd/usd/zipFile.h"
+#include "pxr/usd/sdf/usdzResolver.h"
+#include "pxr/usd/sdf/zipFile.h"
 
 #include "pxr/usd/ar/asset.h"
 #include "pxr/usd/ar/definePackageResolver.h"
@@ -20,56 +20,56 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-Usd_UsdzResolverCache&
-Usd_UsdzResolverCache::GetInstance()
+Sdf_UsdzResolverCache&
+Sdf_UsdzResolverCache::GetInstance()
 {
-    static Usd_UsdzResolverCache cache;
+    static Sdf_UsdzResolverCache cache;
     return cache;
 }
 
-Usd_UsdzResolverCache::Usd_UsdzResolverCache()
+Sdf_UsdzResolverCache::Sdf_UsdzResolverCache()
 {
 }
 
-struct Usd_UsdzResolverCache::_Cache
+struct Sdf_UsdzResolverCache::_Cache
 {
     using _Map = tbb::concurrent_hash_map<std::string, AssetAndZipFile>;
     _Map _pathToEntryMap;
 };
 
 void 
-Usd_UsdzResolverCache::BeginCacheScope(
+Sdf_UsdzResolverCache::BeginCacheScope(
     VtValue* cacheScopeData)
 {
     _caches.BeginCacheScope(cacheScopeData);
 }
 
 void
-Usd_UsdzResolverCache::EndCacheScope(
+Sdf_UsdzResolverCache::EndCacheScope(
     VtValue* cacheScopeData)
 {
     _caches.EndCacheScope(cacheScopeData);
 }
 
-Usd_UsdzResolverCache::_CachePtr 
-Usd_UsdzResolverCache::_GetCurrentCache()
+Sdf_UsdzResolverCache::_CachePtr 
+Sdf_UsdzResolverCache::_GetCurrentCache()
 {
     return _caches.GetCurrentCache();
 }
 
-Usd_UsdzResolverCache::AssetAndZipFile
-Usd_UsdzResolverCache::_OpenZipFile(const std::string& path)
+Sdf_UsdzResolverCache::AssetAndZipFile
+Sdf_UsdzResolverCache::_OpenZipFile(const std::string& path)
 {
     AssetAndZipFile result;
     result.first = ArGetResolver().OpenAsset(ArResolvedPath(path));
     if (result.first) {
-        result.second = UsdZipFile::Open(result.first);
+        result.second = SdfZipFile::Open(result.first);
     }
     return result;
 }
 
-Usd_UsdzResolverCache::AssetAndZipFile 
-Usd_UsdzResolverCache::FindOrOpenZipFile(const std::string& packagePath)
+Sdf_UsdzResolverCache::AssetAndZipFile 
+Sdf_UsdzResolverCache::FindOrOpenZipFile(const std::string& packagePath)
 {
     _CachePtr currentCache = _GetCurrentCache();
     if (currentCache) {
@@ -86,34 +86,34 @@ Usd_UsdzResolverCache::FindOrOpenZipFile(const std::string& packagePath)
 
 // ------------------------------------------------------------
 
-AR_DEFINE_PACKAGE_RESOLVER(Usd_UsdzResolver, ArPackageResolver);
+AR_DEFINE_PACKAGE_RESOLVER(Sdf_UsdzResolver, ArPackageResolver);
 
-Usd_UsdzResolver::Usd_UsdzResolver()
+Sdf_UsdzResolver::Sdf_UsdzResolver()
 {
 }
 
 void 
-Usd_UsdzResolver::BeginCacheScope(
+Sdf_UsdzResolver::BeginCacheScope(
     VtValue* cacheScopeData)
 {
-    Usd_UsdzResolverCache::GetInstance().BeginCacheScope(cacheScopeData);
+    Sdf_UsdzResolverCache::GetInstance().BeginCacheScope(cacheScopeData);
 }
 
 void
-Usd_UsdzResolver::EndCacheScope(
+Sdf_UsdzResolver::EndCacheScope(
     VtValue* cacheScopeData)
 {
-    Usd_UsdzResolverCache::GetInstance().EndCacheScope(cacheScopeData);
+    Sdf_UsdzResolverCache::GetInstance().EndCacheScope(cacheScopeData);
 }
 
 std::string 
-Usd_UsdzResolver::Resolve(
+Sdf_UsdzResolver::Resolve(
     const std::string& packagePath,
     const std::string& packagedPath)
 {
     std::shared_ptr<ArAsset> asset;
-    UsdZipFile zipFile;
-    std::tie(asset, zipFile) = Usd_UsdzResolverCache::GetInstance()
+    SdfZipFile zipFile;
+    std::tie(asset, zipFile) = Sdf_UsdzResolverCache::GetInstance()
         .FindOrOpenZipFile(packagePath);
 
     if (!zipFile) {
@@ -131,14 +131,14 @@ class _Asset
 {
 private:
     std::shared_ptr<ArAsset> _sourceAsset;
-    UsdZipFile _zipFile;
+    SdfZipFile _zipFile;
     const char* _dataInZipFile;
     size_t _offsetInZipFile;
     size_t _sizeInZipFile;
 
 public:
     explicit _Asset(std::shared_ptr<ArAsset>&& sourceAsset,
-                    UsdZipFile&& zipFile,
+                    SdfZipFile&& zipFile,
                     const char* dataInZipFile,
                     size_t offsetInZipFile,
                     size_t sizeInZipFile)
@@ -161,9 +161,9 @@ public:
         {
             void operator()(const char* b)
             {
-                zipFile = UsdZipFile();
+                zipFile = SdfZipFile();
             }
-            UsdZipFile zipFile;
+            SdfZipFile zipFile;
         };
 
         _Deleter d;
@@ -194,13 +194,13 @@ public:
 } // end anonymous namespace
 
 std::shared_ptr<ArAsset> 
-Usd_UsdzResolver::OpenAsset(
+Sdf_UsdzResolver::OpenAsset(
     const std::string& packagePath,
     const std::string& packagedPath)
 {
     std::shared_ptr<ArAsset> asset;
-    UsdZipFile zipFile;
-    std::tie(asset, zipFile) = Usd_UsdzResolverCache::GetInstance()
+    SdfZipFile zipFile;
+    std::tie(asset, zipFile) = Sdf_UsdzResolverCache::GetInstance()
         .FindOrOpenZipFile(packagePath);
 
     if (!zipFile) {
@@ -212,7 +212,7 @@ Usd_UsdzResolver::OpenAsset(
         return nullptr;
     }
 
-    const UsdZipFile::FileInfo info = iter.GetFileInfo();
+    const SdfZipFile::FileInfo info = iter.GetFileInfo();
 
     if (info.compressionMethod != 0) {
         TF_RUNTIME_ERROR(

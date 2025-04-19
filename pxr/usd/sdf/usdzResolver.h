@@ -4,27 +4,27 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_USD_USD_USDZ_RESOLVER_H
-#define PXR_USD_USD_USDZ_RESOLVER_H
+#ifndef PXR_USD_SDF_USDZ_RESOLVER_H
+#define PXR_USD_SDF_USDZ_RESOLVER_H
 
 #include "pxr/pxr.h"
 #include "pxr/usd/ar/packageResolver.h"
 #include "pxr/usd/ar/threadLocalScopedCache.h"
-#include "pxr/usd/usd/zipFile.h"
+#include "pxr/usd/sdf/zipFile.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 class ArAsset;
 
-/// \class Usd_UsdzResolver
+/// \class Sdf_UsdzResolver
 ///
 /// Package resolver responsible for resolving assets in
 /// .usdz files.
-class Usd_UsdzResolver
+class Sdf_UsdzResolver
     : public ArPackageResolver
 {
 public:
-    Usd_UsdzResolver();
+    Sdf_UsdzResolver();
 
     virtual std::string Resolve(
         const std::string& packagePath,
@@ -41,22 +41,22 @@ public:
         VtValue* cacheScopeData) override;
 };
 
-/// \class Usd_UsdzResolverCache
+/// \class Sdf_UsdzResolverCache
 ///
-/// Singleton thread-local scoped cache used by Usd_UsdzResolver. This
-/// allows other clients besides Usd_UsdzResolver to take advantage of
+/// Singleton thread-local scoped cache used by Sdf_UsdzResolver. This
+/// allows other clients besides Sdf_UsdzResolver to take advantage of
 /// caching of zip files while a resolver scoped cache is active.
-class Usd_UsdzResolverCache
+class Sdf_UsdzResolverCache
 {
 public:
-    static Usd_UsdzResolverCache& GetInstance();
+    static Sdf_UsdzResolverCache& GetInstance();
 
-    Usd_UsdzResolverCache(const Usd_UsdzResolverCache&) = delete;
-    Usd_UsdzResolverCache& operator=(const Usd_UsdzResolverCache&) = delete;
+    Sdf_UsdzResolverCache(const Sdf_UsdzResolverCache&) = delete;
+    Sdf_UsdzResolverCache& operator=(const Sdf_UsdzResolverCache&) = delete;
 
-    using AssetAndZipFile = std::pair<std::shared_ptr<ArAsset>, UsdZipFile>;
+    using AssetAndZipFile = std::pair<std::shared_ptr<ArAsset>, SdfZipFile>;
 
-    /// Returns the ArAsset and UsdZipFile for the given package path.
+    /// Returns the ArAsset and SdfZipFile for the given package path.
     /// If a cache scope is active in the current thread, the returned
     /// values will be cached and returned on subsequent calls to this
     /// function for the same packagePath.
@@ -76,7 +76,7 @@ public:
         VtValue* cacheScopeData);
 
 private:
-    Usd_UsdzResolverCache();
+    Sdf_UsdzResolverCache();
 
     struct _Cache;
     using _ThreadLocalCaches = ArThreadLocalScopedCache<_Cache>;
@@ -90,4 +90,4 @@ private:
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // PXR_USD_USD_USDZ_RESOLVER_H
+#endif // PXR_USD_SDF_USDZ_RESOLVER_H

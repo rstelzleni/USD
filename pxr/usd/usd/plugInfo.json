@@ -112,28 +112,6 @@
                         ], 
                         "schemaIdentifier": "Typed", 
                         "schemaKind": "abstractBase"
-                    }, 
-                    "UsdUsdzFileFormat": {
-                        "bases": [
-                            "SdfFileFormat"
-                        ], 
-                        "displayName": "USDZ File Format", 
-                        "extensions": [
-                            "usdz"
-                        ], 
-                        "formatId": "usdz", 
-                        "primary": true, 
-                        "supportsEditing": false, 
-                        "supportsWriting": false, 
-                        "target": "usd"
-                    }, 
-                    "Usd_UsdzResolver": {
-                        "bases": [
-                            "ArPackageResolver"
-                        ], 
-                        "extensions": [
-                            "usdz"
-                        ]
                     }
                 }
             }, 
