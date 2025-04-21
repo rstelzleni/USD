@@ -62,9 +62,9 @@ VerifySampleError(std::ostream& out,
             // Measure the error to each point
             //
             // It's tempting to just check the "vertical" distance in the values
-            // at the same time, but that's not the error tolerance contract.
-            // What we may need to find is the closest point on the spline,
-            // not the point vertically above or below the sampled polyline.
+            // but that's not the error tolerance contract.  What we may need to
+            // find is the closest point on the spline, not the point vertically
+            // above or below the sampled polyline.
             //
             // Finding the perpendicular distance from the line segment
             // to the spline involves changing coordinate systems and
@@ -85,7 +85,9 @@ VerifySampleError(std::ostream& out,
 
                 // Vertical distance was outside of tolerance, see if we can
                 // find a closer point. Because of the way we subdivide, the
-                // endpoints of each polyline segment are on the spline.
+                // endpoints of each polyline segment are on the spline. Note
+                // that this works for both Bezier and Hermite splines because
+                // we simply use Eval.
                 GfVec2d testPts[5] =
                 {
                     prev,
@@ -113,7 +115,7 @@ VerifySampleError(std::ostream& out,
 
                     if (minErrorSq < toleranceSq) {
                         // We're already close enough
-                        continue;
+                        break;
                     }
 
                     // Not close enough yet. See if we can get some closer

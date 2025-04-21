@@ -296,9 +296,101 @@ _EvalHermite(
     const TsTime time,
     const Ts_EvalAspect aspect)
 {
-    // XXX TODO
-    TF_WARN("Hermite evaluation is not yet implemented");
-    return 0.0;
+    // For a unit time range (t in [0..1]), and given:
+    //     v0 = value at time 0
+    //     m0 = first derivative at time 0
+    //     v1 = value at time 1
+    //     m1 = first derivative at time 1
+    // the cubic hermite equation is:
+    //   v(t) = (( 2 * t^3 - 3 * t^2     +  1) * v0 +
+    //           (     t^3 - 2 * t^2 + t     ) * m0 +
+    //           (-2 * t^3 + 3 * t^2         ) * v1 +
+    //           (     t^3 -     t^2         ) * m1)
+    //
+    // This can be refactored to be:
+    //   v(t) = (t^3 * ( 2 * v0 - 2 * v1 +     m0 + m1) +
+    //           t^2 * (-3 * v0 + 3 * v1 - 2 * m0 - m1) +
+    //           t   * (                       m0     ) +
+    //                       v0)
+    //
+    // yielding the coefficients of a polynomial:
+    //   a = ( 2 * v0 - 2 * v1 +     m0 + m1)
+    //   b = (-3 * v0 + 3 * v1 - 2 * m0 - m1)
+    //   c = m0
+    //   d = v0
+    //   v(t) = a * t^3 + b * t^2 + c * t + d
+    //
+    // If we let:
+    //   dv = v1 - v0
+    // we can further simplify the a and b coefficients to:
+    //   a = (-2 * dv +     m0 + m1)
+    //   b = ( 3 * dv - 2 * m0 - m1)
+    //
+    // For curves evaluated from [t0..t1] instead of [0..1], a change of
+    // variables is in order. We subtract t0 from t and divide by (t1 - t0).
+    // When we do this, we have to multiply the slopes by (t1 - t0) as they
+    // represent rise/run and we just reduced run by a factor of (t1 - t0).
+    //
+    //   dt = t1 - t0
+    //   u = (t - t0) / dt
+    //   um0 = m0 * dt
+    //   um1 = m1 * dt
+    //
+    //   a = -2 * dv + um0 + um1
+    //   b = 3 * dv - 2 * um0 - um1
+    //   c = um0
+    //   d = v0
+    //
+    // Then:
+    //
+    //   v(t) = a * u^3 + b * u^2 + c * u + d; where u = (t - t0)/(t1 - t0)
+    //
+    // If we are asked to calculate the derivative, the answer is a simple chain
+    // rule.
+    //
+    //   v'(t) = (3*a * u^2 + 2*b * u + c) * (du/dt)
+    //
+    // where du/dt == 1.0/(t1 - t0). (Just to add confusion, (t1 - t0) is stored
+    // in a variable named "dt"). So
+    //
+    //   v'(t) == (3*a * u^2 + 2*b * u + c) / (t1 - t0);
+    //            where u = (t - t0)/(t1 - t0)
+    //
+    const double t0 = beginData.time;
+    const double v0 = beginData.value;
+    const double m0 = beginData.postTanSlope;
+
+    const double t1 = endData.time;
+    const double v1 = endData.GetPreValue();
+    const double m1 = endData.preTanSlope;
+
+    if (!TF_VERIFY(t0 < t1,
+                   "Cannot interpolate Hermite segment whose length <= 0.0"))
+    {
+        return v0;
+    }
+
+    const double dt = t1 - t0;
+    const double dv = v1 - v0;
+
+    // Convert time into the [0..1] range and adjust slopes to match.
+    const double u = (time - t0) / dt;
+    const double um0 = m0 * dt;
+    const double um1 = m1 * dt;
+
+    // Calculate the coefficients
+    const double a = -2 * dv + um0 + um1;
+    const double b = 3 * dv - 2 * um0 - um1;
+    const double c = um0;
+    const double d = v0;
+
+    if (aspect == Ts_EvalDerivative) {
+        // Derivative evaluation via chain rule
+        return (u * (u * 3 * a + 2 * b) + c) / dt;
+    } else {
+        // Normal value evaluation.
+        return u * (u * (u * a + b) + c) + d;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

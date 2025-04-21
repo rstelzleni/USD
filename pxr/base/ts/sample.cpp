@@ -746,16 +746,8 @@ _Sampler::_SampleSegment(
         // No value, nothing to do.
         return;
     } else if (prevKnot->nextInterp == TsInterpCurve) {
-        // The segment is a curve that may need to be broken down. Ensure that
-        // this segment is not regressive.
-        Ts_DoubleKnotData pKnot = *prevKnot;
-        Ts_DoubleKnotData nKnot = *nextKnot;
-        Ts_RegressionPreventerBatchAccess::ProcessSegment(
-            &pKnot, &nKnot, TsAntiRegressionKeepRatio);
-
-        // Sample the (maybe now deregressed) segment.
-        _SampleCurveSegment(&pKnot,
-                            &nKnot,
+        _SampleCurveSegment(prevKnot,
+                            nextKnot,
                             segmentInterval,
                             source,
                             knotToSampleTimeScale,
@@ -812,33 +804,52 @@ _Sampler::_SampleCurveSegment(
     const double valueOffset,
     Ts_SampleDataInterface* sampledSpline)
 {
+    // Bezier control points. We sample the Bezier version even for Hermite
+    // curves since the math is equivalent.
+    GfVec2d cp[4];
+
     // A switch statement will generate a compile error if we ever add a new
     // curve type without adding a case for it.
-    switch (prevKnot->curveType) {
+    switch (_data->curveType) {
       case TsCurveTypeBezier:
         {
+            // Bezier curves may be regressive, prevent that.
+            Ts_DoubleKnotData pKnot = *prevKnot;
+            Ts_DoubleKnotData nKnot = *nextKnot;
+            Ts_RegressionPreventerBatchAccess::ProcessSegment(
+                &pKnot, &nKnot, TsAntiRegressionKeepRatio);
+
             // Get the 4 Bezier control points. Note that the value returned by
             // GetPreTanWidth() is always non-negative, but GetPreTanHeight()
             // has the correct sign.
-            GfVec2d cp[4];
-
-            cp[0] = GfVec2d(prevKnot->time, prevKnot->value);
-            cp[3] = GfVec2d(nextKnot->time, nextKnot->GetPreValue());
-            cp[1] = cp[0] + GfVec2d(prevKnot->GetPostTanWidth(),
-                                    prevKnot->GetPostTanHeight());
-            cp[2] = cp[3] + GfVec2d(-nextKnot->GetPreTanWidth(),
-                                    nextKnot->GetPreTanHeight());
-
-            _SampleBezier(cp, segmentInterval, source,
-                          knotToSampleTimeScale, knotToSampleTimeOffset,
-                          valueOffset, sampledSpline);
+            cp[0] = GfVec2d(pKnot.time, pKnot.value);
+            cp[3] = GfVec2d(nKnot.time, nKnot.GetPreValue());
+            cp[1] = cp[0] + GfVec2d(pKnot.GetPostTanWidth(),
+                                    pKnot.GetPostTanHeight());
+            cp[2] = cp[3] + GfVec2d(-nKnot.GetPreTanWidth(),
+                                    nKnot.GetPreTanHeight());
         }
         break;
 
       case TsCurveTypeHermite:
-        // XXX: Not implemented yet. See USD-10314
+        {
+            // Convert the Hermite curve to Bezier control points. Note, Hermite
+            // curves are never regressive so regression prevention is not
+            // needed.
+            const double dt = nextKnot->time - prevKnot->time;
+            const double dt_3 = dt / 3.0;
+
+            cp[0] = GfVec2d(prevKnot->time, prevKnot->value);
+            cp[3] = GfVec2d(nextKnot->time, nextKnot->GetPreValue());
+            cp[1] = cp[0] + GfVec2d(dt_3, dt_3 * prevKnot->GetPostTanSlope());
+            cp[2] = cp[3] - GfVec2d(dt_3, dt_3 * nextKnot->GetPreTanSlope());
+        }
         break;
     }
+
+    _SampleBezier(cp, segmentInterval, source,
+                  knotToSampleTimeScale, knotToSampleTimeOffset,
+                  valueOffset, sampledSpline);
 }
 
 void
