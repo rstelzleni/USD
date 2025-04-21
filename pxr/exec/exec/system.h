@@ -38,8 +38,9 @@ class VdfMaskedOutput;
 class ExecSystem
 {
 public:
-    EXEC_API
-    void GraphNetwork(const char *filename) const;
+    /// Diagnostic utility class.
+    ///
+    class Diagnostics;
 
 protected:
     /// Construct an exec system for computing values on \p stage.
@@ -68,6 +69,16 @@ private:
     // Requires access to _Compile
     friend class Exec_RequestImpl;
     std::vector<VdfMaskedOutput> _Compile(TfSpan<const ExecValueKey> valueKeys);
+
+    // Constructs a new instance of the main executor, and discards the previous
+    // instance if any.
+    EXEC_API
+    void _CreateExecutor();
+
+    // Discards all internal state, and constructs new internal data structures
+    // leaving the system in the same state as if it was newly constructed.
+    EXEC_API
+    void _InvalidateAll();
 
 private:
     EsfStage _stage;

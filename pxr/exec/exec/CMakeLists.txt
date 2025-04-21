@@ -29,6 +29,7 @@ pxr_library(exec
         requestImpl
         system
         systemChangeManager
+        systemDiagnostics
         typeRegistry
         valueKey
 

@@ -121,6 +121,7 @@ public:
     }
 
     /// Writes the compiled network to a file at \p filename.
+    ///
     void GraphNetwork(const char *filename) const;
 
 private:

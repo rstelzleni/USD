@@ -11,6 +11,8 @@
 #include "pxr/exec/execUsd/valueKey.h"
 
 #include "pxr/exec/exec/registerSchema.h"
+#include "pxr/exec/exec/systemDiagnostics.h"
+
 #include "pxr/exec/vdf/context.h"
 
 #include "pxr/base/gf/matrix4d.h"
@@ -98,7 +100,8 @@ TestCompiler()
     execSystem.PrepareRequest(request);
     TF_AXIOM(request.IsValid());
 
-    execSystem.GraphNetwork("testCompiler.dot");
+    ExecUsdSystem::Diagnostics execSystemDiagnostics(&execSystem);
+    execSystemDiagnostics.GraphNetwork("testCompiler.dot");
 
     TraceCollector::GetInstance().SetEnabled(false);
     

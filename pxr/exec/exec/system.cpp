@@ -16,6 +16,7 @@
 #include "pxr/exec/vdf/parallelSpeculationExecutorEngine.h"
 
 #include "pxr/base/tf/span.h"
+#include "pxr/base/trace/trace.h"
 
 #include <utility>
 
@@ -23,10 +24,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 ExecSystem::ExecSystem(EsfStage &&stage) :
     _stage(std::move(stage)),
-    _program(std::make_unique<Exec_Program>()),
-    _executor(std::make_unique<EfExecutor<
-                  VdfParallelExecutorEngine, VdfParallelDataManagerVector>>())
+    _program(std::make_unique<Exec_Program>())
 {
+    _CreateExecutor();
 }
 
 ExecSystem::~ExecSystem() = default;
@@ -37,17 +37,28 @@ ExecSystem::_InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl)
     _requests.push_back(std::move(impl));
 }
 
-void
-ExecSystem::GraphNetwork(const char *filename) const
-{
-    _program->GraphNetwork(filename);
-}
-
 std::vector<VdfMaskedOutput>
 ExecSystem::_Compile(TfSpan<const ExecValueKey> valueKeys)
 {
     Exec_Compiler compiler(_stage, _program.get());
     return compiler.Compile(valueKeys);
+}
+
+void
+ExecSystem::_CreateExecutor()
+{
+    _executor = std::make_unique<
+        EfExecutor<VdfParallelExecutorEngine, VdfParallelDataManagerVector>>();
+}
+
+void
+ExecSystem::_InvalidateAll()
+{
+    TRACE_FUNCTION();
+
+    _program = std::make_unique<Exec_Program>();
+    _CreateExecutor();
+    _requests.clear();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
