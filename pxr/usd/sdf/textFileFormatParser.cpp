@@ -20,6 +20,7 @@
 #include "pxr/base/ts/valueTypeDispatch.h"
 
 #include <cmath>
+#include <memory>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -4252,8 +4253,8 @@ Sdf_ParseLayer(
     auto bufferPtr = asset->GetBuffer();
     if (!bufferPtr) {
         TF_RUNTIME_ERROR("Failed to read asset contents @%s@: "
-            "an error occurred while reading",
-            fileContext.c_str());
+                         "an error occurred while reading",
+                         fileContext.c_str());
         return false;
     }
 
@@ -4266,13 +4267,37 @@ Sdf_ParseLayer(
         std::string_view
         >;
 
-    PegtlInput content { bufferPtr.get(), asset->GetSize(), fileContext };
+    const size_t size = asset->GetSize();
+    char const *contentPtr = bufferPtr.get();
+
+    // If the entire asset size is small, just read the asset content fully into
+    // memory via ArAsset::Read().  We've observed that this can be faster than
+    // demand-paging for very small assets on some systems.
+    const size_t smallSize = 1024;
+    std::unique_ptr<char []> smallBuffer;
+    if (size <= smallSize) {
+        smallBuffer.reset(new char[size]);
+        if (asset->Read(smallBuffer.get(), size, /*offset=*/0) != size) {
+            TF_RUNTIME_ERROR("Failed to read asset contents @%s@: "
+                             "an error occurred while reading",
+                             fileContext.c_str());
+            return false;
+        }
+        contentPtr = smallBuffer.get();
+    }
+
+    if (!TF_VERIFY(contentPtr)) {
+        return false;
+    }
+
+    PegtlInput content { contentPtr, size, fileContext };
     context.values.errorReporter =
         [&context, capture0 = std::cref(content)](auto && PH1) { 
             return Sdf_TextFileFormatParser
                 ::_ReportParseError<PegtlInput>(
                     context, capture0, std::forward<decltype(PH1)>(PH1));
         };
+    
     bool status = false;
     try
     {
