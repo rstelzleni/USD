@@ -2900,6 +2900,9 @@ class AppController(QtCore.QObject):
         if ext not in ('.jpg', '.png'):
             saveName += '.png'
 
+        self.SaveViewerImageToFile(saveName)
+
+    def SaveViewerImageToFile(self, saveName):
         with BusyContext():
             self.GrabViewportShot().save(saveName)
 

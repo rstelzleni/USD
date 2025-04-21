@@ -77,6 +77,10 @@ class Launcher(object):
                 traceCollector.enabled = True
 
             app, appController = self.LaunchPreamble(arg_parse_result)
+
+            if arg_parse_result.dumpFirstImage:
+                appController.SaveViewerImageToFile(arg_parse_result.dumpFirstImage)
+
             self.LaunchProcess(arg_parse_result, app, appController)
 
         if traceCollector:
@@ -214,6 +218,12 @@ class Launcher(object):
                             dest='mallocTagStats', type=str,
                             choices=['none', 'stage', 'stageAndImaging'],
                             help='Use the Pxr MallocTags memory accounting system to profile USD, saving results to a tmp file, with a summary to the console.  Will have no effect if MallocTags are not supported in the USD installation.')
+
+        parser.add_argument('--dumpFirstImage', action='store',
+                            type=_AbsoluteFilePath,
+                            dest='dumpFirstImage',
+                            default=None,
+                            help='Dumps the first image to file (as png)')
 
         parser.add_argument('--numThreads', action='store',
                             type=int, default=0,
