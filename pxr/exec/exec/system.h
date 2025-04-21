@@ -61,6 +61,9 @@ protected:
     EXEC_API
     void _InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl);
 
+    /// Derived systems instantiate this class to deliver scene changes to exec.
+    class _ChangeManager;
+
 private:
     // Requires access to _Compile
     friend class Exec_RequestImpl;

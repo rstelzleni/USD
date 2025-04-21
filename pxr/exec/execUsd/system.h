@@ -16,6 +16,7 @@
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/exec/exec/system.h"
 
+#include <memory>
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -49,6 +50,12 @@ public:
 
     EXECUSD_API
     ExecUsdCacheView CacheValues(const ExecUsdRequest &request);
+
+private:
+    // This object to subscribes to scene changes on the UsdStage and delivers
+    // those changes to the base ExecSystem.
+    class _NoticeListener;
+    std::unique_ptr<_NoticeListener> _noticeListener;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
