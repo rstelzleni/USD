@@ -159,7 +159,7 @@ TestUnknownSchemaType()
 
     const Exec_ComputationDefinition *const primCompDef =
         reg.GetComputationDefinition(
-            prim.Get(), _tokens->noInputsComputation, nullJournal);
+            *prim, _tokens->noInputsComputation, nullJournal);
     TF_AXIOM(!primCompDef);
 }
 
@@ -179,7 +179,7 @@ TestComputationRegistration()
         // Look up a computation that wasn't registered.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                prim.Get(), _tokens->missingComputation, nullJournal);
+                *prim, _tokens->missingComputation, nullJournal);
         TF_AXIOM(!primCompDef);
     }
 
@@ -190,7 +190,7 @@ TestComputationRegistration()
         // want some kind of validation to ensure we end up with a callback.)
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                prim.Get(), _tokens->emptyComputation, nullJournal);
+                *prim, _tokens->emptyComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
@@ -200,7 +200,7 @@ TestComputationRegistration()
         // Look up a computation with no inputs.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                prim.Get(), _tokens->noInputsComputation, nullJournal);
+                *prim, _tokens->noInputsComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
@@ -210,7 +210,7 @@ TestComputationRegistration()
         // Look up a bultin computation.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                prim.Get(), ExecBuiltinComputations->computeTime, nullJournal);
+                *prim, ExecBuiltinComputations->computeTime, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
@@ -220,7 +220,7 @@ TestComputationRegistration()
         // Look up a computation with multiple inputs.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                prim.Get(), _tokens->primComputation, nullJournal);
+                *prim, _tokens->primComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         const auto inputKeys = primCompDef->GetInputKeys();
@@ -282,7 +282,7 @@ TestComputationRegistration()
         // Look up a computation with one input.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                prim.Get(), _tokens->stageAccessComputation, nullJournal);
+                *prim, _tokens->stageAccessComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
         const auto inputKeys = primCompDef->GetInputKeys();

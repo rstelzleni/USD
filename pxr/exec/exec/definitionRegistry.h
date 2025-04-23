@@ -55,7 +55,7 @@ public:
     ///
     EXEC_API
     const Exec_ComputationDefinition *GetComputationDefinition(
-        const EsfPrimInterface *providerPrim,
+        const EsfPrimInterface &providerPrim,
         const TfToken &computationName,
         EsfJournal *journal) const;
 
@@ -67,7 +67,7 @@ public:
     ///
     EXEC_API
     const Exec_ComputationDefinition *GetComputationDefinition(
-        const EsfAttributeInterface *providerAttribute,
+        const EsfAttributeInterface &providerAttribute,
         const TfToken &computationName,
         EsfJournal *journal) const;
 

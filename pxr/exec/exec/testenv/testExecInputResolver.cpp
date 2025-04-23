@@ -126,7 +126,7 @@ public:
         TF_AXIOM(prim->IsValid(nullJournal));
         customComputationDefinition =
             reg.GetComputationDefinition(
-                prim.Get(), _tokens->customComputation, nullJournal);
+                *prim.Get(), _tokens->customComputation, nullJournal);
         TF_AXIOM(customComputationDefinition);
 
         const EsfPrim pseudoRoot =
@@ -134,7 +134,7 @@ public:
         TF_AXIOM(pseudoRoot->IsValid(nullJournal));
         timeComputationDefinition =
             reg.GetComputationDefinition(
-                pseudoRoot.Get(),
+                *pseudoRoot.Get(),
                 ExecBuiltinComputations->computeTime, nullJournal);
         TF_AXIOM(timeComputationDefinition);
     }

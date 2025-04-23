@@ -57,15 +57,10 @@ Exec_DefinitionRegistry::GetInstance() {
 
 const Exec_ComputationDefinition *
 Exec_DefinitionRegistry::GetComputationDefinition(
-    const EsfPrimInterface *const providerPrim,
+    const EsfPrimInterface &providerPrim,
     const TfToken &computationName,
     EsfJournal *const journal) const
 {
-    if (!providerPrim) {
-        TF_CODING_ERROR("Null providerPrim");
-        return nullptr;
-    }
-
     // First look for a matching builtin computation.
     const auto builtinIt = _builtinComputationDefinitions.find(computationName);
     if (builtinIt != _builtinComputationDefinitions.end()) {
@@ -73,7 +68,7 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     }
 
     // If we didn't find a builtin computation, look for a plugin computation.
-    const TfType schemaType = providerPrim->GetType(journal);
+    const TfType schemaType = providerPrim.GetType(journal);
     const auto pluginIt = _pluginPrimComputationDefinitions.find(
         {schemaType, computationName});
     return pluginIt == _pluginPrimComputationDefinitions.end()
@@ -83,19 +78,14 @@ Exec_DefinitionRegistry::GetComputationDefinition(
 
 const Exec_ComputationDefinition *
 Exec_DefinitionRegistry::GetComputationDefinition(
-    const EsfAttributeInterface *const providerAttribute,
+    const EsfAttributeInterface &providerAttribute,
     const TfToken &computationName,
     EsfJournal *const journal) const
 {
-    if (!providerAttribute) {
-        TF_CODING_ERROR("Null providerAttribute");
-        return nullptr;
-    }
-
     // TODO: Look up builtin attribute computations.
 
     // TODO: Look up plugin attribute computations.
-    const EsfPrim owningPrim = providerAttribute->GetPrim(journal);
+    const EsfPrim owningPrim = providerAttribute.GetPrim(journal);
     const TfType primSchemaType = owningPrim->GetType(journal);
     (void)owningPrim;
     (void)primSchemaType;

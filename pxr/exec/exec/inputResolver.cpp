@@ -241,7 +241,7 @@ private:
         {
             const Exec_ComputationDefinition *const computationDefinition =
                 _definitionRegistry.GetComputationDefinition(
-                    _currentPrim,
+                    *_currentPrim,
                     computationName,
                     _journal);
             
@@ -278,7 +278,7 @@ private:
         if (_currentPrim) {
             computationDefinition =
                 _definitionRegistry.GetComputationDefinition(
-                    _currentPrim,
+                    *_currentPrim,
                     computationName,
                     _journal);
         }
@@ -286,7 +286,7 @@ private:
         else if (_currentAttribute) {
             computationDefinition =
                 _definitionRegistry.GetComputationDefinition(
-                    _currentAttribute,
+                    *_currentAttribute,
                     computationName,
                     _journal);
         }
