@@ -1,8 +1,8 @@
 # Change Log
 
-## [25.05] - 2025-04-25
+## [25.05] - 2025-04-28
 
-We anticipate moving to the [VFX Reference Platform CY2023](https://vfxplatform.com/)  
+We anticipate moving to the [VFX Reference Platform CY2023](https://vfxplatform.com/)
 in an upcoming release.  
 
 ### Build
