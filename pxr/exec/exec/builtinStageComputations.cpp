@@ -29,20 +29,29 @@ Exec_TimeComputationDefinition::Exec_TimeComputationDefinition()
 
 Exec_TimeComputationDefinition::~Exec_TimeComputationDefinition() = default;
 
-const Exec_InputKeyVector &
-Exec_TimeComputationDefinition::GetInputKeys() const
+Exec_InputKeyVector
+Exec_TimeComputationDefinition::GetInputKeys(
+    const EsfObjectInterface &,
+    EsfJournal *) const
 {
-    // The time node requires no inputs.
-    const static Exec_InputKeyVector empty;
+    static Exec_InputKeyVector empty;
     return empty;
 }
 
 VdfNode *
 Exec_TimeComputationDefinition::CompileNode(
-    const EsfJournal &nodeJournal,
+    const EsfObjectInterface &,
+    EsfJournal *const nodeJournal,
     Exec_Program *const program) const
 {
-    return program->CreateNode<EfTimeInputNode>(nodeJournal);
+    if (!TF_VERIFY(nodeJournal, "Null nodeJournal")) {
+        return nullptr;
+    }
+    if (!TF_VERIFY(program, "Null program")) {
+        return nullptr;
+    }
+
+    return program->CreateNode<EfTimeInputNode>(*nodeJournal);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

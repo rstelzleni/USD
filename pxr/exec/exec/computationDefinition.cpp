@@ -29,6 +29,14 @@ Exec_ComputationDefinition::Exec_ComputationDefinition(
 
 Exec_ComputationDefinition::~Exec_ComputationDefinition() = default;
 
+TfType
+Exec_ComputationDefinition::GetResultType(
+    const EsfObjectInterface &,
+    EsfJournal *) const
+{
+    return _resultType;
+}
+
 //
 // Exec_PluginComputationDefinition
 //
@@ -48,16 +56,29 @@ Exec_PluginComputationDefinition::Exec_PluginComputationDefinition(
 
 Exec_PluginComputationDefinition::~Exec_PluginComputationDefinition() = default;
 
-const Exec_InputKeyVector &
-Exec_PluginComputationDefinition::GetInputKeys() const {
+Exec_InputKeyVector
+Exec_PluginComputationDefinition::GetInputKeys(
+    const EsfObjectInterface &,
+    EsfJournal *) const
+{
     return _inputKeys;
 }
 
 VdfNode *
 Exec_PluginComputationDefinition::CompileNode(
-    const EsfJournal &nodeJournal,
+    const EsfObjectInterface &providerObject,
+    EsfJournal *const nodeJournal,
     Exec_Program *const program) const
 {
+    if (!nodeJournal) {
+        TF_CODING_ERROR("Null nodeJournal");
+        return nullptr;
+    }
+    if (!program) {
+        TF_CODING_ERROR("Null program");
+        return nullptr;
+    }
+
     VdfInputSpecs inputSpecs;
     inputSpecs.Reserve(_inputKeys.size());
     for (const Exec_InputKey &inputKey : _inputKeys) {
@@ -65,10 +86,12 @@ Exec_PluginComputationDefinition::CompileNode(
     }
 
     VdfOutputSpecs outputSpecs;
-    outputSpecs.Connector(GetResultType(), VdfTokens->out);
+    outputSpecs.Connector(
+        GetResultType(providerObject, nodeJournal),
+        VdfTokens->out);
 
     return program->CreateNode<Exec_CallbackNode>(
-        nodeJournal,
+        *nodeJournal,
         inputSpecs,
         outputSpecs,
         _callback);

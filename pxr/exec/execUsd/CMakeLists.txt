@@ -45,9 +45,17 @@ pxr_build_test(testExecUsdBasicCompilation
         testenv/testExecUsdBasicCompilation.cpp
 )
 
+pxr_install_test_dir(
+    SRC testenv/testExecUsdBasicCompilation
+    DEST testExecUsdBasicCompilation
+)
+
 pxr_register_test(testExecUsdBasicCompilation
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdBasicCompilation"
     EXPECTED_RETURN_CODE 0
+    POST_COMMAND "${PYTHON_EXECUTABLE} normalizeDotFile.py testCompiler.dot testCompiler.out"
+    DIFF_COMPARE testCompiler.out
+    TESTENV testExecUsdBasicCompilation
 )
 
 pxr_build_test(testExecUsdExternalRegistration

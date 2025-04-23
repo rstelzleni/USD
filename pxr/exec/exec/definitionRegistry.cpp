@@ -6,6 +6,7 @@
 //
 #include "pxr/exec/exec/definitionRegistry.h"
 
+#include "pxr/exec/exec/builtinAttributeComputations.h"
 #include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/builtinStageComputations.h"
 #include "pxr/exec/exec/typeRegistry.h"
@@ -63,8 +64,9 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     EsfJournal *const journal) const
 {
     // First look for a matching builtin computation.
-    const auto builtinIt = _builtinComputationDefinitions.find(computationName);
-    if (builtinIt != _builtinComputationDefinitions.end()) {
+    const auto builtinIt =
+        _builtinPrimComputationDefinitions.find(computationName);
+    if (builtinIt != _builtinPrimComputationDefinitions.end()) {
         return builtinIt->second.get();
     }
 
@@ -83,14 +85,18 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     const TfToken &computationName,
     EsfJournal *const journal) const
 {
-    // TODO: Look up builtin attribute computations.
+    // First look for a matching builtin computation.
+    const auto builtinIt =
+        _builtinAttributeComputationDefinitions.find(computationName);
+    if (builtinIt != _builtinAttributeComputationDefinitions.end()) {
+        return builtinIt->second.get();
+    }
 
     // TODO: Look up plugin attribute computations.
     const EsfPrim owningPrim = providerAttribute.GetPrim(journal);
     const TfType primSchemaType = owningPrim->GetType(journal);
     (void)owningPrim;
     (void)primSchemaType;
-    (void)computationName;
     return nullptr;
 }
 
@@ -107,6 +113,8 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
             "Attempt to register a computation using an unknown type.");
         return;
     }
+
+    // TODO: Verify computationName isn't a builtin computation name.
 
     const bool emplaced =
         _pluginPrimComputationDefinitions.emplace(
@@ -128,19 +136,37 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
 }
 
 void
-Exec_DefinitionRegistry::_RegisterBuiltinComputation(
+Exec_DefinitionRegistry::_RegisterBuiltinPrimComputation(
     const TfToken &computationName,
     std::unique_ptr<Exec_ComputationDefinition> &&definition)
 {
     const bool emplaced =
-        _builtinComputationDefinitions.emplace(
+        _builtinPrimComputationDefinitions.emplace(
             computationName,
             std::move(definition)).second;
 
     if (!emplaced) {
         TF_CODING_ERROR(
-            "Duplicate builtin computation registration for computation named "
-            "'%s'",
+            "Duplicate builtin computation registration for prim computation "
+            "named '%s'",
+            computationName.GetText());
+    }
+}
+
+void
+Exec_DefinitionRegistry::_RegisterBuiltinAttributeComputation(
+    const TfToken &computationName,
+    std::unique_ptr<Exec_ComputationDefinition> &&definition)
+{
+    const bool emplaced =
+        _builtinAttributeComputationDefinitions.emplace(
+            computationName,
+            std::move(definition)).second;
+
+    if (!emplaced) {
+        TF_CODING_ERROR(
+            "Duplicate builtin attribute computation registration for "
+            "computation named '%s'",
             computationName.GetText());
     }
 }
@@ -148,15 +174,18 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputation(
 void
 Exec_DefinitionRegistry::_RegisterBuiltinComputations()
 {
-    _RegisterBuiltinComputation(
+    _RegisterBuiltinPrimComputation(
         ExecBuiltinComputations->computeTime,
         std::make_unique<Exec_TimeComputationDefinition>());
 
-//     // TODO: Register computeValue
-// 
-//     // Make sure we registered all builtins.
-//     TF_VERIFY(_builtinComputationDefinitions.size() ==
-//               ExecBuiltinComputations->GetComputationTokens().size());
+    _RegisterBuiltinAttributeComputation(
+        ExecBuiltinComputations->computeValue,
+        std::make_unique<Exec_ComputeValueComputationDefinition>());
+
+    // Make sure we registered all builtins.
+    TF_VERIFY(_builtinPrimComputationDefinitions.size() +
+              _builtinAttributeComputationDefinitions.size() ==
+              ExecBuiltinComputations->GetComputationTokens().size());
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

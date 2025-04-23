@@ -12,6 +12,7 @@
 #include "pxr/exec/exec/api.h"
 
 #include "pxr/exec/exec/compilationTask.h"
+#include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/outputKey.h"
 
 #include "pxr/base/tf/smallVector.h"
@@ -51,6 +52,10 @@ private:
     // The output key indicating which output and node must be compiled.
     const Exec_OutputKey _outputKey;
 
+    // The input keys, which are recorded during the first stage of this task,
+    // and queried during the second stage.
+    Exec_InputKeyVector _inputKeys;
+
     // Some nodes only have one input, and many inputs only source from one
     // output, hence the choice of TfSmallVector.
     using _SourceOutputs = TfSmallVector<VdfMaskedOutput, 1>;
@@ -65,6 +70,10 @@ private:
     // Input resolving tasks created by this task record their resolution
     // traversals into these journals. One journal is created for each input.
     TfSmallVector<EsfJournal, 1> _inputJournals;
+
+    // This journal records the changes that should cause uncompilation of the
+    // node.
+    EsfJournal _nodeJournal;
 
     // Pointer to the resulting masked output to be populated by this task.
     VdfMaskedOutput *const _resultOutput;

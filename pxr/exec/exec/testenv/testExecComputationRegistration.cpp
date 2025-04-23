@@ -35,7 +35,9 @@ PXR_NAMESPACE_USING_DIRECTIVE;
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
 
+    (attr)
     (attributeComputation)
+    (attributeComputedValueComputation)
     (attributeName)
     (emptyComputation)
     (missingComputation)
@@ -59,6 +61,7 @@ EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
     self.PrimComputation(_tokens->noInputsComputation)
         .Callback(+[](const VdfContext &) { return 1.0; });
 
+    // A prim computation that exercises various kinds of inputs.
     self.PrimComputation(_tokens->primComputation)
         .Callback<double>([](const VdfContext &ctx) { ctx.SetOutput(11.0); })
         .Inputs(
@@ -71,6 +74,7 @@ EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
                 .InputName(_tokens->namespaceAncestorInput)
         );
 
+    // A prim computation that returns the current time.
     self.PrimComputation(_tokens->stageAccessComputation)
         .Callback<EfTime>([](const VdfContext &ctx) {
             ctx.SetOutput(EfTime());
@@ -79,6 +83,21 @@ EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
             Stage()
                 .Computation<EfTime>(ExecBuiltinComputations->computeTime)
                 .Required()
+        );
+
+    // A prim computation that returns the value of the attribute 'attr' (of
+    // type double), or 0.0, if there is no attribute of that name on the
+    // owning prim.
+    self.PrimComputation(_tokens->attributeComputedValueComputation)
+        .Callback<double>([](const VdfContext &ctx) {
+            const double *const valuePtr =
+                ctx.GetInputValuePtr<double>(
+                    ExecBuiltinComputations->computeValue);
+            ctx.SetOutput(valuePtr ? *valuePtr : 0.0);
+        })
+        .Inputs(
+            Attribute(_tokens->attr)
+                .Computation<double>(ExecBuiltinComputations->computeValue)
         );
 }
 
@@ -193,7 +212,9 @@ TestComputationRegistration()
                 *prim, _tokens->emptyComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
-        ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
+        ASSERT_EQ(
+            primCompDef->GetInputKeys(*prim, nullJournal).size(),
+            0);
     }
 
     {
@@ -203,7 +224,9 @@ TestComputationRegistration()
                 *prim, _tokens->noInputsComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
-        ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
+        ASSERT_EQ(
+            primCompDef->GetInputKeys(*prim, nullJournal).size(),
+            0);
     }
 
     {
@@ -213,7 +236,9 @@ TestComputationRegistration()
                 *prim, ExecBuiltinComputations->computeTime, nullJournal);
         TF_AXIOM(primCompDef);
 
-        ASSERT_EQ(primCompDef->GetInputKeys().size(), 0);
+        ASSERT_EQ(
+            primCompDef->GetInputKeys(*prim, nullJournal).size(),
+            0);
     }
 
     {
@@ -223,7 +248,8 @@ TestComputationRegistration()
                 *prim, _tokens->primComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
-        const auto inputKeys = primCompDef->GetInputKeys();
+        const auto inputKeys =
+            primCompDef->GetInputKeys(*prim, nullJournal);
         ASSERT_EQ(inputKeys.size(), 4);
 
         _PrintInputKeys(inputKeys);
@@ -279,13 +305,13 @@ TestComputationRegistration()
     }
 
     {
-        // Look up a computation with one input.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
                 *prim, _tokens->stageAccessComputation, nullJournal);
         TF_AXIOM(primCompDef);
 
-        const auto inputKeys = primCompDef->GetInputKeys();
+        const auto inputKeys =
+            primCompDef->GetInputKeys(*prim, nullJournal);
         ASSERT_EQ(inputKeys.size(), 1);
 
         _PrintInputKeys(inputKeys);
@@ -298,6 +324,29 @@ TestComputationRegistration()
         ASSERT_EQ(key.providerResolution.dynamicTraversal,
                   ExecProviderResolution::DynamicTraversal::Local);
         ASSERT_EQ(key.optional, false);
+    }
+
+    {
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim, _tokens->attributeComputedValueComputation,
+                nullJournal);
+        TF_AXIOM(primCompDef);
+
+        const auto inputKeys =
+            primCompDef->GetInputKeys(*prim, nullJournal);
+        ASSERT_EQ(inputKeys.size(), 1);
+
+        _PrintInputKeys(inputKeys);
+
+        const Exec_InputKey &key = inputKeys[0];
+        ASSERT_EQ(key.inputName, ExecBuiltinComputations->computeValue);
+        ASSERT_EQ(key.computationName, ExecBuiltinComputations->computeValue);
+        ASSERT_EQ(key.resultType, TfType::Find<double>());
+        ASSERT_EQ(key.providerResolution.localTraversal, SdfPath(".attr"));
+        ASSERT_EQ(key.providerResolution.dynamicTraversal,
+                  ExecProviderResolution::DynamicTraversal::Local);
+        ASSERT_EQ(key.optional, true);
     }
 }
 

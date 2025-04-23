@@ -8,7 +8,6 @@
 
 #include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/computationDefinition.h"
-#include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
@@ -27,21 +26,24 @@ Exec_OutputProvidingCompilationTask::_Compile(
 
     const Exec_ComputationDefinition *const computationDefinition =
         _outputKey.GetComputationDefinition();
-    const Exec_InputKeyVector &inputKeys =
-        computationDefinition->GetInputKeys();
 
     taskStages.Invoke(
     // Make sure input dependencies are fulfilled
-    [this, &compilationState, &inputKeys](TaskDependencies &deps) {
+    [this, &compilationState, computationDefinition](TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("input tasks");
 
-        _inputSources.resize(inputKeys.size());
-        _inputJournals.resize(inputKeys.size());
-        const size_t numInputKeys = inputKeys.size();
+        _inputKeys =
+            computationDefinition->GetInputKeys(
+                *_outputKey.GetProviderObject(),
+                &_nodeJournal);
+
+        _inputSources.resize(_inputKeys.size());
+        _inputJournals.resize(_inputKeys.size());
+        const size_t numInputKeys = _inputKeys.size();
         for (size_t i = 0; i < numInputKeys; ++i) {
             deps.NewSubtask<Exec_InputResolvingCompilationTask>(
                 compilationState,
-                inputKeys[i],
+                _inputKeys[i],
                 _outputKey.GetProviderObject(),
                 &_inputSources[i],
                 &_inputJournals[i]);
@@ -49,15 +51,14 @@ Exec_OutputProvidingCompilationTask::_Compile(
     },
 
     // Compile and connect the callback node
-    [this, &compilationState, computationDefinition, &inputKeys](
+    [this, &compilationState, computationDefinition](
         TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("node creation");
 
-        // TODO: Journaling
-        EsfJournal nodeJournal;
-
         VdfNode *const node = computationDefinition->CompileNode(
-            nodeJournal, compilationState.GetProgram());
+            *_outputKey.GetProviderObject(),
+            &_nodeJournal,
+            compilationState.GetProgram());
 
         if (!TF_VERIFY(node)) {
             return;
@@ -73,7 +74,7 @@ Exec_OutputProvidingCompilationTask::_Compile(
                 _inputJournals[i],
                 _inputSources[i],
                 node,
-                inputKeys[i].inputName);
+                _inputKeys[i].inputName);
         }
 
         // Return the compiled output to the calling task.

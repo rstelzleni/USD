@@ -38,6 +38,8 @@ pxr_library(exec
         inputKey.h
 
     PRIVATE_CLASSES
+        attributeInputNode
+        builtinAttributeComputations
         builtinStageComputations
         callbackNode
         compilationTask

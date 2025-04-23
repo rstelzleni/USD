@@ -240,7 +240,8 @@ private:
                     _journal);
             
             if (computationDefinition &&
-                computationDefinition->GetResultType() == resultType) {
+                computationDefinition->GetResultType(*_currentPrim, _journal) ==
+                resultType) {
                 *foundComputationDefinition = computationDefinition;
                 return true;
             }
@@ -275,7 +276,6 @@ private:
                     computationName,
                     _journal);
         }
-
         else if (_currentAttribute) {
             computationDefinition =
                 _definitionRegistry.GetComputationDefinition(
@@ -292,7 +292,8 @@ private:
         // result type. Otherwise, the expected result type must match the type
         // of the found definition.
         if (resultType.IsUnknown() ||
-            resultType == computationDefinition->GetResultType()) {
+            resultType ==
+            computationDefinition->GetResultType(*_currentObject, _journal)) {
             return computationDefinition;
         }
 

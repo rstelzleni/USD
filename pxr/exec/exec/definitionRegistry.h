@@ -99,7 +99,11 @@ private:
         ExecCallbackFn &&callback,
         Exec_InputKeyVector &&inputKeys);
 
-    void _RegisterBuiltinComputation(
+    void _RegisterBuiltinPrimComputation(
+        const TfToken &computationName,
+        std::unique_ptr<Exec_ComputationDefinition> &&definition);
+
+    void _RegisterBuiltinAttributeComputation(
         const TfToken &computationName,
         std::unique_ptr<Exec_ComputationDefinition> &&definition);
 
@@ -109,19 +113,30 @@ private:
 
     // Map from (schemaType, computationName) to plugin prim computation
     // definition.
+    //
+    // TODO: When we add support for loading plugins, we will need to think about
+    // how to provide thread-safe access to this map.
     std::unordered_map<
         std::tuple<TfType, TfToken>,
         Exec_PluginComputationDefinition,
         TfHash>
         _pluginPrimComputationDefinitions;
 
-    // Map from computationName to builtin computation
+    // Map from computationName to builtin prim computation
     // definition.
     std::unordered_map<
         TfToken,
         std::unique_ptr<Exec_ComputationDefinition>,
         TfHash>
-        _builtinComputationDefinitions;
+        _builtinPrimComputationDefinitions;
+
+    // Map from computationName to builtin attribute computation
+    // definition.
+    std::unordered_map<
+        TfToken,
+        std::unique_ptr<Exec_ComputationDefinition>,
+        TfHash>
+        _builtinAttributeComputationDefinitions;
 };
 
 void

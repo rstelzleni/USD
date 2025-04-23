@@ -15,19 +15,19 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/token.h"
 
+#include <utility>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 class EsfJournal;
+class EsfObjectInterface;
 class Exec_Program;
 class VdfNode;
 
 /// A base class that defines an exec computation.
 ///
-/// A computation definition includes a VdfNode kind and an optional callback
-/// that implements the evaluation logic, if the kind is Callback.
-///
-/// A computation definition can also produce input keys that describe how to
-/// source the input values the computation requires.
+/// For a given computation provider object, a computation definition can
+/// provide the result type, generate input keys, and compile a VdfNode.
 ///
 class Exec_ComputationDefinition
 {
@@ -39,29 +39,35 @@ public:
 
     virtual ~Exec_ComputationDefinition();
 
-    /// Returns the value type that is produced by this computation.
-    TfType GetResultType() const {
-        return _resultType;
-    }
-
     /// Returns the name of the computation.
     const TfToken &GetComputationName() const {
         return _computationName;
     }
 
-    /// Returns the keys that indicate how to source the input values required
-    /// to evaluate the computation defined by this definition.
-    ///
-    virtual const Exec_InputKeyVector &GetInputKeys() const = 0;
+    /// Returns the type of values that are produced by this computation.
+    virtual TfType GetResultType(
+        const EsfObjectInterface &providerObject,
+        EsfJournal *journal) const;
 
-    /// Compiles the node that implements the computation, adding it to the
-    /// network owned by \program.
+    /// Returns the keys that indicate how to source the input values required
+    /// to evaluate the computation when the provider is \p providerObject.
+    ///
+    /// Any scene access needed to determine the input keys is recorded in
+    /// \p journal.
+    ///
+    virtual Exec_InputKeyVector GetInputKeys(
+        const EsfObjectInterface &providerObject,
+        EsfJournal *journal) const = 0;
+
+    /// Compiles the node that implements the computation when the provider is
+    /// \p providerObject, adding it to the network owned by \p program.
     ///
     /// The information in \p nodeJournal will be used to determine when the
     /// node must be uncompiled.
     ///
     virtual VdfNode *CompileNode(
-        const EsfJournal &nodeJournal,
+        const EsfObjectInterface &providerObject,
+        EsfJournal *nodeJournal,
         Exec_Program *program) const = 0;
 
 protected:
@@ -78,17 +84,18 @@ private:
 /// A class that defines a plugin computation.
 ///
 /// A plugin computation definition includes the callback that implements the
-/// evaluation logic.
+/// evaluation logic and input keys that indicate how to source the input values
+/// that are provided to the callback at evaluation time.
 ///
 class Exec_PluginComputationDefinition final
     : public Exec_ComputationDefinition
 {
 public:
-    /// Creates a definition for a computation.
+    /// Creates a definition for a plugin computation.
     ///
-    /// The computation's evaluation-time behavior is implemented in \p
-    /// callback. The \p inputKeys indicate how to source the input values that
-    /// are required at evaluation time.
+    /// The computation's evaluation-time behavior is implemented by \p
+    /// callback. The \p inputKeys indicate how to source the computation's
+    /// input values.
     ///
     Exec_PluginComputationDefinition(
         TfType resultType,
@@ -98,10 +105,13 @@ public:
 
     ~Exec_PluginComputationDefinition() override;
 
-    const Exec_InputKeyVector &GetInputKeys() const override;
+    Exec_InputKeyVector GetInputKeys(
+        const EsfObjectInterface &providerObject,
+        EsfJournal *journal) const override;
 
     VdfNode *CompileNode(
-        const EsfJournal &nodeJournal,
+        const EsfObjectInterface &providerObject,
+        EsfJournal *nodeJournal,
         Exec_Program *program) const override;
 
 private:
