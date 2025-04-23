@@ -527,6 +527,10 @@ HgiVulkanTexture::SubmitLayoutChange(HgiTextureUsage newLayout)
     const VkImageLayout newVkLayout =
         HgiVulkanTexture::GetDefaultImageLayout(newLayout);
 
+    if (oldVkLayout == newVkLayout) {
+        return _VkImageLayoutToHgiTextureUsage(oldVkLayout);
+    }
+
     HgiVulkanCommandQueue* queue = _device->GetCommandQueue();
     HgiVulkanCommandBuffer* cb = queue->AcquireResourceCommandBuffer();
 
