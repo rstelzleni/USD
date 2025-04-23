@@ -82,6 +82,12 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+#ifdef PXR_PREFER_SAFETY_OVER_SPEED
+static constexpr bool SafetyOverSpeed = true;
+#else
+static constexpr bool SafetyOverSpeed = false;
+#endif
+
 static inline unsigned int
 _GetPageShift(unsigned int mask)
 {
@@ -570,14 +576,8 @@ struct _MmapStream {
     }
     
     inline void Read(void *dest, size_t nBytes) {
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED
-        const bool doRangeChecks = true;
-#else
-        const bool doRangeChecks = false;
-#endif
-
         // Range check first.
-        if (doRangeChecks) {
+        if constexpr (SafetyOverSpeed) {
             char const *mapStart = _mapping->GetMapStart();
             size_t mapLen = _mapping->GetLength();
             
@@ -680,7 +680,15 @@ struct _PreadStream {
         , _cur(0)
         , _file(fr.file) {}
     inline void Read(void *dest, size_t nBytes) {
-        _cur += ArchPRead(_file, dest, nBytes, _start + _cur);
+        int64_t nRead = ArchPRead(_file, dest, nBytes, _start + _cur);
+        if constexpr (SafetyOverSpeed) {
+            if (ARCH_UNLIKELY(nRead != static_cast<int64_t>(nBytes))) {
+                TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
+                             "Failed reading %zu bytes at offset %" PRId64,
+                             nBytes, _start + _cur));
+            }
+        }
+        _cur += nRead;
     }
     inline int64_t Tell() const { return _cur; }
     inline void Seek(int64_t offset) { _cur = offset; }
@@ -702,7 +710,15 @@ struct _AssetStream {
         : _asset(asset)
         , _cur(0) {}
     inline void Read(void *dest, size_t nBytes) {
-        _cur += _asset->Read(dest, nBytes, _cur);
+        size_t nRead = _asset->Read(dest, nBytes, _cur);
+        if constexpr (SafetyOverSpeed) {
+            if (nRead != nBytes) {
+                TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
+                             "Failed reading %zu bytes at offset %zu",
+                             nBytes, _cur));
+            }
+        }
+        _cur += nRead;
     }
     inline int64_t Tell() const { return _cur; }
     inline void Seek(int64_t offset) { _cur = offset; }
@@ -3238,52 +3254,53 @@ CrateFile::_ReadStructuralSections(Reader reader, int64_t fileSize)
         _fields.clear();
     }
 
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED
-    if (m.IsClean()) {
-        auto errorAndClear = [this]() {
-            TF_RUNTIME_ERROR("Corrupt asset @%s@", _assetPath.c_str());
-            _specs.clear();
-            _fieldSets.clear();
-            _fields.clear();
-        };
-        
-        // Sanity check structural validity.
+    if constexpr (SafetyOverSpeed) {
+        if (m.IsClean()) {
+            auto errorAndClear = [this]() {
+                TF_RUNTIME_ERROR("Corrupt asset @%s@", _assetPath.c_str());
+                _specs.clear();
+                _fieldSets.clear();
+                _fields.clear();
+            };
 
-        // Fields.
-        for (Field const &f: _fields) {
-            if (f.tokenIndex.value >= _tokens.size()) {
-                errorAndClear();
-                return;
+            // Sanity check structural validity.
+
+            // Fields.
+            for (Field const &f: _fields) {
+                if (f.tokenIndex.value >= _tokens.size()) {
+                    errorAndClear();
+                    return;
+                }
+            }
+
+            // FieldSets.
+            for (FieldIndex fi: _fieldSets) {
+                // Default-constructed FieldIndex terminates field runs,
+                // otherwise must index into _fields.
+                if (fi != FieldIndex() && fi.value >= _fields.size()) {
+                    errorAndClear();
+                    return;
+                }
+            }
+
+            // Specs.
+            for (Spec const &spec: _specs) {
+                // Range check path indexes, fieldSet indexes, spec types.
+                // Additionally, a fieldSetIndex must either be 0, or the
+                // element at the prior index must be a default-constructed
+                // FieldIndex.
+                if (spec.pathIndex.value >= _paths.size() ||
+                    spec.fieldSetIndex.value >= _fieldSets.size() ||
+                    (spec.fieldSetIndex.value &&
+                     _fieldSets[spec.fieldSetIndex.value-1] != FieldIndex()) ||
+                    spec.specType == SdfSpecTypeUnknown ||
+                    spec.specType >= SdfNumSpecTypes) {
+                    errorAndClear();
+                    return;
+                }
             }
         }
-
-        // FieldSets.
-        for (FieldIndex fi: _fieldSets) {
-            // Default-constructed FieldIndex terminates field runs, otherwise
-            // must index into _fields.
-            if (fi != FieldIndex() && fi.value >= _fields.size()) {
-                errorAndClear();
-                return;
-            }
-        }
-
-        // Specs.
-        for (Spec const &spec: _specs) {
-            // Range check path indexes, fieldSet indexes, spec types.
-            // Additionally, a fieldSetIndex must either be 0, or the element at
-            // the prior index must be a default-constructed FieldIndex.
-            if (spec.pathIndex.value >= _paths.size() ||
-                spec.fieldSetIndex.value >= _fieldSets.size() ||
-                (spec.fieldSetIndex.value &&
-                 _fieldSets[spec.fieldSetIndex.value-1] != FieldIndex()) ||
-                spec.specType == SdfSpecTypeUnknown ||
-                spec.specType >= SdfNumSpecTypes) {
-                errorAndClear();
-                return;
-            }
-        }
-    }
-#endif // PXR_PREFER_SAFETY_OVER_SPEED
+    } // SafetyOverSpeed
 }
 
 template <class ByteStream>
@@ -3454,67 +3471,66 @@ CrateFile::_ReadSpecs(Reader reader)
         }
     }
 
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED 
-    // Spec sanity checks, in "prefer-safety-over-speed" mode.
+    if constexpr (SafetyOverSpeed) {
+        // Spec sanity checks, in "prefer-safety-over-speed" mode.
+        pxr_tsl::robin_set<SdfPath, SdfPath::Hash> seenPaths;
 
-    pxr_tsl::robin_set<SdfPath, SdfPath::Hash> seenPaths;
+        std::vector<std::string> messages;
 
-    std::vector<std::string> messages;
-    
-    for (Spec &spec: _specs) {
-        // Check for valid-looking specs (no empty paths, no repeated paths,
-        // valid SdfSpecType enum values...)
-        SdfPath const &specPath = GetPath(spec.pathIndex);
-        if (specPath.IsEmpty()) {
-            messages.push_back(
-                TfStringPrintf("spec at index %zu has empty path",
-                               std::distance(&_specs.front(), &spec))); 
-            // Mark for removal. 
-            spec.specType = SdfSpecTypeUnknown;
-            continue;
+        for (Spec &spec: _specs) {
+            // Check for valid-looking specs (no empty paths, no repeated paths,
+            // valid SdfSpecType enum values...)
+            SdfPath const &specPath = GetPath(spec.pathIndex);
+            if (specPath.IsEmpty()) {
+                messages.push_back(
+                    TfStringPrintf("spec at index %zu has empty path",
+                                   std::distance(&_specs.front(), &spec))); 
+                // Mark for removal. 
+                spec.specType = SdfSpecTypeUnknown;
+                continue;
+            }
+            if (spec.specType == SdfSpecTypeUnknown ||
+                spec.specType >= SdfNumSpecTypes) {
+                messages.push_back(
+                    TfStringPrintf("spec <%s> has %s",
+                                   specPath.GetAsString().c_str(),
+                                   spec.specType == SdfSpecTypeUnknown ?
+                                   "unknown spec type" :
+                                   TfStringPrintf("invalid spec type value %d",
+                                                  spec.specType).c_str()));
+                // Mark for removal.
+                spec.specType = SdfSpecTypeUnknown;
+                continue;
+            }
+            if (!seenPaths.insert(specPath).second) {
+                messages.push_back(
+                    TfStringPrintf("spec <%s> repeated",
+                                   specPath.GetAsString().c_str()));
+                // Mark for removal.
+                spec.specType = SdfSpecTypeUnknown;
+                continue;
+            }
         }
-        if (spec.specType == SdfSpecTypeUnknown ||
-            spec.specType >= SdfNumSpecTypes) {
-            messages.push_back(
-                TfStringPrintf("spec <%s> has %s",
-                               specPath.GetAsString().c_str(),
-                               spec.specType == SdfSpecTypeUnknown ?
-                               "unknown spec type" :
-                               TfStringPrintf("invalid spec type value %d",
-                                              spec.specType).c_str()));
-            // Mark for removal.
-            spec.specType = SdfSpecTypeUnknown;
-            continue;
-        }
-        if (!seenPaths.insert(specPath).second) {
-            messages.push_back(
-                TfStringPrintf("spec <%s> repeated",
-                               specPath.GetAsString().c_str()));
-            // Mark for removal.
-            spec.specType = SdfSpecTypeUnknown;
-            continue;
-        }
-    }
 
-    if (!messages.empty()) {
-        // Remove everything with specType == Unknown -- any failed tests above
-        // set specs that failed to have this spec type.
-        _specs.erase(
-            std::remove_if(_specs.begin(), _specs.end(),
-                           [](Spec const &s) {
-                               return s.specType == SdfSpecTypeUnknown;
-                           }),
-            _specs.end());
+        if (!messages.empty()) {
+            // Remove everything with specType == Unknown -- any failed tests
+            // above set specs that failed to have this spec type.
+            _specs.erase(
+                std::remove_if(_specs.begin(), _specs.end(),
+                               [](Spec const &s) {
+                                   return s.specType == SdfSpecTypeUnknown;
+                               }),
+                _specs.end());
 
-        // Sort and unique the messages, then emit a warning.
-        std::sort(messages.begin(), messages.end(), TfDictionaryLessThan());
-        messages.erase(std::unique(messages.begin(), messages.end()),
-                       messages.end());
-        TF_RUNTIME_ERROR(
-            "Corrupt asset @%s@ - ignoring invalid specs: %s.",
-            _assetPath.c_str(), TfStringJoin(messages, ", ").c_str());
-    }
-#endif // PXR_PREFER_SAFETY_OVER_SPEED
+            // Sort and unique the messages, then emit a warning.
+            std::sort(messages.begin(), messages.end(), TfDictionaryLessThan());
+            messages.erase(std::unique(messages.begin(), messages.end()),
+                           messages.end());
+            TF_RUNTIME_ERROR(
+                "Corrupt asset @%s@ - ignoring invalid specs: %s.",
+                _assetPath.c_str(), TfStringJoin(messages, ", ").c_str());
+        }
+    } // SafetyOverSpeed
 }
 
 template <class Reader>
@@ -3701,14 +3717,13 @@ CrateFile::_ReadCompressedPaths(Reader reader,
     pathIndexes.resize(numPaths);
     cr.Read(reader, pathIndexes.data(), numPaths);
 
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED
     // Range check the pathIndexes, which index into _paths, and also ensure
     // there are no duplicates in pathIndexes.  If there are this file is
     // corrupt, and if we were to continue we could data-race while mutating the
     // same SdfPath object in _paths concurrently in
     // _BuildDecompressedPathsImpl.  It's a delightful occasion to use C++'s
     // collectio non grata: vector<bool>.
-    {
+    if constexpr (SafetyOverSpeed) {
         vector<bool> seenIndexes(_paths.size());
         for (const uint32_t pathIndex: pathIndexes) {
             if (pathIndex >= _paths.size() || seenIndexes[pathIndex]) {
@@ -3722,27 +3737,25 @@ CrateFile::_ReadCompressedPaths(Reader reader,
             }
             seenIndexes[pathIndex] = true;
         }
-    }
+    } // SafetyOverSpeed
     
-#endif // PXR_PREFER_SAFETY_OVER_SPEED
-
     // elementTokenIndexes.
     elementTokenIndexes.resize(numPaths);
     cr.Read(reader, elementTokenIndexes.data(), numPaths);
 
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED
     // Range check the elementTokenIndexes, which index (by absolute value) into
     // _tokens.
-    for (const int32_t elementTokenIndex: elementTokenIndexes) {
-        if (static_cast<size_t>(
-                std::abs(elementTokenIndex)) >= _tokens.size()) {
-            TF_RUNTIME_ERROR("Corrupt path element token index in crate file "
-                             "(%d >= %zu)",
-                             std::abs(elementTokenIndex), _tokens.size());
-            return;
+    if constexpr (SafetyOverSpeed) {
+        for (const int32_t elementTokenIndex: elementTokenIndexes) {
+            if (static_cast<size_t>(
+                    std::abs(elementTokenIndex)) >= _tokens.size()) {
+                TF_RUNTIME_ERROR("Corrupt path element token index in crate "
+                                 "file (%d >= %zu)",
+                                 std::abs(elementTokenIndex), _tokens.size());
+                return;
+            }
         }
-    }
-#endif // PXR_PREFER_SAFETY_OVER_SPEED
+    } // SafetyOverSpeed
 
     // jumps.
     jumps.resize(numPaths);
@@ -3767,15 +3780,17 @@ CrateFile::_BuildDecompressedPathsImpl(
     bool hasChild = false, hasSibling = false;
     do {
         auto thisIndex = curIndex++;
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED
-        // Range check thisIndex.
-        if (thisIndex >= pathIndexes.size()) {
-            TF_RUNTIME_ERROR("Corrupt paths encoding in crate file "
-                             "(index:%zu >= %zu)",
-                             thisIndex, pathIndexes.size());
-            return;
-        }
-#endif // PXR_PREFER_SAFETY_OVER_SPEED
+        
+        if constexpr (SafetyOverSpeed) {
+            // Range check thisIndex.
+            if (thisIndex >= pathIndexes.size()) {
+                TF_RUNTIME_ERROR("Corrupt paths encoding in crate file "
+                                 "(index:%zu >= %zu)",
+                                 thisIndex, pathIndexes.size());
+                return;
+            }
+        } // SafetyOverSpeed
+        
         if (parentPath.IsEmpty()) {
             parentPath = SdfPath::AbsoluteRootPath();
             _paths[pathIndexes[thisIndex]] = parentPath;
@@ -3802,16 +3817,18 @@ CrateFile::_BuildDecompressedPathsImpl(
             if (hasSibling) {
                 // Branch off a parallel task for the sibling subtree.
                 auto siblingIndex = thisIndex + jumps[thisIndex];
-#ifdef PXR_PREFER_SAFETY_OVER_SPEED
-                // Range check siblingIndex, which indexes into pathIndexes.
-                if (siblingIndex >= pathIndexes.size()) {
-                    TF_RUNTIME_ERROR(
-                        "Corrupt paths jumps table in crate file (jump:%d + "
-                        "thisIndex:%zu >= %zu)",
-                        jumps[thisIndex], thisIndex, pathIndexes.size());
-                    return;
-                }
-#endif
+
+                if constexpr (SafetyOverSpeed) {
+                    // Range check siblingIndex, which indexes into pathIndexes.
+                    if (siblingIndex >= pathIndexes.size()) {
+                        TF_RUNTIME_ERROR(
+                            "Corrupt paths jumps table in crate file "
+                            "(jump:%d + thisIndex:%zu >= %zu)",
+                            jumps[thisIndex], thisIndex, pathIndexes.size());
+                        return;
+                    }
+                } // SafetyOverSpeed
+
                 dispatcher.Run(
                     [this, &pathIndexes, &elementTokenIndexes, &jumps,
                      siblingIndex, &dispatcher, parentPath]()  {
