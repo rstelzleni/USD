@@ -1299,9 +1299,18 @@ HdPrman_RenderParam::UpdateLegacyOptions()
         }
     }
 
-    // Force incremental to be enabled for interacive renders
+    // Force incremental to be enabled for interacive renders,
+    // and if threads has default value, remove it so fallback value,
+    // which has a reasonable value for interactive, will be used.
     if (_renderDelegate->IsInteractive() && !_usingHusk) {
         options.SetInteger(RixStr.k_hider_incremental, 1);
+        if( options.HasParam(RixStr.k_limits_threads) ) {
+            int nthreads = 0;
+            options.GetInteger(RixStr.k_limits_threads, nthreads);
+            if(nthreads == 0) {
+                options.Remove(RixStr.k_limits_threads);
+            }
+        }
     }
 
     // Apply the batch command line settings last, so that they can
