@@ -38,7 +38,7 @@
                     }, 
                     "SdfUsdaFileFormat": {
                         "bases": [
-                            "SdfTextFileFormat"
+                            "SdfFileFormat"
                         ], 
                         "displayName": "USD Text File Format", 
                         "extensions": [

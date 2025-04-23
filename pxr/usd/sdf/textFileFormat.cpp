@@ -9,6 +9,7 @@
 
 #include "pxr/pxr.h"
 #include "pxr/usd/sdf/textFileFormat.h"
+#include "pxr/usd/sdf/usdaFileFormat.h"
 #include "pxr/usd/sdf/fileIO.h"
 #include "pxr/usd/sdf/fileIO_Common.h"
 #include "pxr/usd/sdf/layer.h"
@@ -32,11 +33,6 @@ using std::string;
 PXR_NAMESPACE_OPEN_SCOPE
 
 TF_DEFINE_PUBLIC_TOKENS(SdfTextFileFormatTokens, SDF_TEXT_FILE_FORMAT_TOKENS);
-
-TF_DEFINE_ENV_SETTING(
-    SDF_TEXTFILE_SIZE_WARNING_MB, 0,
-    "Warn when reading a text file larger than this number of MB "
-    "(no warnings if set to 0)");
 
 // Our interface to the parser for parsing to SdfData.
 extern bool Sdf_ParseLayer(
