@@ -614,7 +614,7 @@ HdDirtyBitsTranslator::RprimLocatorSetToDirtyBits(
 
     {
         using Schema = HdLegacyDisplayStyleSchema;
-    
+
         if (_FindLocator(Schema::GetDefaultLocator(), end, &it, false)) {
             if (Schema::GetDefaultLocator().HasPrefix(*it)) {
                 bits |= HdChangeTracker::DirtyDisplayStyle |
@@ -625,7 +625,7 @@ HdDirtyBitsTranslator::RprimLocatorSetToDirtyBits(
                         Schema::GetCullStyleLocator(),
                         end, &it)) {
                     bits |= HdChangeTracker::DirtyCullStyle;
-                }                    
+                }
                 if (_FindLocator(
                         Schema::GetDisplacementEnabledLocator(),
                         end, &it)) {
@@ -671,7 +671,7 @@ HdDirtyBitsTranslator::RprimLocatorSetToDirtyBits(
                         end, &it)) {
                     bits |= HdChangeTracker::DirtyDisplayStyle;
                 }
-            }                
+            }
         }
     }
 
@@ -892,7 +892,13 @@ HdDirtyBitsTranslator::SprimLocatorSetToDirtyBits(
         const static HdDataSourceLocator locator(
                 HdPrimTypeTokens->drawTarget);
         if (_FindLocator(locator, end, &it)) {
-            bits |= HdChangeTracker::AllDirty;
+            // XXX: We cannot use HdChangeTracker::AllDirty here. That value
+            // leaves the twos bit off (0xfffffffd). HdStDrawTarget uses that
+            // bit to signal a dirty camera binding. We use AllSceneDirtyBits
+            // instead because it covers all bits HdStDrawTarget cares about.
+            // We cannot include HdSt here, and there is no Hd equivalent for
+            // HdStDrawTarget::DirtyBits.
+            bits |= HdChangeTracker::AllSceneDirtyBits;
         }
     } else if (primType == HdPrimTypeTokens->extComputation) {
         if (_FindLocator(HdExtComputationSchema::GetDefaultLocator(),
