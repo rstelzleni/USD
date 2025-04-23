@@ -14,7 +14,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 EsfPrimInterface::~EsfPrimInterface() = default;
 
-TfTokenVector EsfPrimInterface::GetAppliedSchemas(EsfJournal *journal) const
+TfTokenVector
+EsfPrimInterface::GetAppliedSchemas(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
@@ -22,7 +23,8 @@ TfTokenVector EsfPrimInterface::GetAppliedSchemas(EsfJournal *journal) const
     return _GetAppliedSchemas();
 }
 
-EsfAttribute EsfPrimInterface::GetAttribute(
+EsfAttribute
+EsfPrimInterface::GetAttribute(
     const TfToken &attrName,
     EsfJournal *journal) const
 {
@@ -34,7 +36,8 @@ EsfAttribute EsfPrimInterface::GetAttribute(
     return _GetAttribute(attrName);
 }
 
-EsfPrim EsfPrimInterface::GetParent(EsfJournal *journal) const
+EsfPrim
+EsfPrimInterface::GetParent(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
@@ -42,7 +45,8 @@ EsfPrim EsfPrimInterface::GetParent(EsfJournal *journal) const
     return _GetParent();
 }
 
-TfType EsfPrimInterface::GetType(EsfJournal *journal) const
+TfType
+EsfPrimInterface::GetType(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);

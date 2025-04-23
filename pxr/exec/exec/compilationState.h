@@ -34,13 +34,11 @@ public:
     }
 
     /// The scene adapter stage.
-    ///
     const EsfStage &GetStage() const {
         return _stage;
     }
 
     /// The program being compiled.
-    ///
     Exec_Program *GetProgram() {
         return _program;
     }

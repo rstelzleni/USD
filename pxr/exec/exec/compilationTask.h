@@ -24,7 +24,6 @@ class Exec_CompilationState;
 class Exec_OutputKey;
 
 /// Base class for parallel compilation tasks.
-///
 class Exec_CompilationTask : public tbb::task
 {
 public:
@@ -68,7 +67,6 @@ private:
 };
 
 /// Manages the task dependencies established during task stages.
-///
 class Exec_CompilationTask::TaskDependencies
 {
 public:
@@ -110,7 +108,8 @@ private:
 };
 
 template<class TaskType, class ... Args>
-void Exec_CompilationTask::TaskDependencies::NewSubtask(Args&&... args)
+void
+Exec_CompilationTask::TaskDependencies::NewSubtask(Args&&... args)
 {
     _hasDependencies = true;
     tbb::task *task =
@@ -130,7 +129,6 @@ class Exec_CompilationTask::TaskStages
 {
 public:
     /// Invokes the callables in order, each denoting a task stage.
-    ///
     template<typename... Callables>
     void Invoke(Callables&&... callables) {
         _InvokeOne(0, std::forward<Callables>(callables)...);
@@ -163,7 +161,8 @@ private:
 };
 
 template<typename Callable, typename... Tail>
-void Exec_CompilationTask::TaskStages::_InvokeOne(
+void
+Exec_CompilationTask::TaskStages::_InvokeOne(
     uint32_t i,
     Callable&& callable,
     Tail&&... tail)

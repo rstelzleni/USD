@@ -10,12 +10,14 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-void ExecSystem::_ChangeManager::DidResync(const SdfPath &path) const
+void
+ExecSystem::_ChangeManager::DidResync(const SdfPath &path) const
 {
     // TODO
 }
 
-void ExecSystem::_ChangeManager::DidChangeInfoOnly(
+void
+ExecSystem::_ChangeManager::DidChangeInfoOnly(
     const SdfPath &path,
     const TfTokenVector &changedFields) const
 {

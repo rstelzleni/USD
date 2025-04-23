@@ -31,37 +31,43 @@ ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::~ExecUsd_ObjectImpl()
     = default;
 
 template <class InterfaceType, class UsdObjectType>
-bool ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_IsValid() const
+bool
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_IsValid() const
 {
     return _GetWrapped().IsValid();
 }
 
 template <class InterfaceType, class UsdObjectType>
-TfToken ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetName() const
+TfToken
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetName() const
 {
     return _GetWrapped().GetName();
 }
 
 template <class InterfaceType, class UsdObjectType>
-EsfPrim ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetPrim() const
+EsfPrim
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetPrim() const
 {
     return {std::in_place_type<ExecUsd_Prim>, _GetWrapped().GetPrim()};
 }
 
 template <class InterfaceType, class UsdObjectType>
-bool ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsPrim() const
+bool
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsPrim() const
 {
     return _GetWrapped().template Is<UsdPrim>();
 }
 
 template <class InterfaceType, class UsdObjectType>
-bool ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsAttribute() const
+bool
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsAttribute() const
 {
     return _GetWrapped().template Is<UsdAttribute>();
 }
 
 template <class InterfaceType, class UsdObjectType>
-EsfObject ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsObject() const
+EsfObject
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsObject() const
 {
     return {
         std::in_place_type<ExecUsd_Object>,
@@ -70,7 +76,8 @@ EsfObject ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsObject() const
 }
 
 template <class InterfaceType, class UsdObjectType>
-EsfPrim ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsPrim() const
+EsfPrim
+ExecUsd_ObjectImpl<InterfaceType, UsdObjectType>::AsPrim() const
 {
     return {
         std::in_place_type<ExecUsd_Prim>,

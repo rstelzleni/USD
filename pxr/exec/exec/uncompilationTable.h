@@ -91,7 +91,6 @@ public:
     struct Entry
     {
         /// The rule set corresponds to the scene object at this path.
-        ///
         SdfPath path;
 
         /// Pointer to a rule set. Ownership of the rule set is shared by this
@@ -116,7 +115,6 @@ public:
         {}
 
         /// The entry evaluates true iff it contains a non-null rule set.
-        ///
         operator bool() const {
             return ruleSet != nullptr;
         }

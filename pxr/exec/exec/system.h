@@ -39,12 +39,10 @@ class ExecSystem
 {
 public:
     /// Diagnostic utility class.
-    ///
     class Diagnostics;
 
 protected:
     /// Construct an exec system for computing values on \p stage.
-    ///
     EXEC_API
     explicit ExecSystem(EsfStage &&stage);
 
@@ -63,7 +61,6 @@ protected:
     void _InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl);
 
     /// Derived systems instantiate this class to deliver scene changes to exec.
-    ///
     class _ChangeManager;
 
 private:
@@ -73,11 +70,13 @@ private:
 
     // Constructs a new instance of the main executor, and discards the previous
     // instance if any.
+    // 
     EXEC_API
     void _CreateExecutor();
 
     // Discards all internal state, and constructs new internal data structures
     // leaving the system in the same state as if it was newly constructed.
+    // 
     EXEC_API
     void _InvalidateAll();
 

@@ -29,7 +29,6 @@ class Exec_CacheView
 {
 public:
     /// Constructs an invalid cache view.
-    ///
     Exec_CacheView() = default;
 
     /// Returns \c true if \p idx is evaluated and stores the computed value

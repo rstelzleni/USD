@@ -23,6 +23,7 @@ namespace
 // by an ExecUsdValueKey.  Currently, this is very straightforward.  However,
 // there is expected future complexity when dealing with attribute values that
 // can be obtained without involving the underlying exec system.
+// 
 struct _ValueKeyVisitor
 {
     ExecValueKey operator()(

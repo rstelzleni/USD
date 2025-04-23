@@ -42,12 +42,10 @@ protected:
     ~Exec_RequestImpl();
 
     /// Compiles outputs for the value keys in the request.
-    ///
     EXEC_API
     void _Compile(ExecSystem *system, TfSpan<const ExecValueKey> valueKeys);
 
     /// Builds the schedule for the request.
-    ///
     EXEC_API
     void _Schedule();
 

@@ -16,7 +16,6 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// Utility class with various diagnostic functions for ExecSystem.
-///
 class ExecSystem::Diagnostics
 {
 public:

@@ -34,23 +34,19 @@ public:
     {}
 
     /// Returns the object that provides the computation.
-    ///
     const EsfObject &GetProviderObject() const {
         return _providerObject;
     }
 
     /// Returns the definition of the computation to compile.
-    ///
     const Exec_ComputationDefinition *GetComputationDefinition() const {
         return _computationDefinition;
     }
 
     /// Identity class. See Exec_OutputKey::Identity below.
-    ///
     class Identity;
 
     /// Constructs and returns an identity for this output key.
-    ///
     inline Identity MakeIdentity() const;
 
 private:

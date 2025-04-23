@@ -28,7 +28,6 @@ class ExecUsdCacheView
 {
 public:
     /// Construct an invalid view.
-    ///
     ExecUsdCacheView() = default;
 
     /// Returns \c true if \p idx is evaluated and stores the computed value

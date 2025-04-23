@@ -11,7 +11,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-bool Exec_CompiledOutputCache::Insert(
+bool
+Exec_CompiledOutputCache::Insert(
     const Exec_OutputKey::Identity &key,
     const VdfMaskedOutput &maskedOutput)
 {
@@ -42,7 +43,8 @@ Exec_CompiledOutputCache::Find(const Exec_OutputKey::Identity &key) const
     return {it->second, true};
 }
 
-void Exec_CompiledOutputCache::EraseByNodeId(VdfId nodeId)
+void
+Exec_CompiledOutputCache::EraseByNodeId(VdfId nodeId)
 {
     const _ReverseMap::iterator it = _reverseMap.find(nodeId);
     

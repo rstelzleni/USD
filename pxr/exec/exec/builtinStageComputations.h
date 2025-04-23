@@ -18,7 +18,6 @@ PXR_NAMESPACE_OPEN_SCOPE
 //
 
 /// A computation that yields the current evaluation time.
-///
 class Exec_TimeComputationDefinition final
     : public Exec_ComputationDefinition
 {

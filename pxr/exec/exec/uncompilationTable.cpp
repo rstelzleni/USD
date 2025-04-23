@@ -10,7 +10,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-void Exec_UncompilationTable::AddRulesForNode(
+void
+Exec_UncompilationTable::AddRulesForNode(
     VdfId nodeId,
     const EsfJournal &journal)
 {
@@ -21,7 +22,8 @@ void Exec_UncompilationTable::AddRulesForNode(
     }
 }
 
-void Exec_UncompilationTable::AddRulesForInput(
+void
+Exec_UncompilationTable::AddRulesForInput(
     VdfId nodeId,
     const TfToken &inputName,
     const EsfJournal &journal)
@@ -33,8 +35,8 @@ void Exec_UncompilationTable::AddRulesForInput(
     }
 }
 
-Exec_UncompilationTable::Entry Exec_UncompilationTable::Find(
-    const SdfPath &path)
+Exec_UncompilationTable::Entry
+Exec_UncompilationTable::Find(const SdfPath &path)
 {
     TRACE_FUNCTION();
 
@@ -60,8 +62,8 @@ Exec_UncompilationTable::UpdateForRecursiveResync(const SdfPath &path)
     return result;
 }
 
-Exec_UncompilationRuleSet &Exec_UncompilationTable::_FindOrInsert(
-    const SdfPath &path)
+Exec_UncompilationRuleSet &
+Exec_UncompilationTable::_FindOrInsert(const SdfPath &path)
 {
     _ConcurrentMap::iterator foundIter = _ruleSets.find(path);
     if (foundIter != _ruleSets.end()) {

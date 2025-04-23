@@ -33,7 +33,8 @@ ExecUsd_Stage::ExecUsd_Stage(UsdStageConstRefPtr &&stage)
     TF_VERIFY(_stage);
 }
 
-EsfAttribute ExecUsd_Stage::_GetAttributeAtPath(const SdfPath &path) const
+EsfAttribute
+ExecUsd_Stage::_GetAttributeAtPath(const SdfPath &path) const
 {
     return {
         std::in_place_type<ExecUsd_Attribute>,
@@ -41,17 +42,20 @@ EsfAttribute ExecUsd_Stage::_GetAttributeAtPath(const SdfPath &path) const
     };
 }
 
-EsfObject ExecUsd_Stage::_GetObjectAtPath(const SdfPath &path) const
+EsfObject
+ExecUsd_Stage::_GetObjectAtPath(const SdfPath &path) const
 {
     return {std::in_place_type<ExecUsd_Object>, _stage->GetObjectAtPath(path)};
 }
 
-EsfPrim ExecUsd_Stage::_GetPrimAtPath(const SdfPath &path) const
+EsfPrim
+ExecUsd_Stage::_GetPrimAtPath(const SdfPath &path) const
 {
     return {std::in_place_type<ExecUsd_Prim>, _stage->GetPrimAtPath(path)};
 }
 
-EsfProperty ExecUsd_Stage::_GetPropertyAtPath(const SdfPath &path) const
+EsfProperty
+ExecUsd_Stage::_GetPropertyAtPath(const SdfPath &path) const
 {
     return {
         std::in_place_type<ExecUsd_Property>,

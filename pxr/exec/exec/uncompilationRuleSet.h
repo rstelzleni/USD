@@ -54,14 +54,12 @@ struct Exec_UncompilationRule
     Exec_UncompilationRule() = delete;
 
     /// Constructs a rule for uncompiling a node.
-    ///
     Exec_UncompilationRule(VdfId nodeId_, EsfEditReason reasons_)
         : nodeId(nodeId_)
         , reasons(reasons_) 
     {}
 
     /// Constructs a rule for uncompiling an input.
-    ///
     Exec_UncompilationRule(
         VdfId nodeId_,
         const TfToken &inputName_,
@@ -87,7 +85,6 @@ public:
     Exec_UncompilationRuleSet() = default;
     
     /// Constructs a set pre-filled with the given \p rules.
-    ///
     Exec_UncompilationRuleSet(
         std::initializer_list<Exec_UncompilationRule> rules)
         : _rules(rules)
@@ -115,7 +112,6 @@ public:
     /// @{
 
     /// Returns the number of items in the set, including any duplicates.
-    ///
     size_t size() const { 
         return _rules.size();
     }
@@ -124,13 +120,11 @@ public:
     using const_iterator = _ConcurrentVector::const_iterator;
 
     /// Returns an iterator to the beginning of the rule set.
-    ///
     iterator begin() {
         return _rules.begin();
     }
 
     /// Returns a const iterator to the beginning of the rule set.
-    ///
     const_iterator begin() const {
         return _rules.begin();
     }
@@ -182,7 +176,6 @@ public:
     /// @}
 
     /// Gets a string describing all rules in the set.
-    ///
     EXEC_API std::string GetDescription() const;
 
 private:

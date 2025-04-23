@@ -19,7 +19,6 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// Apply a visitor to the held value key variant.
-///
 template <typename Visitor>
 auto
 ExecUsd_VisitValueKey(Visitor &&visitor, const ExecUsdValueKey &uvk)

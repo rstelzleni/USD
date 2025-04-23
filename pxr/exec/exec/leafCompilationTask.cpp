@@ -91,7 +91,8 @@ Exec_LeafCompilationTask::_Compile(
     );
 }
 
-Exec_InputKey _MakeInputKey(const ExecValueKey &valueKey)
+Exec_InputKey
+_MakeInputKey(const ExecValueKey &valueKey)
 {
     return {
         EfLeafTokens->in,

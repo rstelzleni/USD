@@ -42,6 +42,7 @@ public:
 
     // Systems are non-copyable and non-movable to simplify management of
     // back-pointers.
+    // 
     ExecUsdSystem(const ExecUsdSystem &) = delete;
     ExecUsdSystem& operator=(const ExecUsdSystem &) = delete;
 
@@ -49,7 +50,6 @@ public:
     ~ExecUsdSystem();
 
     /// Builds a request for the given \p valueKeys.
-    ///
     EXECUSD_API
     ExecUsdRequest BuildRequest(std::vector<ExecUsdValueKey> &&valueKeys);
 

@@ -12,7 +12,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-const char *EsfEditReason::_GetBitDescription(EsfEditReason::_BitIndex bitIndex)
+const char *
+EsfEditReason::_GetBitDescription(EsfEditReason::_BitIndex bitIndex)
 {
     switch (bitIndex) {
     case EsfEditReason::_BitIndex::ResyncedObject:
@@ -27,7 +28,8 @@ const char *EsfEditReason::_GetBitDescription(EsfEditReason::_BitIndex bitIndex)
     return "InvalidBit";
 }
 
-std::string EsfEditReason::GetDescription() const
+std::string
+EsfEditReason::GetDescription() const
 {
     std::string result;
 

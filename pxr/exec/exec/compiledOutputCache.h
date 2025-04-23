@@ -23,7 +23,6 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// The output cache stores a compiled masked output for a given output key.
-///
 class Exec_CompiledOutputCache
 {
 public:

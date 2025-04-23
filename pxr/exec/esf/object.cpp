@@ -14,7 +14,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 EsfObjectInterface::~EsfObjectInterface() = default;
 
-bool EsfObjectInterface::IsValid(EsfJournal *journal) const
+bool
+EsfObjectInterface::IsValid(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
@@ -22,7 +23,8 @@ bool EsfObjectInterface::IsValid(EsfJournal *journal) const
     return _IsValid();
 }
 
-SdfPath EsfObjectInterface::GetPath(EsfJournal *journal) const
+SdfPath
+EsfObjectInterface::GetPath(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
@@ -30,7 +32,8 @@ SdfPath EsfObjectInterface::GetPath(EsfJournal *journal) const
     return _path;
 }
 
-TfToken EsfObjectInterface::GetName(EsfJournal *journal) const
+TfToken
+EsfObjectInterface::GetName(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
@@ -38,7 +41,8 @@ TfToken EsfObjectInterface::GetName(EsfJournal *journal) const
     return _GetName();
 }
 
-EsfPrim EsfObjectInterface::GetPrim(EsfJournal *journal) const
+EsfPrim
+EsfObjectInterface::GetPrim(EsfJournal *journal) const
 {
     if (journal) {
         journal->Add(_GetPath().GetPrimPath(), EsfEditReason::ResyncedObject);

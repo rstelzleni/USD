@@ -77,15 +77,15 @@ Exec_Program::Connect(
 }
 
 void
-Exec_Program::_AddNode(const EsfJournal &journal, const VdfNode *node)
-{
-    _uncompilationTable.AddRulesForNode(node->GetId(), journal);
-}
-
-void
 Exec_Program::GraphNetwork(const char *const filename) const
 {
     VdfGrapher::GraphToFile(_network, filename);
+}
+
+void
+Exec_Program::_AddNode(const EsfJournal &journal, const VdfNode *node)
+{
+    _uncompilationTable.AddRulesForNode(node->GetId(), journal);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

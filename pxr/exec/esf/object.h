@@ -91,8 +91,7 @@ private:
 /// The size is specified as an integer literal to prevent introducing Usd as
 /// a dependency.
 ///
-class EsfObject
-    : public EsfFixedSizePolymorphicHolder<EsfObjectInterface, 48>
+class EsfObject : public EsfFixedSizePolymorphicHolder<EsfObjectInterface, 48>
 {
 public:
     using EsfFixedSizePolymorphicHolder::EsfFixedSizePolymorphicHolder;

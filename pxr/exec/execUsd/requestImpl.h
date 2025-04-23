@@ -22,7 +22,6 @@ class ExecUsdValueKey;
 class ExecValueKey;
 
 /// Contains Usd-specific data structures necessary to implement requests.
-///
 class ExecUsd_RequestImpl final : public Exec_RequestImpl
 {
 public:
@@ -34,11 +33,9 @@ public:
     ~ExecUsd_RequestImpl();
 
     /// Compile the request.
-    ///
     void Compile(ExecUsdSystem *system);
 
     /// Schedule the request.
-    ///
     void Schedule();
 
 private:

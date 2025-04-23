@@ -44,9 +44,7 @@ class _InputResolver
 {
 public:
     /// Implements the global Exec_ResolveInput function.
-    ///
-    static Exec_OutputKeyVector
-    ResolveInput(
+    static Exec_OutputKeyVector ResolveInput(
         const EsfStage &stage,
         const EsfObject &origin,
         const Exec_InputKey &inputKey,
@@ -59,6 +57,7 @@ public:
 private:
     // Construct a new _InputResolver that begins at \p origin and logs
     // traversals to \p journal.
+    // 
     _InputResolver(
         const EsfStage &stage,
         const EsfObject &origin,
@@ -88,8 +87,7 @@ private:
     }
 
     // Updates the current object to the specified \p prim.
-    void
-    _SetPrim(EsfPrim &&prim)
+    void _SetPrim(EsfPrim &&prim)
     {
         _currentPrim = _currentObjectVariant.emplace<EsfPrim>(
             std::move(prim)).Get();
@@ -98,8 +96,7 @@ private:
     }
 
     // Updates the current object to the specified \p attribute.
-    void
-    _SetAttribute(EsfAttribute &&attribute)
+    void _SetAttribute(EsfAttribute &&attribute)
     {
         _currentAttribute = _currentObjectVariant.emplace<EsfAttribute>(
             std::move(attribute)).Get();
@@ -112,8 +109,8 @@ private:
     // This does *not* check if the current object, or its parent is a valid
     // scene object. Such checks are left up to the caller. This only returns
     // false if the current object type is not supported.
-    bool
-    _TraverseToParent()
+    // 
+    bool _TraverseToParent()
     {
         if (_currentPrim) {
             _SetPrim(_currentPrim->GetParent(_journal));
@@ -137,8 +134,8 @@ private:
     // are valid scene objects. Such checks are left up to the caller. The
     // current object must be a prim, or else a TF_VERIFY is raised, and this
     // returns false.
-    bool
-    _TraverseToAttribute(const TfToken &attributeName)
+    // 
+    bool _TraverseToAttribute(const TfToken &attributeName)
     {
         if (!TF_VERIFY(_currentPrim)) {
             return false;
@@ -159,8 +156,8 @@ private:
     // If this method returns false, then the current object is set to the first
     // invalid object encountered while performing the traversal - which may be
     // the final object, or some intermediate object.
-    bool
-    _TraverseToRelativePath(const SdfPath &relativePath)
+    // 
+    bool _TraverseToRelativePath(const SdfPath &relativePath)
     {
         if (!TF_VERIFY(!relativePath.IsAbsolutePath())) {
             return false;
@@ -219,8 +216,8 @@ private:
     //
     // If no such ancestor can provide the requested computation, then the
     // current object is set to the pseudo-root prim, and this returns false.
-    bool
-    _TraverseToNamespaceAncestor(
+    // 
+    bool _TraverseToNamespaceAncestor(
         const TfToken &computationName,
         const TfType resultType,
         const Exec_ComputationDefinition **const foundComputationDefinition)
@@ -264,8 +261,8 @@ private:
     //
     // If found, the returned definition may refer to a prim computation or an
     // attribute computation. If not found, this returns nullptr.
-    const Exec_ComputationDefinition *
-    _FindComputationDefinition(
+    // 
+    const Exec_ComputationDefinition * _FindComputationDefinition(
         const TfToken &computationName,
         const TfType resultType) const
     {
@@ -316,8 +313,8 @@ private:
     // traversals that "fan-out" to multiple providers (e.g. inputs on attribute
     // connections, inputs on namespace children, etc.). For now, inputs can
     // only resolve to 0 or 1 output keys.
-    Exec_OutputKeyVector
-    _ResolveInput(const Exec_InputKey &inputKey)
+    // 
+    Exec_OutputKeyVector _ResolveInput(const Exec_InputKey &inputKey)
     {
         if (!TF_VERIFY(_currentObject)) {
             return {};
@@ -394,7 +391,8 @@ private:
 
 } // anonymous namespace
 
-Exec_OutputKeyVector Exec_ResolveInput(
+Exec_OutputKeyVector
+Exec_ResolveInput(
     const EsfStage &stage,
     const EsfObject &origin,
     const Exec_InputKey &inputKey,

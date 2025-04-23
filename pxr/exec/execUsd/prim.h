@@ -17,19 +17,16 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// Implementation of EsfPrimInterface that wraps a UsdPrim.
-///
 class ExecUsd_Prim : public ExecUsd_ObjectImpl<EsfPrimInterface, UsdPrim>
 {
 public:
     ~ExecUsd_Prim() override;
 
     /// Copies the provided \p prim into this instance.
-    ///
     ExecUsd_Prim(const UsdPrim &prim)
         : ExecUsd_ObjectImpl<EsfPrimInterface, UsdPrim>(prim) {}
 
     /// Moves the provided \p prim into this instance.
-    ///
     ExecUsd_Prim(UsdPrim &&prim)
         : ExecUsd_ObjectImpl<EsfPrimInterface, UsdPrim>(std::move(prim)) {}
 

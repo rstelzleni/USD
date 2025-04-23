@@ -72,8 +72,7 @@ private:
 /// UsdStageConstRefPtr. The size is specified as an integer literal to prevent
 /// introducing Usd as a dependency.
 ///
-class EsfStage
-    : public EsfFixedSizePolymorphicHolder<EsfStageInterface, 16>
+class EsfStage : public EsfFixedSizePolymorphicHolder<EsfStageInterface, 16>
 {
 public:
     using EsfFixedSizePolymorphicHolder::EsfFixedSizePolymorphicHolder;

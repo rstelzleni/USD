@@ -17,12 +17,14 @@ static_assert(sizeof(ExecUsd_Prim) == sizeof(EsfPrim));
 
 ExecUsd_Prim::~ExecUsd_Prim() = default;
 
-TfTokenVector ExecUsd_Prim::_GetAppliedSchemas() const
+TfTokenVector
+ExecUsd_Prim::_GetAppliedSchemas() const
 {
     return _GetWrapped().GetAppliedSchemas();
 }
 
-EsfAttribute ExecUsd_Prim::_GetAttribute(const TfToken &attrName) const
+EsfAttribute
+ExecUsd_Prim::_GetAttribute(const TfToken &attrName) const
 {
     return {
         std::in_place_type<ExecUsd_Attribute>,
@@ -30,17 +32,20 @@ EsfAttribute ExecUsd_Prim::_GetAttribute(const TfToken &attrName) const
     };
 }
 
-EsfPrim ExecUsd_Prim::_GetParent() const
+EsfPrim
+ExecUsd_Prim::_GetParent() const
 {
     return {std::in_place_type<ExecUsd_Prim>, _GetWrapped().GetParent()};
 }
 
-TfType ExecUsd_Prim::_GetType() const
+TfType
+ExecUsd_Prim::_GetType() const
 {
     return _GetWrapped().GetPrimTypeInfo().GetSchemaType();
 }
 
-bool ExecUsd_Prim::IsPseudoRoot() const
+bool
+ExecUsd_Prim::IsPseudoRoot() const
 {
     return _GetWrapped().IsPseudoRoot();
 }

@@ -45,7 +45,6 @@ public:
     Exec_CompilerTaskSync() = default;
 
     /// The different results claiming an output key can return.
-    ///
     enum class ClaimResult {
         Done,       /// The task is already done.
 
@@ -87,6 +86,7 @@ private:
 
     // Entries in the map always begin life as unclaimed tasks with no
     // nodes on their waitlist.
+    // 
     struct _Entry {
         _Entry() : state(_TaskStateUnclaimed), waiting(nullptr) {}
         std::atomic<uint8_t> state;

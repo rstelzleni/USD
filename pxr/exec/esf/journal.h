@@ -77,16 +77,34 @@ public:
     /// for-loops.
     ///
     /// @{
+    /// 
     using value_type = _HashMap::value_type;
     using iterator = _HashMap::iterator;
     using const_iterator = _HashMap::const_iterator;
 
-    iterator begin() & { return _hashMap.begin(); }
-    iterator end() & { return _hashMap.end(); }
-    const_iterator begin() const & { return _hashMap.begin(); }
-    const_iterator end() const & { return _hashMap.end(); }
-    const_iterator cbegin() const & { return _hashMap.begin(); }
-    const_iterator cend() const & { return _hashMap.end(); }
+    iterator begin() & {
+        return _hashMap.begin();
+    }
+
+    iterator end() & {
+        return _hashMap.end();
+    }
+
+    const_iterator begin() const & {
+        return _hashMap.begin();
+    }
+
+    const_iterator end() const & {
+        return _hashMap.end();
+    }
+
+    const_iterator cbegin() const & {
+        return _hashMap.begin();
+    }
+
+    const_iterator cend() const & {
+        return _hashMap.end();
+    }
     /// @}
 
 private:

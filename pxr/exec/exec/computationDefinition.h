@@ -40,13 +40,11 @@ public:
     virtual ~Exec_ComputationDefinition();
 
     /// Returns the value type that is produced by this computation.
-    ///
     TfType GetResultType() const {
         return _resultType;
     }
 
     /// Returns the name of the computation.
-    ///
     const TfToken &GetComputationName() const {
         return _computationName;
     }
@@ -68,7 +66,6 @@ public:
 
 protected:
     /// Creates a definition for a computation.
-    ///
     Exec_ComputationDefinition(
         TfType resultType,
         const TfToken &computationName);

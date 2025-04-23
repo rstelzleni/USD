@@ -26,15 +26,12 @@ PXR_NAMESPACE_OPEN_SCOPE
 struct Exec_InputKey
 {
     /// The name used to uniquely address the input value.
-    ///
     TfToken inputName;
 
     /// The requested computation name.
-    ///
     TfToken computationName;
 
     /// The requested computation result type.
-    ///
     TfType resultType;
 
     /// Describes how we find the provider, starting from the object that owns
@@ -43,7 +40,6 @@ struct Exec_InputKey
     ExecProviderResolution providerResolution;
 
     /// Indicates whether or not the input is optional.
-    ///
     bool optional;
 };
 

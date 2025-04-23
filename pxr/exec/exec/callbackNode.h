@@ -22,7 +22,6 @@ class VdfInputSpecs;
 class VdfOutputSpecs;
 
 /// Execution node that invokes a provided callback.
-///
 class Exec_CallbackNode : public VdfNode
 {
 public:

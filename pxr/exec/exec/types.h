@@ -25,7 +25,6 @@ PXR_NAMESPACE_OPEN_SCOPE
 class VdfContext;
 
 /// Function type used for computation callbacks.
-///
 using ExecCallbackFn = std::function<void (const VdfContext &context)>;
 
 /// Type used to identify Exec_DefinitionRegistry registry functions.

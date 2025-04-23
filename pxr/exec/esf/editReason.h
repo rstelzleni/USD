@@ -54,53 +54,47 @@ public:
     /// @{
 
     /// Return true if this object contains any edit reasons.
-    constexpr explicit operator bool() const { return _bits; }
+    constexpr explicit operator bool() const {
+        return _bits;
+    }
 
-    constexpr bool operator==(EsfEditReason other) const
-    {
+    constexpr bool operator==(EsfEditReason other) const {
         return _bits == other._bits;
     }
 
-    constexpr bool operator!=(EsfEditReason other) const
-    {
+    constexpr bool operator!=(EsfEditReason other) const {
         return _bits != other._bits;
     }
 
-    constexpr EsfEditReason& operator&=(EsfEditReason other)
-    {
+    constexpr EsfEditReason& operator&=(EsfEditReason other) {
         _bits &= other._bits;
         return *this;
     }
 
-    constexpr EsfEditReason& operator|=(EsfEditReason other)
-    {
+    constexpr EsfEditReason& operator|=(EsfEditReason other) {
         _bits |= other._bits;
         return *this;
     }
 
-    constexpr EsfEditReason operator&(EsfEditReason other) const
-    {
+    constexpr EsfEditReason operator&(EsfEditReason other) const {
         return {_bits & other._bits};
     }
 
-    constexpr EsfEditReason operator|(EsfEditReason other) const
-    {
+    constexpr EsfEditReason operator|(EsfEditReason other) const {
         return {_bits | other._bits};
     }
 
     /// Return true if \p other's reasons are entirely contained by this set
     /// of reasons.
     ///
-    constexpr bool Contains(EsfEditReason other) const
-    {
+    constexpr bool Contains(EsfEditReason other) const {
         return (_bits & other._bits) == other._bits;
     }
 
     /// @}
 
     /// Enables consistent sorting of EsfEditReasons.
-    bool operator<(const EsfEditReason &other) const
-    {
+    bool operator<(const EsfEditReason &other) const {
         return _bits < other._bits;
     }
 

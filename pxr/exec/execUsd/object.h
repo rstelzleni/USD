@@ -72,13 +72,11 @@ public:
     ~ExecUsd_ObjectImpl() override;
 
     /// Copies the provided object into this instance.
-    ///
     ExecUsd_ObjectImpl(const UsdObjectType &object)
         : InterfaceType(object.GetPath())
         , _object(object) {}
 
     /// Moves the provided object into this instance.
-    ///
     ExecUsd_ObjectImpl(UsdObjectType &&object)
         : InterfaceType(object.GetPath())
         , _object(std::move(object)) {}
@@ -106,7 +104,6 @@ private:
 };
 
 /// Implementation of EsfObjectInterface that wraps a UsdObject.
-///
 using ExecUsd_Object = ExecUsd_ObjectImpl<EsfObjectInterface, UsdObject>;
 
 PXR_NAMESPACE_CLOSE_SCOPE
