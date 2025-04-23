@@ -63,6 +63,7 @@ protected:
     void _InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl);
 
     /// Derived systems instantiate this class to deliver scene changes to exec.
+    ///
     class _ChangeManager;
 
 private:

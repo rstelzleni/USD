@@ -40,6 +40,7 @@ public:
     /// or even that the network has been compiled.  It only means that
     /// calling ExecUsdSystem::PrepareRequest or ExecUsdSystem::CacheValues is
     /// allowed.
+    /// 
     EXECUSD_API
     bool IsValid() const;
 
@@ -47,8 +48,7 @@ private:
     friend class ExecUsdSystem;
     explicit ExecUsdRequest(std::weak_ptr<ExecUsd_RequestImpl> &&impl)
         : _impl(std::move(impl))
-    {
-    }
+    {}
 
     std::shared_ptr<ExecUsd_RequestImpl> _GetImpl() const {
         return _impl.lock();

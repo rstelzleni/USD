@@ -28,25 +28,29 @@ class Exec_OutputKey
 public:
     Exec_OutputKey(
         const EsfObject &providerObject,
-        const Exec_ComputationDefinition *const computationDefinition) :
-        _providerObject(providerObject),
-        _computationDefinition(computationDefinition)
+        const Exec_ComputationDefinition *const computationDefinition)
+        : _providerObject(providerObject)
+        , _computationDefinition(computationDefinition)
     {}
 
     /// Returns the object that provides the computation.
+    ///
     const EsfObject &GetProviderObject() const {
         return _providerObject;
     }
 
     /// Returns the definition of the computation to compile.
+    ///
     const Exec_ComputationDefinition *GetComputationDefinition() const {
         return _computationDefinition;
     }
 
     /// Identity class. See Exec_OutputKey::Identity below.
+    ///
     class Identity;
 
     /// Constructs and returns an identity for this output key.
+    ///
     inline Identity MakeIdentity() const;
 
 private:
@@ -65,9 +69,9 @@ private:
 class Exec_OutputKey::Identity
 {
 public:
-    explicit Identity(const Exec_OutputKey &key) :
-        _providerPath(key._providerObject->GetPath(nullptr)),
-        _computationName(key._computationDefinition->GetComputationName())
+    explicit Identity(const Exec_OutputKey &key)
+        : _providerPath(key._providerObject->GetPath(nullptr))
+        , _computationName(key._computationDefinition->GetComputationName())
     {}
 
     bool operator==(const Exec_OutputKey::Identity &rhs) const {
@@ -88,6 +92,7 @@ public:
 
     /// Return a human-readable description of this value key for diagnostic
     /// purposes.
+    /// 
     EXEC_API std::string GetDebugName() const;
 
 private:

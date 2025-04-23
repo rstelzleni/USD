@@ -31,19 +31,23 @@ class VdfSchedule;
 ///
 class Exec_RequestImpl
 {
-    Exec_RequestImpl(const Exec_RequestImpl&) = delete;
-    Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
-
 protected:
     EXEC_API
     Exec_RequestImpl();
 
+    Exec_RequestImpl(const Exec_RequestImpl&) = delete;
+    Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
+
     EXEC_API
     ~Exec_RequestImpl();
 
+    /// Compiles outputs for the value keys in the request.
+    ///
     EXEC_API
     void _Compile(ExecSystem *system, TfSpan<const ExecValueKey> valueKeys);
 
+    /// Builds the schedule for the request.
+    ///
     EXEC_API
     void _Schedule();
 

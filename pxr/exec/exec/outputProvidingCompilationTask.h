@@ -30,16 +30,17 @@ class Exec_CompilationState;
 /// output key, this task will create a new node with the relevant
 /// VdfMaskedOutput, and connect all its inputs by kicking off
 /// Exec_InputResolvingCompilationTasks for each input.
+/// 
 class Exec_OutputProvidingCompilationTask : public Exec_CompilationTask
 {
 public:
     Exec_OutputProvidingCompilationTask(
         Exec_CompilationState &compilationState,
         const Exec_OutputKey &outputKey,
-        VdfMaskedOutput *resultOutput) :
-        Exec_CompilationTask(compilationState),
-        _outputKey(outputKey),
-        _resultOutput(resultOutput)
+        VdfMaskedOutput *resultOutput)
+        : Exec_CompilationTask(compilationState)
+        , _outputKey(outputKey)
+        , _resultOutput(resultOutput)
     {}
 
 private:

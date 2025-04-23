@@ -27,21 +27,20 @@ class Exec_Program;
 class Exec_CompilationState
 {
 public:
-    Exec_CompilationState(
-        const EsfStage &stage,
-        Exec_Program *program) :
-        _stage(stage),
-        _program(program)
-    {
+    Exec_CompilationState(const EsfStage &stage, Exec_Program *program)
+        : _stage(stage)
+        , _program(program) {
         TF_VERIFY(_program);
     }
 
     /// The scene adapter stage.
+    ///
     const EsfStage &GetStage() const {
         return _stage;
     }
 
     /// The program being compiled.
+    ///
     Exec_Program *GetProgram() {
         return _program;
     }
@@ -55,7 +54,6 @@ public:
     };
 
 private:
-
     const EsfStage &_stage;
     Exec_CompilerTaskSync _outputTasks;
     Exec_Program *_program;

@@ -24,6 +24,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 class ExecValueKey;
 
 /// Represents attribute value keys.
+///
 struct ExecUsd_AttributeValueKey
 {
     UsdAttribute provider;
@@ -31,6 +32,7 @@ struct ExecUsd_AttributeValueKey
 };
 
 /// Represents prim computation value keys.
+///
 struct ExecUsd_PrimComputationValueKey
 {
     UsdPrim provider;

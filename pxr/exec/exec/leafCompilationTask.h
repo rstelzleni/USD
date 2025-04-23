@@ -29,16 +29,17 @@ class VdfMaskedOutput;
 /// This is the main entry point into the compilation task graph for outputs
 /// that have been requested via an ExecRequest and therefore need leaf nodes
 /// compiled and connected to them.
+/// 
 class Exec_LeafCompilationTask : public Exec_CompilationTask
 {
 public:
     Exec_LeafCompilationTask(
         Exec_CompilationState &compilationState,
         const ExecValueKey &valueKey,
-        VdfMaskedOutput *leafOutput) :
-        Exec_CompilationTask(compilationState),
-        _valueKey(valueKey),
-        _leafOutput(leafOutput)
+        VdfMaskedOutput *leafOutput)
+        : Exec_CompilationTask(compilationState)
+        , _valueKey(valueKey)
+        , _leafOutput(leafOutput)
     {}
 
 private:

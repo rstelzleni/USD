@@ -54,12 +54,14 @@ struct Exec_UncompilationRule
     Exec_UncompilationRule() = delete;
 
     /// Constructs a rule for uncompiling a node.
+    ///
     Exec_UncompilationRule(VdfId nodeId_, EsfEditReason reasons_)
         : nodeId(nodeId_)
         , reasons(reasons_) 
     {}
 
     /// Constructs a rule for uncompiling an input.
+    ///
     Exec_UncompilationRule(
         VdfId nodeId_,
         const TfToken &inputName_,
@@ -85,6 +87,7 @@ public:
     Exec_UncompilationRuleSet() = default;
     
     /// Constructs a set pre-filled with the given \p rules.
+    ///
     Exec_UncompilationRuleSet(
         std::initializer_list<Exec_UncompilationRule> rules)
         : _rules(rules)
@@ -100,8 +103,7 @@ public:
     /// but cannot be called concurrently with any other method.
     ///
     template <class... Args>
-    void emplace_back(Args &&...args)
-    {
+    void emplace_back(Args &&...args) {
         _rules.emplace_back(std::forward<Args>(args)...);
     }
 
@@ -113,22 +115,43 @@ public:
     /// @{
 
     /// Returns the number of items in the set, including any duplicates.
-    size_t size() const { return _rules.size(); }
+    ///
+    size_t size() const { 
+        return _rules.size();
+    }
 
     using iterator = _ConcurrentVector::iterator;
     using const_iterator = _ConcurrentVector::const_iterator;
 
     /// Returns an iterator to the beginning of the rule set.
-    iterator begin() { return _rules.begin(); }
-    const_iterator begin() const { return _rules.begin(); }
+    ///
+    iterator begin() {
+        return _rules.begin();
+    }
+
+    /// Returns a const iterator to the beginning of the rule set.
+    ///
+    const_iterator begin() const {
+        return _rules.begin();
+    }
 
     /// Returns an iterator to the end of the rule set.
     ///
     /// The iterator returned by this method becomes invalid if a client erases
     /// an element.
     ///
-    iterator end() { return _rules.end(); }
-    const_iterator end() const { return _rules.end(); }
+    iterator end() {
+        return _rules.end();
+    }
+
+    /// Returns a const iterator to the end of the rule set.
+    ///
+    /// The iterator returned by this method becomes invalid if a client erases
+    /// an element.
+    ///
+    const_iterator end() const {
+        return _rules.end();
+    }
 
     /// Removes the item referred to by \p it from the set.
     ///
@@ -152,11 +175,14 @@ public:
     /// \note
     /// This method is not thread-safe.
     ///
-    void shrink_to_fit() { _rules.shrink_to_fit(); }
+    void shrink_to_fit() {
+        _rules.shrink_to_fit();
+    }
 
     /// @}
 
     /// Gets a string describing all rules in the set.
+    ///
     EXEC_API std::string GetDescription() const;
 
 private:

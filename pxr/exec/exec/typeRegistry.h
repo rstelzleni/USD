@@ -30,7 +30,6 @@ PXR_NAMESPACE_OPEN_SCOPE
 class ExecTypeRegistry
 {
 public:
-
     ExecTypeRegistry(ExecTypeRegistry const&) = delete;
     ExecTypeRegistry& operator=(ExecTypeRegistry const&) = delete;
 
@@ -67,13 +66,11 @@ public:
     /// If \p ValueType has not been registerd, a fatal error is emitted.
     ///
     template <typename ValueType>
-    TfType CheckForRegistration()
-    {
+    TfType CheckForRegistration() {
         return VdfExecutionTypeRegistry::CheckForRegistration<ValueType>();
     }
 
 private:
-
     // Only TfSingleton can create instances.
     friend class TfSingleton<ExecTypeRegistry>;
 

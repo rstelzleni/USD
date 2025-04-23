@@ -27,8 +27,14 @@ class ExecUsdCacheView;
 class ExecUsdRequest;
 class ExecUsdValueKey;
 
-class ExecUsdSystem
-    : public ExecSystem
+/// The implementation of a system to procedurally compute values based on USD
+/// scene description and computation definitions.
+/// 
+/// ExecUsdSystem specializes the base ExecSystem class and owns USD-specific
+/// structures and logic necessary to compile, schedule and evaluate requested
+/// computation values.
+/// 
+class ExecUsdSystem : public ExecSystem
 {
 public:
     EXECUSD_API
@@ -42,12 +48,28 @@ public:
     EXECUSD_API
     ~ExecUsdSystem();
 
+    /// Builds a request for the given \p valueKeys.
+    ///
     EXECUSD_API
     ExecUsdRequest BuildRequest(std::vector<ExecUsdValueKey> &&valueKeys);
 
+    /// Prepares a given \p request for execution.
+    /// 
+    /// This ensures the exec network is compiled and scheduled for the value
+    /// keys in the request. CacheValues() will implicitly prepare the request
+    /// if needed, but calling PrepareRequest() separately enables clients to
+    /// front-load compilation and scheduling cost.
+    ///
     EXECUSD_API
     void PrepareRequest(const ExecUsdRequest &request);
 
+    /// Executes the given \p request and returns a cache view for extracting
+    /// the computed values.
+    /// 
+    /// This implicitly calls PrepareRequest(), though clients may choose to
+    /// call PrepareRequest() ahead of time and front-load the associated
+    /// compilation and scheduling cost.
+    ///
     EXECUSD_API
     ExecUsdCacheView CacheValues(const ExecUsdRequest &request);
 

@@ -24,7 +24,7 @@ class Exec_TimeComputationDefinition final
 {
 public:
     Exec_TimeComputationDefinition();
-
+    
     ~Exec_TimeComputationDefinition() override;
 
     const Exec_InputKeyVector &GetInputKeys() const override;

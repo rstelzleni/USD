@@ -31,10 +31,8 @@ class VdfNetwork;
 class Exec_Compiler
 {
 public:
-    Exec_Compiler(
-        const EsfStage &stage,
-        Exec_Program *program);
-
+    Exec_Compiler(const EsfStage &stage, Exec_Program *program);
+    
     ~Exec_Compiler();
 
     /// Returns a vector of leaf masked outputs whose entries correspond to

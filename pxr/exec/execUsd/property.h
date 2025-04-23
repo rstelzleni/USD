@@ -39,10 +39,12 @@ public:
     ~ExecUsd_PropertyImpl() override;
 
     /// Copies the provided property into this instance.
+    ///
     ExecUsd_PropertyImpl(const UsdPropertyType &property)
         : ExecUsd_ObjectImpl<InterfaceType, UsdPropertyType>(property) {}
 
     /// Moves the provided property into this instance.
+    ///
     ExecUsd_PropertyImpl(UsdPropertyType &&property)
         : ExecUsd_ObjectImpl<InterfaceType, UsdPropertyType>(
             std::move(property)) {}

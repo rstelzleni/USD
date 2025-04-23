@@ -32,7 +32,6 @@ class VdfNode;
 class Exec_ComputationDefinition
 {
 public:
-
     Exec_ComputationDefinition(
         const Exec_ComputationDefinition &) = delete;
     Exec_ComputationDefinition &operator=(
@@ -68,14 +67,13 @@ public:
         Exec_Program *program) const = 0;
 
 protected:
-
     /// Creates a definition for a computation.
+    ///
     Exec_ComputationDefinition(
         TfType resultType,
         const TfToken &computationName);
 
 private:
-    
     const TfType _resultType;
     const TfToken _computationName;
 };
@@ -89,7 +87,6 @@ class Exec_PluginComputationDefinition final
     : public Exec_ComputationDefinition
 {
 public:
-
     /// Creates a definition for a computation.
     ///
     /// The computation's evaluation-time behavior is implemented in \p
@@ -111,7 +108,6 @@ public:
         Exec_Program *program) const override;
 
 private:
-    
     const ExecCallbackFn _callback;
     const Exec_InputKeyVector _inputKeys;
 };

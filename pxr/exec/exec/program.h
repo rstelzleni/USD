@@ -52,11 +52,12 @@ class Exec_Program
 {
 public:
     Exec_Program();
-    ~Exec_Program();
 
-    /// Non-copyable and non-movable.
+    // Non-copyable and non-movable.
     Exec_Program(const Exec_Program &) = delete;
     Exec_Program& operator=(const Exec_Program &) = delete;
+    
+    ~Exec_Program();
 
     /// Adds a new node in the VdfNetwork.
     ///
@@ -102,8 +103,7 @@ public:
     /// *already known* to not have a corresponding output.
     ///
     std::tuple<const VdfMaskedOutput &, bool> GetCompiledOutput(
-        const Exec_OutputKey::Identity &outputKeyIdentity) const
-    {
+        const Exec_OutputKey::Identity &outputKeyIdentity) const {
         return _compiledOutputCache.Find(outputKeyIdentity);
     }
 
@@ -115,8 +115,7 @@ public:
     ///
     bool SetCompiledOutput(
         const Exec_OutputKey::Identity &outputKeyIdentity,
-        const VdfMaskedOutput &maskedOutput)
-    {
+        const VdfMaskedOutput &maskedOutput) {
         return _compiledOutputCache.Insert(outputKeyIdentity, maskedOutput);
     }
 

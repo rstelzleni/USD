@@ -21,19 +21,24 @@ class ExecUsdSystem;
 class ExecUsdValueKey;
 class ExecValueKey;
 
-// Contains Usd-specific data structures necessary to implement requests.
-//
-class ExecUsd_RequestImpl final
-    : public Exec_RequestImpl
+/// Contains Usd-specific data structures necessary to implement requests.
+///
+class ExecUsd_RequestImpl final : public Exec_RequestImpl
 {
+public:
+    explicit ExecUsd_RequestImpl(std::vector<ExecUsdValueKey> &&valueKeys);
+
     ExecUsd_RequestImpl(const ExecUsd_RequestImpl&) = delete;
     ExecUsd_RequestImpl& operator=(const ExecUsd_RequestImpl&) = delete;
 
-public:
-    explicit ExecUsd_RequestImpl(std::vector<ExecUsdValueKey> &&valueKeys);
     ~ExecUsd_RequestImpl();
 
+    /// Compile the request.
+    ///
     void Compile(ExecUsdSystem *system);
+
+    /// Schedule the request.
+    ///
     void Schedule();
 
 private:

@@ -27,11 +27,11 @@ PXR_NAMESPACE_OPEN_SCOPE
 class Exec_CompiledOutputCache
 {
 public:
+    Exec_CompiledOutputCache() = default;
+    
     Exec_CompiledOutputCache(const Exec_CompiledOutputCache &) = delete;
     Exec_CompiledOutputCache &operator=(const Exec_CompiledOutputCache &) =
         delete;
-
-    Exec_CompiledOutputCache() = default;
 
     /// Insert a masked output corresponding to the output key.
     ///

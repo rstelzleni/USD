@@ -17,6 +17,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// Implementation of EsfStageInterface that wraps a UsdStageConstRefPtr.
+///
 class ExecUsd_Stage : public EsfStageInterface
 {
 public:

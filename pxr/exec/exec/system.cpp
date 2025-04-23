@@ -22,9 +22,9 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-ExecSystem::ExecSystem(EsfStage &&stage) :
-    _stage(std::move(stage)),
-    _program(std::make_unique<Exec_Program>())
+ExecSystem::ExecSystem(EsfStage &&stage)
+    : _stage(std::move(stage))
+    , _program(std::make_unique<Exec_Program>())
 {
     _CreateExecutor();
 }

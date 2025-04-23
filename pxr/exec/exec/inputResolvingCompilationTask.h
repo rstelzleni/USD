@@ -33,6 +33,7 @@ class Exec_CompilationState;
 /// in the input key. The provider object and computation name are used to
 /// construct output keys for Exec_OutputProvidingCompilationTasks, which are
 /// then kicked off to populate the source masked outputs.
+/// 
 class Exec_InputResolvingCompilationTask : public Exec_CompilationTask
 {
 public:
@@ -41,12 +42,12 @@ public:
         const Exec_InputKey &inputKey,
         const EsfObject &originObject,
         TfSmallVector<VdfMaskedOutput, 1> *resultOutputs,
-        EsfJournal *journal) :
-        Exec_CompilationTask(compilationState),
-        _inputKey(inputKey),
-        _originObject(originObject),
-        _journal(journal),
-        _resultOutputs(resultOutputs)
+        EsfJournal *journal)
+        : Exec_CompilationTask(compilationState)
+        , _inputKey(inputKey)
+        , _originObject(originObject)
+        , _journal(journal)
+        , _resultOutputs(resultOutputs)
     {}
 
 private:

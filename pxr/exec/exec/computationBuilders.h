@@ -177,7 +177,8 @@ constexpr bool operator&(
 /// This class builds up an Exec_InputKey that specifies how to source an input
 /// value at exec compilation time.
 ///
-class Exec_ComputationBuilderValueSpecifierBase {
+class Exec_ComputationBuilderValueSpecifierBase
+{
 public:
     EXEC_API
     Exec_ComputationBuilderValueSpecifierBase(
@@ -194,7 +195,6 @@ public:
     ~Exec_ComputationBuilderValueSpecifierBase();
 
 protected:
-
     EXEC_API
     void _SetInputName(const TfToken &inputName);
 
@@ -202,7 +202,6 @@ protected:
     void _SetOptional (const bool optional);
 
 private:
-
     // Only computation builders can get the input key.
     friend class Exec_PrimComputationBuilder;
 
@@ -210,7 +209,6 @@ private:
     void _GetInputKey(Exec_InputKey *inputKey) const;
 
 private:
-
     // We PIMPL the data for this class to avoid exposing more private details
     // in this public header.
     struct _Data;
@@ -669,7 +667,6 @@ class Exec_ComputationBuilder
     Exec_ComputationBuilder(TfType schemaType);
 
 public:
-
     /// Allows access to the constructor.
     ///
     /// Only schema computation registration functions should create computation
@@ -707,7 +704,6 @@ public:
     ///  @}
 
 private:
-
     // The type of the schema for which this builder defines computations.
     TfType _schemaType;
 };
@@ -725,7 +721,6 @@ class Exec_PrimComputationBuilder
         const TfToken &computationName);
 
 public:
-
     EXEC_API
     ~Exec_PrimComputationBuilder();
 
@@ -787,7 +782,6 @@ public:
     Inputs(Args && ... args);
 
 private:
-
     // Adds the callback with result type.
     EXEC_API
     void _AddCallback(ExecCallbackFn &&calback, TfType resultType);
@@ -806,7 +800,6 @@ private:
         const Exec_ComputationBuilderValueSpecifierBase *valueSpecifier);
 
 private:
-
     // We PIMPL the data for this class to avoid exposing more private details
     // in this public header.
     struct _Data;

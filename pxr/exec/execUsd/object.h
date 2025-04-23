@@ -72,11 +72,13 @@ public:
     ~ExecUsd_ObjectImpl() override;
 
     /// Copies the provided object into this instance.
+    ///
     ExecUsd_ObjectImpl(const UsdObjectType &object)
         : InterfaceType(object.GetPath())
         , _object(object) {}
 
     /// Moves the provided object into this instance.
+    ///
     ExecUsd_ObjectImpl(UsdObjectType &&object)
         : InterfaceType(object.GetPath())
         , _object(std::move(object)) {}
@@ -84,11 +86,12 @@ public:
 protected:
     /// Accessors to the wrapped object are made available to all derived
     /// classes.
+    /// 
     UsdObjectType &_GetWrapped() { return _object; }
     const UsdObjectType &_GetWrapped() const { return _object; }
 
 private:
-    /// The wrapped native usd object.
+    // The wrapped native usd object.
     UsdObjectType _object;
 
     // EsfObjectInterface implementation.
@@ -103,6 +106,7 @@ private:
 };
 
 /// Implementation of EsfObjectInterface that wraps a UsdObject.
+///
 using ExecUsd_Object = ExecUsd_ObjectImpl<EsfObjectInterface, UsdObject>;
 
 PXR_NAMESPACE_CLOSE_SCOPE

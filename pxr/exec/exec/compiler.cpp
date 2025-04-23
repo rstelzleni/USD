@@ -20,11 +20,11 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_Compiler::Exec_Compiler(
     const EsfStage &stage,
-    Exec_Program *program) :
-    _stage(stage),
-    _program(program),
-    _rootTask(nullptr),
-    _taskGroupContext(
+    Exec_Program *program)
+    : _stage(stage)
+    , _program(program)
+    , _rootTask(nullptr)
+    , _taskGroupContext(
         tbb::task_group_context::isolated,
         tbb::task_group_context::concurrent_wait |
         tbb::task_group_context::default_traits)

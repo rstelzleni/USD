@@ -44,6 +44,7 @@ class _InputResolver
 {
 public:
     /// Implements the global Exec_ResolveInput function.
+    ///
     static Exec_OutputKeyVector
     ResolveInput(
         const EsfStage &stage,
@@ -111,7 +112,6 @@ private:
     // This does *not* check if the current object, or its parent is a valid
     // scene object. Such checks are left up to the caller. This only returns
     // false if the current object type is not supported.
-    //
     bool
     _TraverseToParent()
     {
@@ -137,7 +137,6 @@ private:
     // are valid scene objects. Such checks are left up to the caller. The
     // current object must be a prim, or else a TF_VERIFY is raised, and this
     // returns false.
-    // 
     bool
     _TraverseToAttribute(const TfToken &attributeName)
     {
@@ -160,7 +159,6 @@ private:
     // If this method returns false, then the current object is set to the first
     // invalid object encountered while performing the traversal - which may be
     // the final object, or some intermediate object.
-    //
     bool
     _TraverseToRelativePath(const SdfPath &relativePath)
     {
@@ -221,7 +219,6 @@ private:
     //
     // If no such ancestor can provide the requested computation, then the
     // current object is set to the pseudo-root prim, and this returns false.
-    //
     bool
     _TraverseToNamespaceAncestor(
         const TfToken &computationName,
@@ -267,7 +264,6 @@ private:
     //
     // If found, the returned definition may refer to a prim computation or an
     // attribute computation. If not found, this returns nullptr.
-    //
     const Exec_ComputationDefinition *
     _FindComputationDefinition(
         const TfToken &computationName,
@@ -320,7 +316,6 @@ private:
     // traversals that "fan-out" to multiple providers (e.g. inputs on attribute
     // connections, inputs on namespace children, etc.). For now, inputs can
     // only resolve to 0 or 1 output keys.
-    //
     Exec_OutputKeyVector
     _ResolveInput(const Exec_InputKey &inputKey)
     {

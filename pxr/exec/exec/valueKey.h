@@ -28,17 +28,19 @@ PXR_NAMESPACE_OPEN_SCOPE
 class ExecValueKey
 {
 public:
-    ExecValueKey(EsfObject&& provider, const TfToken& computationName) :
-        _provider(std::move(provider)),
-        _computationName(computationName)
+    ExecValueKey(EsfObject&& provider, const TfToken& computationName)
+        : _provider(std::move(provider))
+        , _computationName(computationName)
     {}
 
     /// Returns the provider object of the requested value.
+    ///
     const EsfObject& GetProvider() const {
         return _provider;
     }
 
     /// Returns the name of the requested computation.
+    ///
     const TfToken& GetComputationName() const {
         return _computationName;
     }
