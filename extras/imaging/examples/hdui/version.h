@@ -7,6 +7,8 @@
 #ifndef PXR_IMAGING_HDUI_VERSION_H
 #define PXR_IMAGING_HDUI_VERSION_H
 
-#define HDUI_API_VERSION 11
+// 11 -> 12: Reworked Qt signals emitted by HduiSceneObserver.
+
+#define HDUI_API_VERSION 12
 
 #endif // PXR_IMAGING_HDUI_VERSION_H
