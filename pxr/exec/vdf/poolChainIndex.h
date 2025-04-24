@@ -71,16 +71,13 @@ private:
 };
 
 
-/// Returns \c true if \p output is a pool output.
+/// Returns \c true if \p output is a pool output, i.e., an output that has an
+/// associated input, that outputs vectorized data.
 ///
 inline bool
 Vdf_IsPoolOutput(const VdfOutput &output)
 {
-    if (!output.GetAssociatedInput()) {
-        return false;
-    }
-    const VdfMask *const affectsMask = output.GetAffectsMask();
-    return affectsMask && affectsMask->GetSize() > 1;
+    return output.GetAssociatedInput() && output.GetNumDataEntries() > 1;
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

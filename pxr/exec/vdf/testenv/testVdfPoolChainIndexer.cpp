@@ -81,13 +81,13 @@ BuildNetwork(VdfTestUtils::Network &graph)
     VdfTestUtils::Node &mover4 = graph["Mover4"];
     mover4.GetVdfNode()->GetOutput()->SetAffectsMask(mask);
 
+    // We don't set affects masks for some movers, since pool index order
+    // shouldn't require affects masks.
     graph.Add("Mover3", moverType);
     VdfTestUtils::Node &mover3 = graph["Mover3"];
-    mover3.GetVdfNode()->GetOutput()->SetAffectsMask(mask);
 
     graph.Add("Mover2", moverType);
     VdfTestUtils::Node &mover2 = graph["Mover2"];
-    mover2.GetVdfNode()->GetOutput()->SetAffectsMask(mask);
 
     graph.Add("Mover1", moverType);
     VdfTestUtils::Node &mover1 = graph["Mover1"];
