@@ -106,8 +106,9 @@
 //           source and prim type.
 // 77 -> 78: Removed the widget renderTag and added a displayInOverlay boolean
 //           attribute to serve the same purpose that widget signified.
+// 78 -> 79: Added Hgi::GarbageCollect.
 
-#define HD_API_VERSION 78
+#define HD_API_VERSION 79
 
 // 1  ->  2: SimpleLighting -> FallbackLighting
 #define HD_SHADER_API 2

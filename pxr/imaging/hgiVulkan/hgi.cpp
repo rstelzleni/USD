@@ -307,6 +307,19 @@ HgiVulkan::EndFrame()
     }
 }
 
+void
+HgiVulkan::GarbageCollect()
+{
+    if (ARCH_UNLIKELY(_threadId != std::this_thread::get_id())) {
+        TF_CODING_ERROR("Secondary thread violation");
+        return;
+    }
+    HgiVulkanDevice* device = GetPrimaryDevice();
+
+    // Perform garbage collection for each device.
+    _garbageCollector->PerformGarbageCollection(device);
+}
+
 /* Multi threaded */
 HgiVulkanInstance*
 HgiVulkan::GetVulkanInstance() const

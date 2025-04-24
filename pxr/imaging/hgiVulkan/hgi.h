@@ -131,6 +131,9 @@ public:
     HGIVULKAN_API
     void EndFrame() override;
 
+    HGIVULKAN_API
+    void GarbageCollect() override;
+
     //
     // HgiVulkan specific
     //

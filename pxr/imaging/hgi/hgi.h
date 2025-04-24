@@ -324,6 +324,14 @@ public:
     HGI_API
     virtual void EndFrame() = 0;
 
+    /// Perform any necessary garbage collection, if applicable. This can be
+    /// used to flush pending deletes immediately after unloading assets, for
+    /// example. Note that as some clients may not call this, Hgi
+    /// implementations should find other opportunities to garbage collect as
+    /// well (e.g. EndFrame).
+    HGI_API
+    virtual void GarbageCollect() = 0;
+
 protected:
     // Returns a unique id for handle creation.
     // Thread safety: Thread-safe atomic increment.
