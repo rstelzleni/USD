@@ -29,7 +29,6 @@
 #include "pxr/usd/usd/stageCache.h"
 #include "pxr/usd/usd/stageCacheContext.h"
 #include "pxr/usd/usd/tokens.h"
-#include "pxr/usd/usd/usdFileFormat.h"
 #include "pxr/usd/usd/valueUtils.h"
 
 #include "pxr/usd/pcp/changes.h"
@@ -47,6 +46,7 @@
 #include "pxr/usd/sdf/fileFormat.h"
 #include "pxr/usd/sdf/schema.h"
 #include "pxr/usd/sdf/types.h" 
+#include "pxr/usd/sdf/usdFileFormat.h"
 #include "pxr/usd/sdf/variableExpression.h"
 
 #include "pxr/base/trace/trace.h"
@@ -696,7 +696,7 @@ UsdStage::UsdStage(const SdfLayerRefPtr& rootLayer,
     , _editTargetIsLocalLayer(true)
     , _cache(new PcpCache(PcpLayerStackIdentifier(
                               _rootLayer, _sessionLayer, pathResolverContext),
-                          UsdUsdFileFormatTokens->Target,
+                          SdfUsdFileFormatTokens->Target,
                           /*usdMode=*/true))
     , _clipCache(new Usd_ClipCache)
     , _instanceCache(new Usd_InstanceCache)
@@ -1077,7 +1077,7 @@ _OpenLayer(
 
     SdfLayer::FileFormatArguments args;
     args[SdfFileFormatTokens->TargetArg] =
-        UsdUsdFileFormatTokens->Target.GetString();
+        SdfUsdFileFormatTokens->Target.GetString();
 
     return SdfLayer::FindOrOpen(filePath, args);
 }
@@ -3666,7 +3666,7 @@ UsdStage::IsSupportedFile(const std::string& filePath)
 
     // if the extension is valid we'll get a non null FileFormatPtr
     return SdfFileFormat::FindByExtension(fileExtension, 
-                                          UsdUsdFileFormatTokens->Target);
+                                          SdfUsdFileFormatTokens->Target);
 }
 
 namespace {

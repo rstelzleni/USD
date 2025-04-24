@@ -5,12 +5,11 @@
 // https://openusd.org/license.
 //
 #include "pxr/pxr.h"
+#include "pxr/usd/sdf/usdaFileFormat.h"
 #include "pxr/usd/usd/clipSet.h"
-
 #include "pxr/usd/usd/clipsAPI.h"
 #include "pxr/usd/usd/clipSetDefinition.h"
 #include "pxr/usd/usd/debugCodes.h"
-#include "pxr/usd/usd/usdaFileFormat.h"
 #include "pxr/usd/usd/valueUtils.h"
 
 #include "pxr/usd/pcp/layerStack.h"
@@ -84,7 +83,7 @@ Usd_GenerateClipManifest(
     }
 
     SdfLayerRefPtr manifestLayer = SdfLayer::CreateAnonymous(TfStringPrintf(
-        "%s.%s", tag.c_str(), UsdUsdaFileFormatTokens->Id.GetText()));
+        "%s.%s", tag.c_str(), SdfUsdaFileFormatTokens->Id.GetText()));
  
     SdfChangeBlock changeBlock;
    

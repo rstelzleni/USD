@@ -18,9 +18,9 @@
 #include "pxr/usd/sdf/layer.h"
 #include "pxr/usd/sdf/layerUtils.h"
 #include "pxr/usd/sdf/path.h"
+#include "pxr/usd/sdf/usdaFileFormat.h"
 
 #include "pxr/usd/usd/tokens.h"
-#include "pxr/usd/usd/usdaFileFormat.h"
 
 #include "pxr/base/gf/interval.h"
 #include "pxr/base/tf/preprocessorUtilsLite.h"
@@ -740,7 +740,7 @@ Usd_Clip::_GetLayerForClip() const
                 assetPath.GetAssetPath().c_str());
         layer = SdfLayer::CreateAnonymous(TfStringPrintf(
                      _tokens->dummy_clipFormat.GetText(), 
-                     UsdUsdaFileFormatTokens->Id.GetText()));
+                     SdfUsdaFileFormatTokens->Id.GetText()));
     }
 
     std::lock_guard<std::mutex> lock(_layerMutex);
