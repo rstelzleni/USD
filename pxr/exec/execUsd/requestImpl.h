@@ -38,6 +38,9 @@ public:
     /// Schedule the request.
     void Schedule();
 
+    /// Computes the value keys in the request.
+    void CacheValues(ExecUsdSystem *system);
+
 private:
     std::vector<ExecUsdValueKey> _valueKeys;
 };

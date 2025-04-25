@@ -9,7 +9,7 @@
 
 /// \file
 ///
-/// This file contains definitions for trvial types, including type aliases, so
+/// This file contains definitions for trivial types, including type aliases, so
 /// that source files that require these types can get access to them without
 /// transitively including many headers, and otherwise pulling in unneeded
 /// definitions. Defining these types in this public header also helps keep
@@ -19,13 +19,12 @@
 #include "pxr/pxr.h"
 
 #include <functional>
+#include <tuple>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-class VdfContext;
-
 /// Function type used for computation callbacks.
-using ExecCallbackFn = std::function<void (const VdfContext &context)>;
+using ExecCallbackFn = std::function<void (const class VdfContext &context)>;
 
 /// Type used to identify Exec_DefinitionRegistry registry functions.
 ///
@@ -33,6 +32,12 @@ using ExecCallbackFn = std::function<void (const VdfContext &context)>;
 /// Exec_DefinitionRegistry itself, to allow that type to remain private.
 /// 
 struct ExecDefinitionRegistryTag {};
+
+/// The path to a scene object for which the authored value has been invalidated
+/// along with a time interval denoting the invalid time range.
+/// 
+using ExecInvalidAuthoredValue =
+    std::tuple<const class SdfPath, class EfTimeInterval>;
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

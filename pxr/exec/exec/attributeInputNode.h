@@ -25,7 +25,6 @@ TF_DECLARE_PUBLIC_TOKENS(
     Exec_AttributeInputNodeTokens, EXEC_ATTRIBUTE_INPUT_NODE_TOKENS);
 
 /// Node that computes attribute resolved values.
-///
 class Exec_AttributeInputNode final : public VdfNode
 {
 public:

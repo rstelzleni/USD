@@ -52,8 +52,7 @@ ExecUsd_RequestImpl::ExecUsd_RequestImpl(
 ExecUsd_RequestImpl::~ExecUsd_RequestImpl() = default;
 
 void
-ExecUsd_RequestImpl::Compile(
-    ExecUsdSystem *system)
+ExecUsd_RequestImpl::Compile(ExecUsdSystem *const system)
 {
     TRACE_FUNCTION();
 
@@ -77,6 +76,12 @@ void
 ExecUsd_RequestImpl::Schedule()
 {
     this->_Schedule();
+}
+
+void
+ExecUsd_RequestImpl::CacheValues(ExecUsdSystem *const system)
+{
+    this->_CacheValues(system);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

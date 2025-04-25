@@ -6,11 +6,14 @@
 //
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/base/tf/span.h"
 #include "pxr/base/tf/token.h"
 #include "pxr/exec/ef/timeInputNode.h"
+#include "pxr/exec/ef/timeInterval.h"
+#include "pxr/exec/vdf/grapher.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/node.h"
-#include "pxr/exec/vdf/grapher.h"
+#include "pxr/usd/sdf/path.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -74,6 +77,14 @@ Exec_Program::Connect(
     }
     _uncompilationTable.AddRulesForInput(
         inputNode->GetId(), inputName, journal);
+}
+
+void
+Exec_Program::InvalidateAuthoredValues(
+    TfSpan<ExecInvalidAuthoredValue> invalidProperties)
+{
+    // TODO: Leaf node and request invalidation, as well as queueing up main
+    // executor invalidation. 
 }
 
 void

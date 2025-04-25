@@ -10,9 +10,9 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/compiledOutputCache.h"
+#include "pxr/exec/exec/types.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
-#include "pxr/base/tf/span.h"
 #include "pxr/exec/ef/leafNodeCache.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/network.h"
@@ -24,6 +24,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 class EfTimeInputNode;
 class EsfJournal;
+template <typename> class TfSpan;
 class VdfNode;
 
 /// Owns a VdfNetwork and related data structures to access and modify the
@@ -118,6 +119,15 @@ public:
         const VdfMaskedOutput &maskedOutput) {
         return _compiledOutputCache.Insert(outputKeyIdentity, maskedOutput);
     }
+
+    /// Returns the current generational counter of the execution network.
+    size_t GetNetworkVersion() const {
+        return _network.GetVersion();
+    }
+
+    /// Notifies the program of authored value invalidation.
+    void InvalidateAuthoredValues(
+        TfSpan<ExecInvalidAuthoredValue> invalidProperties);
 
     /// Writes the compiled network to a file at \p filename.
     void GraphNetwork(const char *filename) const;

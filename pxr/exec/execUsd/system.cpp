@@ -14,7 +14,7 @@
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/notice.h"
 #include "pxr/base/trace/trace.h"
-#include "pxr/exec/exec/systemChangeManager.h"
+#include "pxr/exec/exec/systemChangeProcessor.h"
 #include "pxr/usd/usd/notice.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -76,6 +76,14 @@ ExecUsdSystem::PrepareRequest(const ExecUsdRequest &request)
 ExecUsdCacheView
 ExecUsdSystem::CacheValues(const ExecUsdRequest &request)
 {
+    std::shared_ptr<ExecUsd_RequestImpl> requestImpl = request._GetImpl();
+    if (!requestImpl) {
+        TF_CODING_ERROR("Cannot cache an expired request");
+        return ExecUsdCacheView();
+    }
+
+    requestImpl->CacheValues(this);
+
     return ExecUsdCacheView();
 }
 
@@ -102,19 +110,19 @@ ExecUsdSystem::_NoticeListener::_DidObjectsChanged(
 {
     TRACE_FUNCTION();
 
-    ExecSystem::_ChangeManager changeManager(_system);
+    ExecSystem::_ChangeProcessor changeProcessor(_system);
 
     for (const SdfPath &path : objectsChanged.GetResyncedPaths()) {
-        changeManager.DidResync(path);
+        changeProcessor.DidResync(path);
     }
 
     for (const SdfPath &path :
         objectsChanged.GetResolvedAssetPathsResyncedPaths()) {
-        changeManager.DidResync(path);
+        changeProcessor.DidResync(path);
     }
 
     for (const SdfPath &path : objectsChanged.GetChangedInfoOnlyPaths()) {
-        changeManager.DidChangeInfoOnly(
+        changeProcessor.DidChangeInfoOnly(
             path,
             objectsChanged.GetChangedFields(path));
     }

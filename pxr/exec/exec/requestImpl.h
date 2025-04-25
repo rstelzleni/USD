@@ -29,7 +29,7 @@ class VdfSchedule;
 /// Concrete implementations inherit from Exec_RequestImpl to implement any
 /// functionality that is specific to the scene description system.
 ///
-class Exec_RequestImpl
+class EXEC_API_TYPE Exec_RequestImpl
 {
 protected:
     EXEC_API
@@ -39,7 +39,7 @@ protected:
     Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
 
     EXEC_API
-    ~Exec_RequestImpl();
+    virtual ~Exec_RequestImpl();
 
     /// Compiles outputs for the value keys in the request.
     EXEC_API
@@ -48,6 +48,10 @@ protected:
     /// Builds the schedule for the request.
     EXEC_API
     void _Schedule();
+
+    /// Computes the value keys in the request.
+    EXEC_API
+    void _CacheValues(ExecSystem *system);
 
 private:
     std::vector<VdfMaskedOutput> _leafOutputs;

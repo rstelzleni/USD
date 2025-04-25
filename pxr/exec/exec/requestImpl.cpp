@@ -24,11 +24,10 @@ Exec_RequestImpl::~Exec_RequestImpl() = default;
 
 void
 Exec_RequestImpl::_Compile(
-    ExecSystem *system,
+    ExecSystem *const system,
     TfSpan<const ExecValueKey> valueKeys)
 {
-    if (!system) {
-        TF_CODING_ERROR("Got null system");
+    if (!TF_VERIFY(system)) {
         return;
     }
 
@@ -58,6 +57,16 @@ Exec_RequestImpl::_Schedule()
     _schedule = std::make_unique<VdfSchedule>();
     VdfScheduler::Schedule(
         *_computeRequest, _schedule.get(), /* topologicallySort */ false);
+}
+
+void
+Exec_RequestImpl::_CacheValues(ExecSystem *const system)
+{
+    if (!TF_VERIFY(system)) {
+        return;
+    }
+
+    system->_CacheValues(*_schedule, *_computeRequest);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -28,7 +28,7 @@ pxr_library(exec
         computationBuilders
         requestImpl
         system
-        systemChangeManager
+        systemChangeProcessor
         systemDiagnostics
         typeRegistry
         valueKey
