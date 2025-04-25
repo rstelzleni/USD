@@ -99,6 +99,10 @@ private:
         ExecCallbackFn &&callback,
         Exec_InputKeyVector &&inputKeys);
 
+    void _RegisterBuiltinStageComputation(
+        const TfToken &computationName,
+        std::unique_ptr<Exec_ComputationDefinition> &&definition);
+
     void _RegisterBuiltinPrimComputation(
         const TfToken &computationName,
         std::unique_ptr<Exec_ComputationDefinition> &&definition);
@@ -120,7 +124,15 @@ private:
         std::tuple<TfType, TfToken>,
         Exec_PluginComputationDefinition,
         TfHash>
-        _pluginPrimComputationDefinitions;
+    _pluginPrimComputationDefinitions;
+
+    // Map from computationName to builtin stage computation
+    // definition.
+    std::unordered_map<
+        TfToken,
+        std::unique_ptr<Exec_ComputationDefinition>,
+        TfHash>
+    _builtinStageComputationDefinitions;
 
     // Map from computationName to builtin prim computation
     // definition.
@@ -128,7 +140,7 @@ private:
         TfToken,
         std::unique_ptr<Exec_ComputationDefinition>,
         TfHash>
-        _builtinPrimComputationDefinitions;
+    _builtinPrimComputationDefinitions;
 
     // Map from computationName to builtin attribute computation
     // definition.
@@ -136,7 +148,7 @@ private:
         TfToken,
         std::unique_ptr<Exec_ComputationDefinition>,
         TfHash>
-        _builtinAttributeComputationDefinitions;
+    _builtinAttributeComputationDefinitions;
 };
 
 void

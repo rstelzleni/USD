@@ -182,6 +182,29 @@ TestUnknownSchemaType()
     TF_AXIOM(!primCompDef);
 }
 
+// State that attempts to look up builtin stage computations on prims (other
+// than the pseudo-root) are rejected.
+//
+static void
+TestStageBuiltinComputationOnPrim()
+{
+    EsfJournal *const nullJournal = nullptr;
+    const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+    const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def TestUnknownType "Prim" {
+        }
+    )usd");
+    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+    TF_AXIOM(prim->IsValid(nullJournal));
+
+    std::cerr << "=== Expected Error Output Begin ===\n";
+    const Exec_ComputationDefinition *const primCompDef =
+        reg.GetComputationDefinition(
+            *prim, ExecBuiltinComputations->computeTime, nullJournal);
+    std::cerr << "=== Expected Error Output End ===\n";
+    TF_AXIOM(!primCompDef);
+}
+
 static void
 TestComputationRegistration()
 {
@@ -192,6 +215,7 @@ TestComputationRegistration()
         }
     )usd");
     const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+    const EsfPrim pseudoroot = stage->GetPrimAtPath(SdfPath("/"), nullJournal);
     TF_AXIOM(prim->IsValid(nullJournal));
 
     {
@@ -230,15 +254,23 @@ TestComputationRegistration()
     }
 
     {
-        // Look up a bultin computation.
+        // Look up a stage bultin computation.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                *prim, ExecBuiltinComputations->computeTime, nullJournal);
+                *pseudoroot, ExecBuiltinComputations->computeTime, nullJournal);
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(
             primCompDef->GetInputKeys(*prim, nullJournal).size(),
             0);
+    }
+
+    {
+        // Look up a plugin computation on the stage pseudo-root.
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *pseudoroot, _tokens->noInputsComputation, nullJournal);
+        TF_AXIOM(!primCompDef);
     }
 
     {
@@ -363,7 +395,7 @@ int main()
     TF_AXIOM(!schemaType.IsUnknown());
 
     TestUnknownSchemaType();
-
+    TestStageBuiltinComputationOnPrim();
     TestComputationRegistration();
 
     return 0;

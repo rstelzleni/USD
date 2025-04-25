@@ -63,7 +63,18 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     const TfToken &computationName,
     EsfJournal *const journal) const
 {
-    // First look for a matching builtin computation.
+    // If the provider is the stage, we only support builtin computations.
+    if (providerPrim.IsPseudoRoot()) {
+        const auto builtinIt =
+            _builtinStageComputationDefinitions.find(computationName);
+        if (builtinIt != _builtinStageComputationDefinitions.end()) {
+            return builtinIt->second.get();
+        }
+
+        return nullptr;
+    }
+
+    // Otherwise, first look for a matching builtin computation.
     const auto builtinIt =
         _builtinPrimComputationDefinitions.find(computationName);
     if (builtinIt != _builtinPrimComputationDefinitions.end()) {
@@ -136,6 +147,24 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
 }
 
 void
+Exec_DefinitionRegistry::_RegisterBuiltinStageComputation(
+    const TfToken &computationName,
+    std::unique_ptr<Exec_ComputationDefinition> &&definition)
+{
+    const bool emplaced = 
+        _builtinStageComputationDefinitions.emplace(
+            computationName,
+            std::move(definition)).second;
+
+    if (!emplaced) {
+        TF_CODING_ERROR(
+            "Duplicate builtin computation registration for stage computation "
+            "named '%s'",
+            computationName.GetText());
+    }
+}
+
+void
 Exec_DefinitionRegistry::_RegisterBuiltinPrimComputation(
     const TfToken &computationName,
     std::unique_ptr<Exec_ComputationDefinition> &&definition)
@@ -174,7 +203,7 @@ Exec_DefinitionRegistry::_RegisterBuiltinAttributeComputation(
 void
 Exec_DefinitionRegistry::_RegisterBuiltinComputations()
 {
-    _RegisterBuiltinPrimComputation(
+    _RegisterBuiltinStageComputation(
         ExecBuiltinComputations->computeTime,
         std::make_unique<Exec_TimeComputationDefinition>());
 
@@ -183,7 +212,8 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputations()
         std::make_unique<Exec_ComputeValueComputationDefinition>());
 
     // Make sure we registered all builtins.
-    TF_VERIFY(_builtinPrimComputationDefinitions.size() +
+    TF_VERIFY(_builtinStageComputationDefinitions.size() +
+              _builtinPrimComputationDefinitions.size() +
               _builtinAttributeComputationDefinitions.size() ==
               ExecBuiltinComputations->GetComputationTokens().size());
 }
