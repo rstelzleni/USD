@@ -215,6 +215,9 @@ UsdImagingStageSceneIndex::UsdImagingStageSceneIndex(
 
 UsdImagingStageSceneIndex::~UsdImagingStageSceneIndex()
 {
+    // Trace the dtor as an important special case.
+    TRACE_FUNCTION();
+
     SetStage(nullptr);
 }
 
@@ -378,23 +381,35 @@ void UsdImagingStageSceneIndex::_Populate()
         return;
     }
 
-    _PopulateSubtree(_stage->GetPseudoRoot());
+    HdSceneIndexObserver::AddedPrimEntries addedPrims;
 
+    // Populate each subtree, building up a single list of AddedPrimEntries.
+    _PopulateSubtree(_stage->GetPseudoRoot(), &addedPrims);
     for (const UsdPrim &prim : _stage->GetPrototypes()) {
-        _PopulateSubtree(prim);
+        _PopulateSubtree(prim, &addedPrims);
     }
 
+    if (TfDebug::IsEnabled(USDIMAGING_POPULATION)) {
+        TF_DEBUG(USDIMAGING_POPULATION).Msg(
+            "[Population] Populating\n");
+        for (size_t i = 0; i < addedPrims.size(); ++i) {
+            TF_DEBUG(USDIMAGING_POPULATION).Msg("\t<%s> (type = %s)\n",
+                addedPrims[i].primPath.GetText(),
+                addedPrims[i].primType.GetText());
+        }
+    }
+
+    _SendPrimsAdded(addedPrims);
 }
 
-void UsdImagingStageSceneIndex::_PopulateSubtree(UsdPrim subtreeRoot)
+void UsdImagingStageSceneIndex::_PopulateSubtree(
+    UsdPrim subtreeRoot,
+    HdSceneIndexObserver::AddedPrimEntries *addedPrims)
 {
     TRACE_FUNCTION();
     if (!subtreeRoot) {
         return;
     }
-
-    HdSceneIndexObserver::AddedPrimEntries addedPrims;
-    size_t lastEnd = 0;
 
     UsdPrimRange range(subtreeRoot, _GetPrimPredicate());
 
@@ -403,7 +418,7 @@ void UsdImagingStageSceneIndex::_PopulateSubtree(UsdPrim subtreeRoot)
         if (prim.IsPseudoRoot()) {
             // XXX for now, we have to make sure the prim at the absolute root
             // path is "added"
-            addedPrims.emplace_back(SdfPath::AbsoluteRootPath(), TfToken());
+            addedPrims->emplace_back(SdfPath::AbsoluteRootPath(), TfToken());
             continue;
         }
 
@@ -425,25 +440,10 @@ void UsdImagingStageSceneIndex::_PopulateSubtree(UsdPrim subtreeRoot)
             const SdfPath subpath =
                 subprim.IsEmpty() ? primPath : primPath.AppendProperty(subprim);
 
-            addedPrims.emplace_back(subpath,
+            addedPrims->emplace_back(subpath,
                 _GetImagingSubprimType(entry.allAdapters, prim, subprim));
         }
-
-        if (TfDebug::IsEnabled(USDIMAGING_POPULATION)) {
-            TF_DEBUG(USDIMAGING_POPULATION).Msg(
-                "[Population] Populating <%s> (type = %s) ->\n",
-                primPath.GetText(),
-                prim.GetPrimTypeInfo().GetSchemaTypeName().GetText());
-            for (size_t i = lastEnd; i < addedPrims.size(); ++i) {
-                TF_DEBUG(USDIMAGING_POPULATION).Msg("\t<%s> (type = %s)\n",
-                    addedPrims[i].primPath.GetText(),
-                    addedPrims[i].primType.GetText());
-            }
-            lastEnd = addedPrims.size();
-        }
     }
-
-    _SendPrimsAdded(addedPrims);
 }
 
 Usd_PrimFlagsPredicate
@@ -646,11 +646,15 @@ UsdImagingStageSceneIndex::_ApplyPendingResyncs()
         TF_DEBUG(USDIMAGING_CHANGES).Msg("[Population] Repopulating <%s>\n",
                                          primPath.GetText());
         _SendPrimsRemoved({primPath});
-        _PopulateSubtree(prim);
+
+        HdSceneIndexObserver::AddedPrimEntries addedPrims;
+        _PopulateSubtree(prim, &addedPrims);
 
         // Prune property updates of resynced prims, which are redundant.
         _DeletePrefix(primPath, &_usdPropertiesToResync);
         _DeletePrefix(primPath, &_usdPropertiesToUpdate);
+
+        _SendPrimsAdded(addedPrims);
     }
 
     _usdPrimsToResync.clear();

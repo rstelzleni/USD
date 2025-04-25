@@ -148,7 +148,8 @@ private:
 
     // Population
     void _Populate();
-    void _PopulateSubtree(UsdPrim subtreeRoot);
+    void _PopulateSubtree(UsdPrim subtreeRoot,
+        HdSceneIndexObserver::AddedPrimEntries *addedPrims);
 
     // Edit processing
     void _OnUsdObjectsChanged(UsdNotice::ObjectsChanged const& notice,
