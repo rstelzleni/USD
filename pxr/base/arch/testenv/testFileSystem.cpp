@@ -103,7 +103,15 @@ int main()
     ARCH_AXIOM(std::filesystem::equivalent(filePath, firstName));
 #endif
     fclose(firstFile);
-
+    
+    // Test utf-8 path
+    std::string secondName = ArchMakeTmpFileName("测试");
+    ARCH_AXIOM((firstFile = ArchOpenFile(secondName.c_str(), "w")) != NULL);
+    filePath = ArchGetFileName(firstFile);
+    ARCH_AXIOM(std::filesystem::equivalent(std::filesystem::u8path(filePath),
+               std::filesystem::u8path(secondName)));
+    fclose(firstFile);
+    
     // Map the file and assert the bytes are what we expect they are.
     ARCH_AXIOM((firstFile = ArchOpenFile(firstName.c_str(), "rb")) != NULL);
     ArchConstFileMapping cfm = ArchMapFileReadOnly(firstFile);
