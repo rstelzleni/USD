@@ -103,6 +103,9 @@ struct Exec_BuiltinComputations
 
     /// Returns all builtin computation tokens.
     const std::vector<TfToken> &GetComputationTokens();
+
+    /// The prefix that begins all builtin computation names.
+    static constexpr char builtinComputationNamePrefix[] = "__";
 };
 
 // Used to publicly access builtin computation tokens.

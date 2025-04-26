@@ -16,9 +16,8 @@ static TfStaticData<std::vector<TfToken>> _builtinComputationNames;
 static TfToken
 _RegisterBuiltin(const std::string &name)
 {
-    static constexpr char _computationNamePrefix[] = "__";
-
-    const TfToken computationNameToken(_computationNamePrefix + name);
+    const TfToken computationNameToken(
+        Exec_BuiltinComputations::builtinComputationNamePrefix + name);
     _builtinComputationNames->push_back(computationNameToken);
     return computationNameToken;
 }

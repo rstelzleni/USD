@@ -17,6 +17,7 @@
 
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/instantiateSingleton.h"
+#include "pxr/base/tf/stringUtils.h"
 
 #include <utility>
 
@@ -63,8 +64,17 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     const TfToken &computationName,
     EsfJournal *const journal) const
 {
+    const bool hasBuiltinPrefix =
+        TfStringStartsWith(
+            computationName.GetString(),
+            Exec_BuiltinComputations::builtinComputationNamePrefix);
+
     // If the provider is the stage, we only support builtin computations.
     if (providerPrim.IsPseudoRoot()) {
+        if (!hasBuiltinPrefix) {
+            return nullptr;
+        }
+
         const auto builtinIt =
             _builtinStageComputationDefinitions.find(computationName);
         if (builtinIt != _builtinStageComputationDefinitions.end()) {
@@ -74,14 +84,18 @@ Exec_DefinitionRegistry::GetComputationDefinition(
         return nullptr;
     }
 
-    // Otherwise, first look for a matching builtin computation.
-    const auto builtinIt =
-        _builtinPrimComputationDefinitions.find(computationName);
-    if (builtinIt != _builtinPrimComputationDefinitions.end()) {
-        return builtinIt->second.get();
+    if (hasBuiltinPrefix) {
+        // look for a matching builtin computation.
+        const auto builtinIt =
+            _builtinPrimComputationDefinitions.find(computationName);
+        if (builtinIt != _builtinPrimComputationDefinitions.end()) {
+            return builtinIt->second.get();
+        }
+
+        return nullptr;
     }
 
-    // If we didn't find a builtin computation, look for a plugin computation.
+    // Otherwise, look for a plugin computation.
     const TfType schemaType = providerPrim.GetType(journal);
     const auto pluginIt = _pluginPrimComputationDefinitions.find(
         {schemaType, computationName});
@@ -121,11 +135,21 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
 {
     if (schemaType.IsUnknown()) {
         TF_CODING_ERROR(
-            "Attempt to register a computation using an unknown type.");
+            "Attempt to register computation '%s' using an unknown type.",
+            computationName.GetText());
         return;
     }
 
-    // TODO: Verify computationName isn't a builtin computation name.
+    if (TfStringStartsWith(
+            computationName.GetString(),
+            Exec_BuiltinComputations::builtinComputationNamePrefix)) {
+        TF_CODING_ERROR(
+            "Attempt to register computation '%s' with a name that uses the "
+            "prefix '%s', which is reserved for builtin computations.",
+            computationName.GetText(),
+            Exec_BuiltinComputations::builtinComputationNamePrefix);
+        return;
+    }
 
     const bool emplaced =
         _pluginPrimComputationDefinitions.emplace(
@@ -151,6 +175,13 @@ Exec_DefinitionRegistry::_RegisterBuiltinStageComputation(
     const TfToken &computationName,
     std::unique_ptr<Exec_ComputationDefinition> &&definition)
 {
+    if (!TF_VERIFY(
+            TfStringStartsWith(
+                computationName.GetString(),
+                Exec_BuiltinComputations::builtinComputationNamePrefix))) {
+        return;
+    }
+
     const bool emplaced = 
         _builtinStageComputationDefinitions.emplace(
             computationName,
@@ -169,6 +200,13 @@ Exec_DefinitionRegistry::_RegisterBuiltinPrimComputation(
     const TfToken &computationName,
     std::unique_ptr<Exec_ComputationDefinition> &&definition)
 {
+    if (!TF_VERIFY(
+            TfStringStartsWith(
+                computationName.GetString(),
+                Exec_BuiltinComputations::builtinComputationNamePrefix))) {
+        return;
+    }
+
     const bool emplaced =
         _builtinPrimComputationDefinitions.emplace(
             computationName,
@@ -187,6 +225,13 @@ Exec_DefinitionRegistry::_RegisterBuiltinAttributeComputation(
     const TfToken &computationName,
     std::unique_ptr<Exec_ComputationDefinition> &&definition)
 {
+    if (!TF_VERIFY(
+            TfStringStartsWith(
+                computationName.GetString(),
+                Exec_BuiltinComputations::builtinComputationNamePrefix))) {
+        return;
+    }
+
     const bool emplaced =
         _builtinAttributeComputationDefinitions.emplace(
             computationName,

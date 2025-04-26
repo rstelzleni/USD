@@ -18,6 +18,7 @@
 #include "pxr/base/plug/plugin.h"
 #include "pxr/base/plug/registry.h"
 #include "pxr/base/tf/diagnostic.h"
+#include "pxr/base/tf/errorMark.h"
 #include "pxr/base/tf/pathUtils.h"
 #include "pxr/base/tf/registryManager.h"
 #include "pxr/base/tf/smallVector.h"
@@ -57,6 +58,10 @@ EXEC_REGISTER_SCHEMA(TestUnknownType)
 EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
 {
     self.PrimComputation(_tokens->emptyComputation);
+
+    // Attempt to register a prim computation that uses a builtin computation
+    // name.
+    self.PrimComputation(ExecBuiltinComputations->computeTime);
 
     self.PrimComputation(_tokens->noInputsComputation)
         .Callback(+[](const VdfContext &) { return 1.0; });
@@ -165,6 +170,28 @@ _PrintInputKeys(
 }
 
 static void
+TestRegistrationErrors()
+{
+    // The first time we pull on the defintion registry, errors for bad
+    // registrations are emitted.
+    TfErrorMark mark;
+    std::cerr << "=== Expected Error Output Begin ===\n";
+    Exec_DefinitionRegistry::GetInstance();
+    std::cerr << "=== Expected Error Output End ===\n";
+
+    static const std::vector expected{
+        "Attempt to register computation 'noInputsComputation' using an unknown type.",
+        "Attempt to register computation '__computeTime' with a name that uses the prefix '__', which is reserved for builtin computations."
+    };
+
+    size_t i=0;
+    for (auto it=mark.begin(); it!=mark.end(); ++it) {
+        ASSERT_EQ(it->GetCommentary(), expected[i++]);
+    }
+    ASSERT_EQ(i, 2);
+}
+
+static void
 TestUnknownSchemaType()
 {
     EsfJournal *const nullJournal = nullptr;
@@ -182,7 +209,7 @@ TestUnknownSchemaType()
     TF_AXIOM(!primCompDef);
 }
 
-// State that attempts to look up builtin stage computations on prims (other
+// Test that attempts to look up builtin stage computations on prims (other
 // than the pseudo-root) are rejected.
 //
 static void
@@ -197,11 +224,9 @@ TestStageBuiltinComputationOnPrim()
     const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
     TF_AXIOM(prim->IsValid(nullJournal));
 
-    std::cerr << "=== Expected Error Output Begin ===\n";
     const Exec_ComputationDefinition *const primCompDef =
         reg.GetComputationDefinition(
             *prim, ExecBuiltinComputations->computeTime, nullJournal);
-    std::cerr << "=== Expected Error Output End ===\n";
     TF_AXIOM(!primCompDef);
 }
 
@@ -394,6 +419,7 @@ int main()
         TfType::FindByName("TestExecComputationRegistrationCustomSchema");
     TF_AXIOM(!schemaType.IsUnknown());
 
+    TestRegistrationErrors();
     TestUnknownSchemaType();
     TestStageBuiltinComputationOnPrim();
     TestComputationRegistration();
