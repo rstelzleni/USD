@@ -81,8 +81,7 @@ template <typename ValueType>
 void
 ExecTypeRegistry::RegisterType(ValueType const &fallback)
 {
-    VdfExecutionTypeRegistry::GetInstance()
-        .Define(fallback);
+    VdfExecutionTypeRegistry::Define(fallback);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

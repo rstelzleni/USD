@@ -89,7 +89,6 @@ pxr_library(vdf
         executorInvalidator
         executorObserver
         extensibleNode
-        fallbackValueRegistry
         fixedSizeHolder
         grapher
         grapherOptions
