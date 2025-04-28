@@ -884,20 +884,50 @@ PcpChanges::DidChange(const PcpCache* cache,
 
                 // Treat a change to DefaultPrim as a resync
                 // of that root prim path.
+                //
+                // XXX: This a bit of heavy hammer when the default prim
+                // change only affects prim indexes that have a reference or
+                // payload dependency on the layer's default prim. Treating
+                // the change as a resync of the path causes ANY dependencies
+                // on the old default prim path to be resynced. We really should
+                // handle this in a more efficient manner that only resyncs 
+                // prim indexes that truly depend on the defaultPrim change.
                 auto i = entry.FindInfoChange(SdfFieldKeys->DefaultPrim);
                 if (i != entry.infoChanged.end()) {
-                    // old value.
-                    TfToken token = i->second.first.GetWithDefault<TfToken>();
-                    pathsWithSignificantChanges.insert(
-                        SdfPath::IsValidIdentifier(token)
-                        ? SdfPath::AbsoluteRootPath().AppendChild(token)
-                        : SdfPath::AbsoluteRootPath());
-                    // new value.
-                    token = i->second.second.GetWithDefault<TfToken>();
-                    pathsWithSignificantChanges.insert(
-                        SdfPath::IsValidIdentifier(token)
-                        ? SdfPath::AbsoluteRootPath().AppendChild(token)
-                        : SdfPath::AbsoluteRootPath());
+                    SdfPath oldDefaultPrimPath = 
+                        SdfLayer::ConvertDefaultPrimTokenToPath(
+                            i->second.first.GetWithDefault<TfToken>());
+                    SdfPath newDefaultPrimPath = 
+                        SdfLayer::ConvertDefaultPrimTokenToPath(
+                            i->second.second.GetWithDefault<TfToken>());
+
+                    // Skip if no effective change.
+                    if (newDefaultPrimPath == oldDefaultPrimPath) {
+                        continue;
+                    }
+                    if (!oldDefaultPrimPath.IsEmpty()) {
+                        pathsWithSignificantChanges.insert(
+                            std::move(oldDefaultPrimPath));
+                    } 
+                    // When the old path is empty we mark absolute root path as
+                    // a significant change because prim indexes that have 
+                    // references or payloads that depend on this default prim
+                    // log the dependency to the layer using the absolute root
+                    // path. Thus we have to notify the absolute root path as a
+                    // significant change so that we know that those prim 
+                    // indexes can/need to be rebuilt with the new default prim.
+                    //
+                    // XXX: Note that due to the reasons detailed in the XXX 
+                    // above, this is a pretty drastic measure to mark the 
+                    // root of the layer as a significant change just for the
+                    // default prim metadata change as this can cause all the
+                    // prim indexes in this cache with any dependency on this 
+                    // layer to have to be rebuilt even if none of those 
+                    // dependencies rely on the default prim at all.
+                    else {
+                        pathsWithSignificantChanges.insert(
+                            SdfPath::AbsoluteRootPath());
+                    }
                 }
 
                 // Handle changes that require blowing the layer stack.
@@ -1331,6 +1361,7 @@ PcpChanges::DidChange(const PcpCache* cache,
             for (size_t i = 0, n = oldPaths.size(); i != n; ++i) {
                 const SdfPath& oldPath = oldPaths[i];
                 const SdfPath& newPath = newPaths[i];
+
                 // Do every path dependent on the new path.  We might
                 // have an object at the new path and we're replacing
                 // it with the object at the old path.  So we must
@@ -1362,8 +1393,11 @@ PcpChanges::DidChange(const PcpCache* cache,
                     SdfPath newIndexPath;
                     // If this isn't a delete then translate newPath
                     if (!newPath.IsEmpty()) {
-                        newIndexPath =
-                            dep.mapFunc.MapSourceToTarget(newPath);
+                        // Note that we have to strip variant selections from
+                        // new path as the map functions from variant nodes do
+                        // not map variant selection paths.
+                        newIndexPath = dep.mapFunc.MapSourceToTarget(
+                            newPath.StripAllVariantSelections());
                     }
                     renameChanges[dep.indexPath] = newIndexPath;
                     PCP_APPEND_DEBUG("  renameChanges <%s> to <%s>\n",
@@ -1820,7 +1854,49 @@ PcpChanges::DidChangeSpecs(
             }
 
             const PcpNodeRef nodeForChangedSpec = 
-                primIndex->GetNodeProvidingSpec(changedLayer, changedPath);
+            [&primIndex, &changedLayer, &changedPath, &cache]() {
+                const PcpNodeRef nodeProvidingSpec = 
+                    primIndex->GetNodeProvidingSpec(changedLayer, changedPath);
+
+                if (nodeProvidingSpec) {
+                    return nodeProvidingSpec;
+                }
+
+                // If we are unable to find a node above, we want to check the
+                // case where the node's layer stack is is being unmuted or
+                // inserted as part of a sublayer operation.  If this is the
+                // case we can query the overrides set for such layers and see
+                // if any node's layer stack is among them
+                const PcpLayerStackPtrVector& layerStackVecOverride = 
+                    cache->_layerStackCache->GetLayerStackVectorOverride(
+                        changedLayer);
+
+                if (layerStackVecOverride.empty()) {
+                    return PcpNodeRef();
+                }
+
+                for (const PcpNodeRef &node: primIndex->GetNodeRange()) {
+                    if (!node.CanContributeSpecs() || 
+                        node.GetPath() != changedPath ) 
+                    {
+                        continue;
+                    }
+
+                    const PcpLayerStackPtr nodeLayerStack = 
+                        node.GetLayerStack();
+                    
+                    if (std::find(layerStackVecOverride.begin(), 
+                            layerStackVecOverride.end(), nodeLayerStack) != 
+                                layerStackVecOverride.end())
+                    {
+                        return node;
+                    }
+                    
+                }
+
+                return PcpNodeRef();
+            }();
+
             if (nodeForChangedSpec) {
                 // If this prim index is instanceable, the addition or removal
                 // of an inert spec could affect whether this node is considered

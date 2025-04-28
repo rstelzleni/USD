@@ -626,7 +626,7 @@ from RenderMan. These are:
   interpolated over each face of the mesh. Bilinear interpolation is used for 
   interpolation between the four values.
 
-For a graphical illustration of these modes, see `Primvar Interpolation <https://github.com/usd-wg/assets/tree/main/docs/PrimvarInterpolation>`__
+For visual examples of these modes, see :ref:`primvars`.
 
 As :usda:`faceVarying` allows for per-vertex-per-face values, you can use this 
 interpolation to create discontinuous vertex UVs or normals. For example, with 
@@ -634,7 +634,7 @@ discontinuous vertex UVs, you could create a "seam" in your texture-coordinate
 mapping to emulate wrapping a label around a cylinder.
 
 Primvar interpolation for curves, such as :usda:`BasisCurves` interprets the 
-interpolation values differently, and is described in detail `here <https://openusd.org/release/api/class_usd_geom_basis_curves.html#UsdGeomBasisCurves_PrimvarInterpolation>`__
+interpolation values differently, and is described in detail `here <https://openusd.org/release/api/class_usd_geom_basis_curves.html#UsdGeomBasisCurves_PrimvarInterpolation>`__.
 
 Indexed Primvars
 ----------------
@@ -1502,3 +1502,25 @@ see:
 Note that renderers are expected to add renderer-specific properties to the 
 USD render schemas via auto applied API schemas, and document those settings in 
 the renderer documentation. 
+
+.. _understanding_render_settings_colorspaces:
+
+Understanding Renderer Settings Colorspaces
+===========================================
+
+RenderSettings provides a way to set the renderer *working* color space via the
+:usda:`renderingColorSpace` attribute. This is the (linear) color space a 
+renderer should use to do internal calculations for the given render
+invocation. If this is not set, a renderer is expected to use whatever default
+color space it normally uses.
+
+Note that this color space should not be confused with specific color spaces for 
+scene objects. If you need to specify particular color spaces for objects
+(say, a texture asset that was created with a particular color space), or 
+transform between color spaces, you should use the :usda:`ColorSpaceAPI` and
+:usda:`ColorSpaceDefinitionAPI` schemas on prims that need to specify color
+space information. USD has specific rules on how color spaces specified on 
+objects are propagated and resolved.
+
+See :ref:`color_users_guide` for more details on working with color spaces with
+USD objects.

@@ -23,10 +23,12 @@
    :maxdepth: 1
 
    Collections and Patterns <user_guides/collections_and_patterns>
+   Color User's Guide <user_guides/color_user_guide>
    Namespace Editing <user_guides/namespace_editing>
    Rendering with USD <user_guides/render_user_guide>
-   USD Variable Expressions <user_guides/variable_expressions>
+   Primvars <user_guides/primvars>
    Schema Domains <user_guides/schemas/index>
+   Variable Expressions <user_guides/variable_expressions>
 
 .. toctree::
    :hidden:
