@@ -40,7 +40,7 @@ class ArAsset;
 ///
 /// Sdf text file format
 ///
-/// \deprecated in favor of UsdaTextFileFormat. .sdf will be
+/// \deprecated in favor of SdfUsdaFileFormat. .sdf will be
 /// replaced by .usda.
 ///
 class SdfTextFileFormat : public SdfFileFormat

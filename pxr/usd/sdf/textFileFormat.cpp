@@ -93,19 +93,25 @@ _CanReadImpl(const std::shared_ptr<ArAsset>& asset,
              const std::string& cookie)
 {
     TfErrorMark mark;
-
-    char aLine[512];
-
-    size_t numToRead = std::min(sizeof(aLine), cookie.length());
-    if (asset->Read(aLine, numToRead, /* offset = */ 0) != numToRead) {
+    
+    constexpr size_t COOKIE_BUFFER_SIZE = 512;
+    char local[COOKIE_BUFFER_SIZE];
+    std::unique_ptr<char []> remote;
+    char *buf = local;
+    size_t cookieLength = cookie.length();
+    if (cookieLength > COOKIE_BUFFER_SIZE - 1) {
+        remote.reset(new char[cookieLength + 1]);
+        buf = remote.get();
+    }
+    if (asset->Read(buf, cookieLength, /* offset = */ 0) != cookieLength) {
         return false;
     }
 
-    aLine[numToRead] = '\0';
+    buf[cookieLength] = '\0';
 
     // Don't allow errors to escape this function, since this function is
     // just trying to answer whether the asset can be read.
-    return !mark.Clear() && TfStringStartsWith(aLine, cookie);
+    return !mark.Clear() && TfStringStartsWith(buf, cookie);
 }
 
 } // end anonymous namespace

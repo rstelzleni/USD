@@ -216,6 +216,7 @@ pxr_test_scripts(
     testenv/testSdfReference.py
     testenv/testSdfRelocates.py
     testenv/testSdfSpecHash.py
+    testenv/testSdfTargetFileFormat.py
     testenv/testSdfTimeCode.py
     testenv/testSdfTypes.py
     testenv/testSdfVariableExpression.py
@@ -424,6 +425,11 @@ pxr_install_test_dir(
 )
 
 pxr_install_test_dir(
+    SRC testenv/testSdfTargetFileFormat.testenv
+    DEST testSdfTargetFileFormat
+)
+
+pxr_install_test_dir(
     SRC testenv/testSdfZipFile.testenv
     DEST testSdfZipFile
 )
@@ -611,6 +617,10 @@ pxr_register_test(testSdfRelocates
 pxr_register_test(testSdfSpecHash
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfSpecHash"
+)
+pxr_register_test(testSdfTargetFileFormat
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfTargetFileFormat"
 )
 pxr_register_test(testSdfTimeCode
     PYTHON
