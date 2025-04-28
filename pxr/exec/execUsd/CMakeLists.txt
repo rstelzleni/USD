@@ -5,6 +5,9 @@ pxr_library(execUsd
     LIBRARIES
         esf
         exec
+        tf
+        trace
+        sdf
         usd
         
     PUBLIC_HEADERS

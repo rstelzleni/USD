@@ -91,7 +91,9 @@ pxr_build_test(testExecInputResolver
         esf
         exec
         execUsd
+        plug
         sdf
+        tf
         usd
     CPPFILES
         testenv/testExecInputResolver.cpp
