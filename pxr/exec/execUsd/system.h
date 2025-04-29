@@ -14,6 +14,7 @@
 #include "pxr/exec/execUsd/api.h"
 
 #include "pxr/base/tf/declarePtrs.h"
+#include "pxr/exec/exec/request.h"
 #include "pxr/exec/exec/system.h"
 
 #include <memory>
@@ -50,8 +51,30 @@ public:
     ~ExecUsdSystem();
 
     /// Builds a request for the given \p valueKeys.
+    ///
+    /// The optionally provided \p invalidationCallback will be invoked when
+    /// previously computed value keys become invalid as a result of authored
+    /// value changes or structural invalidation of the scene. If multiple
+    /// value keys become invalid at the same time, they may be batched into a
+    /// single invocation of the callback.
+    /// 
+    /// \note
+    /// The \p invalidationCallback is only guaranteed to be invoked at
+    /// least once per invalid value key and invalid time interval combination,
+    /// and only after CacheValues() has been called. If clients want to be
+    /// notified of future invalidation, they must call CacheValues() again to
+    /// renew their interest in the computed value keys.
+    /// 
+    /// \note
+    /// The client must not call into execution (including, but not
+    /// limited to CacheValues() or value extraction) from within the
+    /// \p invalidationCallback.
+    /// 
     EXECUSD_API
-    ExecUsdRequest BuildRequest(std::vector<ExecUsdValueKey> &&valueKeys);
+    ExecUsdRequest BuildRequest(
+        std::vector<ExecUsdValueKey> &&valueKeys,
+        const ExecRequestIndexedInvalidationCallback &invalidationCallback =
+            ExecRequestIndexedInvalidationCallback());
 
     /// Prepares a given \p request for execution.
     /// 

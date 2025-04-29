@@ -38,11 +38,18 @@ public:
 
     ~Exec_AttributeInputNode() override;
 
+    /// Returns the scene path to the attribute that the input value is sourced
+    /// from.
+    /// 
+    SdfPath GetAttributePath() const {
+        return _attribute->GetPath(nullptr);
+    }
+
     void Compute(VdfContext const& ctx) const override;
 
 private:
-    // TODO: Long-term, we will need some kind of handle to the attribute that is
-    // stable across namespace edits.
+    // TODO: Long-term, we will need some kind of handle to the attribute that
+    // is stable across namespace edits.
     const EsfAttribute _attribute;
 };
 

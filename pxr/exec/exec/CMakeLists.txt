@@ -20,6 +20,7 @@ pxr_library(exec
         api.h
         providerResolution.h
         registerSchema.h
+        request.h
         types.h
 
     PUBLIC_CLASSES

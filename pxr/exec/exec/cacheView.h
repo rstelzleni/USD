@@ -40,7 +40,7 @@ public:
     bool Extract(int idx, VtValue *result) const;
 
 private:
-    friend class ExecSystem;
+    friend class Exec_RequestImpl;
     Exec_CacheView(
         const VdfExecutorInterface *executor,
         TfSpan<const VdfMaskedOutput> outputs)

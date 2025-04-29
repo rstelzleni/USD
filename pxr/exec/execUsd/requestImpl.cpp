@@ -6,6 +6,8 @@
 //
 #include "pxr/exec/execUsd/requestImpl.h"
 
+#include "pxr/exec/execUsd/cacheView.h"
+#include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/sceneAdapter.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
@@ -44,8 +46,10 @@ struct _ValueKeyVisitor
 }
 
 ExecUsd_RequestImpl::ExecUsd_RequestImpl(
-    std::vector<ExecUsdValueKey> &&valueKeys)
-    : _valueKeys(std::move(valueKeys))
+    std::vector<ExecUsdValueKey> &&valueKeys,
+    const ExecRequestIndexedInvalidationCallback &invalidationCallback)
+    : Exec_RequestImpl(invalidationCallback)
+    , _valueKeys(std::move(valueKeys))
 {
 }
 
@@ -78,10 +82,10 @@ ExecUsd_RequestImpl::Schedule()
     this->_Schedule();
 }
 
-void
+ExecUsdCacheView
 ExecUsd_RequestImpl::CacheValues(ExecUsdSystem *const system)
 {
-    this->_CacheValues(system);
+    return ExecUsdCacheView(this->_CacheValues(system));
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

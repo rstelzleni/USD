@@ -49,8 +49,7 @@ public:
     ///
     /// \see UsdAttribute::Get
     ///
-    bool Get(VtValue *value, UsdTimeCode time) const
-    {
+    bool Get(VtValue *value, UsdTimeCode time) const {
         return _Get(value, time);
     }
 

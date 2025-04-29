@@ -10,16 +10,25 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/api.h"
+#include "pxr/exec/exec/request.h"
+#include "pxr/exec/exec/types.h"
+
+#include "pxr/base/tf/bits.h"
+#include "pxr/exec/ef/timeInterval.h"
+#include "pxr/exec/vdf/maskedOutput.h"
+#include "pxr/exec/vdf/types.h"
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class Exec_CacheView;
 class ExecSystem;
 class ExecValueKey;
+class TfBits;
 template <typename> class TfSpan;
-class VdfMaskedOutput;
 class VdfRequest;
 class VdfSchedule;
 
@@ -31,9 +40,31 @@ class VdfSchedule;
 ///
 class EXEC_API_TYPE Exec_RequestImpl
 {
+public:
+    /// Notify the request of invalid computed values as a consequence of
+    /// authored value, or structural invalidation.
+    /// 
+    /// Call site provides the set of \p invalidLeafNodes, along with a
+    /// combined \p invalidInterval denoting the time interval over which leaf
+    /// nodes are invalid.
+    /// 
+    /// Additionally, a span of \p invalidProperties may be provided. The
+    /// entries in the span contain the scene description property path along
+    /// with the invalid time range for said property. The \p compiledProperties
+    /// bit set specifies all properties in the \p invalidProperties span, which
+    /// are compiled through exec. All other invalid properties only manifest in
+    /// scene description.
+    /// 
+    void DidInvalidateComputedValues(
+        const std::vector<const VdfNode *> &invalidLeafNodes,
+        const EfTimeInterval &invalidInterval,
+        TfSpan<ExecInvalidAuthoredValue> invalidProperties,
+        const TfBits &compiledProperties);
+
 protected:
     EXEC_API
-    Exec_RequestImpl();
+    explicit Exec_RequestImpl(
+        const ExecRequestIndexedInvalidationCallback &invalidationCallback);
 
     Exec_RequestImpl(const Exec_RequestImpl&) = delete;
     Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
@@ -51,13 +82,31 @@ protected:
 
     /// Computes the value keys in the request.
     EXEC_API
-    void _CacheValues(ExecSystem *system);
+    Exec_CacheView _CacheValues(ExecSystem *system);
 
 private:
+    // The compiled leaf output.
     std::vector<VdfMaskedOutput> _leafOutputs;
 
+    // Maps leaf outputs to their index in the array of valueKeys the request
+    // was built with.
+    std::unordered_map<VdfMaskedOutput, size_t, VdfMaskedOutput::Hash>
+        _leafOutputToIndex;
+
+    // The compute request to cache values with.
     std::unique_ptr<VdfRequest> _computeRequest;
+
+    // The schedule to cache values with.
     std::unique_ptr<VdfSchedule> _schedule;
+
+    // The combined time interval for which invalidation has been sent out.
+    EfTimeInterval _lastInvalidatedInterval;
+
+    // The combined set of indices for which invalidation has been sent out.
+    TfBits _lastInvalidatedIndices;
+
+    // The invalidation callback to invoke when computed values change.
+    ExecRequestIndexedInvalidationCallback _invalidationCallback;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

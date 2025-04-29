@@ -11,13 +11,17 @@
 #include "pxr/exec/exec/requestImpl.h"
 
 #include "pxr/exec/ef/executor.h"
+#include "pxr/exec/ef/timeInterval.h"
+#include "pxr/exec/vdf/dataManagerVector.h"
 #include "pxr/exec/vdf/executorErrorLogger.h"
 #include "pxr/exec/vdf/parallelDataManagerVector.h"
 #include "pxr/exec/vdf/parallelExecutorEngine.h"
 #include "pxr/exec/vdf/parallelSpeculationExecutorEngine.h"
+#include "pxr/exec/vdf/pullBasedExecutorEngine.h"
 
 #include "pxr/base/tf/span.h"
 #include "pxr/base/trace/trace.h"
+#include "pxr/base/work/loops.h"
 
 #include <utility>
 
@@ -77,10 +81,27 @@ ExecSystem::_CacheValues(
 {
     TRACE_FUNCTION();
 
-    // TODO: Initialize program
-
-    VdfExecutorErrorLogger errorLogger;
     VdfExecutorInterface *const executor = _GetMainExecutor();
+
+    // Initialize the time on the executor.
+    // TODO: Enable setting of time on the ExecSystem.
+    _program->InitializeTime(executor, EfTime());
+
+    // Initialize the input nodes in the exec network.
+    const VdfMaskedOutputVector invalidationRequest =
+        _program->InitializeInputNodes();
+
+    // TODO: Invalidate executor topological state if input node initialization
+    // resulted in time-dependency changes.
+
+    // Make sure that the executor data manager is properly invalidate for any
+    // input nodes that were just initialized.
+    if (!invalidationRequest.empty()) {
+        executor->InvalidateValues(invalidationRequest);
+    }
+
+    // Run the executor to compute the values.
+    VdfExecutorErrorLogger errorLogger;
     executor->Run(schedule, computeRequest, &errorLogger);
 
     // Increment the executor's invalidation timestamp after each run. All
@@ -92,6 +113,7 @@ ExecSystem::_CacheValues(
     // parent executor for mung-buffer locking to function on sub-executors.
     executor->IncrementExecutorInvalidationTimestamp();
 
+    // Report any errors or warnings surfaced during this executor run.
     _ReportExecutorErrors(errorLogger);
 }
 
@@ -106,8 +128,19 @@ void
 ExecSystem::_CreateExecutorState()
 {
     _executorState = std::make_unique<ExecSystem::_ExecutorState>();
-    _executorState->CreateExecutor<
-        EfExecutor<VdfParallelExecutorEngine, VdfParallelDataManagerVector>>();
+
+    if (VdfIsParallelEvaluationEnabled()) {
+        _executorState->CreateExecutor<
+            EfExecutor<
+                VdfParallelExecutorEngine,
+                VdfParallelDataManagerVector>>();
+    } else {
+        _executorState->CreateExecutor<
+            EfExecutor<
+                VdfPullBasedExecutorEngine,
+                VdfDataManagerVector<
+                    VdfDataManagerDeallocationMode::Background>>>();
+    }
 }
 
 VdfExecutorInterface *
@@ -134,9 +167,21 @@ ExecSystem::_InvalidateAuthoredValues(
 {
     TRACE_FUNCTION();
 
-    _program->InvalidateAuthoredValues(invalidProperties);
+    const auto &[leafNodes, compiledProperties, invalidInterval] =
+        _program->InvalidateAuthoredValues(invalidProperties);
 
-    //TODO: Send request invalidation
+    // Notify all the requests of computed value invalidation. Not all the
+    // requests will contain all the invalid leaf nodes or invalid properties,
+    // and the request impls are responsible for filtering the provided
+    // information.
+    // 
+    // TODO: Once we expect the system to contain more than a handful of
+    // requests, we should do this in parallel. We might still want to invoke
+    // the invalidation callbacks serially, though.
+    for (const auto &requestImpl : _requests) {
+        requestImpl->DidInvalidateComputedValues(
+            leafNodes, invalidInterval, invalidProperties, compiledProperties);
+    } 
 }
 
 void

@@ -9,7 +9,6 @@
 #include "pxr/exec/vdf/connection.h"
 #include "pxr/exec/vdf/inputAndOutputSpecsRegistry.h"
 #include "pxr/exec/vdf/maskedOutput.h"
-#include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/requiredInputsPredicate.h"
 #include "pxr/exec/vdf/scheduleInvalidator.h"
 

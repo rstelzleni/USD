@@ -52,6 +52,14 @@ public:
         return input ? &(*input)[0].GetSourceOutput() : nullptr;
     }
 
+    /// Returns the single masked output the leaf node sources its value from.
+    /// Returns an invalid masked output if the leaf node is not connected.
+    ///
+    static VdfMaskedOutput GetSourceMaskedOutput(const VdfNode &node) {
+        const VdfInput *const input = node.GetInputsIterator().begin()->second;
+        return input ? (*input)[0].GetSourceMaskedOutput() : VdfMaskedOutput();
+    }
+
     EF_API
     EfLeafNode(VdfNetwork *network, TfType inputType);
 

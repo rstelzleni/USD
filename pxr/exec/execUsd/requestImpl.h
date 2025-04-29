@@ -11,12 +11,14 @@
 
 #include "pxr/exec/execUsd/api.h"
 
+#include "pxr/exec/exec/request.h"
 #include "pxr/exec/exec/requestImpl.h"
 
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class ExecUsdCacheView;
 class ExecUsdSystem;
 class ExecUsdValueKey;
 class ExecValueKey;
@@ -25,7 +27,9 @@ class ExecValueKey;
 class ExecUsd_RequestImpl final : public Exec_RequestImpl
 {
 public:
-    explicit ExecUsd_RequestImpl(std::vector<ExecUsdValueKey> &&valueKeys);
+    ExecUsd_RequestImpl(
+        std::vector<ExecUsdValueKey> &&valueKeys,
+        const ExecRequestIndexedInvalidationCallback &invalidationCallback);
 
     ExecUsd_RequestImpl(const ExecUsd_RequestImpl&) = delete;
     ExecUsd_RequestImpl& operator=(const ExecUsd_RequestImpl&) = delete;
@@ -39,7 +43,7 @@ public:
     void Schedule();
 
     /// Computes the value keys in the request.
-    void CacheValues(ExecUsdSystem *system);
+    ExecUsdCacheView CacheValues(ExecUsdSystem *system);
 
 private:
     std::vector<ExecUsdValueKey> _valueKeys;

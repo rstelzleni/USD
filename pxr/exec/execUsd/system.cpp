@@ -51,11 +51,14 @@ ExecUsdSystem::ExecUsdSystem(const UsdStageConstRefPtr &stage)
 ExecUsdSystem::~ExecUsdSystem() = default;
 
 ExecUsdRequest
-ExecUsdSystem::BuildRequest(std::vector<ExecUsdValueKey> &&valueKeys)
+ExecUsdSystem::BuildRequest(
+    std::vector<ExecUsdValueKey> &&valueKeys,
+    const ExecRequestIndexedInvalidationCallback &invalidationCallback)
 {
     TRACE_FUNCTION();
 
-    auto impl = std::make_shared<ExecUsd_RequestImpl>(std::move(valueKeys));
+    auto impl = std::make_shared<ExecUsd_RequestImpl>(
+        std::move(valueKeys), invalidationCallback);
     _InsertRequest(impl);
     return ExecUsdRequest(std::move(impl));
 }
@@ -82,9 +85,11 @@ ExecUsdSystem::CacheValues(const ExecUsdRequest &request)
         return ExecUsdCacheView();
     }
 
-    requestImpl->CacheValues(this);
+    // Before caching values, make sure that the request has been prepared.
+    requestImpl->Compile(this);
+    requestImpl->Schedule();
 
-    return ExecUsdCacheView();
+    return requestImpl->CacheValues(this);
 }
 
 ExecUsdSystem::_NoticeListener::_NoticeListener(
@@ -93,7 +98,7 @@ ExecUsdSystem::_NoticeListener::_NoticeListener(
     : _system(system)
     , _objectsChangedNoticeKey(
         TfNotice::Register(
-            TfWeakPtr<ExecUsdSystem::_NoticeListener>(this),
+            TfCreateWeakPtr(this),
             &ExecUsdSystem::_NoticeListener::_DidObjectsChanged,
             UsdStageConstPtr(stage)))
 {

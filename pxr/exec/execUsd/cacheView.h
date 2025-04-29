@@ -39,7 +39,7 @@ public:
     bool Extract(int idx, VtValue *result) const;
 
 private:
-    friend class ExecUsdSystem;
+    friend class ExecUsd_RequestImpl;
     explicit ExecUsdCacheView(
         Exec_CacheView &&view)
         : _view(std::move(view))

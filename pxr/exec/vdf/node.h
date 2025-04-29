@@ -17,6 +17,7 @@
 #include "pxr/exec/vdf/inputAndOutputSpecs.h"
 #include "pxr/exec/vdf/linearMap.h"
 #include "pxr/exec/vdf/mask.h"
+#include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/output.h"
 #include "pxr/exec/vdf/request.h"
 #include "pxr/exec/vdf/types.h"
@@ -37,7 +38,6 @@ PXR_NAMESPACE_OPEN_SCOPE
 class VdfContext;
 class VdfExecutorInterface;
 class VdfMaskedOutput;
-class VdfNetwork;
 class VdfRequiredInputsPredicate;
 class VdfVector;
 

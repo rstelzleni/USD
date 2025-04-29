@@ -9,22 +9,36 @@
 
 #include "pxr/pxr.h"
 
+#include "pxr/exec/exec/attributeInputNode.h"
 #include "pxr/exec/exec/compiledOutputCache.h"
 #include "pxr/exec/exec/types.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
+#include "pxr/base/tf/bits.h"
 #include "pxr/exec/ef/leafNodeCache.h"
+#include "pxr/exec/ef/time.h"
 #include "pxr/exec/vdf/maskedOutput.h"
+#include "pxr/exec/vdf/maskedOutputVector.h"
 #include "pxr/exec/vdf/network.h"
+#include "pxr/exec/vdf/types.h"
+#include "pxr/usd/sdf/path.h"
+
+#include <tbb/concurrent_unordered_map.h>
 
 #include <memory>
+#include <tuple>
 #include <type_traits>
+#include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EfTime;
 class EfTimeInputNode;
+class EfTimeInterval;
 class EsfJournal;
+class TfBits;
 template <typename> class TfSpan;
+class VdfExecutorInterface;
 class VdfNode;
 
 /// Owns a VdfNetwork and related data structures to access and modify the
@@ -126,23 +140,61 @@ public:
     }
 
     /// Notifies the program of authored value invalidation.
-    void InvalidateAuthoredValues(
+    std::tuple<const std::vector<const VdfNode *> &, TfBits, EfTimeInterval>
+    InvalidateAuthoredValues(
         TfSpan<ExecInvalidAuthoredValue> invalidProperties);
+
+    /// Initializes time in the network.
+    void InitializeTime(
+        VdfExecutorInterface *executor,
+        const EfTime &newTime) const;
+
+    /// Initializes all invalid input nodes in the network, and returns a vector
+    /// of invalid input node outputs.
+    /// 
+    VdfMaskedOutputVector InitializeInputNodes();
 
     /// Writes the compiled network to a file at \p filename.
     void GraphNetwork(const char *filename) const;
 
 private:
-    // Updates data strucutres for a newly-added node.
+    // Updates data structures for a newly-added node.
     void _AddNode(const EsfJournal &journal, const VdfNode *node);
 
-    class _EditMonitor;
+    // Registers an input node for authored value initialization.
+    void _RegisterInputNode(const Exec_AttributeInputNode *inputNode);
 
+    // Unregisters an input node from authored value initialization.
+    void _UnregisterInputNode(const Exec_AttributeInputNode *inputNode);
+
+private:
+    // The compiled data flow network.
     VdfNetwork _network;
+
+    // Every network always has a compiled time input node.
     EfTimeInputNode *const _timeInputNode;
+
+    // A cache of compiled outputs keys and corresponding data flow outputs.
     Exec_CompiledOutputCache _compiledOutputCache;
+
+    // Maps scene paths to data flow network that must be uncompiled in response
+    // to edits to those scene paths.
     Exec_UncompilationTable _uncompilationTable;
+
+    // Collection of compiled leaf nodes.
     EfLeafNodeCache _leafNodeCache;
+
+    // Collection of compiled input nodes.
+    // TODO: We will need to update this map in response to namespace edits,
+    // once they are supported.
+    tbb::concurrent_unordered_map<SdfPath, VdfId, SdfPath::Hash> _inputNodes;
+
+    // Input nodes currently queued for initialization.
+    std::vector<VdfId> _uninitializedInputNodes;
+
+    // On behalf of the program intercepts and responds to fine-grained network
+    // edits.
+    class _EditMonitor;
     std::unique_ptr<_EditMonitor> _editMonitor;
 };
 
@@ -162,6 +214,12 @@ NodeType *Exec_Program::CreateNode(
     NodeType *const node = new NodeType(
         &_network, std::forward<NodeCtorArgs>(nodeCtorArgs)...);
     _AddNode(journal, node);
+
+    // Input nodes are tracked for authored value initialization.
+    if constexpr (std::is_same_v<Exec_AttributeInputNode, NodeType>) {
+        _RegisterInputNode(node);
+    }
+
     return node;
 }
 

@@ -40,6 +40,8 @@ Exec_CacheView::Extract(int idx, VtValue *result) const
         return false;
     }
 
+    // TODO: VdfVector -> VtValue extraction
+
     TF_CODING_ERROR("Extraction is not yet implemented");
     return false;
 }
