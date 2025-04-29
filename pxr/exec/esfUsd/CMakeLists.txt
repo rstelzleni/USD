@@ -25,3 +25,17 @@ pxr_library(esfUsd
     RESOURCE_FILES
         plugInfo.json
 )
+
+pxr_build_test(testEsfUsdSceneObjects
+    LIBRARIES
+        esf
+        esfUsd
+        usdGeom
+    CPPFILES
+        testenv/testEsfUsdSceneObjects.cpp
+)
+
+pxr_register_test(testEsfUsdSceneObjects
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testEsfUsdSceneObjects"
+    EXPECTED_RETURN_CODE 0
+)

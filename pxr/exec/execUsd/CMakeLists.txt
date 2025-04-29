@@ -91,17 +91,3 @@ pxr_register_test(testExecUsdRequest
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdRequest"
     EXPECTED_RETURN_CODE 0
 )
-
-pxr_build_test(testExecUsdSceneObjects
-    LIBRARIES
-        esf
-        execUsd
-        usdGeom
-    CPPFILES
-        testenv/testExecUsdSceneObjects.cpp
-)
-
-pxr_register_test(testExecUsdSceneObjects
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdSceneObjects"
-    EXPECTED_RETURN_CODE 0
-)
