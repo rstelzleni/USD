@@ -66,8 +66,8 @@ pxr_build_test(testExecComputationRegistration
     LIBRARIES
         ef
         esf
+        esfUsd
         exec
-        execUsd
         plug
         sdf
         tf
@@ -90,8 +90,8 @@ pxr_build_test(testExecInputResolver
     LIBRARIES
         ef
         esf
+        esfUsd
         exec
-        execUsd
         plug
         sdf
         tf

@@ -4,6 +4,7 @@ set(PXR_PACKAGE execUsd)
 pxr_library(execUsd
     LIBRARIES
         esf
+        esfUsd
         exec
         tf
         trace
@@ -16,7 +17,6 @@ pxr_library(execUsd
     PUBLIC_CLASSES
         cacheView
         request
-        sceneAdapter
         system
         valueKey
 
@@ -24,12 +24,7 @@ pxr_library(execUsd
         visitValueKey.h
 
     PRIVATE_CLASSES
-        attribute
-        object
-        prim
-        property
         requestImpl
-        stage
 
     RESOURCE_FILES
         plugInfo.json

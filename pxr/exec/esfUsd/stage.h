@@ -4,8 +4,8 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_EXEC_EXEC_USD_STAGE_H
-#define PXR_EXEC_EXEC_USD_STAGE_H
+#ifndef PXR_EXEC_ESF_USD_STAGE_H
+#define PXR_EXEC_ESF_USD_STAGE_H
 
 /// \file
 
@@ -17,22 +17,22 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// Implementation of EsfStageInterface that wraps a UsdStageConstRefPtr.
-class ExecUsd_Stage : public EsfStageInterface
+class EsfUsd_Stage : public EsfStageInterface
 {
 public:
-    ~ExecUsd_Stage() override;
+    ~EsfUsd_Stage() override;
 
     /// Copies the provided \p stage pointer into this instance.
     ///
     /// \p stage must not be a null pointer.
     ///
-    ExecUsd_Stage(const UsdStageConstRefPtr &stage);
+    EsfUsd_Stage(const UsdStageConstRefPtr &stage);
 
     /// Moves the provided \p stage pointer into this instance.
     ///
     /// \p stage must not be a null pointer.
     ///
-    ExecUsd_Stage(UsdStageConstRefPtr &&stage);
+    EsfUsd_Stage(UsdStageConstRefPtr &&stage);
 
 private:
     // EsfStageInterface implementation.

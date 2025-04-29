@@ -6,7 +6,7 @@
 //
 #include "pxr/pxr.h"
 
-#include "pxr/exec/execUsd/sceneAdapter.h"
+#include "pxr/exec/esfUsd/sceneAdapter.h"
 
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/base/tf/token.h"
@@ -55,9 +55,9 @@ struct Fixture
 
 void TestStage(Fixture &fixture)
 {
-    // Tests that ExecUsd_Stages behave as UsdStage.
+    // Tests that EsfUsd_Stage behaves as UsdStage.
 
-    const EsfStage stage = ExecUsdSceneAdapter::AdaptStage(fixture.stage);
+    const EsfStage stage = EsfUsdSceneAdapter::AdaptStage(fixture.stage);
 
     const EsfPrim prim = stage->GetPrimAtPath(
         SdfPath("/Prim1"), fixture.journal);
@@ -76,15 +76,15 @@ void TestObject(Fixture &fixture)
 {
     // Tests that ExecUsd_Objects behave as UsdObjects.
 
-    const EsfObject primObject = ExecUsdSceneAdapter::AdaptObject(
+    const EsfObject primObject = EsfUsdSceneAdapter::AdaptObject(
         fixture.stage->GetObjectAtPath(SdfPath("/Prim1")));
     TF_AXIOM(primObject->IsValid(fixture.journal));
 
-    const EsfObject attrObject = ExecUsdSceneAdapter::AdaptObject(
+    const EsfObject attrObject = EsfUsdSceneAdapter::AdaptObject(
         fixture.stage->GetObjectAtPath(SdfPath("/Prim1.attr1")));
     TF_AXIOM(attrObject->IsValid(fixture.journal));
 
-    const EsfObject invalidObject = ExecUsdSceneAdapter::AdaptObject(
+    const EsfObject invalidObject = EsfUsdSceneAdapter::AdaptObject(
         fixture.stage->GetObjectAtPath(SdfPath("/Does/Not/Exist")));
     TF_AXIOM(!invalidObject->IsValid(fixture.journal));
 }
@@ -93,7 +93,7 @@ void TestPrim(Fixture &fixture)
 {
     // Tests that ExecUsd_Prims behave as UsdPrims.
 
-    const EsfPrim prim = ExecUsdSceneAdapter::AdaptPrim(
+    const EsfPrim prim = EsfUsdSceneAdapter::AdaptPrim(
         fixture.stage->GetPrimAtPath(SdfPath("/Prim1")));
     TF_AXIOM(prim->IsValid(fixture.journal));
 
@@ -117,7 +117,7 @@ void TestProperty(Fixture &fixture)
 {
     // Tests that ExecUsd_Properties behave as UsdProperties.
 
-    const EsfProperty prop = ExecUsdSceneAdapter::AdaptProperty(
+    const EsfProperty prop = EsfUsdSceneAdapter::AdaptProperty(
         fixture.stage->GetPropertyAtPath(SdfPath("/Prim1.ns1:ns2:attr2")));
     TF_AXIOM(prop->IsValid(fixture.journal));
 
@@ -129,7 +129,7 @@ void TestAttribute(Fixture &fixture)
 {
     // Tests that ExecUsd_Attributes behave as UsdAttributes.
 
-    const EsfAttribute attr = ExecUsdSceneAdapter::AdaptAttribute(
+    const EsfAttribute attr = EsfUsdSceneAdapter::AdaptAttribute(
         fixture.stage->GetAttributeAtPath(SdfPath("/Prim1.attr1")));
     TF_AXIOM(attr->IsValid(fixture.journal));
 

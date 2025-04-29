@@ -27,7 +27,7 @@
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/stage.h"
-#include "pxr/exec/execUsd/sceneAdapter.h"
+#include "pxr/exec/esfUsd/sceneAdapter.h"
 #include "pxr/usd/sdf/layer.h"
 #include "pxr/usd/usd/stage.h"
 
@@ -179,7 +179,7 @@ private:
         TF_AXIOM(layer);
         UsdStageRefPtr usdStage = UsdStage::Open(layer);
         TF_AXIOM(usdStage);
-        return ExecUsdSceneAdapter::AdaptStage(usdStage);
+        return EsfUsdSceneAdapter::AdaptStage(usdStage);
     }
 
 private:

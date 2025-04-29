@@ -9,12 +9,12 @@
 #include "pxr/exec/execUsd/cacheView.h"
 #include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/requestImpl.h"
-#include "pxr/exec/execUsd/sceneAdapter.h"
 
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/notice.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/exec/systemChangeProcessor.h"
+#include "pxr/exec/esfUsd/sceneAdapter.h"
 #include "pxr/usd/usd/notice.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -43,7 +43,7 @@ private:
 };
 
 ExecUsdSystem::ExecUsdSystem(const UsdStageConstRefPtr &stage)
-    : ExecSystem(ExecUsdSceneAdapter::AdaptStage(stage))
+    : ExecSystem(EsfUsdSceneAdapter::AdaptStage(stage))
     , _noticeListener(std::make_unique<_NoticeListener>(this, stage))
 {
 }

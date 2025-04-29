@@ -2,6 +2,7 @@ set(DIRS
     vdf
     ef
     esf
+    esfUsd
     exec
     execUsd
 )

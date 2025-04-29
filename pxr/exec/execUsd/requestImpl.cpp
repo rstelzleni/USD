@@ -8,11 +8,11 @@
 
 #include "pxr/exec/execUsd/cacheView.h"
 #include "pxr/exec/execUsd/request.h"
-#include "pxr/exec/execUsd/sceneAdapter.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
 #include "pxr/exec/execUsd/visitValueKey.h"
 
+#include "pxr/exec/esfUsd/sceneAdapter.h"
 #include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/valueKey.h"
 
@@ -31,14 +31,14 @@ struct _ValueKeyVisitor
     ExecValueKey operator()(
         const ExecUsd_AttributeValueKey &key) const {
         return ExecValueKey(
-            ExecUsdSceneAdapter::AdaptObject(key.provider),
+            EsfUsdSceneAdapter::AdaptObject(key.provider),
             key.computation);
     }
 
     ExecValueKey operator()(
         const ExecUsd_PrimComputationValueKey &key) const {
         return ExecValueKey(
-            ExecUsdSceneAdapter::AdaptObject(key.provider),
+            EsfUsdSceneAdapter::AdaptObject(key.provider),
             key.computation);
     }
 };

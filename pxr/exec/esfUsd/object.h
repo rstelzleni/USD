@@ -4,8 +4,8 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 //
-#ifndef PXR_EXEC_EXEC_USD_OBJECT_H
-#define PXR_EXEC_EXEC_USD_OBJECT_H
+#ifndef PXR_EXEC_ESF_USD_OBJECT_H
+#define PXR_EXEC_ESF_USD_OBJECT_H
 
 #include "pxr/pxr.h"
 
@@ -28,56 +28,56 @@ class TfToken;
 /// inherits from, which can be EsfObjectInterface or any other interface that
 /// extends EsfObjectInterface.
 ///
-/// ## ExecUsd Inheritance Structure
+/// ## EsfUsd Inheritance Structure
 ///
-/// ExecUsd defines implementations of the Esf interface classes. Naturally,
-/// ExecUsd_Object inherits from EsfObjectInterface, ExecUsd_Prim inherits from
+/// EsfUsd defines implementations of the Esf interface classes. Naturally,
+/// EsfUsd_Object inherits from EsfObjectInterface, EsfUsd_Prim inherits from
 /// EsfPrimInterface, etc.
 ///
 /// However, while all prims are objects (i.e. EsfPrimInterface extends
-/// EsfObjectInterface), ExecUsd_Prim does _not_ inherit from ExecUsd_Object.
-/// This means ExecUsd_Prim needs to override and re-implement the virtual
-/// methods of EsfObjectInterface in the same manner as ExecUsd_Object, but must
+/// EsfObjectInterface), EsfUsd_Prim does _not_ inherit from EsfUsd_Object.
+/// This means EsfUsd_Prim needs to override and re-implement the virtual
+/// methods of EsfObjectInterface in the same manner as EsfUsd_Object, but must
 /// do so using a UsdPrim instead of a UsdObject.
 ///
-/// We prevent code duplication by defining ExecUsd_XxxImpl class templates.
+/// We prevent code duplication by defining EsfUsd_XxxImpl class templates.
 /// These templates provide a single implementation for virtual methods defined
 /// by an Esf interface which can be "grafted" onto any subclass of that
 /// interface while also operating on a generic USD object type.
 ///
-/// For example, this is the full inheritance chain for ExecUsd_Attribute:
+/// For example, this is the full inheritance chain for EsfUsd_Attribute:
 ///
 ///  EsfObjectInterface
 ///    EsfPropertyInterface
 ///      EsfAttributeInterface
-///        ExecUsd_ObjectImpl<EsfAttributeInterface, UsdAttribute>
-///          ExecUsd_PropertyImpl<EsfAttributeInterface, UsdAttribute>
-///            ExecUsd_Attribute
+///        EsfUsd_ObjectImpl<EsfAttributeInterface, UsdAttribute>
+///          EsfUsd_PropertyImpl<EsfAttributeInterface, UsdAttribute>
+///            EsfUsd_Attribute
 ///
-/// And here is the full inheritance chain for ExecUsd_Prim. Note that in this
-/// diagram, ExecUsd_ObjectImpl inherits from EsfPrimInterface instead.
+/// And here is the full inheritance chain for EsfUsd_Prim. Note that in this
+/// diagram, EsfUsd_ObjectImpl inherits from EsfPrimInterface instead.
 ///
 ///  EsfObjectInterface
 ///    EsfPrimInterface
-///      ExecUsd_ObjectImpl<EsfPrimInterface, UsdPrim>
-///        ExecUsd_Prim
+///      EsfUsd_ObjectImpl<EsfPrimInterface, UsdPrim>
+///        EsfUsd_Prim
 ///
 template <class InterfaceType, class UsdObjectType>
-class ExecUsd_ObjectImpl : public InterfaceType
+class EsfUsd_ObjectImpl : public InterfaceType
 {
     static_assert(std::is_base_of_v<EsfObjectInterface, InterfaceType>);
     static_assert(std::is_base_of_v<UsdObject, UsdObjectType>);
 
 public:
-    ~ExecUsd_ObjectImpl() override;
+    ~EsfUsd_ObjectImpl() override;
 
     /// Copies the provided object into this instance.
-    ExecUsd_ObjectImpl(const UsdObjectType &object)
+    EsfUsd_ObjectImpl(const UsdObjectType &object)
         : InterfaceType(object.GetPath())
         , _object(object) {}
 
     /// Moves the provided object into this instance.
-    ExecUsd_ObjectImpl(UsdObjectType &&object)
+    EsfUsd_ObjectImpl(UsdObjectType &&object)
         : InterfaceType(object.GetPath())
         , _object(std::move(object)) {}
 
@@ -104,7 +104,7 @@ private:
 };
 
 /// Implementation of EsfObjectInterface that wraps a UsdObject.
-using ExecUsd_Object = ExecUsd_ObjectImpl<EsfObjectInterface, UsdObject>;
+using EsfUsd_Object = EsfUsd_ObjectImpl<EsfObjectInterface, UsdObject>;
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

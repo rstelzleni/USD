@@ -13,7 +13,7 @@
 
 #include "pxr/exec/ef/time.h"
 #include "pxr/exec/esf/stage.h"
-#include "pxr/exec/execUsd/sceneAdapter.h"
+#include "pxr/exec/esfUsd/sceneAdapter.h"
 
 #include "pxr/base/plug/plugin.h"
 #include "pxr/base/plug/registry.h"
@@ -146,7 +146,7 @@ _NewStageFromLayer(
     TF_AXIOM(layer);
     const UsdStageRefPtr usdStage = UsdStage::Open(layer);
     TF_AXIOM(usdStage);
-    return ExecUsdSceneAdapter::AdaptStage(usdStage);
+    return EsfUsdSceneAdapter::AdaptStage(usdStage);
 }
 
 static void
