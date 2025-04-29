@@ -13,6 +13,7 @@
 
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/ef/leafNode.h"
+#include "pxr/exec/esf/editReason.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/vdf/maskedOutput.h"
@@ -70,8 +71,12 @@ Exec_LeafCompilationTask::_Compile(
         // Return the compiled source output as the requested leaf output
         *_leafOutput = sourceOutput;
 
-        // TODO: Determine what journals need to be used to create leaf nodes.
-        const EsfJournal nodeJournal;
+        // Leaf nodes should be uncompiled when a resync occurs on the value
+        // key's provider.
+        EsfJournal nodeJournal;
+        nodeJournal.Add(
+            _valueKey.GetProvider()->GetPath(nullptr),
+            EsfEditReason::ResyncedObject);
 
         EfLeafNode *const leafNode =
             compilationState.GetProgram()->CreateNode<EfLeafNode>(

@@ -13,6 +13,7 @@
 
 #include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
+#include "pxr/exec/esf/editReason.h"
 #include "pxr/exec/esf/journal.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -32,6 +33,15 @@ Exec_OutputProvidingCompilationTask::_Compile(
     [this, &compilationState, computationDefinition](TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("input tasks");
 
+        // TODO: The node to be compiled by this task should be uncompiled when
+        // the provider object is resynced. Ideally, this dependency would be
+        // automatically added by looking up the computation definition, but
+        // that already happened in the input resolving task. Therefore, we need
+        // to explicitly add the resync entry to the node's journal.
+        _nodeJournal.Add(
+            _outputKey.GetProviderObject()->GetPath(nullptr),
+            EsfEditReason::ResyncedObject);
+
         _inputKeys =
             computationDefinition->GetInputKeys(
                 *_outputKey.GetProviderObject(),
@@ -50,7 +60,7 @@ Exec_OutputProvidingCompilationTask::_Compile(
         }
     },
 
-    // Compile and connect the callback node
+    // Compile and connect the node
     [this, &compilationState, computationDefinition](
         TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("node creation");
