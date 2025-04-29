@@ -140,6 +140,11 @@ public:
     }
 
     /// Notifies the program of authored value invalidation.
+    ///
+    /// \return a vector of invalid leaf nodes, a bit set indicating which 
+    /// \p invalidProperties are compiled, and a time interval indicating the
+    /// combined invalidation interval.
+    /// 
     std::tuple<const std::vector<const VdfNode *> &, TfBits, EfTimeInterval>
     InvalidateAuthoredValues(
         TfSpan<ExecInvalidAuthoredValue> invalidProperties);
