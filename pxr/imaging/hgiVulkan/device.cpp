@@ -241,6 +241,10 @@ HgiVulkanDevice::HgiVulkanDevice(HgiVulkanInstance* instance)
     // shaders and vertex data can remain the same between opengl and vulkan.
     extensions.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
+    #ifdef VK_USE_PLATFORM_METAL_EXT
+    extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    #endif
+
     // Enabling certain features may incure a performance hit
     // (e.g. robustBufferAccess), so only enable the features we will use.
 

@@ -16,6 +16,8 @@
     #define VK_USE_PLATFORM_XLIB_KHR
 #elif defined(ARCH_OS_OSX)
     #define VK_USE_PLATFORM_METAL_EXT
+    // Needed for VK_KHR_portability_subset
+    #define VK_ENABLE_BETA_EXTENSIONS 1
 #else
     #error Unsupported Platform
 #endif
