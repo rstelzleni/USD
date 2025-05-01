@@ -209,7 +209,8 @@ HgiVulkanGraphicsPipeline::HgiVulkanGraphicsPipeline(
 
     VkPipelineRasterizationLineStateCreateInfoKHR lineState {
         VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_KHR };
-    if (bresenhamLineRendering) {
+    if (device->GetDeviceCapabilities().vkLineRasterizationFeatures.bresenhamLines
+        && bresenhamLineRendering) {
         lineState.lineRasterizationMode =
             VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
         lineState.pNext = rasterState.pNext;
