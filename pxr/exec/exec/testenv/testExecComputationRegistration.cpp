@@ -40,6 +40,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (attributeComputation)
     (attributeComputedValueComputation)
     (attributeName)
+    (derivedSchemaComputation)
     (emptyComputation)
     (missingComputation)
     (namespaceAncestorInput)
@@ -106,6 +107,12 @@ EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
         );
 }
 
+EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationDerivedCustomSchema)
+{
+    self.PrimComputation(_tokens->derivedSchemaComputation)
+        .Callback(+[](const VdfContext &) { return 1.0; });
+}
+
 // XXX:TODO
 #if 0
 
@@ -136,6 +143,34 @@ EXEC_REGISTER_SCHEMA(TestNamespacedSchemaType)
                 TfStringify(expr_).c_str());                            \
         }                                                               \
      }()
+
+// RAII class that verifies the expected number of errors is emitted during the
+// lifetime of the object and that the commentary matches the expected error
+// strings.
+class ExpectedErrors {
+public:
+    ExpectedErrors(const std::vector<std::string> &expectedErrors)
+        : _expectedErrors(expectedErrors)
+    {
+    }
+
+    ~ExpectedErrors() {
+        size_t i=0;
+        for (auto it=_mark.begin(); it!=_mark.end(); ++it) {
+            if (i < _expectedErrors.size()) {
+                ASSERT_EQ(it->GetCommentary(), _expectedErrors[i]);
+            }
+            ++i;
+        }
+        ASSERT_EQ(i, _expectedErrors.size());
+
+        _mark.Clear();
+    }
+
+private:
+    const std::vector<std::string> _expectedErrors;
+    TfErrorMark _mark;
+};
 
 static EsfStage
 _NewStageFromLayer(
@@ -172,23 +207,16 @@ _PrintInputKeys(
 static void
 TestRegistrationErrors()
 {
+    ExpectedErrors expected({
+        "Attempt to register computation 'noInputsComputation' using an unknown "
+        "type.",
+        "Attempt to register computation '__computeTime' with a name that uses "
+        "the prefix '__', which is reserved for builtin computations."
+    });
+
     // The first time we pull on the defintion registry, errors for bad
     // registrations are emitted.
-    TfErrorMark mark;
-    std::cerr << "=== Expected Error Output Begin ===\n";
     Exec_DefinitionRegistry::GetInstance();
-    std::cerr << "=== Expected Error Output End ===\n";
-
-    static const std::vector expected{
-        "Attempt to register computation 'noInputsComputation' using an unknown type.",
-        "Attempt to register computation '__computeTime' with a name that uses the prefix '__', which is reserved for builtin computations."
-    };
-
-    size_t i=0;
-    for (auto it=mark.begin(); it!=mark.end(); ++it) {
-        ASSERT_EQ(it->GetCommentary(), expected[i++]);
-    }
-    ASSERT_EQ(i, 2);
 }
 
 static void
@@ -203,10 +231,16 @@ TestUnknownSchemaType()
     const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
     TF_AXIOM(prim->IsValid(nullJournal));
 
-    const Exec_ComputationDefinition *const primCompDef =
-        reg.GetComputationDefinition(
-            *prim, _tokens->noInputsComputation, nullJournal);
-    TF_AXIOM(!primCompDef);
+    {
+        ExpectedErrors expected({
+            "Unknown schema type when looking up definition for computation "
+            "'noInputsComputation'"
+        });
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim, _tokens->noInputsComputation, nullJournal);
+        TF_AXIOM(!primCompDef);
+    }
 }
 
 // Test that attempts to look up builtin stage computations on prims (other
@@ -239,8 +273,8 @@ TestComputationRegistration()
         def CustomSchema "Prim" {
         }
     )usd");
-    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
     const EsfPrim pseudoroot = stage->GetPrimAtPath(SdfPath("/"), nullJournal);
+    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
     TF_AXIOM(prim->IsValid(nullJournal));
 
     {
@@ -407,6 +441,35 @@ TestComputationRegistration()
     }
 }
 
+static void
+TestDerivedSchemaComputationRegistration()
+{
+    EsfJournal *const nullJournal = nullptr;
+    const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+    const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def DerivedCustomSchema "Prim" {
+        }
+    )usd");
+    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+    TF_AXIOM(prim->IsValid(nullJournal));
+
+    {
+        // Look up a computation registered for the derived schema type.
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim, _tokens->derivedSchemaComputation, nullJournal);
+        TF_AXIOM(primCompDef);
+    }
+
+    {
+        // Look up a computation registered for the base schema type.
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim, _tokens->noInputsComputation, nullJournal);
+        TF_AXIOM(primCompDef);
+    }
+}
+
 int main()
 {
     // Load the custom schema.
@@ -423,6 +486,7 @@ int main()
     TestUnknownSchemaType();
     TestStageBuiltinComputationOnPrim();
     TestComputationRegistration();
+    TestDerivedSchemaComputationRegistration();
 
     return 0;
 }

@@ -5,6 +5,7 @@ set(DIRS
     esfUsd
     exec
     execUsd
+    execGeom
 )
 
 foreach(d ${DIRS})

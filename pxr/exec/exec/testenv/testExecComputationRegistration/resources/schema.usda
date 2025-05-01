@@ -21,3 +21,9 @@ class CustomSchema "CustomSchema" (
 )
 {
 }
+
+class DerivedCustomSchema "DerivedCustomSchema" (
+    inherits = </CustomSchema>
+)
+{
+}

@@ -18,6 +18,7 @@
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/instantiateSingleton.h"
 #include "pxr/base/tf/stringUtils.h"
+#include "pxr/base/trace/trace.h"
 
 #include <utility>
 
@@ -45,7 +46,7 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
     // Now initialize the registry.
     //
     // We use ExecDefinitionRegistryTag to identify registry functions, rather
-    // than definition registry type, so Exec_DefinitionRegistry can remain
+    // than the definition registry type, so Exec_DefinitionRegistry can remain
     // private.
     TfRegistryManager::GetInstance().SubscribeTo<ExecDefinitionRegistryTag>();
 }
@@ -64,6 +65,8 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     const TfToken &computationName,
     EsfJournal *const journal) const
 {
+    TRACE_FUNCTION();
+
     const bool hasBuiltinPrefix =
         TfStringStartsWith(
             computationName.GetString(),
@@ -85,7 +88,7 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     }
 
     if (hasBuiltinPrefix) {
-        // look for a matching builtin computation.
+        // Look for a prim builtin computation.
         const auto builtinIt =
             _builtinPrimComputationDefinitions.find(computationName);
         if (builtinIt != _builtinPrimComputationDefinitions.end()) {
@@ -96,12 +99,44 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     }
 
     // Otherwise, look for a plugin computation.
+
     const TfType schemaType = providerPrim.GetType(journal);
-    const auto pluginIt = _pluginPrimComputationDefinitions.find(
-        {schemaType, computationName});
-    return pluginIt == _pluginPrimComputationDefinitions.end()
-        ? nullptr
-        : &pluginIt->second;
+    if (schemaType.IsUnknown()) {
+        TF_CODING_ERROR(
+            "Unknown schema type when looking up definition for computation "
+            "'%s'", computationName.GetText());
+        return nullptr;
+    }
+
+    // Iterate over all ancestor types of the provider's schema type, from
+    // derived to base, starting with the schema type itself. Look for a
+    // matching plugin prim computation for the derived-most schema type that
+    // defines it, or null, if no matching computation can be found.
+    //
+    // TODO: Repeatedly traversing the schema type hierarchy like this is
+    // wasteful and we plan to cache results appropriately. But we still need to
+    // add support for applied schemas, and we will also need to add the ability
+    // to compose computation definitions, so for now we are leaving this
+    // inefficiency in place until more of that functionality lands. The current
+    // thinking is that exec will cache composed prim definitions that will be
+    // keyed off of a tuple of typed and applied schemas and will cache the
+    // resulting set of composed computation definitions. That will enable this
+    // code to construct a key and do a single lookup into the cache, rather
+    // than searching to find the computation definition.
+
+    TfType foundType;
+    std::vector<TfType> schemaAncestorTypes;
+    schemaType.GetAllAncestorTypes(&schemaAncestorTypes);
+
+    for (const TfType type : schemaAncestorTypes) {
+        if (const auto pluginIt = _pluginPrimComputationDefinitions.find(
+                {type, computationName});
+            pluginIt != _pluginPrimComputationDefinitions.end()) {
+            return &pluginIt->second;
+        }
+    }
+
+    return nullptr;
 }
 
 const Exec_ComputationDefinition *

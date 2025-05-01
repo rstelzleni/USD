@@ -20,8 +20,10 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/weakBase.h"
 
-#include <unordered_map>
+#include <memory>
 #include <tuple>
+#include <unordered_map>
+#include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
