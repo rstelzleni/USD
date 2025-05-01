@@ -117,3 +117,43 @@ pxr_register_test(testExecUsdRequestInvalidation
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdRequestInvalidation"
     EXPECTED_RETURN_CODE 0
 )
+
+pxr_build_test(testExecUsdUncompilation
+    LIBRARIES
+        exec
+        execUsd
+        plug
+        tf
+        sdf
+        usd
+    CPPFILES
+        testenv/testExecUsdUncompilation.cpp
+)
+
+pxr_install_test_dir(
+    SRC testenv/testExecUsdUncompilation
+    DEST testExecUsdUncompilation
+)
+
+pxr_register_test(testExecUsdUncompilation
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdUncompilation"
+    EXPECTED_RETURN_CODE 0
+    POST_COMMAND "${PYTHON_EXECUTABLE} normalizeDotFiles.py                    \
+        TestUncompileAttributeInput-compiled.dot                               \
+        TestUncompileAttributeInput-uncompiled.dot                             \
+        TestUncompileConstantComputation-compiled.dot                          \
+        TestUncompileConstantComputation-uncompiled.dot                        \
+        TestUncompileNamespaceAncestorInput-compiled.dot                       \
+        TestUncompileNamespaceAncestorInput-uncompiled.dot                     \
+        TestUncompileRecursiveResync-compiled.dot                              \
+        TestUncompileRecursiveResync-uncompiled.dot                            \
+        "
+    DIFF_COMPARE TestUncompileAttributeInput-compiled.out
+    DIFF_COMPARE TestUncompileAttributeInput-uncompiled.out
+    DIFF_COMPARE TestUncompileConstantComputation-compiled.out
+    DIFF_COMPARE TestUncompileConstantComputation-uncompiled.out
+    DIFF_COMPARE TestUncompileNamespaceAncestorInput-compiled.out
+    DIFF_COMPARE TestUncompileNamespaceAncestorInput-uncompiled.out
+    DIFF_COMPARE TestUncompileRecursiveResync-compiled.out
+    DIFF_COMPARE TestUncompileRecursiveResync-uncompiled.out
+)
