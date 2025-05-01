@@ -47,18 +47,12 @@ public:
     /// Returns the single output the leaf node sources its value from. Returns
     /// \c nullptr if the leaf node is not connected.
     ///
-    static const VdfOutput *GetSourceOutput(const VdfNode &node) {
-        const VdfInput *input = node.GetInputsIterator().begin()->second;
-        return input ? &(*input)[0].GetSourceOutput() : nullptr;
-    }
+    static const VdfOutput *GetSourceOutput(const VdfNode &node);
 
     /// Returns the single masked output the leaf node sources its value from.
     /// Returns an invalid masked output if the leaf node is not connected.
     ///
-    static VdfMaskedOutput GetSourceMaskedOutput(const VdfNode &node) {
-        const VdfInput *const input = node.GetInputsIterator().begin()->second;
-        return input ? (*input)[0].GetSourceMaskedOutput() : VdfMaskedOutput();
-    }
+    static VdfMaskedOutput GetSourceMaskedOutput(const VdfNode &node);
 
     EF_API
     EfLeafNode(VdfNetwork *network, TfType inputType);
@@ -71,6 +65,26 @@ private:
     // Only a network is allowed to delete nodes.
     virtual ~EfLeafNode();
 };
+
+inline const VdfOutput *
+EfLeafNode::GetSourceOutput(const VdfNode &node)
+{
+    const VdfInput *const input = node.GetInputsIterator().begin()->second;
+    if (input && input->GetNumConnections() > 0) {
+        return &(*input)[0].GetSourceOutput();
+    }
+    return nullptr;
+}
+
+inline VdfMaskedOutput
+EfLeafNode::GetSourceMaskedOutput(const VdfNode &node)
+{
+    const VdfInput *const input = node.GetInputsIterator().begin()->second;
+    if (input && input->GetNumConnections() > 0) {
+        return (*input)[0].GetSourceMaskedOutput();
+    }
+    return VdfMaskedOutput();
+}
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
