@@ -155,12 +155,13 @@ HdxRenderSetupTask::SyncParams(HdSceneDelegate* delegate,
     _aovInputBindings = params.aovInputBindings;
 
     // Inspect AOVs to see if we're doing color or id rendering.
-    const bool usingIdAov = std::find_if(params.aovBindings.begin(),
-        params.aovBindings.end(), &_AovHasIdSemantic) !=
-        params.aovBindings.end();
-    const bool usingColorAov = std::find_if(params.aovBindings.begin(),
-        params.aovBindings.end(), &_AovHasColorSemantic) !=
-        params.aovBindings.end();
+    const bool usingIdAov = std::find_if(_aovBindings.begin(),
+        _aovBindings.end(), &_AovHasIdSemantic) !=
+        _aovBindings.end();
+    const bool usingColorAov = std::find_if(_aovBindings.begin(),
+        _aovBindings.end(), &_AovHasColorSemantic) !=
+        _aovBindings.end();
+    const bool usingNoAovs = _aovBindings.empty();
 
     HdRenderIndex &renderIndex = delegate->GetRenderIndex();
     HdRenderPassStateSharedPtr &renderPassState =
@@ -209,7 +210,7 @@ HdxRenderSetupTask::SyncParams(HdSceneDelegate* delegate,
         // If this becomes an issue, we'll need to reconsider this approach.
         renderPassState->SetAlphaToCoverageEnabled(
             params.enableAlphaToCoverage &&
-            usingColorAov && !usingIdAov &&
+            (usingNoAovs || usingColorAov) && !usingIdAov &&
             !TfDebug::IsEnabled(HDX_DISABLE_ALPHA_TO_COVERAGE));
 
         // For id renders that use an id aov (which use an int format), it's ok
