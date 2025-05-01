@@ -38,7 +38,7 @@ class VdfSchedule;
 /// Concrete implementations inherit from Exec_RequestImpl to implement any
 /// functionality that is specific to the scene description system.
 ///
-class EXEC_API_TYPE Exec_RequestImpl
+class Exec_RequestImpl
 {
 public:
     /// Notify the request of invalid computed values as a consequence of
@@ -70,7 +70,7 @@ protected:
     Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
 
     EXEC_API
-    virtual ~Exec_RequestImpl();
+    ~Exec_RequestImpl();
 
     /// Compiles outputs for the value keys in the request.
     EXEC_API

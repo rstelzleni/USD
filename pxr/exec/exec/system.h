@@ -38,7 +38,7 @@ class VdfSchedule;
 /// evaluate requested computation values.  Derived classes are responsible
 /// for interfacing with the underlying scene description.
 ///
-class EXEC_API_TYPE ExecSystem
+class ExecSystem
 {
 public:
     /// Diagnostic utility class.
@@ -53,7 +53,7 @@ protected:
     ExecSystem& operator=(const ExecSystem &) = delete;
 
     EXEC_API
-    virtual ~ExecSystem();
+    ~ExecSystem();
 
     /// Transfer ownership of a newly-created request impl to the system.
     ///

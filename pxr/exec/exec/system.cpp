@@ -34,7 +34,7 @@ class ExecSystem::_ExecutorState
 {
 public:
     template <class T, class... Args>
-    void CreateExecutor(Args... args) {
+    void CreateExecutor(Args&&... args) {
         _executor = std::make_unique<T>(std::forward<Args>(args)...);
     }
 
