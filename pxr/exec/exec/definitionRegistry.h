@@ -20,7 +20,9 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/weakBase.h"
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -44,7 +46,8 @@ public:
         const Exec_DefinitionRegistry &) = delete;
 
     /// Provides access to the singleton instance, first ensuring it is
-    /// constructed.
+    /// constructed, and ensuring that all currently-loaded plugins have
+    /// registered their computations.
     ///
     EXEC_API
     static Exec_DefinitionRegistry& GetInstance();
@@ -94,6 +97,11 @@ private:
 
     Exec_DefinitionRegistry();
 
+    // Returns a reference to the singleton that is suitable for registering
+    // new computations. This instance cannot be used to look up computations.
+    EXEC_API
+    static Exec_DefinitionRegistry& _GetInstanceForRegistration();
+
     void _RegisterPrimComputation(
         TfType schemaType,
         const TfToken &computationName,
@@ -116,6 +124,14 @@ private:
     void _RegisterBuiltinComputations();
 
 private:
+
+    // These members ensure singleton access returns a fully-constructed
+    // instance. This is the case for GetInstance(), but not required for
+    // _GetInstanceForRegistration() which is called by exec definition registry
+    // functions.
+    std::atomic<bool> _isFullyConstructed;
+    std::mutex _isFullyConstructedMutex;
+    std::condition_variable _isFullyConstructedConditionVariable;
 
     // Map from (schemaType, computationName) to plugin prim computation
     // definition.
@@ -162,7 +178,7 @@ _RegisterPrimComputation(
     ExecCallbackFn &&callback,
     Exec_InputKeyVector &&inputKeys)
 {
-    GetInstance()._RegisterPrimComputation(
+    _GetInstanceForRegistration()._RegisterPrimComputation(
         schemaType,
         computationName,
         resultType,

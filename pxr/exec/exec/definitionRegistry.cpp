@@ -12,14 +12,15 @@
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
-#include "pxr/exec/esf/attribute.h"
-#include "pxr/exec/esf/prim.h"
-
+#include "pxr/base/arch/hints.h"
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/instantiateSingleton.h"
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/trace/trace.h"
+#include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/prim.h"
 
+#include <mutex>
 #include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -27,17 +28,18 @@ PXR_NAMESPACE_OPEN_SCOPE
 TF_INSTANTIATE_SINGLETON(Exec_DefinitionRegistry);
 
 Exec_DefinitionRegistry::Exec_DefinitionRegistry()
+    : _isFullyConstructed(false)
 {
     // Ensure the type registry is initialized before the definition registry so
     // that computation registrations will be able to look up value types.
     ExecTypeRegistry::GetInstance();
 
-    // Calling SetInstanceConstructed() makes it possible to call GetInstance()
-    // before this constructor has finished.
+    // Calling SetInstanceConstructed() makes it possible to call
+    // TfSingleton<>::GetInstance() before this constructor has finished.
     //
     // This is neccessary because the following call to SubscribeTo() will
     // _immediately_ invoke all registry functions which will, in turn, most
-    // likely call GetInstance().
+    // likely call TfSingleton<>::GetInstance().
     TfSingleton<Exec_DefinitionRegistry>::SetInstanceConstructed(*this);
 
     // Populate the registry with builtin computation definitions.
@@ -49,13 +51,41 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
     // than the definition registry type, so Exec_DefinitionRegistry can remain
     // private.
     TfRegistryManager::GetInstance().SubscribeTo<ExecDefinitionRegistryTag>();
+
+    // Callers of Exec_DefinitionRegistry::GetInstance() can now safely return
+    // a fully-constructed registry.
+    _isFullyConstructed.store(true);
+    _isFullyConstructedConditionVariable.notify_all();
 }
 
 // This must be defined in the cpp file, or we get undefined symbols when
 // linking.
 // 
 Exec_DefinitionRegistry&
-Exec_DefinitionRegistry::GetInstance() {
+Exec_DefinitionRegistry::GetInstance()
+{
+    Exec_DefinitionRegistry &instance =
+        TfSingleton<Exec_DefinitionRegistry>::GetInstance();
+    
+    if (ARCH_LIKELY(instance._isFullyConstructed)) {
+        return instance;
+    }
+
+    // Measure time spent waiting for the _isFullyConstructed flag.
+    TRACE_FUNCTION_SCOPE("Waiting for construction");
+
+    // Wait for the registry to be fully constructed.
+    std::unique_lock<std::mutex> lock(instance._isFullyConstructedMutex);
+    instance._isFullyConstructedConditionVariable.wait(lock, [&instance] {
+        return instance._isFullyConstructed.load();
+    });
+
+    return instance;
+}
+
+Exec_DefinitionRegistry&
+Exec_DefinitionRegistry::_GetInstanceForRegistration()
+{
     return TfSingleton<Exec_DefinitionRegistry>::GetInstance();
 }
 
