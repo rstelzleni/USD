@@ -941,6 +941,13 @@ HdRenderIndex::_ConfigureReprs()
                                          /*flatShadingEnabled=*/false,
                                          /*blendWireframeColor=*/true,
                                          /*forceOpaqueEdges=*/false));
+    HdMesh::ConfigureRepr(HdReprTokens->solidWireOnSurf,
+                          HdMeshReprDesc(HdMeshGeomStyleHullEdgeOnSurf,
+                                         HdCullStyleDontCare,
+                                         HdMeshReprDescTokens->surfaceShader,
+                                         /*flatShadingEnabled=*/false,
+                                         /*blendWireframeColor=*/true,
+                                         /*forceOpaqueEdges=*/true));
     HdMesh::ConfigureRepr(HdReprTokens->refined,
                           HdMeshReprDesc(HdMeshGeomStyleSurf,
                                          HdCullStyleDontCare,
@@ -960,6 +967,13 @@ HdRenderIndex::_ConfigureReprs()
                                          /*flatShadingEnabled=*/false,
                                          /*blendWireframeColor=*/true,
                                          /*forceOpaqueEdges=*/false));
+    HdMesh::ConfigureRepr(HdReprTokens->refinedSolidWireOnSurf,
+                          HdMeshReprDesc(HdMeshGeomStyleEdgeOnSurf,
+                                         HdCullStyleDontCare,
+                                         HdMeshReprDescTokens->surfaceShader,
+                                         /*flatShadingEnabled=*/false,
+                                         /*blendWireframeColor=*/true,
+                                         /*forceOpaqueEdges=*/true));
     HdMesh::ConfigureRepr(HdReprTokens->points,
                           HdMeshReprDesc(HdMeshGeomStylePoints,
                                          HdCullStyleNothing,

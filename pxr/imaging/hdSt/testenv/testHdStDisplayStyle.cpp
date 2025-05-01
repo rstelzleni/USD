@@ -32,7 +32,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (wireframeBack)
     (wireframeFront)
     (wireOnSurfUnlit)
-    (wireOnSurfForceOpaqueEdges)
+    (solidWireOnSurf)
     (points)
     (pointsAndSurf)
     );
@@ -122,7 +122,7 @@ My_TestGLDrawing::InitTest()
                             HdPointsGeomStylePoints);
 
     // wireframe on surface, force opaque edges
-    HdMesh::ConfigureRepr(_tokens->wireOnSurfForceOpaqueEdges,
+    HdMesh::ConfigureRepr(_tokens->solidWireOnSurf,
                           HdMeshReprDesc(HdMeshGeomStyleEdgeOnSurf,
                                          HdCullStyleDontCare,
                                          HdMeshReprDescTokens->surfaceShader,
@@ -241,7 +241,7 @@ My_TestGLDrawing::InitTest()
             VtValue(0.5f),
             HdInterpolationConstant);
         delegate.SetReprSelector(SdfPath("/cube10"),
-                HdReprSelector(_tokens->wireOnSurfForceOpaqueEdges));
+                HdReprSelector(_tokens->solidWireOnSurf));
         pos[0] += 3.0;
     }
     GfVec3f center(7.5f, 0, 1.5f);
