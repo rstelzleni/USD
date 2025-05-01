@@ -562,3 +562,30 @@ class UsdContrivedNoAlias "UsdContrivedNoAlias" (
 )
 {
 }
+
+class "TestReflectedAPIBase" (
+    inherits = </Typed>
+    prepend apiSchemas = ["TestReflectedInternalAPI", "TestReflectedExternalAPI"]
+    customData = {
+        string[] reflectedAPISchemas = ["TestReflectedInternalAPI", "TestReflectedExternalAPI"]
+    }
+)
+{
+
+}
+
+class "TestReflectedInternalAPI" (
+    inherits = </APISchemaBase>
+    prepend apiSchemas = ["BuiltinAPI"]
+    customData = {
+        token apiSchemaType = "singleApply"
+        token[] apiSchemaAutoApplyTo = ["Derived", "ExternalPluginType"]
+        token[] apiSchemaCanOnlyApplyTo = ["Base", "ExternalPluginType"]
+    }
+)
+{
+    int testAttrInternal
+    rel testRelInternal
+    int testAttrDuplicate 
+    rel testRelDuplicate
+}

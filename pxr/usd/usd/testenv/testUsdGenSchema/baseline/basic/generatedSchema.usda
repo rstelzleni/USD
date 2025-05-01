@@ -419,3 +419,19 @@ class UsdContrivedNoAlias "UsdContrivedNoAlias"
 {
 }
 
+class "TestReflectedAPIBase" (
+    apiSchemas = ["TestReflectedInternalAPI", "TestReflectedExternalAPI"]
+)
+{
+}
+
+class "TestReflectedInternalAPI" (
+    apiSchemas = ["BuiltinAPI"]
+)
+{
+    int testAttrDuplicate
+    int testAttrInternal
+    rel testRelDuplicate
+    rel testRelInternal
+}
+

@@ -485,6 +485,18 @@ struct UsdContrivedTokensType {
     /// 
     /// UsdContrivedMultipleApplyAPI
     const TfToken test_MultipleApplyTemplate_TestAttrTwo;
+    /// \brief "testAttrDuplicate"
+    /// 
+    /// UsdTestReflectedExternalAPI, UsdContrivedTestReflectedInternalAPI
+    const TfToken testAttrDuplicate;
+    /// \brief "testAttrExternal"
+    /// 
+    /// UsdTestReflectedExternalAPI
+    const TfToken testAttrExternal;
+    /// \brief "testAttrInternal"
+    /// 
+    /// UsdContrivedTestReflectedInternalAPI
+    const TfToken testAttrInternal;
     /// \brief "testingAsset"
     /// 
     /// UsdContrivedDerived
@@ -517,6 +529,18 @@ struct UsdContrivedTokensType {
     /// 
     /// UsdContrivedPublicMultipleApplyAPI
     const TfToken testo_MultipleApplyTemplate_TestAttrTwo;
+    /// \brief "testRelDuplicate"
+    /// 
+    /// UsdTestReflectedExternalAPI, UsdContrivedTestReflectedInternalAPI
+    const TfToken testRelDuplicate;
+    /// \brief "testRelExternal"
+    /// 
+    /// UsdTestReflectedExternalAPI
+    const TfToken testRelExternal;
+    /// \brief "testRelInternal"
+    /// 
+    /// UsdContrivedTestReflectedInternalAPI
+    const TfToken testRelInternal;
     /// \brief "token"
     /// 
     /// UsdContrivedBase, Fallback value for UsdContrivedBase::GetTokenAttr()
@@ -661,6 +685,18 @@ struct UsdContrivedTokensType {
     /// 
     /// Schema identifer for UsdContrivedTestHairman_1
     const TfToken TestPxHairman_1;
+    /// \brief "TestReflectedAPIBase"
+    /// 
+    /// Schema identifer and family for UsdContrivedTestReflectedAPIBase
+    const TfToken TestReflectedAPIBase;
+    /// \brief "TestReflectedExternalAPI"
+    /// 
+    /// Schema identifer and family for UsdTestReflectedExternalAPI
+    const TfToken TestReflectedExternalAPI;
+    /// \brief "TestReflectedInternalAPI"
+    /// 
+    /// Schema identifer and family for UsdContrivedTestReflectedInternalAPI
+    const TfToken TestReflectedInternalAPI;
     /// \brief "UsdContrivedNoAlias"
     /// 
     /// Schema identifer and family for UsdContrivedNoAlias
