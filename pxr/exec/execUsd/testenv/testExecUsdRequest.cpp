@@ -39,7 +39,7 @@ EXEC_REGISTER_SCHEMA(TestExecUsdRequestComputedTransform)
             return xf * parentXf;
         })
         .Inputs(
-            // AttributeValue<GfMatrix4d>(_tokens->xf),
+            AttributeValue<GfMatrix4d>(_tokens->xf),
             NamespaceAncestor<GfMatrix4d>(_tokens->computeXf)
         );
 }

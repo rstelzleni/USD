@@ -73,7 +73,9 @@ pxr_register_test(testExecUsdExternalRegistration
 pxr_build_test(testExecUsdRequest
     LIBRARIES
         gf
+        plug
         tf
+        work
         esf
         exec
         execUsd
@@ -89,5 +91,29 @@ pxr_install_test_dir(
 
 pxr_register_test(testExecUsdRequest
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdRequest"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_build_test(testExecUsdRequestInvalidation
+    LIBRARIES
+        gf
+        plug
+        tf
+        ef
+        esf
+        exec
+        execUsd
+        vdf
+    CPPFILES
+        testenv/testExecUsdRequestInvalidation.cpp
+)
+
+pxr_install_test_dir(
+    SRC testenv/testExecUsdRequestInvalidation
+    DEST testExecUsdRequestInvalidation
+)
+
+pxr_register_test(testExecUsdRequestInvalidation
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdRequestInvalidation"
     EXPECTED_RETURN_CODE 0
 )
