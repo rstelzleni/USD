@@ -179,6 +179,22 @@ struct TextParserAction<KeywordNone>
 };
 
 template <>
+struct TextParserAction<KeywordAnimationBlock>
+{
+    template <class Input>
+    static void apply(const Input& in, Sdf_TextParserContext& context)
+    {
+        Sdf_TextParserCurrentParsingContext parsingContext =
+            context.parsingContext.back();
+        if (parsingContext ==
+            Sdf_TextParserCurrentParsingContext::AttributeSpec)
+        {
+            _SetDefault(context.path, VtValue(SdfAnimationBlock()), context);
+        }
+    }
+};
+
+template <>
 struct TextParserAction<KeywordCustomData>
 {
     template <class Input>

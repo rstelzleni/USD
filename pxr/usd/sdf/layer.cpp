@@ -1289,6 +1289,14 @@ SdfLayer::SetTimeSample(const SdfPath& path, double time,
         return;
     }
 
+    if (value.IsHolding<SdfAnimationBlock>()) {
+        TF_CODING_ERROR(
+            "Animation block can not be authored on a time sample."
+            "SdfAnimationBlock can only be authored as the default value to "
+            "block animation from weaker layer.");
+        return;
+    }
+
     // circumvent type checking if setting a block.
     if (value.IsHolding<SdfValueBlock>()) {
         _PrimSetTimeSample(path, time, value);

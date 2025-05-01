@@ -103,3 +103,5 @@ xx(PathExpression,          57, SdfPathExpression,           true)
 xx(Relocates,               58, SdfRelocates,                false)
 xx(Spline,                  59, TsSpline,                    false)
 
+xx(AnimationBlock,          60, SdfAnimationBlock,           false)
+
