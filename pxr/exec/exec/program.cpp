@@ -11,44 +11,51 @@
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/ef/timeInputNode.h"
 #include "pxr/exec/ef/timeInterval.h"
+#include "pxr/exec/vdf/connection.h"
 #include "pxr/exec/vdf/executorInterface.h"
 #include "pxr/exec/vdf/grapher.h"
+#include "pxr/exec/vdf/input.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/node.h"
 #include "pxr/exec/vdf/typedVector.h"
+#include "pxr/exec/vdf/types.h"
 #include "pxr/usd/sdf/path.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 class Exec_Program::_EditMonitor final : public VdfNetwork::EditMonitor {
 public:
-    explicit _EditMonitor(EfLeafNodeCache *const leafNodeCache)
-        : _leafNodeCache(leafNodeCache)
+    explicit _EditMonitor(Exec_Program *const program)
+        : _program(program)
     {}
 
     void WillClear() override {
-        _leafNodeCache->Clear();
+        _program->_leafNodeCache.Clear();
     }
 
     void DidConnect(const VdfConnection *connection) override {
-        _leafNodeCache->DidConnect(*connection);
+        _program->_leafNodeCache.DidConnect(*connection);
     }
 
     void DidAddNode(const VdfNode *node) override {}
 
     void WillDelete(const VdfConnection *connection) override {
-        _leafNodeCache->WillDeleteConnection(*connection);
+        _program->_leafNodeCache.WillDeleteConnection(*connection);
     }
 
-    void WillDelete(const VdfNode *node) override {}
+    void WillDelete(const VdfNode *node) override {
+        // TODO: When we implement parallel node deletion, this needs to be made
+        // thread-safe.
+        _program->_compiledOutputCache.EraseByNodeId(node->GetId());
+    }
 
 private:
-    EfLeafNodeCache *const _leafNodeCache;
+    Exec_Program *const _program;
 };
 
 Exec_Program::Exec_Program()
     : _timeInputNode(new EfTimeInputNode(&_network))
-    , _editMonitor(std::make_unique<_EditMonitor>(&_leafNodeCache))
+    , _editMonitor(std::make_unique<_EditMonitor>(this))
 {
     _network.RegisterEditMonitor(_editMonitor.get());
 }
@@ -216,6 +223,78 @@ Exec_Program::InitializeInputNodes()
     _uninitializedInputNodes.clear();
 
     return invalidationRequest;
+}
+
+void
+Exec_Program::DisconnectAndDeleteNode(VdfNode *const node)
+{
+    TRACE_FUNCTION();
+
+    // Track a set of connections to be deleted at the end of this function,
+    // because it is not safe to remove connections while iterating over them.
+    VdfConnectionVector connections;
+
+    // Upstream nodes are potentially isolated.
+    for (const auto &[name, input] : node->GetInputsIterator()) {
+        TF_UNUSED(name);
+        for (VdfConnection *const connection : input->GetConnections()) {
+            _potentiallyIsolatedNodes.insert(&connection->GetSourceNode());
+            connections.push_back(connection);
+        }
+    }
+
+    // Downstream inputs require recompilation.
+    for (const auto &[name, output] : node->GetOutputsIterator()) {
+        TF_UNUSED(name);
+        for (VdfConnection *const connection : output->GetConnections()) {
+            _inputsRequiringRecompilation.insert(&connection->GetTargetInput());
+
+            // TODO: We currently disconnect other connections incoming on the
+            // target input, and we mark the nodes upstream of those connections
+            // as potentially isolated. We do this because recompilation of
+            // inputs expects those inputs to be fully disconnected. However,
+            // a future change can add support to recompile inputs with existing
+            // connections.
+            for (VdfConnection *const targetInputConnection :
+                connection->GetTargetInput().GetConnections()) {
+                
+                _potentiallyIsolatedNodes.insert(
+                    &targetInputConnection->GetSourceNode());
+                connections.push_back(targetInputConnection);
+            }
+        }
+    }
+
+    // This node cannot be isolated, and its inputs do not require
+    // recompilation, because they are all about to be deleted.
+    _potentiallyIsolatedNodes.erase(node);
+    for (const auto &[name, input] : node->GetInputsIterator()) {
+        TF_UNUSED(name);
+        _inputsRequiringRecompilation.erase(input);
+    }
+
+    // Finally, delete the affected connections and the node.
+    for (VdfConnection *const connection : connections) {
+        _network.Disconnect(connection);
+    }
+    _network.Delete(node);
+}
+
+void
+Exec_Program::DisconnectInput(VdfInput *const input)
+{
+    TRACE_FUNCTION();
+
+    _inputsRequiringRecompilation.insert(input);
+
+    // All source nodes of the input's connections are now potentially isolated.
+    // Iterate over a copy of the connections, because the original vector will
+    // be modified by VdfNetwork::Disconnect.
+    const VdfConnectionVector connections = input->GetConnections();
+    for (VdfConnection *const connection : connections) {
+        _potentiallyIsolatedNodes.insert(&connection->GetSourceNode());
+        _network.Disconnect(connection);
+    }
 }
 
 void

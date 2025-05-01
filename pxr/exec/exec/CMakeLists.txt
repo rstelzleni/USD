@@ -57,6 +57,7 @@ pxr_library(exec
         program
         uncompilationRuleSet
         uncompilationTable
+        uncompiler
 
     RESOURCE_FILES
         plugInfo.json

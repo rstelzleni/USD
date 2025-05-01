@@ -7,6 +7,7 @@
 #include "pxr/exec/exec/systemChangeProcessor.h"
 
 #include "pxr/exec/exec/types.h"
+#include "pxr/exec/exec/uncompiler.h"
 
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/smallVector.h"
@@ -17,14 +18,20 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 struct ExecSystem::_ChangeProcessor::_State {
+    _State(ExecSystem *const system)
+        : uncompiler(system->_program.get())
+    {}
+
     // Accumulate invalid authored values so that program and executor
     // invalidation can be batch-processed.
     TfSmallVector<ExecInvalidAuthoredValue, 1> invalidAuthoredValues;
+    
+    Exec_Uncompiler uncompiler;
 };
 
 ExecSystem::_ChangeProcessor::_ChangeProcessor(ExecSystem *const system)
     : _system(system)
-    , _state(std::make_unique<_State>())
+    , _state(std::make_unique<_State>(system))
 {
     TF_VERIFY(system);
 }
@@ -37,7 +44,12 @@ ExecSystem::_ChangeProcessor::~_ChangeProcessor()
 void
 ExecSystem::_ChangeProcessor::DidResync(const SdfPath &path)
 {
-    // TODO
+    // TODO: Resyncs on an object may trigger edit reasons on related objects.
+    // (E.g. resync on /Prim.attr would trigger a ChangedPropertyList on /Prim)
+    // That would be handled here. For now, resync is the only supported edit
+    // reason.
+    _state->uncompiler.UncompileForSceneChange(
+        path, EsfEditReason::ResyncedObject);
 }
 
 void

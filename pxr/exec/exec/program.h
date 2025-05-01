@@ -28,6 +28,7 @@
 #include <memory>
 #include <tuple>
 #include <type_traits>
+#include <unordered_set>
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -39,6 +40,7 @@ class EsfJournal;
 class TfBits;
 template <typename> class TfSpan;
 class VdfExecutorInterface;
+class VdfInput;
 class VdfNode;
 
 /// Owns a VdfNetwork and related data structures to access and modify the
@@ -58,6 +60,9 @@ class VdfNode;
 ///     deleted from the network.
 ///   - Tracking the leaf nodes dependent on any particular output in the
 ///     network.
+///   - Tracking which nodes may be isolated due to uncompilation.
+///   - Tracking which inputs have been affected by uncompilation and should
+///     later be recompiled.
 ///
 /// Some of these data structures must be modified when the network is modified.
 /// Therefore, compilation never directly accesses the VdfNetwork, but does so
@@ -159,6 +164,68 @@ public:
     /// 
     VdfMaskedOutputVector InitializeInputNodes();
 
+    /// Returns the node with the given \p nodeId, or nullptr if no such node
+    /// exists.
+    ///
+    VdfNode *GetNodeById(const VdfId nodeId) {
+        return _network.GetNodeById(nodeId);
+    }
+
+    /// Deletes a \p node from the network.
+    ///
+    /// All incoming and outgoing connections on \p node are deleted. Downstream
+    /// inputs previously connected to \p node are marked as "dirty" and can be
+    /// queried by GetDirtyOutputs. Upstream nodes previously feeding into
+    /// \p node may be left isolated.
+    ///
+    /// \note
+    /// This method is not thread-safe.
+    ///
+    void DisconnectAndDeleteNode(VdfNode *node);
+
+    /// Deletes all connections flowing into \p input.
+    ///
+    /// This input is added to the set of "dirty" inputs. Upstream nodes
+    /// previously feeding into this \p input may be left isolated.
+    ///
+    /// \note
+    /// This method is not thread-safe.
+    /// 
+    void DisconnectInput(VdfInput *input);
+
+    /// Gets the set of inputs that have been affected by uncompilation and need
+    /// to be recompiled.
+    ///
+    const std::unordered_set<VdfInput *> &
+    GetInputsRequiringRecompilation() const {
+        return _inputsRequiringRecompilation;
+    }
+
+    /// Clears the set of inputs that were affected by uncompilation.
+    ///
+    /// This should be called after all such inputs have been recompiled.
+    ///
+    /// \note
+    /// This method is not thread-safe.
+    ///
+    void ClearInputsRequiringRecompilation() {
+        _inputsRequiringRecompilation.clear();
+    }
+
+    /// Returns Exec_UncompilationRuleSet%s for \p resyncedPath and descendants
+    /// of \p resyncedPath.
+    ///
+    std::vector<Exec_UncompilationTable::Entry>
+    ExtractUncompilationRuleSetsForResync(const SdfPath &resyncedPath) {
+        return _uncompilationTable.UpdateForRecursiveResync(resyncedPath);
+    }
+
+    /// Returns the Exec_UncompilationRuleSet for \p changedPath.
+    Exec_UncompilationTable::Entry GetUncompilationRuleSetForPath(
+        const SdfPath &changedPath) {
+        return _uncompilationTable.Find(changedPath);
+    }
+
     /// Writes the compiled network to a file at \p filename.
     void GraphNetwork(const char *filename) const;
 
@@ -201,6 +268,12 @@ private:
     // edits.
     class _EditMonitor;
     std::unique_ptr<_EditMonitor> _editMonitor;
+
+    // Nodes that may be isolated due to prior uncompilation.
+    std::unordered_set<VdfNode *> _potentiallyIsolatedNodes;
+
+    // Inputs that were disconnected during uncompilation.
+    std::unordered_set<VdfInput *> _inputsRequiringRecompilation;
 };
 
 
