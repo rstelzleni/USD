@@ -356,9 +356,9 @@ in an upcoming release.
 - **Important**: UsdImagingStageSceneIndex now has feature parity with 
   UsdImagingDelegate. Users of the UsdImaging library are encouraged to try 
   switching to UsdImagingStageSceneIndex (via the 
-  USDIMAGINGGL_ENGINE_USE_SCENE_INDEX flag, if they use UsdImagingGL) and report 
-  any issues. Pixar intends to switch usdview to the new API later in the year, 
-  and deprecate UsdImagingDelegate.
+  USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX flag, if they use UsdImagingGL) and 
+  report any issues. Pixar intends to switch usdview to the new API later in the 
+  year, and deprecate UsdImagingDelegate.
 
 - Added UsdSkelImaging Hydra 2.0 implementation as prim adapters and filtering 
   scene indices that resolve the skeleton. This adds UsdImagingSceneIndexPlugin 
