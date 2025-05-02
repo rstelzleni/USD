@@ -123,6 +123,10 @@ private:
 
     void _RegisterBuiltinComputations();
 
+    void _SetInstanceFullyConstructed();
+
+    void _WaitForFullConstruction();
+
 private:
 
     // These members ensure singleton access returns a fully-constructed

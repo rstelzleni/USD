@@ -54,8 +54,7 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
 
     // Callers of Exec_DefinitionRegistry::GetInstance() can now safely return
     // a fully-constructed registry.
-    _isFullyConstructed.store(true);
-    _isFullyConstructedConditionVariable.notify_all();
+    _SetInstanceFullyConstructed();
 }
 
 // This must be defined in the cpp file, or we get undefined symbols when
@@ -71,15 +70,7 @@ Exec_DefinitionRegistry::GetInstance()
         return instance;
     }
 
-    // Measure time spent waiting for the _isFullyConstructed flag.
-    TRACE_FUNCTION_SCOPE("Waiting for construction");
-
-    // Wait for the registry to be fully constructed.
-    std::unique_lock<std::mutex> lock(instance._isFullyConstructedMutex);
-    instance._isFullyConstructedConditionVariable.wait(lock, [&instance] {
-        return instance._isFullyConstructed.load();
-    });
-
+    instance._WaitForFullConstruction();
     return instance;
 }
 
@@ -326,6 +317,28 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputations()
               _builtinPrimComputationDefinitions.size() +
               _builtinAttributeComputationDefinitions.size() ==
               ExecBuiltinComputations->GetComputationTokens().size());
+}
+
+void
+Exec_DefinitionRegistry::_SetInstanceFullyConstructed()
+{
+    // Even though _isFullyConstructed is an atomic, we still need to protect
+    // its update with a lock on the mutex, or else other threads might enter
+    // a wait state after we've notified the condition variable.
+    std::lock_guard<std::mutex> lock(_isFullyConstructedMutex);
+    _isFullyConstructed.store(true);
+    _isFullyConstructedConditionVariable.notify_all();
+}
+
+void
+Exec_DefinitionRegistry::_WaitForFullConstruction()
+{
+    TRACE_FUNCTION();
+
+    std::unique_lock<std::mutex> lock(_isFullyConstructedMutex);
+    _isFullyConstructedConditionVariable.wait(lock, [this] {
+        return _isFullyConstructed.load();
+    });
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
