@@ -6,6 +6,7 @@
 //
 #include "pxr/usdImaging/usdImaging/piPrototypeSceneIndex.h"
 
+#include "pxr/usdImaging/usdImaging/geomModelSchema.h"
 #include "pxr/usdImaging/usdImaging/usdPrimInfoSchema.h"
 
 #include "pxr/imaging/hd/tokens.h"
@@ -163,7 +164,11 @@ _MakeUnrenderable(HdSceneIndexPrim * const prim)
             UsdImagingUsdPrimInfoSchema::GetSchemaToken(),
             HdRetainedContainerDataSource::New(
                 UsdImagingUsdPrimInfoSchemaTokens->niPrototypePath,
-                HdBlockDataSource::New()));
+                HdBlockDataSource::New()),
+            UsdImagingGeomModelSchema::GetSchemaToken(),
+            HdRetainedContainerDataSource::New(
+                UsdImagingGeomModelSchemaTokens->applyDrawMode,
+                HdRetainedTypedSampledDataSource<bool>::New(false)));
     prim->dataSource = HdOverlayContainerDataSource::New(
         overlaySource,
         prim->dataSource);
