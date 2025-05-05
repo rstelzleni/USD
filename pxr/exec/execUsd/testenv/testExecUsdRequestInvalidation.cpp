@@ -249,19 +249,17 @@ main(int argc, char* argv[])
     TF_AXIOM(invalidation.interval.IsEmpty());
 
     // Test changing multiple default values at the same time.
-    // XXX: We only end up getting ObjectsChanged for A2.xf here. This feels
-    //      like a bug with incorrect objects changed notices being sent out.
-    // SdfLayerHandle rootLayer = stage->GetRootLayer();
-    // {
-    //     SdfChangeBlock block;
-    //     rootLayer->GetAttributeAtPath(SdfPath("/Root/A1.xf"))->SetDefaultValue(
-    //         VtValue(GfMatrix4d(1.0)));
-    //     rootLayer->GetAttributeAtPath(SdfPath("/Root/A2.xf"))->SetDefaultValue(
-    //         VtValue(GfMatrix4d(1.0)));
-    // }
-    // TF_AXIOM(invalidation.numInvoked == 1);
-    // TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,1}));
-    // TF_AXIOM(invalidation.interval.IsFullInterval());
+    SdfLayerHandle rootLayer = stage->GetRootLayer();
+    {
+        SdfChangeBlock block;
+        rootLayer->GetAttributeAtPath(SdfPath("/Root/A1.xf"))->SetDefaultValue(
+            VtValue(GfMatrix4d(5.0)));
+        rootLayer->GetAttributeAtPath(SdfPath("/Root/A2.xf"))->SetDefaultValue(
+            VtValue(GfMatrix4d(5.0)));
+    }
+    TF_AXIOM(invalidation.numInvoked == 1);
+    TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,1}));
+    TF_AXIOM(invalidation.interval.IsFullInterval());
 
     return 0;
 }
