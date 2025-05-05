@@ -12,6 +12,9 @@
 #include "pxr/usd/sdf/path.h"
 
 #include "pxr/base/trace/trace.h"
+#include "pxr/base/work/loops.h"
+
+#include "tbb/concurrent_vector.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -216,7 +219,37 @@ UsdImagingDrawModeSceneIndex::_PrimsAdded(
     HdSceneIndexObserver::AddedPrimEntries newEntries;
     HdSceneIndexObserver::RemovedPrimEntries removedEntries;
 
-    for (const HdSceneIndexObserver::AddedPrimEntry &entry : entries) {
+    // Loop over notices to determine the prims that have a draw mode. Since
+    // the prim container is used to determine this, it can be quite expensive.
+    // So, we parallelize the work below with the caveat that we may be querying
+    // descendant prims under a tracked prim that has a draw mode.
+    // XXX We preserve the order of notice entries to workaround a bug in 
+    // backend emulation in the handling of geom subset prims.
+    //
+    using _AddedEntryAndPrimPair =
+        std::pair<HdSceneIndexObserver::AddedPrimEntry, HdSceneIndexPrim>;
+    tbb::concurrent_vector<_AddedEntryAndPrimPair> entryPrimPairs(
+        entries.size());
+
+    {
+        TRACE_FUNCTION_SCOPE("Notice processing - prim query");
+        WorkParallelForN(entries.size(),
+            [&](size_t begin, size_t end) {
+                for (size_t i = begin; i < end; ++i) {
+                    const HdSceneIndexObserver::AddedPrimEntry &entry =
+                        entries[i];
+                    
+                    const SdfPath &path = entry.primPath;
+                    const HdSceneIndexPrim prim =
+                        _GetInputSceneIndex()->GetPrim(path);
+                    entryPrimPairs[i] = {entry, prim};
+                }
+            });
+    }
+
+    // Serial loop for simplicity because _prims is not thread safe.
+    //
+    for (const auto& [entry, prim] : entryPrimPairs) {
         const SdfPath &path = entry.primPath;
 
         // Suppress prims from input scene delegate that have an ancestor
@@ -228,13 +261,12 @@ UsdImagingDrawModeSceneIndex::_PrimsAdded(
                 continue;
             }
         }
-               
-        const HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(path);
+
         const TfToken drawMode = _GetDrawMode(prim);
 
         if (UsdImaging_DrawModeStandinSharedPtr standin =
-                UsdImaging_GetDrawModeStandin(
-                    drawMode, path, prim.dataSource)) {
+            UsdImaging_GetDrawModeStandin(
+                drawMode, path, prim.dataSource)) {
 
             // Sending out removed entry here for the following scenario:
             // Assume that the input to the draw mode scene index has a
@@ -278,13 +310,8 @@ UsdImagingDrawModeSceneIndex::_PrimsAdded(
         }
     }
 
-    if (!removedEntries.empty()) {
-        _SendPrimsRemoved(removedEntries);
-    }
-     
-    if (!newEntries.empty()) {
-        _SendPrimsAdded(newEntries);
-    }
+    _SendPrimsRemoved(removedEntries);
+    _SendPrimsAdded(newEntries);
 }
 
 void
