@@ -22,6 +22,7 @@
 #include "pxr/base/arch/demangle.h"
 #include "pxr/base/tf/hash.h"
 #include "pxr/base/tf/iterator.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/base/tf/stl.h"
 #include "pxr/base/trace/trace.h"
 
@@ -87,15 +88,13 @@ VdfNetwork::GetNodeDebugName(const VdfNode *node) const
 void 
 VdfNetwork::_RegisterNodeDebugName(
     const VdfNode &node, 
-    const VdfNodeDebugNameCallback &callback)
+    VdfNodeDebugNameCallback &&callback)
 {
-    if (!callback) {
-        TF_CODING_ERROR("Null callback for node: %s", 
-            ArchGetDemangled(typeid(node)).c_str());
-    } else {
+    if (TF_VERIFY(callback, "Null callback for node: %s", 
+                  ArchGetDemangled(typeid(node)).c_str())) {
         const VdfIndex index = VdfNode::GetIndexFromId(node.GetId());
         _nodeDebugNames[index] =
-            std::make_unique<Vdf_ExecNodeDebugName>(node, callback);
+            std::make_unique<Vdf_ExecNodeDebugName>(node, std::move(callback));
     }
 }
 

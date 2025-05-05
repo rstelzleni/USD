@@ -9,6 +9,7 @@
 #include "pxr/exec/vdf/connection.h"
 #include "pxr/exec/vdf/inputAndOutputSpecsRegistry.h"
 #include "pxr/exec/vdf/maskedOutput.h"
+#include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/requiredInputsPredicate.h"
 #include "pxr/exec/vdf/scheduleInvalidator.h"
 
@@ -124,6 +125,17 @@ VdfNode::SetDebugName(const std::string &name)
 {
     TfAutoMallocTag2 tag("Vdf", __ARCH_PRETTY_FUNCTION__);
     SetDebugNameCallback([name] { return name; });
+}
+
+void
+VdfNode::SetDebugNameCallback(VdfNodeDebugNameCallback &&callback)
+{
+    if (!callback) {
+        TF_CODING_ERROR("Null callback for node: %s",
+                        ArchGetDemangled(typeid(*this)).c_str());
+    } else {
+        _network._RegisterNodeDebugName(*this, std::move(callback));
+    }  
 }
 
 const std::string

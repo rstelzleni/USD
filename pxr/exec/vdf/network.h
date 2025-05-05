@@ -311,9 +311,8 @@ private:
     // 
     // Only VdfNode should call this function.
     //
-    VDF_API
     void _RegisterNodeDebugName(
-        const VdfNode &node, const VdfNodeDebugNameCallback &callback);
+        const VdfNode &node, VdfNodeDebugNameCallback &&callback);
 
     // Unregisters a name for a given node.  
     //
