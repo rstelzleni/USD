@@ -360,6 +360,28 @@ class TestUsdFlattenLayerStack(unittest.TestCase):
             stage_from_flattened.GetAttributeAtPath('/Test.a').Get().resolvedPath,
             stage_from_layer_stack.GetAttributeAtPath('/Test.a').Get().resolvedPath)
 
+    def test_TimeSamplesAndSplineWithStrongDefaults(self):
+        src_stage = Usd.Stage.Open(
+            'timeSamplesSplinesWithStrongDefault_strong.usda')
+        src_layer_stack = src_stage._GetPcpCache().layerStack
+        layer = Usd.FlattenLayerStack(src_layer_stack, tag='timeSamples')
+        print(layer.ExportToString())
+        result_stage = Usd.Stage.Open(layer)
+
+        # verify that time samples and splines worked
+        prim = result_stage.GetPrimAtPath('/Prim')
+        a = prim.GetAttribute('a')
+        self.assertEqual(
+            a.GetResolveInfo().GetSource(), Usd.ResolveInfoSourceDefault)
+        self.assertEqual(a.Get(), 5)
+        self.assertEqual(a.Get(1), 5)
+
+        b = prim.GetAttribute('b')
+        self.assertEqual(
+            b.GetResolveInfo().GetSource(), Usd.ResolveInfoSourceDefault)
+        self.assertEqual(b.Get(), 5.0)
+        self.assertEqual(b.Get(1), 5.0)
+
     def test_ValueBlocks(self):
         src_stage = Usd.Stage.Open('valueBlocks_root.usda')
         src_layer_stack = src_stage._GetPcpCache().layerStack
