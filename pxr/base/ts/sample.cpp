@@ -1009,6 +1009,11 @@ _Sampler::_UnrollInnerLoops()
         return;
     }
 
+    // We're going to have to convert the knots and times info. Point _knots and
+    // _times at the internal arrays that we're about to populate.
+    _knots = &_internalKnots;
+    _times = &_internalTimes;
+
     // Inner loops are defined over a closed interval. The end of the looped
     // interval has a knot that is a copy of the knot at the start of the
     // interval. It will overrule any knot that may be in the spline data at
@@ -1154,11 +1159,6 @@ _Sampler::_UnrollInnerLoops()
         _internalTimes.push_back(_data->times[i]);
         _internalKnots.push_back(_data->GetKnotDataAsDouble(i));
     }
-
-    // Finally, make sure that _knots and _times are pointing at the
-    // internal arrays.
-    _knots = &_internalKnots;
-    _times = &_internalTimes;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
