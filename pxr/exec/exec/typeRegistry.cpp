@@ -6,6 +6,8 @@
 //
 #include "pxr/exec/exec/typeRegistry.h"
 
+#include "pxr/exec/exec/registrationBarrier.h"
+
 #include "pxr/exec/ef/time.h"
 
 #include "pxr/usd/sdf/path.h"
@@ -24,14 +26,23 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 TF_INSTANTIATE_SINGLETON(ExecTypeRegistry);
 
-ExecTypeRegistry&
+const ExecTypeRegistry&
 ExecTypeRegistry::GetInstance()
+{
+    ExecTypeRegistry& instance = TfSingleton<ExecTypeRegistry>::GetInstance();
+    instance._registrationBarrier->WaitUntilFullyConstructed();
+    return instance;
+}
+
+ExecTypeRegistry&
+ExecTypeRegistry::_GetInstanceForRegistration()
 {
     return TfSingleton<ExecTypeRegistry>::GetInstance();
 }
 
 inline
 ExecTypeRegistry::ExecTypeRegistry()
+    : _registrationBarrier(std::make_unique<Exec_RegistrationBarrier>())
 {
     TRACE_FUNCTION();
 
@@ -49,18 +60,21 @@ ExecTypeRegistry::ExecTypeRegistry()
         VtValue const &def = name.GetDefaultValue();                    \
         if (TF_VERIFY(def.IsHolding<ValueType>())) {                    \
             ValueType const &value = def.UncheckedGet<ValueType>();     \
-            RegisterType(value);                                        \
+            _RegisterType(value);                                        \
         }                                                               \
     }
 
     TF_PP_SEQ_FOR_EACH(_EXEC_REGISTER_VALUE_TYPE, ~, SDF_VALUE_TYPES);
 #undef _EXEC_REGISTER_VALUE_TYPE
 
-    RegisterType(EfTime());
-    RegisterType(SdfPath());
+    _RegisterType(EfTime());
+    _RegisterType(SdfPath());
 
     TfSingleton<ExecTypeRegistry>::SetInstanceConstructed(*this);
     TfRegistryManager::GetInstance().SubscribeTo<ExecTypeRegistry>();
+    _registrationBarrier->SetFullyConstructed();
 }
+
+ExecTypeRegistry::~ExecTypeRegistry() = default;
 
 PXR_NAMESPACE_CLOSE_SCOPE

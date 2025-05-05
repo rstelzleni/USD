@@ -9,6 +9,7 @@
 #include "pxr/exec/exec/builtinAttributeComputations.h"
 #include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/builtinStageComputations.h"
+#include "pxr/exec/exec/registrationBarrier.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
@@ -20,7 +21,6 @@
 #include "pxr/exec/esf/attribute.h"
 #include "pxr/exec/esf/prim.h"
 
-#include <mutex>
 #include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -28,11 +28,14 @@ PXR_NAMESPACE_OPEN_SCOPE
 TF_INSTANTIATE_SINGLETON(Exec_DefinitionRegistry);
 
 Exec_DefinitionRegistry::Exec_DefinitionRegistry()
-    : _isFullyConstructed(false)
+    : _registrationBarrier(std::make_unique<Exec_RegistrationBarrier>())
 {
     // Ensure the type registry is initialized before the definition registry so
     // that computation registrations will be able to look up value types.
     ExecTypeRegistry::GetInstance();
+
+    // Populate the registry with builtin computation definitions.
+    _RegisterBuiltinComputations();
 
     // Calling SetInstanceConstructed() makes it possible to call
     // TfSingleton<>::GetInstance() before this constructor has finished.
@@ -41,9 +44,6 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
     // _immediately_ invoke all registry functions which will, in turn, most
     // likely call TfSingleton<>::GetInstance().
     TfSingleton<Exec_DefinitionRegistry>::SetInstanceConstructed(*this);
-
-    // Populate the registry with builtin computation definitions.
-    _RegisterBuiltinComputations();
 
     // Now initialize the registry.
     //
@@ -54,7 +54,7 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
 
     // Callers of Exec_DefinitionRegistry::GetInstance() can now safely return
     // a fully-constructed registry.
-    _SetInstanceFullyConstructed();
+    _registrationBarrier->SetFullyConstructed();
 }
 
 // This must be defined in the cpp file, or we get undefined symbols when
@@ -65,12 +65,7 @@ Exec_DefinitionRegistry::GetInstance()
 {
     Exec_DefinitionRegistry &instance =
         TfSingleton<Exec_DefinitionRegistry>::GetInstance();
-    
-    if (ARCH_LIKELY(instance._isFullyConstructed)) {
-        return instance;
-    }
-
-    instance._WaitForFullConstruction();
+    instance._registrationBarrier->WaitUntilFullyConstructed();
     return instance;
 }
 
@@ -317,28 +312,6 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputations()
               _builtinPrimComputationDefinitions.size() +
               _builtinAttributeComputationDefinitions.size() ==
               ExecBuiltinComputations->GetComputationTokens().size());
-}
-
-void
-Exec_DefinitionRegistry::_SetInstanceFullyConstructed()
-{
-    // Even though _isFullyConstructed is an atomic, we still need to protect
-    // its update with a lock on the mutex, or else other threads might enter
-    // a wait state after we've notified the condition variable.
-    std::lock_guard<std::mutex> lock(_isFullyConstructedMutex);
-    _isFullyConstructed.store(true);
-    _isFullyConstructedConditionVariable.notify_all();
-}
-
-void
-Exec_DefinitionRegistry::_WaitForFullConstruction()
-{
-    TRACE_FUNCTION();
-
-    std::unique_lock<std::mutex> lock(_isFullyConstructedMutex);
-    _isFullyConstructedConditionVariable.wait(lock, [this] {
-        return _isFullyConstructed.load();
-    });
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

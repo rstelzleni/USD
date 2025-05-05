@@ -55,6 +55,7 @@ pxr_library(exec
         outputKey
         outputProvidingCompilationTask
         program
+        registrationBarrier
         uncompilationRuleSet
         uncompilationTable
         uncompiler

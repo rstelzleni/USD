@@ -20,15 +20,14 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/weakBase.h"
 
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class Exec_RegistrationBarrier;
 class EsfAttributeInterface;
 class EsfJournal;
 class EsfObjectInterface;
@@ -123,19 +122,13 @@ private:
 
     void _RegisterBuiltinComputations();
 
-    void _SetInstanceFullyConstructed();
-
-    void _WaitForFullConstruction();
-
 private:
 
-    // These members ensure singleton access returns a fully-constructed
+    // This barrier ensures singleton access returns a fully-constructed
     // instance. This is the case for GetInstance(), but not required for
     // _GetInstanceForRegistration() which is called by exec definition registry
     // functions.
-    std::atomic<bool> _isFullyConstructed;
-    std::mutex _isFullyConstructedMutex;
-    std::condition_variable _isFullyConstructedConditionVariable;
+    std::unique_ptr<Exec_RegistrationBarrier> _registrationBarrier;
 
     // Map from (schemaType, computationName) to plugin prim computation
     // definition.
