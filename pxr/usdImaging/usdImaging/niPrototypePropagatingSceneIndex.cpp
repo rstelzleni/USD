@@ -127,6 +127,8 @@ public:
     GarbageCollect(const TfToken &prototypeName,
                    const size_t prototypeRootOverlayDsHash)
     {
+        TRACE_FUNCTION();
+        
         auto it = _prototypeToBindingHashToSceneIndices.find(prototypeName);
         if (it == _prototypeToBindingHashToSceneIndices.end()) {
             return;
@@ -347,6 +349,8 @@ UsdImagingNiPrototypePropagatingSceneIndex(
 UsdImagingNiPrototypePropagatingSceneIndex::
 ~UsdImagingNiPrototypePropagatingSceneIndex()
 {
+    TRACE_FUNCTION()
+
     // We need to release all references we have to the scene indices...
     _instancersToMergingSceneIndexEntry.clear();
     _instanceAggregationSceneIndex = nullptr;
