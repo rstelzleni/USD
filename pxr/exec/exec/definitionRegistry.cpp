@@ -124,35 +124,24 @@ Exec_DefinitionRegistry::GetComputationDefinition(
         return nullptr;
     }
 
-    // Iterate over all ancestor types of the provider's schema type, from
-    // derived to base, starting with the schema type itself. Look for a
-    // matching plugin prim computation for the derived-most schema type that
-    // defines it, or null, if no matching computation can be found.
-    //
-    // TODO: Repeatedly traversing the schema type hierarchy like this is
-    // wasteful and we plan to cache results appropriately. But we still need to
-    // add support for applied schemas, and we will also need to add the ability
-    // to compose computation definitions, so for now we are leaving this
-    // inefficiency in place until more of that functionality lands. The current
-    // thinking is that exec will cache composed prim definitions that will be
-    // keyed off of a tuple of typed and applied schemas and will cache the
-    // resulting set of composed computation definitions. That will enable this
-    // code to construct a key and do a single lookup into the cache, rather
-    // than searching to find the computation definition.
+    // Get the composed prim definition, creating it if necesseary, and use it
+    // to look up the computation, or to determine that the requested
+    // computation isn't defined for this prim.
+    auto composedDefIt = _composedPrimDefinitions.find(schemaType);
+    if (composedDefIt == _composedPrimDefinitions.end()) {
+        // Note that we allow concurrent callers to race to compose prim
+        // definitions, since it is safe to do so and we don't expect it to
+        // happen in the common case.
+        _ComposedPrimDefinition primDef =
+            _ComposePrimDefinition(schemaType);
 
-    TfType foundType;
-    std::vector<TfType> schemaAncestorTypes;
-    schemaType.GetAllAncestorTypes(&schemaAncestorTypes);
-
-    for (const TfType type : schemaAncestorTypes) {
-        if (const auto pluginIt = _pluginPrimComputationDefinitions.find(
-                {type, computationName});
-            pluginIt != _pluginPrimComputationDefinitions.end()) {
-            return &pluginIt->second;
-        }
+        composedDefIt = _composedPrimDefinitions.emplace(
+            schemaType, std::move(primDef)).first;
     }
 
-    return nullptr;
+    const auto &compDefs = composedDefIt->second.primComputationDefinitions;
+    const auto it = compDefs.find(computationName);
+    return it == compDefs.end() ? nullptr : it->second;
 }
 
 const Exec_ComputationDefinition *
@@ -174,6 +163,52 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     (void)owningPrim;
     (void)primSchemaType;
     return nullptr;
+}
+
+Exec_DefinitionRegistry::_ComposedPrimDefinition
+Exec_DefinitionRegistry::_ComposePrimDefinition(
+    const TfType schemaType) const
+{
+    TRACE_FUNCTION();
+
+    // Iterate over all ancestor types of the provider's schema type, from
+    // derived to base, starting with the schema type itself. Ensure that plugin
+    // computations have been loaded for each schema type for which they are
+    // registered. Add all plugin computations registered for each type to the
+    // composed prim definition.
+    //
+    // TODO: Add support for computations that are registered for applied
+    // schemas. To do that, instead of keying off the schema type we will need
+    // to use a "configuration key" that combines the typed schema with applied
+    // schemas. We will also need to search through all applied schemas, in
+    // strength order, in addition to searching up the typed schema type
+    // hierarchy.
+
+    std::vector<TfType> schemaAncestorTypes;
+    schemaType.GetAllAncestorTypes(&schemaAncestorTypes);
+
+    // Build up the composed prim definition.
+    _ComposedPrimDefinition primDef;
+
+    for (const TfType type : schemaAncestorTypes) {
+
+        // TODO: For all but the first type, it makes sense to look in
+        // _composedPrimDefinitions to see if we have already composed the base
+        // type, and then to merge, rather than keep searching up the type
+        // hierarchy.
+
+        if (const auto pluginIt = _pluginPrimComputationDefinitions.find(type);
+            pluginIt != _pluginPrimComputationDefinitions.end()) {
+            for (const Exec_PluginComputationDefinition &computationDef :
+                     pluginIt->second) {
+                primDef.primComputationDefinitions.emplace(
+                    computationDef.GetComputationName(),
+                    &computationDef);
+            }
+        }
+    }
+
+    return primDef;
 }
 
 void
@@ -203,14 +238,11 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
     }
 
     const bool emplaced =
-        _pluginPrimComputationDefinitions.emplace(
-            std::piecewise_construct, 
-            std::forward_as_tuple(schemaType, computationName),
-            std::forward_as_tuple(
-                resultType,
-                computationName,
-                std::move(callback),
-                std::move(inputKeys))).second;
+        _pluginPrimComputationDefinitions[schemaType].emplace(
+            resultType,
+            computationName,
+            std::move(callback),
+            std::move(inputKeys)).second;
 
     if (!emplaced) {
         TF_CODING_ERROR(

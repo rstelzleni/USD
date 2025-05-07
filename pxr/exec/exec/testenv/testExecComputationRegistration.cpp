@@ -40,6 +40,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (attributeComputation)
     (attributeComputedValueComputation)
     (attributeName)
+    (baseAndDerivedSchemaComputation)
     (derivedSchemaComputation)
     (emptyComputation)
     (missingComputation)
@@ -105,12 +106,23 @@ EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
             Attribute(_tokens->attr)
                 .Computation<double>(ExecBuiltinComputations->computeValue)
         );
+
+    self.PrimComputation(_tokens->baseAndDerivedSchemaComputation)
+        .Callback(+[](const VdfContext &) { return 1.0; });
 }
 
 EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationDerivedCustomSchema)
 {
     self.PrimComputation(_tokens->derivedSchemaComputation)
         .Callback(+[](const VdfContext &) { return 1.0; });
+
+    // This overrides the computation of the same name on the base schema.
+    // (We add an input here so we can verify this definition is stronger.)
+    self.PrimComputation(_tokens->baseAndDerivedSchemaComputation)
+        .Callback(+[](const VdfContext &) { return 1.0; })
+        .Inputs(
+            AttributeValue<int>(_tokens->attributeName)
+        );
 }
 
 // XXX:TODO
@@ -459,6 +471,21 @@ TestDerivedSchemaComputationRegistration()
             reg.GetComputationDefinition(
                 *prim, _tokens->derivedSchemaComputation, nullJournal);
         TF_AXIOM(primCompDef);
+    }
+
+    {
+        // Look up a computation registered for the base and derived schema
+        // types.
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim, _tokens->baseAndDerivedSchemaComputation, nullJournal);
+        TF_AXIOM(primCompDef);
+
+        // Make sure we got the definition from the derived schema (i.e., the
+        // stronger one).
+        const auto inputKeys =
+            primCompDef->GetInputKeys(*prim, nullJournal);
+        ASSERT_EQ(inputKeys.size(), 1);
     }
 
     {
