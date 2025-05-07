@@ -27,9 +27,9 @@
 #include "pxr/usd/sdf/relationshipSpec.h"
 #include "pxr/usd/sdf/schema.h"
 #include "pxr/usd/sdf/specType.h"
-#include "pxr/usd/sdf/textFileFormat.h"
-#include "pxr/usd/sdf/types.h"
 #include "pxr/usd/sdf/subLayerListEditor.h"
+#include "pxr/usd/sdf/types.h"
+#include "pxr/usd/sdf/usdaFileFormat.h"
 #include "pxr/usd/sdf/variantSetSpec.h"
 #include "pxr/usd/sdf/variantSpec.h"
 
@@ -335,7 +335,7 @@ SdfLayer::CreateAnonymous(
     }
 
     if (!fileFormat) {
-        fileFormat = SdfFileFormat::FindById(SdfTextFileFormatTokens->Id);
+        fileFormat = SdfFileFormat::FindById(SdfUsdaFileFormatTokens->Id);
     }
 
     if (!fileFormat) {

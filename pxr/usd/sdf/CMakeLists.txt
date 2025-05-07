@@ -204,6 +204,7 @@ pxr_test_scripts(
     testenv/testSdfFileFormat.py
     testenv/testSdfLayer.py
     testenv/testSdfLayerMuting.py
+    testenv/testSdfLegacyFileFormat.py
     testenv/testSdfListOp.py
     testenv/testSdfParsing.py
     testenv/testSdfPath.py
@@ -534,6 +535,20 @@ pxr_register_test(testSdfLayerHints
 pxr_register_test(testSdfLayerMuting
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfLayerMuting"
+)
+
+pxr_register_test(testSdfLegacyFileFormat
+    PYTHON
+    ENV
+        SDF_FILE_FORMAT_LEGACY_IMPORT=allow
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfLegacyFileFormat"
+)
+
+pxr_register_test(testSdfLegacyFileFormat_Error
+    PYTHON
+    ENV
+        SDF_FILE_FORMAT_LEGACY_IMPORT=error
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfLegacyFileFormat"
 )
 
 pxr_register_test(testSdfListOp

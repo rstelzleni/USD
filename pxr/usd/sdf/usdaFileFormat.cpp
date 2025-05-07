@@ -36,6 +36,24 @@ TF_DEFINE_ENV_SETTING(
     "Warn when reading a text file (.usda or .usda derived) larger than this "
     "number of MB (no warnings if set to 0)");
 
+TF_DEFINE_ENV_SETTING(SDF_FILE_FORMAT_LEGACY_IMPORT, "allow",
+    "By default, we allow imported strings with the legacy `#sdf 1.4.32` "
+    "header format to be read as .usda version 1.0. When this is set to "
+    "'warn,' a warning will be emitted when the usda file format attempts "
+    "to import a string with header `#sdf 1.4.32`. When this is set to "
+    "'error', strings imported with the sdf header will no longer be ingested "
+    "and an error will be emitted.");
+
+TF_DEFINE_PRIVATE_TOKENS(
+    _tokens,
+
+    (allow)
+    (warn)
+    (error)
+    ((legacyCookie, "#sdf 1.4.32"))
+    ((modernCookie, "#usda 1.0"))
+);
+
 // Our interface to the parser for parsing to SdfData.
 extern bool Sdf_ParseLayer(
     const string& context, 
@@ -365,8 +383,34 @@ SdfUsdaFileFormat::ReadFromString(
     // code will eventually be removed, it's being put in place so as to provide 
     // backward compatibility for in-code layer constructs to work with pegtl 
     // parser also. This code should be removed when (USD-9838) gets worked on.
-    const std::string trimmedStr = TfStringTrimLeft(str);
+    std::string trimmedStr = TfStringTrimLeft(str);
     
+    // The legacy sdf format is deprecated in favor of the usda format.
+    // Since `sdf 1.4.32` is equivalent in content to `usda 1.0`, allow
+    // imported strings headed with the former to be read by the latter.
+    if (TfStringStartsWith(trimmedStr, _tokens->legacyCookie)) {
+        static const std::string readSdf =
+            TfGetEnvSetting(SDF_FILE_FORMAT_LEGACY_IMPORT);
+
+        if (_tokens->allow == readSdf || _tokens->warn == readSdf) {
+            trimmedStr = _tokens->modernCookie.GetString() + 
+                trimmedStr.substr((_tokens->legacyCookie).size());
+
+            if (_tokens->warn == readSdf) {
+                TF_WARN("'%s' is a deprecated format for reading. "
+                        "Use '%s' instead.",
+                        _tokens->legacyCookie.GetText(),
+                        _tokens->modernCookie.GetText());
+            }
+        } else {
+            TF_RUNTIME_ERROR("'%s' is not a supported format for reading. "
+                             "Use '%s' instead.",
+                             _tokens->legacyCookie.GetText(),
+                             _tokens->modernCookie.GetText());
+            return false;
+        }
+    }
+
     if (!Sdf_ParseLayerFromString(
             trimmedStr, GetFormatId(), GetVersionString(),
             TfDynamic_cast<SdfDataRefPtr>(data), &hints)) {
