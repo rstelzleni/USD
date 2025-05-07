@@ -152,6 +152,7 @@ public:
     /// Returns this object as string. Note that evaluation location will only
     /// be denoted in the output string if the time code IsPreTime().
     ///
+    EF_API
     std::string GetAsString() const;
 
 private:
