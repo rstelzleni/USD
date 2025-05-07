@@ -36,9 +36,9 @@ struct Fixture
 
     Fixture()
     {
-        layer = SdfLayer::CreateAnonymous();
+        layer = SdfLayer::CreateAnonymous(".usda");
         const bool importedLayer = layer->ImportFromString(R"usd(
-            #sdf 1.0
+            #usda 1.0
             def Scope "Prim1" (
                 prepend apiSchemas = ["CollectionAPI:collection1"]
             ) {
