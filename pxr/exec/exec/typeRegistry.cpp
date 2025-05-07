@@ -20,7 +20,11 @@
 #include "pxr/base/tf/preprocessorUtilsLite.h"
 #include "pxr/base/tf/type.h"
 #include "pxr/base/trace/trace.h"
+#include "pxr/base/vt/typeHeaders.h"
 #include "pxr/base/vt/value.h"
+#include "pxr/base/vt/visitValue.h"
+
+#include <type_traits>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -46,7 +50,7 @@ ExecTypeRegistry::ExecTypeRegistry()
 {
     TRACE_FUNCTION();
 
-    SdfSchema const& schema = SdfSchema::GetInstance();
+    const SdfSchema& schema = SdfSchema::GetInstance();
 
     // Ensure that USD value types are registered before subscribing to our
     // registry function so that plugin type registration cannot override the
@@ -55,12 +59,13 @@ ExecTypeRegistry::ExecTypeRegistry()
 #define _EXEC_REGISTER_VALUE_TYPE(unused, elem)                         \
     {                                                                   \
         using ValueType = SDF_VALUE_CPP_TYPE(elem);                     \
-        TfType const type = TfType::Find<ValueType>();                  \
-        SdfValueTypeName const name = schema.FindType(type);            \
-        VtValue const &def = name.GetDefaultValue();                    \
+        const TfType type = TfType::Find<ValueType>();                  \
+        const SdfValueTypeName name = schema.FindType(type);            \
+        const VtValue &def = name.GetDefaultValue();                    \
         if (TF_VERIFY(def.IsHolding<ValueType>())) {                    \
-            ValueType const &value = def.UncheckedGet<ValueType>();     \
-            _RegisterType(value);                                        \
+            const ValueType &value = def.UncheckedGet<ValueType>();     \
+            _RegisterType(value);                                       \
+            _RegisterType(SDF_VALUE_CPP_ARRAY_TYPE(elem)());            \
         }                                                               \
     }
 
@@ -69,6 +74,7 @@ ExecTypeRegistry::ExecTypeRegistry()
 
     _RegisterType(EfTime());
     _RegisterType(SdfPath());
+    _RegisterType(VtArray<SdfPath>());
 
     TfSingleton<ExecTypeRegistry>::SetInstanceConstructed(*this);
     TfRegistryManager::GetInstance().SubscribeTo<ExecTypeRegistry>();
@@ -76,5 +82,24 @@ ExecTypeRegistry::ExecTypeRegistry()
 }
 
 ExecTypeRegistry::~ExecTypeRegistry() = default;
+
+VdfVector
+ExecTypeRegistry::CreateVector(const VtValue &value) const
+{
+    return VtVisitValue(value, [this](const auto &value) {
+        using T = std::remove_cv_t<std::remove_reference_t<decltype(value)>>;
+        // Visitors must accept a VtValue argument to handle types that aren't
+        // known to VtValue.  This is exactly the purpose of the type dispatch
+        // table.
+        if constexpr (std::is_same_v<VtValue, T>) {
+            return _createVector.Call<VdfVector>(value.GetType(), value);
+        }
+        // Handle Vt's known value types.  We don't need to explicitly
+        // enumerate them here as VtVisitValue will do so.
+        else {
+            return _CreateVector<T>::Create(value);
+        }
+    });
+}
 
 PXR_NAMESPACE_CLOSE_SCOPE

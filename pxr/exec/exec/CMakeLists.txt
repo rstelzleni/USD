@@ -115,6 +115,20 @@ pxr_register_test(testExecInputResolver
     EXPECTED_RETURN_CODE 0
 )
 
+pxr_build_test(testExecTypeRegistration
+    LIBRARIES
+        gf
+        tf
+        exec
+    CPPFILES
+        testenv/testExecTypeRegistration.cpp
+)
+
+pxr_register_test(testExecTypeRegistration
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecTypeRegistration"
+    EXPECTED_RETURN_CODE 0
+)
+
 pxr_build_test(testExecUncompilationTable
     LIBRARIES
         exec
