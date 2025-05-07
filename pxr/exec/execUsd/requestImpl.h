@@ -29,7 +29,8 @@ class ExecUsd_RequestImpl final : public Exec_RequestImpl
 public:
     ExecUsd_RequestImpl(
         std::vector<ExecUsdValueKey> &&valueKeys,
-        const ExecRequestIndexedInvalidationCallback &invalidationCallback);
+        ExecRequestComputedValueInvalidationCallback &&valueCallback,
+        ExecRequestTimeChangeInvalidationCallback &&timeCallback);
 
     ExecUsd_RequestImpl(const ExecUsd_RequestImpl&) = delete;
     ExecUsd_RequestImpl& operator=(const ExecUsd_RequestImpl&) = delete;

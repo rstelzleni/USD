@@ -47,8 +47,9 @@ struct _ValueKeyVisitor
 
 ExecUsd_RequestImpl::ExecUsd_RequestImpl(
     std::vector<ExecUsdValueKey> &&valueKeys,
-    const ExecRequestIndexedInvalidationCallback &invalidationCallback)
-    : Exec_RequestImpl(invalidationCallback)
+    ExecRequestComputedValueInvalidationCallback &&valueCallback,
+    ExecRequestTimeChangeInvalidationCallback &&timeCallback)
+    : Exec_RequestImpl(std::move(valueCallback), std::move(timeCallback))
     , _valueKeys(std::move(valueKeys))
 {
 }

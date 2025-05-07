@@ -37,6 +37,7 @@ private:
     // EsfAttributeInterface implementation.
     SdfValueTypeName _GetValueTypeName() const final;
     bool _Get(VtValue *value, UsdTimeCode time) const final;
+    bool _ValueMightBeTimeVarying() const final;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -52,29 +52,38 @@ public:
 
     /// Builds a request for the given \p valueKeys.
     ///
-    /// The optionally provided \p invalidationCallback will be invoked when
+    /// The optionally provided \p valueCallback will be invoked when
     /// previously computed value keys become invalid as a result of authored
     /// value changes or structural invalidation of the scene. If multiple
     /// value keys become invalid at the same time, they may be batched into a
     /// single invocation of the callback.
     /// 
     /// \note
-    /// The \p invalidationCallback is only guaranteed to be invoked at
+    /// The \p valueCallback is only guaranteed to be invoked at
     /// least once per invalid value key and invalid time interval combination,
     /// and only after CacheValues() has been called. If clients want to be
     /// notified of future invalidation, they must call CacheValues() again to
     /// renew their interest in the computed value keys.
     /// 
+    /// The optionally provided \p timeCallback will be invoked when
+    /// previously computed value keys become invalid as a result of time
+    /// changing. The invalid value keys are the set of time-dependent value
+    /// keys in this request, further filtered to only include the value keys
+    /// where input dependencies are *actually* changing between the old time
+    /// and new time.
+    /// 
     /// \note
     /// The client must not call into execution (including, but not
     /// limited to CacheValues() or value extraction) from within the
-    /// \p invalidationCallback.
+    /// \p valueCallback, as well as the \p timeCallback.
     /// 
     EXECUSD_API
     ExecUsdRequest BuildRequest(
         std::vector<ExecUsdValueKey> &&valueKeys,
-        const ExecRequestIndexedInvalidationCallback &invalidationCallback =
-            ExecRequestIndexedInvalidationCallback());
+        ExecRequestComputedValueInvalidationCallback &&valueCallback =
+            ExecRequestComputedValueInvalidationCallback(),
+        ExecRequestTimeChangeInvalidationCallback &&timeCallback =
+            ExecRequestTimeChangeInvalidationCallback());
 
     /// Prepares a given \p request for execution.
     /// 

@@ -41,7 +41,6 @@ public:
     /// \see UsdAttribute::GetValueTypeName
     ESF_API SdfValueTypeName GetValueTypeName(EsfJournal *journal) const;
 
-
     /// Gets the resolved value of the attribute at a given time.
     ///
     /// This method is not called by exec compilation, and therefore does not
@@ -53,6 +52,18 @@ public:
         return _Get(value, time);
     }
 
+    /// Returns `true` if the attribute value might be varying over time, and
+    /// `false` if the value is *definitely* not varying over time.
+    /// 
+    /// This method is not called by exec compilation, and therefore does not
+    /// accept an EsfJournal argument.
+    /// 
+    /// \see UsdAttribute::ValueMightBeTimeVarying
+    /// 
+    bool ValueMightBeTimeVarying() const {
+        return _ValueMightBeTimeVarying();
+    }
+
 protected:
     /// This constructor may only be called by the scene adapter implementation.
     EsfAttributeInterface(const SdfPath &path) : EsfPropertyInterface(path) {}
@@ -61,6 +72,7 @@ private:
     // These methods must be implemented by the scene adapter implementation.
     virtual SdfValueTypeName _GetValueTypeName() const = 0;
     virtual bool _Get(VtValue *value, UsdTimeCode time) const = 0;
+    virtual bool _ValueMightBeTimeVarying() const = 0;
 };
 
 /// Holds an implementation of EsfAttributeInterface in a fixed-size buffer.

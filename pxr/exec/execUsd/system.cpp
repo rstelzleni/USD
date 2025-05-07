@@ -53,12 +53,15 @@ ExecUsdSystem::~ExecUsdSystem() = default;
 ExecUsdRequest
 ExecUsdSystem::BuildRequest(
     std::vector<ExecUsdValueKey> &&valueKeys,
-    const ExecRequestIndexedInvalidationCallback &invalidationCallback)
+    ExecRequestComputedValueInvalidationCallback &&valueCallback,
+    ExecRequestTimeChangeInvalidationCallback &&timeCallback)
 {
     TRACE_FUNCTION();
 
     auto impl = std::make_shared<ExecUsd_RequestImpl>(
-        std::move(valueKeys), invalidationCallback);
+        std::move(valueKeys),
+        std::move(valueCallback),
+        std::move(timeCallback));
     _InsertRequest(impl);
     return ExecUsdRequest(std::move(impl));
 }

@@ -29,4 +29,10 @@ EsfUsd_Attribute::_Get(VtValue *value, UsdTimeCode time) const
     return _GetWrapped().Get(value, time);
 }
 
+bool
+EsfUsd_Attribute::_ValueMightBeTimeVarying() const
+{
+    return _GetWrapped().ValueMightBeTimeVarying();
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE

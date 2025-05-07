@@ -25,10 +25,20 @@ using ExecRequestIndexSet = pxr_tsl::robin_set<int>;
 /// values, along with a time interval that specifies the time range over which
 /// these computed values are invalid.
 /// 
-using ExecRequestIndexedInvalidationCallback =
+using ExecRequestComputedValueInvalidationCallback =
     std::function<void (
         const ExecRequestIndexSet &,
         const class EfTimeInterval &)>;
+
+/// Invalidation callback used by exec requests to notify clients of invalid
+/// computed values as a consequence of time changing.
+/// 
+/// The index set contains the indices of value keys which are time dependent,
+/// and for which input values to the execution system are changing between the
+/// old time and new time.
+///
+using ExecRequestTimeChangeInvalidationCallback =
+    std::function<void (const ExecRequestIndexSet &)>;
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

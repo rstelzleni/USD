@@ -21,6 +21,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EfTime;
 class Exec_Program;
 class Exec_RequestImpl;
 class ExecValueKey;
@@ -79,12 +80,6 @@ private:
     friend class Exec_RequestImpl;
     std::vector<VdfMaskedOutput> _Compile(TfSpan<const ExecValueKey> valueKeys);
 
-    // Constructs a new instance of the main executor along with its state, and
-    // discards the previous instance if any.
-    // 
-    EXEC_API
-    void _CreateExecutorState();
-
     // Returns a pointer to the main executor.
     EXEC_API
     VdfExecutorInterface *_GetMainExecutor();
@@ -99,6 +94,10 @@ private:
     EXEC_API
     void _InvalidateAuthoredValues(
         TfSpan<ExecInvalidAuthoredValue> invalidProperties);
+
+    // Notifies the system of changes to time.
+    EXEC_API
+    void _ChangeTime(const EfTime &time);
 
     // Reports any executor errors raised during a round of evaluation.
     EXEC_API

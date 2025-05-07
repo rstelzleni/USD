@@ -6,8 +6,10 @@
 //
 #include "pxr/exec/exec/requestImpl.h"
 
+#include "pxr/exec/exec/authoredValueInvalidationResult.h"
 #include "pxr/exec/exec/cacheView.h"
 #include "pxr/exec/exec/system.h"
+#include "pxr/exec/exec/timeChangeInvalidationResult.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 #include "pxr/exec/exec/valueKey.h"
@@ -24,39 +26,31 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_RequestImpl::Exec_RequestImpl(
-    const ExecRequestIndexedInvalidationCallback &invalidationCallback)
+    ExecRequestComputedValueInvalidationCallback &&valueCallback,
+    ExecRequestTimeChangeInvalidationCallback &&timeCallback)
     : _lastInvalidatedInterval(EfTimeInterval::GetFullInterval())
-    , _invalidationCallback(invalidationCallback)
+    , _valueCallback(std::move(valueCallback))
+    , _timeCallback(std::move(timeCallback))
 {}
 
 Exec_RequestImpl::~Exec_RequestImpl() = default;
 
 void 
 Exec_RequestImpl::DidInvalidateComputedValues(
-    const std::vector<const VdfNode *> &invalidLeafNodes,
-    const EfTimeInterval &invalidInterval,
-    TfSpan<ExecInvalidAuthoredValue> invalidProperties,
-    const TfBits &compiledProperties)
+    const Exec_AuthoredValueInvalidationResult &invalidationResult)
 {
-    if (!_invalidationCallback || _leafOutputs.empty()) {
+    if (!_valueCallback || _leafOutputs.empty()) {
         return;
     }
 
     TRACE_FUNCTION();
 
-    // Invalid leaf outputs will need to be converted into indices for client
-    // notification. Here, we build a data structure for efficient lookup.
-    if (_leafOutputToIndex.size() != _leafOutputs.size()) {
-        TRACE_FUNCTION_SCOPE("rebuilding output-to-index map");
-        _leafOutputToIndex.clear();
-        _leafOutputToIndex.reserve(_leafOutputs.size());
-        for (size_t i = 0; i < _leafOutputs.size(); ++i) {
-            _leafOutputToIndex.emplace(_leafOutputs[i], i);
-        }
-    }
+    // Make sure the _leafOutputToIndexMap is ready for use.
+    _UpdateLeafOutputToIndexMap();
 
     // This is considered new invalidation only if the invalidation interval
     // isn't already fully contained in the last invalidation interval.
+    const EfTimeInterval &invalidInterval = invalidationResult.invalidInterval;
     const bool isNewlyInvalidInterval = invalidInterval.IsFullInterval()
         ? !_lastInvalidatedInterval.IsFullInterval()
         : !_lastInvalidatedInterval.Contains(invalidInterval);
@@ -66,7 +60,7 @@ Exec_RequestImpl::DidInvalidateComputedValues(
 
     // Build a set of invalid indices from the provided invalid leaf nodes.
     ExecRequestIndexSet invalidIndices;
-    for (const VdfNode *const leafNode : invalidLeafNodes) {
+    for (const VdfNode *const leafNode : invalidationResult.invalidLeafNodes) {
         // Every invalid leaf node should still be connected to a source output.
         const VdfMaskedOutput mo = EfLeafNode::GetSourceMaskedOutput(*leafNode);
         if (!TF_VERIFY(mo)) {
@@ -98,8 +92,55 @@ Exec_RequestImpl::DidInvalidateComputedValues(
     // Only invoke the invalidation callback if there are any invalid indices
     // from this request.
     if (!invalidIndices.empty()) {
-        TRACE_FUNCTION_SCOPE("invalidation callback");
-        _invalidationCallback(invalidIndices, invalidInterval);
+        TRACE_FUNCTION_SCOPE("value invalidation callback");
+        _valueCallback(invalidIndices, invalidInterval);
+    }
+}
+
+void
+Exec_RequestImpl::DidChangeTime(
+    const Exec_TimeChangeInvalidationResult &invalidationResult)
+{
+    if (!_timeCallback || _leafOutputs.empty()) {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    // Make sure the _leafOutputToIndexMap is ready for use.
+    _UpdateLeafOutputToIndexMap();
+
+    // Build a set of invalid indices from the provided invalid leaf nodes.
+    ExecRequestIndexSet invalidIndices;
+    for (const VdfNode *const leafNode : invalidationResult.invalidLeafNodes) {
+        // Every invalid leaf node should still be connected to a source output.
+        const VdfMaskedOutput mo = EfLeafNode::GetSourceMaskedOutput(*leafNode);
+        if (!TF_VERIFY(mo)) {
+            continue;
+        }
+
+        // All requests are notified about all time changes, but not all the
+        // invalid leaf nodes may be included in this particular request.
+        const auto it = _leafOutputToIndex.find(mo);
+        if (it == _leafOutputToIndex.end()) {
+            continue;
+        }
+
+        // Insert the index into the set of invalid indices.
+        invalidIndices.insert(it->second);
+    }
+
+    // TODO: Handle all time-dependent properties which are not compiled in
+    // exec. In doing so we must dispatch to the derived class in order to let
+    // the specific scene description library determine properties, which do not
+    // require execution, and which are time-dependent and changing between
+    // invalidationResult.oldTime and invalidationResult.newTime.
+    
+    // Only invoke the invalidation callback if there are any invalid indices
+    // from this request.
+    if (!invalidIndices.empty()) {
+        TRACE_FUNCTION_SCOPE("time change callback");
+        _timeCallback(invalidIndices);
     }
 }
 
@@ -180,6 +221,24 @@ Exec_RequestImpl::_CacheValues(ExecSystem *const system)
 
     // Return an exec cache view for the computed values.
     return Exec_CacheView(system->_GetMainExecutor(), _leafOutputs);
+}
+
+void
+Exec_RequestImpl::_UpdateLeafOutputToIndexMap()
+{
+    if (_leafOutputToIndex.size() == _leafOutputs.size()) {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    // Invalid leaf outputs will need to be converted into indices for client
+    // notification. Here, we build a data structure for efficient lookup.
+    _leafOutputToIndex.clear();
+    _leafOutputToIndex.reserve(_leafOutputs.size());
+    for (size_t i = 0; i < _leafOutputs.size(); ++i) {
+        _leafOutputToIndex.emplace(_leafOutputs[i], i);
+    }
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -70,6 +70,12 @@ ExecSystem::_ChangeProcessor::DidChangeInfoOnly(
                 _state->invalidAuthoredValues.emplace_back(
                     path, EfTimeInterval::GetFullInterval());
             }
+
+            else if (field == SdfFieldKeys->TimeSamples) {
+                _state->invalidAuthoredValues.emplace_back(
+                    path, EfTimeInterval::GetFullInterval());
+            }
+
         }
     }
 }

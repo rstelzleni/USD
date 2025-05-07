@@ -35,8 +35,11 @@ pxr_library(exec
         valueKey
 
     PRIVATE_HEADERS
+        authoredValueInvalidationResult.h
         compilationState.h
         inputKey.h
+        parallelForRange.h
+        timeChangeInvalidationResult.h
 
     PRIVATE_CLASSES
         attributeInputNode

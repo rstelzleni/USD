@@ -25,6 +25,7 @@
 
 #include <tbb/concurrent_unordered_map.h>
 
+#include <atomic>
 #include <memory>
 #include <tuple>
 #include <type_traits>
@@ -35,8 +36,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 class EfTime;
 class EfTimeInputNode;
-class EfTimeInterval;
 class EsfJournal;
+class Exec_AuthoredValueInvalidationResult;
+class Exec_TimeChangeInvalidationResult;
 class TfBits;
 template <typename> class TfSpan;
 class VdfExecutorInterface;
@@ -46,7 +48,7 @@ class VdfNode;
 /// Owns a VdfNetwork and related data structures to access and modify the
 /// network.
 ///
-/// The VdfNetwork describes the toplogical structure of nodes and connections,
+/// The VdfNetwork describes the topological structure of nodes and connections,
 /// but does not prescribe any meaning to the organization of the network. In
 /// order to compile, update, and evaluate the network, Exec requires additional
 /// metadata to facilitate common access patterns.
@@ -150,19 +152,15 @@ public:
     /// \p invalidProperties are compiled, and a time interval indicating the
     /// combined invalidation interval.
     /// 
-    std::tuple<const std::vector<const VdfNode *> &, TfBits, EfTimeInterval>
-    InvalidateAuthoredValues(
+    Exec_AuthoredValueInvalidationResult InvalidateAuthoredValues(
         TfSpan<ExecInvalidAuthoredValue> invalidProperties);
 
-    /// Initializes time in the network.
-    void InitializeTime(
-        VdfExecutorInterface *executor,
-        const EfTime &newTime) const;
+    /// Initializes all invalid input nodes in the network.
+    void InitializeInputNodes(VdfExecutorInterface *executor);
 
-    /// Initializes all invalid input nodes in the network, and returns a vector
-    /// of invalid input node outputs.
-    /// 
-    VdfMaskedOutputVector InitializeInputNodes();
+    /// Initializes time in the network.
+    Exec_TimeChangeInvalidationResult InitializeTime(
+        const EfTime &newTime, VdfExecutorInterface *executor);
 
     /// Returns the node with the given \p nodeId, or nullptr if no such node
     /// exists.
@@ -239,6 +237,12 @@ private:
     // Unregisters an input node from authored value initialization.
     void _UnregisterInputNode(const Exec_AttributeInputNode *inputNode);
 
+    // Flags the array of _timeDependentInputs as invalid.
+    void _InvalidateTimeDependentInputs();
+
+    // Rebuilds the array of _timeDependentInputs.
+    const VdfMaskedOutputVector &_CollectTimeDependentInputs();
+
 private:
     // The compiled data flow network.
     VdfNetwork _network;
@@ -257,9 +261,20 @@ private:
     EfLeafNodeCache _leafNodeCache;
 
     // Collection of compiled input nodes.
-    // TODO: We will need to update this map in response to namespace edits,
-    // once they are supported.
-    tbb::concurrent_unordered_map<SdfPath, VdfId, SdfPath::Hash> _inputNodes;
+    struct _InputNodeEntry {
+        VdfId nodeId;
+        bool isTimeDependent;
+    };
+    using _InputNodesMap =
+        tbb::concurrent_unordered_map<SdfPath, _InputNodeEntry, SdfPath::Hash>;
+    _InputNodesMap _inputNodes;
+
+    // Array of outputs on input nodes, which are time dependent.
+    VdfMaskedOutputVector _timeDependentInputs;
+
+    // Flag indicating whether the _timeDependentInputs array is up-to-date or
+    // must be re-computed.
+    std::atomic<bool> _timeDependentInputsValid;
 
     // Input nodes currently queued for initialization.
     std::vector<VdfId> _uninitializedInputNodes;

@@ -24,10 +24,12 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EfTime;
+class Exec_AuthoredValueInvalidationResult;
 class Exec_CacheView;
+class Exec_TimeChangeInvalidationResult;
 class ExecSystem;
 class ExecValueKey;
-class TfBits;
 template <typename> class TfSpan;
 class VdfRequest;
 class VdfSchedule;
@@ -44,27 +46,20 @@ public:
     /// Notify the request of invalid computed values as a consequence of
     /// authored value, or structural invalidation.
     /// 
-    /// Call site provides the set of \p invalidLeafNodes, along with a
-    /// combined \p invalidInterval denoting the time interval over which leaf
-    /// nodes are invalid.
-    /// 
-    /// Additionally, a span of \p invalidProperties may be provided. The
-    /// entries in the span contain the scene description property path along
-    /// with the invalid time range for said property. The \p compiledProperties
-    /// bit set specifies all properties in the \p invalidProperties span, which
-    /// are compiled through exec. All other invalid properties only manifest in
-    /// scene description.
-    /// 
+    EXEC_API
     void DidInvalidateComputedValues(
-        const std::vector<const VdfNode *> &invalidLeafNodes,
-        const EfTimeInterval &invalidInterval,
-        TfSpan<ExecInvalidAuthoredValue> invalidProperties,
-        const TfBits &compiledProperties);
+        const Exec_AuthoredValueInvalidationResult &invalidationResult);
+
+    /// Notify the request of time having changed.
+    EXEC_API
+    void DidChangeTime(
+        const Exec_TimeChangeInvalidationResult &invalidationResult);
 
 protected:
     EXEC_API
     explicit Exec_RequestImpl(
-        const ExecRequestIndexedInvalidationCallback &invalidationCallback);
+        ExecRequestComputedValueInvalidationCallback &&valueCallback,
+        ExecRequestTimeChangeInvalidationCallback &&timeCallback);
 
     Exec_RequestImpl(const Exec_RequestImpl&) = delete;
     Exec_RequestImpl& operator=(const Exec_RequestImpl&) = delete;
@@ -83,6 +78,11 @@ protected:
     /// Computes the value keys in the request.
     EXEC_API
     Exec_CacheView _CacheValues(ExecSystem *system);
+
+private:
+    // Ensures the _leafOutputToIndex map is up-to-date.
+    EXEC_API
+    void _UpdateLeafOutputToIndexMap();
 
 private:
     // The compiled leaf output.
@@ -106,7 +106,10 @@ private:
     TfBits _lastInvalidatedIndices;
 
     // The invalidation callback to invoke when computed values change.
-    ExecRequestIndexedInvalidationCallback _invalidationCallback;
+    ExecRequestComputedValueInvalidationCallback _valueCallback;
+
+    // The invalidation callback to invoke when time changes.
+    ExecRequestTimeChangeInvalidationCallback _timeCallback;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

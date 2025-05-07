@@ -6,11 +6,14 @@
 //
 #include "pxr/exec/exec/system.h"
 
+#include "pxr/exec/exec/authoredValueInvalidationResult.h"
 #include "pxr/exec/exec/compiler.h"
 #include "pxr/exec/exec/program.h"
 #include "pxr/exec/exec/requestImpl.h"
+#include "pxr/exec/exec/timeChangeInvalidationResult.h"
 
 #include "pxr/exec/ef/executor.h"
+#include "pxr/exec/ef/time.h"
 #include "pxr/exec/ef/timeInterval.h"
 #include "pxr/exec/vdf/dataManagerVector.h"
 #include "pxr/exec/vdf/executorErrorLogger.h"
@@ -33,10 +36,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 class ExecSystem::_ExecutorState 
 {
 public:
-    template <class T, class... Args>
-    void CreateExecutor(Args&&... args) {
-        _executor = std::make_unique<T>(std::forward<Args>(args)...);
-    }
+    _ExecutorState();
 
     VdfExecutorInterface *GetExecutor(size_t networkVersion);
 
@@ -44,6 +44,22 @@ private:
     std::unique_ptr<VdfExecutorInterface> _executor = nullptr;
     size_t _lastNetworkVersion = 0;
 };
+
+ExecSystem::_ExecutorState::_ExecutorState()
+{
+    if (VdfIsParallelEvaluationEnabled()) {
+        _executor = std::make_unique<
+            EfExecutor<
+                VdfParallelExecutorEngine,
+                VdfParallelDataManagerVector>>();
+    } else {
+        _executor = std::make_unique<
+            EfExecutor<
+                VdfPullBasedExecutorEngine,
+                VdfDataManagerVector<
+                    VdfDataManagerDeallocationMode::Background>>>();
+    }
+}
 
 VdfExecutorInterface *
 ExecSystem::_ExecutorState::GetExecutor(const size_t networkVersion)
@@ -62,8 +78,9 @@ ExecSystem::_ExecutorState::GetExecutor(const size_t networkVersion)
 ExecSystem::ExecSystem(EsfStage &&stage)
     : _stage(std::move(stage))
     , _program(std::make_unique<Exec_Program>())
+    , _executorState(std::make_unique<ExecSystem::_ExecutorState>())
 {
-    _CreateExecutorState();
+    _ChangeTime(EfTime());
 }
 
 ExecSystem::~ExecSystem() = default;
@@ -83,22 +100,11 @@ ExecSystem::_CacheValues(
 
     VdfExecutorInterface *const executor = _GetMainExecutor();
 
-    // Initialize the time on the executor.
-    // TODO: Enable setting of time on the ExecSystem.
-    _program->InitializeTime(executor, EfTime());
+    // TODO: Change time here, if we decide to make time a parameter to
+    // CacheValues().
 
     // Initialize the input nodes in the exec network.
-    const VdfMaskedOutputVector invalidationRequest =
-        _program->InitializeInputNodes();
-
-    // TODO: Invalidate executor topological state if input node initialization
-    // resulted in time-dependency changes.
-
-    // Make sure that the executor data manager is properly invalidate for any
-    // input nodes that were just initialized.
-    if (!invalidationRequest.empty()) {
-        executor->InvalidateValues(invalidationRequest);
-    }
+    _program->InitializeInputNodes(executor);
 
     // Run the executor to compute the values.
     VdfExecutorErrorLogger errorLogger;
@@ -124,25 +130,6 @@ ExecSystem::_Compile(TfSpan<const ExecValueKey> valueKeys)
     return compiler.Compile(valueKeys);
 }
 
-void
-ExecSystem::_CreateExecutorState()
-{
-    _executorState = std::make_unique<ExecSystem::_ExecutorState>();
-
-    if (VdfIsParallelEvaluationEnabled()) {
-        _executorState->CreateExecutor<
-            EfExecutor<
-                VdfParallelExecutorEngine,
-                VdfParallelDataManagerVector>>();
-    } else {
-        _executorState->CreateExecutor<
-            EfExecutor<
-                VdfPullBasedExecutorEngine,
-                VdfDataManagerVector<
-                    VdfDataManagerDeallocationMode::Background>>>();
-    }
-}
-
 VdfExecutorInterface *
 ExecSystem::_GetMainExecutor()
 {
@@ -158,7 +145,9 @@ ExecSystem::_InvalidateAll()
     _executorState.reset();
 
     _program = std::make_unique<Exec_Program>();
-    _CreateExecutorState();
+    _executorState = std::make_unique<ExecSystem::_ExecutorState>();
+
+    _ChangeTime(EfTime());
 }
 
 void
@@ -167,8 +156,16 @@ ExecSystem::_InvalidateAuthoredValues(
 {
     TRACE_FUNCTION();
 
-    const auto &[leafNodes, compiledProperties, invalidInterval] =
+    const Exec_AuthoredValueInvalidationResult invalidationResult =
         _program->InvalidateAuthoredValues(invalidProperties);
+
+    // If any of the inputs to exec changed to be time dependent when previously
+    // they were not (or vice versa), we need to invalidate the main executor's
+    // topological state, such that invalidation traversals pick up the new
+    // time dependency.
+    if (invalidationResult.isTimeDependencyChange) {
+        _GetMainExecutor()->InvalidateTopologicalState();
+    }
 
     // Notify all the requests of computed value invalidation. Not all the
     // requests will contain all the invalid leaf nodes or invalid properties,
@@ -179,9 +176,34 @@ ExecSystem::_InvalidateAuthoredValues(
     // requests, we should do this in parallel. We might still want to invoke
     // the invalidation callbacks serially, though.
     for (const auto &requestImpl : _requests) {
-        requestImpl->DidInvalidateComputedValues(
-            leafNodes, invalidInterval, invalidProperties, compiledProperties);
+        requestImpl->DidInvalidateComputedValues(invalidationResult);
     } 
+}
+
+void
+ExecSystem::_ChangeTime(const EfTime &time)
+{
+    // Greedily initialize the time on the executor.
+    const Exec_TimeChangeInvalidationResult invalidationResult =
+        _program->InitializeTime(time, _GetMainExecutor());
+
+    // Bail out if the time change did not result in invalidation, for example
+    // when changing to a time that was already set, or when initializing time
+    // for the first time.
+    if (invalidationResult.invalidLeafNodes.empty()) {
+        return;
+    }
+
+    // Notify all the requests of the time change. Not all the requests will
+    // contain all the leaf nodes affected by the time change, and the request
+    // impls are responsible for filtering the provided information.
+    // 
+    // TODO: Once we expect the system to contain more than a handful of
+    // requests, we should do this in parallel. We might still want to invoke
+    // the invalidation callbacks serially, though.
+    for (const auto &requestImpl : _requests) {
+        requestImpl->DidChangeTime(invalidationResult);
+    }
 }
 
 void
