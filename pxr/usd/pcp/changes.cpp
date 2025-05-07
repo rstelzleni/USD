@@ -1854,49 +1854,7 @@ PcpChanges::DidChangeSpecs(
             }
 
             const PcpNodeRef nodeForChangedSpec = 
-            [&primIndex, &changedLayer, &changedPath, &cache]() {
-                const PcpNodeRef nodeProvidingSpec = 
-                    primIndex->GetNodeProvidingSpec(changedLayer, changedPath);
-
-                if (nodeProvidingSpec) {
-                    return nodeProvidingSpec;
-                }
-
-                // If we are unable to find a node above, we want to check the
-                // case where the node's layer stack is is being unmuted or
-                // inserted as part of a sublayer operation.  If this is the
-                // case we can query the overrides set for such layers and see
-                // if any node's layer stack is among them
-                const PcpLayerStackPtrVector& layerStackVecOverride = 
-                    cache->_layerStackCache->GetLayerStackVectorOverride(
-                        changedLayer);
-
-                if (layerStackVecOverride.empty()) {
-                    return PcpNodeRef();
-                }
-
-                for (const PcpNodeRef &node: primIndex->GetNodeRange()) {
-                    if (!node.CanContributeSpecs() || 
-                        node.GetPath() != changedPath ) 
-                    {
-                        continue;
-                    }
-
-                    const PcpLayerStackPtr nodeLayerStack = 
-                        node.GetLayerStack();
-                    
-                    if (std::find(layerStackVecOverride.begin(), 
-                            layerStackVecOverride.end(), nodeLayerStack) != 
-                                layerStackVecOverride.end())
-                    {
-                        return node;
-                    }
-                    
-                }
-
-                return PcpNodeRef();
-            }();
-
+                primIndex->GetNodeProvidingSpec(changedLayer, changedPath);
             if (nodeForChangedSpec) {
                 // If this prim index is instanceable, the addition or removal
                 // of an inert spec could affect whether this node is considered
