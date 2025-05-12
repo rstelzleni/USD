@@ -133,6 +133,10 @@ public:
     USDAPPUTILS_API
     void SetIncludedPurposes(const TfTokenVector& purposes);
 
+    /// Sets the primary camera prim path.
+    USDAPPUTILS_API
+    void SetPrimaryCameraPrimPath(const SdfPath& cameraPath);
+
     /// Records an image and writes the result to \p outputImagePath.
     ///
     /// The recorded image will represent the view from \p usdCamera looking at

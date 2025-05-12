@@ -125,6 +125,12 @@ UsdAppUtilsFrameRecorder::SetIncludedPurposes(const TfTokenVector& purposes)
     }
 }
 
+void
+UsdAppUtilsFrameRecorder::SetPrimaryCameraPrimPath(const SdfPath& cameraPath)
+{
+    _imagingEngine.SetCameraPath(cameraPath);
+}
+
 static GfCamera
 _ComputeCameraToFrameStage(const UsdStagePtr& stage, UsdTimeCode timeCode,
                            const TfTokenVector& includedPurposes)

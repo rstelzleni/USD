@@ -7,9 +7,9 @@
 #
 
 from pxr import Usd
-from pxr import UsdRender
+from pxr import UsdGeom, UsdRender
 from pxr import Sdf
-from pxr import UsdAppUtils
+from pxr import UsdUtils, UsdAppUtils
 from pxr import Tf
 
 import argparse
@@ -170,7 +170,9 @@ def main() -> int:
         default=960,
         help=(
             'Width of the output image. The height will be computed from this '
-            'value and the camera\'s aspect ratio (default=%(default)s)'))
+            'value and the camera\'s aspect ratio (default=%(default)s). '
+            'Note that this only affects the command-line output image; '
+            'it does not affect any render products in scene description.'))
 
     parser.add_argument('--enableDomeLightVisibility', action='store_true',
         dest='domeLightVisibility',
@@ -182,22 +184,14 @@ def main() -> int:
     parser.add_argument('--renderPassPrimPath', '-rp', action='store', 
         type=str, dest='rpPrimPath', 
         help=(
-            'Specify the Render Pass Prim to use to render the given '
-            'usdFile. '
-            'Note that if a renderSettingsPrimPath has been specified in the '
-            'stage metadata, using this argument will override that opinion. '
-            'Furthermore any properties authored on the RenderSettings will '
-            'override other arguments (imageWidth, camera, outputImagePath)'))
+            'Specify the RenderPass prim to use. This overrides any '
+            'renderSettingsPrimPath specified in stage metadata.'))
 
     parser.add_argument('--renderSettingsPrimPath', '-rs', action='store', 
         type=str, dest='rsPrimPath', 
         help=(
-            'Specify the Render Settings Prim to use to render the given '
-            'usdFile. '
-            'Note that if a renderSettingsPrimPath has been specified in the '
-            'stage metadata, using this argument will override that opinion. '
-            'Furthermore any properties authored on the RenderSettings will '
-            'override other arguments (imageWidth, camera, outputImagePath)'))
+            'Specify the RenderSettings prim to use. This overrides any '
+            'renderSettingsPrimPath specified in stage metadata.'))
 
     parser.add_argument('--traceToFile', action='store',
         type=str, dest='traceToFile', default=None,
@@ -274,9 +268,6 @@ def main() -> int:
     UsdAppUtils.framesArgs.ValidateCmdlineArgs(parser, args, usdStage,
         frameFormatArgName='outputImagePath')
 
-    # Get the camera at the given path (or with the given name).
-    usdCamera = UsdAppUtils.GetCameraAtPath(usdStage, args.camera)
-
     # Get the RenderSettings Prim Path.
     # It may be specified directly (--renderSettingsPrimPath),
     # via a render pass (--renderPassPrimPath),
@@ -303,6 +294,24 @@ def main() -> int:
         # Fall back to stage metadata.
         args.rsPrimPath = usdStage.GetMetadata('renderSettingsPrimPath')
 
+    # Get the camera.
+    usdCamera = None
+    # If a camera was specified directly, use that.
+    if args.camera:
+        usdCamera = UsdAppUtils.GetCameraAtPath(usdStage, args.camera)
+    # If render settings were specified, use the associated camera.
+    if not usdCamera and args.rsPrimPath:
+        rs = UsdRender.Settings(usdStage.GetPrimAtPath(args.rsPrimPath))
+        if rs:
+            cameraTargets = rs.GetCameraRel().GetTargets()
+            if len(cameraTargets) == 1:
+                usdCamera = UsdGeom.Camera(
+                    usdStage.GetPrimAtPath(cameraTargets[0]))
+    # If no camera has been found, use the pipeline configured default.
+    if not usdCamera:
+        usdCamera = UsdAppUtils.GetCameraAtPath(usdStage,
+            UsdUtils.GetPrimaryCameraName())
+
     if args.gpuEnabled:
         # UsdAppUtils.FrameRecorder will expect that an OpenGL context has
         # been created and made current if the GPU is enabled.
@@ -328,6 +337,7 @@ def main() -> int:
     frameRecorder.SetColorCorrectionMode(args.colorCorrectionMode)
     frameRecorder.SetIncludedPurposes(purposes)
     frameRecorder.SetDomeLightVisibility(args.domeLightVisibility)
+    frameRecorder.SetPrimaryCameraPrimPath(usdCamera.GetPath())
 
     _Msg('Camera: %s' % usdCamera.GetPath().pathString)
     _Msg('Renderer plugin: %s' % frameRecorder.GetCurrentRendererId())

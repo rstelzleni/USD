@@ -39,6 +39,7 @@ wrapFrameRecorder()
         .def("SetDomeLightVisibility", &This::SetDomeLightVisibility)
         .def("SetComplexity", &This::SetComplexity)
         .def("SetColorCorrectionMode", &This::SetColorCorrectionMode)
+        .def("SetPrimaryCameraPrimPath", &This::SetPrimaryCameraPrimPath)
         .def("SetIncludedPurposes", &This::SetIncludedPurposes,
              (arg("purposes")))
         .def(
