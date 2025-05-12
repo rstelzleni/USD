@@ -7,6 +7,7 @@
 #include "pxr/imaging/hd/renderIndex.h"
 
 #include "pxr/imaging/hd/basisCurves.h"
+#include "pxr/imaging/hd/cachingSceneIndex.h"
 #include "pxr/imaging/hd/dataSourceLegacyPrim.h"
 #include "pxr/imaging/hd/debugCodes.h"
 #include "pxr/imaging/hd/dirtyList.h"
@@ -183,7 +184,7 @@ HdRenderIndex::HdRenderIndex(
 
         _terminalSceneIndex =
             _mergingBatchingCtx->Append(_mergingSceneIndex);
-        
+
         _terminalSceneIndex = HdLegacyGeomSubsetSceneIndex::New(
             _terminalSceneIndex);
 
@@ -201,6 +202,10 @@ HdRenderIndex::HdRenderIndex(
                         rendererDisplayName, _terminalSceneIndex,
                         instanceName, appName);
         }
+
+// XXX(blevin) Temporarily disabled
+//        _terminalSceneIndex =
+//            HdCachingSceneIndex::New(_terminalSceneIndex);
 
         _siSd = std::make_unique<HdSceneIndexAdapterSceneDelegate>(
             _terminalSceneIndex,

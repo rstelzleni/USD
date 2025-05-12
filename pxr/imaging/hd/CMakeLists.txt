@@ -31,6 +31,7 @@ pxr_library(hd
         bufferArrayRange
         bufferSource
         bufferSpec
+        cachingSceneIndex
         camera
         cameraSchema
         capsuleSchema
