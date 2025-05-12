@@ -367,12 +367,12 @@ pxr_build_test(testSdfPredicateExpression_Cpp
         testenv/testSdfPredicateExpression.cpp
 )
 
-pxr_build_test(testSdfTextFileFormatParsing
+pxr_build_test(testSdfUsdaFileFormatParsing
     LIBRARIES
         sdf
         tf
     CPPFILES
-        testenv/testSdfTextFileFormatParsing.cpp
+        testenv/testSdfUsdaFileFormatParsing.cpp
 )
 
 pxr_build_test(testSdfZipFile_CPP
@@ -609,8 +609,8 @@ pxr_register_test(testSdfPredicateExpression_Cpp
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfPredicateExpression_Cpp"
 )
 
-pxr_register_test(testSdfTextFileFormatParsing
-   COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfTextFileFormatParsing"
+pxr_register_test(testSdfUsdaFileFormatParsing
+   COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testSdfUsdaFileFormatParsing"
 )
 
 pxr_register_test(testSdfPayload

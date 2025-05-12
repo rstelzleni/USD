@@ -196,7 +196,7 @@ class TestSdfAttribute(unittest.TestCase):
     def test_ClearUnexpectedField(self):
         layer = Sdf.Layer.CreateAnonymous("ClearUnexpected")
         layer.ImportFromString(
-'''#sdf 1.4.32
+'''#usda 1.0
 def Sphere "Foo"
 {
     double radius (
@@ -416,7 +416,7 @@ def Sphere "Foo"
         # Test interaction with time samples on an attribute
         timeSamplesLayer = Sdf.Layer.CreateAnonymous()
         timeSamplesLayer.ImportFromString(
-'''#sdf 1.4.32
+'''#usda 1.0
 def Scope "Scope"
 {
     custom double empty = 0

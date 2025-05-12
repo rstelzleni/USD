@@ -53,7 +53,7 @@ public:
 protected:
     TestSdfTargetFileFormatBase(const TfToken& formatId, const TfToken& target)
         : SdfFileFormat(formatId, TfToken(), target, _Tokens->Extension)
-        , _sdfFormat(SdfFileFormat::FindByExtension("sdf"))
+        , _sdfFormat(SdfFileFormat::FindByExtension("usda"))
     {
     }
 

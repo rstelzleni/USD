@@ -8,7 +8,6 @@
 #include "pxr/usd/sdf/usdcFileFormat.h"
 
 #include "pxr/usd/sdf/fileFormat.h"
-#include "pxr/usd/sdf/textFileFormat.h"
 #include "pxr/usd/sdf/usdFileFormat.h"
 #include "pxr/usd/sdf/usdaFileFormat.h"
 #include "pxr/usd/sdf/layer.h"
