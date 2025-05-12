@@ -439,7 +439,8 @@ HdStRenderPassState::Prepare(
             !aovBindings.empty() && GetUseAovMultiSample()) {
         if (const auto* renderBuffer = dynamic_cast<HdStRenderBuffer*>(
                 aovBindings.front().renderBuffer)) {
-            multisampleCount = renderBuffer->GetMSAASampleCount();
+            multisampleCount = renderBuffer->IsMultiSampled() ?
+                renderBuffer->GetMSAASampleCount() : 1;
         }
     }
             
@@ -755,6 +756,10 @@ HdStRenderPassState::Bind(HgiCapabilities const &hgiCapabilities)
 
     if (_multiSampleEnabled) {
         glEnable(GL_MULTISAMPLE);
+        if (!hgiCapabilities.IsSet(HgiDeviceCapabilitiesBitsRoundPoints)) {
+            // Needed to get gl_pointCoord in FS.
+            glEnable(GL_POINT_SPRITE);
+        }
     } else {
         glDisable(GL_MULTISAMPLE);
         // If not using GL_MULTISAMPLE, use GL_POINT_SMOOTH to render points as 
@@ -805,6 +810,7 @@ HdStRenderPassState::Unbind(HgiCapabilities const &hgiCapabilities)
 
     glEnable(GL_MULTISAMPLE);
     glDisable(GL_POINT_SMOOTH);
+    glDisable(GL_POINT_SPRITE);
 }
 
 void
