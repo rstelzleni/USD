@@ -133,6 +133,7 @@ void wrapUsdAttributeQuery()
              arg("desiredTime"))
 
         .def("HasValue", &UsdAttributeQuery::HasValue)
+        .def("HasSpline", &UsdAttributeQuery::HasSpline)
         .def("HasAuthoredValueOpinion", 
                 &UsdAttributeQuery::HasAuthoredValueOpinion)
         .def("HasAuthoredValue", &UsdAttributeQuery::HasAuthoredValue)

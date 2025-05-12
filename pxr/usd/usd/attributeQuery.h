@@ -225,12 +225,21 @@ public:
                                   bool* hasTimeSamples) const;
 
     /// Return true if the attribute associated with this query has an 
-    /// authored default value, authored time samples or a fallback value 
-    /// provided by a registered schema.
+    /// authored default value, authored time samples, authored spline or a 
+    /// fallback value provided by a registered schema.
     ///
     /// \sa UsdAttribute::HasValue
     USD_API
     bool HasValue() const;
+
+    /// Return true if the attribute associated with this query has an
+    /// a spline value as the strongest opinion.
+    ///
+    /// \sa UsdAttribute::HasSpline
+    /// \sa UsdAttributeQuery::GetSpline
+    /// \sa UsdAttributeQuery::ValueMightBeTimeVarying
+    USD_API
+    bool HasSpline() const;
 
     /// \deprecated This method is deprecated because it returns `true` even when
     /// an attribute is blocked.  Please use HasAuthoredValue() instead. If 

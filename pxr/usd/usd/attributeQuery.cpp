@@ -272,6 +272,12 @@ UsdAttributeQuery::HasValue() const
     return _resolveInfo._source != UsdResolveInfoSourceNone;  
 }
 
+bool
+UsdAttributeQuery::HasSpline() const
+{
+    return _resolveInfo._source == UsdResolveInfoSourceSpline;
+}
+
 bool 
 UsdAttributeQuery::HasAuthoredValueOpinion() const
 {
