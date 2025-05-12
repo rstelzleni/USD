@@ -213,13 +213,28 @@ UsdImagingStageSceneIndex::UsdImagingStageSceneIndex(
 {
 }
 
-UsdImagingStageSceneIndex::~UsdImagingStageSceneIndex()
-{
-    // Trace the dtor as an important special case.
-    TRACE_FUNCTION();
-
-    SetStage(nullptr);
-}
+// Note:
+// We don't emit notices on destruction.
+//
+// Let's take A -> B -> C as an example, with A being the stage scene
+// index, and -> representing "is an input to". So, C observes B observes A.
+// Also assume that we hold local references to A, B, and C.
+//
+// 1. Scenario: We reset the reference to A. 
+//    Because B holds a reference to A, resetting a local reference to A will
+//    _not_ result in A being destroyed. It'll only decrement the ref count.
+//    Only when we reset C will ~A and then ~B be called.
+//
+// 2. Scenario: We reset references to C and B.
+//    At this point, A no longer has any observers.
+//
+// 3. Scenario: B is merging scene index.
+// We should invoke RemoveInputScene(A) to generate the appropriate notices.
+//
+// In each of these scenarios, it doesn't make sense to emit notices on 
+// destruction.
+//
+UsdImagingStageSceneIndex::~UsdImagingStageSceneIndex() = default;
 
 // ---------------------------------------------------------------------------
 
