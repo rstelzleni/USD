@@ -664,13 +664,13 @@ namespace {
 struct Task {
     /// This enum must be in evaluation priority order.
     enum Type {
-        EvalNodeRelocations,
-        EvalImpliedRelocations,
-        EvalNodeReferences,
-        EvalNodePayloads,
-        EvalNodeInherits,
-        EvalImpliedClasses,
-        EvalNodeSpecializes,
+        EvalNodeRelocations    = 1 << 0,
+        EvalImpliedRelocations = 1 << 1,
+        EvalNodeReferences     = 1 << 2,
+        EvalNodePayloads       = 1 << 3,
+        EvalNodeInherits       = 1 << 4,
+        EvalImpliedClasses     = 1 << 5,
+        EvalNodeSpecializes    = 1 << 6,
 
         // XXX: 
         // These ancestral variant set tasks should come after the implied
@@ -684,25 +684,30 @@ struct Task {
         // The main effect is that ancestral variant selections authored
         // in specializes nodes may have a stronger strength ordering than
         // they should.
-        EvalNodeAncestralVariantSets,
-        EvalNodeAncestralVariantAuthored,
-        EvalNodeAncestralVariantFallback,
-        EvalNodeAncestralVariantNoneFound,
+        EvalNodeAncestralVariantSets      = 1 << 7,
+        EvalNodeAncestralVariantAuthored  = 1 << 8,
+        EvalNodeAncestralVariantFallback  = 1 << 9,
+        EvalNodeAncestralVariantNoneFound = 1 << 10,
 
-        EvalNodeAncestralDynamicPayloads,
+        EvalNodeAncestralDynamicPayloads  = 1 << 11,
 
-        EvalImpliedSpecializes,
+        EvalImpliedSpecializes            = 1 << 12,
 
-        EvalNodeVariantSets,
-        EvalNodeVariantAuthored,
-        EvalNodeVariantFallback,
-        EvalNodeVariantNoneFound,
+        EvalNodeVariantSets               = 1 << 13,
+        EvalNodeVariantAuthored           = 1 << 14,
+        EvalNodeVariantFallback           = 1 << 15,
+        EvalNodeVariantNoneFound          = 1 << 16,
 
-        EvalNodeDynamicPayloads,
+        EvalNodeDynamicPayloads           = 1 << 17,
 
-        EvalUnresolvedPrimPathError,
-        None
+        EvalUnresolvedPrimPathError       = 1 << 18,
+        None                              = 0
     };
+
+    // Combination of Task::Type values for specifying collections of tasks.
+    using Tasks = std::underlying_type_t<Task::Type>;
+
+    static constexpr Tasks AllTasks = ~0;
 
     // This sorts tasks in priority order from lowest priority to highest
     // priority, so highest priority tasks come last.
@@ -847,41 +852,41 @@ struct Task {
 
 } // end anonymous namespace
 
-// Bitfield of composition arc types
-enum _ArcFlags {
-    _ArcFlagInherits    = 1<<0,
-    _ArcFlagVariants    = 1<<1,
-    _ArcFlagReferences  = 1<<2,
-    _ArcFlagPayloads    = 1<<3,
-    _ArcFlagSpecializes = 1<<4,
-    _ArcFlagRelocates   = 1<<5
-};
-
 // Scan a node's specs for presence of fields describing composition arcs.
 // This is used as a preflight check to confirm presence of these arcs
 // before performing additional work to evaluate them.
-// Return a bitmask of the arc types found.
-inline static size_t
+// Return a bitmask that filters out tasks for arcs that are not present.
+inline static Task::Tasks
 _ScanArcs(PcpNodeRef const& node)
 {
-    if (!node.CanContributeSpecs()) {
-        return 0;
-    }
+    // Start with a mask that includes all tasks except the ones that we're
+    // checking in this function. As we discover composition arcs, we'll
+    // restore those tasks to the mask.
+    Task::Tasks tasks = Task::AllTasks;
+    tasks &= ~Task::EvalNodeRelocations;
+    tasks &= ~Task::EvalNodeInherits;
+    tasks &= ~Task::EvalNodeVariantSets;
+    tasks &= ~Task::EvalNodeReferences;
+    tasks &= ~Task::EvalNodePayloads;
+    tasks &= ~Task::EvalNodeDynamicPayloads;
+    tasks &= ~Task::EvalNodeSpecializes;
 
-    size_t arcs = 0;
+    if (!node.CanContributeSpecs()) {
+        return tasks;
+    }
 
     // Relocates mappings are defined for an entire layer stack so if the node's
     // layer stack has any relocates we have to check for relocates on this 
     // node.
     if (node.GetLayerStack()->HasRelocates()) {
-        arcs |= _ArcFlagRelocates;
+        tasks |= Task::EvalNodeRelocations;
     }
 
     // If the node does not have specs or cannot contribute specs,
     // we can avoid even enqueueing certain kinds of tasks that will
     // end up being no-ops.
     if (!node.HasSpecs()) {
-        return arcs;
+        return tasks;
     }
 
     SdfPath const& path = node.GetPath();
@@ -891,32 +896,40 @@ _ScanArcs(PcpNodeRef const& node)
             continue;
         }
         if (layerPtr->HasField(path, SdfFieldKeys->InheritPaths)) {
-            arcs |= _ArcFlagInherits;
+            tasks |= Task::EvalNodeInherits;
         }
         if (layerPtr->HasField(path, SdfFieldKeys->VariantSetNames)) {
-            arcs |= _ArcFlagVariants;
+            tasks |= Task::EvalNodeVariantSets;
         }
         if (layerPtr->HasField(path, SdfFieldKeys->References)) {
-            arcs |= _ArcFlagReferences;
+            tasks |= Task::EvalNodeReferences;
         }
         if (layerPtr->HasField(path, SdfFieldKeys->Payload)) {
-            arcs |= _ArcFlagPayloads;
+            tasks |= Task::EvalNodePayloads;
+            tasks |= Task::EvalNodeDynamicPayloads;
         }
         if (layerPtr->HasField(path, SdfFieldKeys->Specializes)) {
-            arcs |= _ArcFlagSpecializes;
+            tasks |= Task::EvalNodeSpecializes;
         }
     }
-    return arcs;
+    return tasks;
 }
 
 // Scan all ancestors of the site represented by this node for the
 // presence of any payload or variant arcs. 
 // See _ScanArcs for more details.
-inline static size_t
+inline static Task::Tasks
 _ScanAncestralArcs(PcpNodeRef const& node)
 {
+    // Start with a mask that includes all tasks except the ones that we're
+    // checking in this function. As we discover composition arcs, we'll
+    // restore those tasks to the mask.
+    Task::Tasks tasks = Task::AllTasks;
+    tasks &= ~Task::EvalNodeAncestralVariantSets;
+    tasks &= ~Task::EvalNodeAncestralDynamicPayloads;
+
     if (node.GetPath().IsAbsoluteRootPath()) {
-        return 0;
+        return tasks;
     }
 
     // Since this function is specific to *ancestral* arcs, we
@@ -935,21 +948,20 @@ _ScanAncestralArcs(PcpNodeRef const& node)
         }
     }
 
-    size_t arcs = 0;
     PcpLayerStackRefPtr const& layerStack = node.GetLayerStack();
     for (; !path.IsAbsoluteRootPath(); path = path.GetParentPath()) {
         for (SdfLayerRefPtr const& layer : layerStack->GetLayers()) {
             if (layer->HasField(path, SdfFieldKeys->Payload)) {
-                arcs |= _ArcFlagPayloads;
+                tasks |= Task::EvalNodeAncestralDynamicPayloads;
             }
 
             if (layer->HasField(path, SdfFieldKeys->VariantSetNames)) {
-                arcs |= _ArcFlagVariants;
+                tasks |= Task::EvalNodeAncestralVariantSets;
             }
         }
     }
 
-    return arcs;
+    return tasks;
 }  
 
 TF_REGISTRY_FUNCTION(TfEnum) {
@@ -1243,18 +1255,14 @@ struct Pcp_PrimIndexer
                 isUsd);
         }
 
-        // Preflight scan for arc types that are present in specs.
-        // This reduces pressure on the task queue, and enables more
-        // data access locality, since we avoid interleaving tasks that
-        // re-visit sites later only to determine there is no work to do.
-        const size_t arcMask = _ScanArcs(n);
+        Task::Tasks tasks = Task::None;
 
         // Only reference and payload arcs require the source prim to provide
         // opinions, so we only enqueue this task for those arcs.
         if (evaluateUnresolvedPrimPathErrors &&
             (n.GetArcType() == PcpArcTypeReference ||
              n.GetArcType() == PcpArcTypePayload)) {
-            AddTask(Task(Task::EvalUnresolvedPrimPathError, n));
+            tasks |= Task::EvalUnresolvedPrimPathError;
         }
 
         // If the caller tells us the new node and its children were already
@@ -1264,35 +1272,18 @@ struct Pcp_PrimIndexer
             // In this case, we only need to add tasks that come after 
             // implied specializes.
             if (evaluateVariantsAndDynamicPayloads) {
-                if (arcMask & _ArcFlagVariants) {
-                    AddTask(Task(Task::EvalNodeVariantSets, n));
-                }
-
-                if (arcMask & _ArcFlagPayloads) {
-                    AddTask(Task(Task::EvalNodeDynamicPayloads, n));
-                }
+                tasks |= Task::EvalNodeVariantSets;
+                tasks |= Task::EvalNodeDynamicPayloads;
             }
         } else {
             if (evaluateVariantsAndDynamicPayloads) {
-                if (arcMask & _ArcFlagVariants) {
-                    AddTask(Task(Task::EvalNodeVariantSets, n));
-                }
-
-                if (arcMask & _ArcFlagPayloads) {
-                    AddTask(Task(Task::EvalNodeDynamicPayloads, n));
-                }
+                tasks |= Task::EvalNodeVariantSets;
+                tasks |= Task::EvalNodeDynamicPayloads;
             }
 
             if (evaluateAncestralVariantsAndDynamicPayloads) {
-                const size_t ancestralArcMask = _ScanAncestralArcs(n);
-
-                if (ancestralArcMask & _ArcFlagPayloads) {
-                    AddTask(Task(Task::EvalNodeAncestralDynamicPayloads, n));
-                }
-
-                if (ancestralArcMask & _ArcFlagVariants) {
-                    AddTask(Task(Task::EvalNodeAncestralVariantSets, n));
-                }
+                tasks |= Task::EvalNodeAncestralDynamicPayloads;
+                tasks |= Task::EvalNodeAncestralVariantSets;
             }
 
             if (!skipTasksForExpressedArcs) {
@@ -1303,24 +1294,49 @@ struct Pcp_PrimIndexer
                 // These cases include adding a subtree that was recursively 
                 // prim indexed for ancestral opinions or propagating a 
                 // specializes subtree back down to its origin node.
-                if (arcMask & _ArcFlagSpecializes) {
-                    AddTask(Task(Task::EvalNodeSpecializes, n));
-                }
-                if (arcMask & _ArcFlagInherits) {
-                    AddTask(Task(Task::EvalNodeInherits, n));
-                }
-                if (arcMask & _ArcFlagPayloads) {
-                    AddTask(Task(Task::EvalNodePayloads, n));
-                }
-                if (arcMask & _ArcFlagReferences) {
-                    AddTask(Task(Task::EvalNodeReferences, n));
-                }
-                if (arcMask & _ArcFlagRelocates) {
-                    AddTask(Task(Task::EvalNodeRelocations, n));
-                }
+                tasks |= Task::EvalNodeSpecializes;
+                tasks |= Task::EvalNodeInherits;
+                tasks |= Task::EvalNodePayloads;
+                tasks |= Task::EvalNodeReferences;
+                tasks |= Task::EvalNodeRelocations;
             }
             if (n.GetArcType() == PcpArcTypeRelocate) {
-                AddTask(Task(Task::EvalImpliedRelocations, n));
+                tasks |= Task::EvalImpliedRelocations;
+            }
+        }
+
+        // Preflight scan for arc types that are present in specs.
+        // This reduces pressure on the task queue, and enables more
+        // data access locality, since we avoid interleaving tasks that
+        // re-visit sites later only to determine there is no work to do.
+        tasks &= _ScanArcs(n);
+        if (evaluateAncestralVariantsAndDynamicPayloads) {
+            tasks &= _ScanAncestralArcs(n);
+        }
+
+        // Add indicated tasks to the queue. The tasks listed here are
+        // the entry points for processing various composition arcs and
+        // behaviors. The other tasks specified in the Task::Type enum
+        // are subtasks that are added to the queue during that
+        // processing.
+        //
+        // The order of tasks in this list is arbitrary. AddTask will
+        // ensure tasks are sorted in the queue as needed.
+        for (Task::Type t : { 
+                Task::EvalUnresolvedPrimPathError,
+                Task::EvalNodeVariantSets,
+                Task::EvalNodeDynamicPayloads,
+                Task::EvalNodeAncestralDynamicPayloads,
+                Task::EvalNodeAncestralVariantSets,
+                Task::EvalNodeSpecializes,
+                Task::EvalNodeInherits,
+                Task::EvalNodePayloads,
+                Task::EvalNodeReferences,
+                Task::EvalNodeRelocations,
+                Task::EvalImpliedRelocations}) {
+
+            if (tasks & t) {
+                AddTask(Task(t, n));
             }
         }
     }
