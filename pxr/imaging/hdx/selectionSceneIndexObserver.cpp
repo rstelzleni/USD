@@ -41,6 +41,8 @@ _PopulateFromSceneIndex(
     HdSelectionSharedPtr const &result,
     std::mutex &resultMutex)
 {
+    TRACE_FUNCTION();
+
     _AddToSelection(sceneIndex, path, result, resultMutex);
     const SdfPathVector childPaths = sceneIndex->GetChildPrimPaths(path);
     if (!childPaths.empty()) {
@@ -97,33 +99,20 @@ HdxSelectionSceneIndexObserver::GetSelection()
     return _selection;
 }
 
-// Finds the instancer and prototype from the HdInstanceIndicesSchema to
-// query the instancer how often it instances the prototype.
 static
 int
-_GetNumInstances(
+_GetNumInstancesForPrototypeIndex(
     HdSceneIndexBaseRefPtr const &sceneIndex,
-    HdInstanceIndicesSchema &instanceIndices)
+    const SdfPath &instancerPath,
+    const int prototypeIndex)
 {
-    HdPathDataSourceHandle const instancerPathDs =
-        instanceIndices.GetInstancer();
-    if (!instancerPathDs) {
-        return 1;
-    }
-    const SdfPath instancerPath = instancerPathDs->GetTypedValue(0.0f);
+    TRACE_FUNCTION();
 
-    HdIntDataSourceHandle const prototypeIndexDs =
-        instanceIndices.GetPrototypeIndex();
-    if (!prototypeIndexDs) {
-        return 1;
-    }
-    const int prototypeIndex = prototypeIndexDs->GetTypedValue(0.0f);
-
-    HdInstancerTopologySchema instancerTopologySchema =
+    const HdInstancerTopologySchema instancerTopologySchema =
         HdInstancerTopologySchema::GetFromParent(
             sceneIndex->GetPrim(instancerPath).dataSource);
 
-    HdIntArrayVectorSchema indicesSchema =
+    const HdIntArrayVectorSchema indicesSchema =
         instancerTopologySchema.GetInstanceIndices();
     
     HdIntArrayDataSourceHandle const indicesDs =
@@ -135,9 +124,41 @@ _GetNumInstances(
     return indicesDs->GetTypedValue(0.0f).size();
 }
 
+// Finds the instancer and prototype from the HdInstanceIndicesSchema to
+// query the instancer how often it instances the prototype.
+static
+int
+_GetNumInstances(
+    HdSceneIndexBaseRefPtr const &sceneIndex,
+    const HdInstanceIndicesSchema &instanceIndices)
+{
+    TRACE_FUNCTION();
+
+    HdPathDataSourceHandle const instancerPathDs =
+        instanceIndices.GetInstancer();
+    if (!instancerPathDs) {
+        return 1;
+    }
+    const SdfPath instancerPath = instancerPathDs->GetTypedValue(0.0f);
+    if (instancerPath.IsEmpty()) {
+        return 1;
+    }
+
+    HdIntDataSourceHandle const prototypeIndexDs =
+        instanceIndices.GetPrototypeIndex();
+    if (!prototypeIndexDs) {
+        return 1;
+    }
+
+    return _GetNumInstancesForPrototypeIndex(
+        sceneIndex,
+        instancerPath,
+        prototypeIndexDs->GetTypedValue(0.0f));
+}
+
 static
 VtIntArray
-_GetInstanceIndices(HdInstanceIndicesSchema &instanceIds)
+_GetInstanceIndices(const HdInstanceIndicesSchema &instanceIds)
 {
     HdIntArrayDataSourceHandle const dataSource =
         instanceIds.GetInstanceIndices();
@@ -163,7 +184,7 @@ static
 VtIntArray
 _GetInstanceIndices(
     HdSceneIndexBaseRefPtr const &sceneIndex,
-    HdInstanceIndicesVectorSchema & instanceIndicesVector)
+    const HdInstanceIndicesVectorSchema &instanceIndicesVector)
 {
     TRACE_FUNCTION();
 
@@ -185,7 +206,7 @@ _GetInstanceIndices(
     // as above.
 
     for (size_t i = 0; i < n; i++) {
-        HdInstanceIndicesSchema instanceIndicesSchema =
+        const HdInstanceIndicesSchema instanceIndicesSchema =
             instanceIndicesVector.GetElement(i);
 
         // Number of instances of this prototype.
@@ -220,7 +241,7 @@ static
 void
 _AddToSelection(
     HdSceneIndexBaseRefPtr const &sceneIndex,
-    HdSelectionSchema &selectionSchema,
+    const HdSelectionSchema &selectionSchema,
     const SdfPath &primPath,
     HdSelectionSharedPtr const &result,
     std::mutex &resultMutex)
@@ -236,7 +257,7 @@ _AddToSelection(
     }
 
     // Retrieve instancing information.
-    HdInstanceIndicesVectorSchema instanceIndicesVectorSchema =
+    const HdInstanceIndicesVectorSchema instanceIndicesVectorSchema =
         selectionSchema.GetNestedInstanceIndices();
 
     {
@@ -278,7 +299,7 @@ _AddToSelection(
 {
     TRACE_FUNCTION();
     
-    HdSelectionsSchema selectionsSchema =
+    const HdSelectionsSchema selectionsSchema =
         HdSelectionsSchema::GetFromParent(
             sceneIndex->GetPrim(primPath).dataSource);
     if (!selectionsSchema) {
@@ -290,7 +311,8 @@ _AddToSelection(
 
         const size_t n = selectionsSchema.GetNumElements();
         for (size_t i = 0; i < n; ++i) {
-            HdSelectionSchema selectionSchema = selectionsSchema.GetElement(i);
+            const HdSelectionSchema selectionSchema =
+                selectionsSchema.GetElement(i);
             _AddToSelection(
                 sceneIndex,
                 selectionSchema,
@@ -306,7 +328,7 @@ HdxSelectionSceneIndexObserver::_ComputeSelection()
 {
     TRACE_FUNCTION();
 
-    HdSelectionSharedPtr result = std::make_shared<HdSelection>();
+    HdSelectionSharedPtr const result = std::make_shared<HdSelection>();
 
     if (!_sceneIndex) {
         return result;
@@ -343,6 +365,8 @@ HdxSelectionSceneIndexObserver::PrimsAdded(
     const HdSceneIndexBase &sender,
     const AddedPrimEntries &entries)
 {
+    TRACE_FUNCTION();
+
     if (entries.empty()) {
         return;
     }
@@ -359,6 +383,8 @@ HdxSelectionSceneIndexObserver::PrimsDirtied(
     const HdSceneIndexBase &sender,
     const DirtiedPrimEntries &entries)
 {
+    TRACE_FUNCTION();
+
     for (const DirtiedPrimEntry &entry : entries) {
         if (entry.dirtyLocators.Contains(
                 HdSelectionsSchema::GetDefaultLocator())) {
