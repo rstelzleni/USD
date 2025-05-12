@@ -266,6 +266,8 @@ _AddToSelection(
     HdSelectionSharedPtr const &result, 
     std::mutex &resultMutex)
 {
+    TRACE_FUNCTION();
+    
     HdSelectionsSchema selectionsSchema =
         HdSelectionsSchema::GetFromParent(
             sceneIndex->GetPrim(primPath).dataSource);
@@ -273,15 +275,19 @@ _AddToSelection(
         return;
     }
 
-    const size_t n = selectionsSchema.GetNumElements();
-    for (size_t i = 0; i < n; ++i) {
-        HdSelectionSchema selectionSchema = selectionsSchema.GetElement(i);
-        _AddToSelection(
-            sceneIndex,
-            selectionSchema,
-            primPath,
-            result, 
-            resultMutex);
+    {
+        TRACE_FUNCTION_SCOPE("Resolving selection schema");
+
+        const size_t n = selectionsSchema.GetNumElements();
+        for (size_t i = 0; i < n; ++i) {
+            HdSelectionSchema selectionSchema = selectionsSchema.GetElement(i);
+            _AddToSelection(
+                sceneIndex,
+                selectionSchema,
+                primPath,
+                result, 
+                resultMutex);
+        }
     }    
 }    
 
@@ -301,6 +307,8 @@ HdxSelectionSceneIndexObserver::_ComputeSelection()
     _dirtiedPrims.insert(prims.begin(), prims.end());
 
     if (!_dirtiedPrims.empty()) {
+        TRACE_FUNCTION_SCOPE("Query prims for selection");
+        
         std::mutex resultMutex;
 
         // On comparison with using WorkParallelForN with both a path set and

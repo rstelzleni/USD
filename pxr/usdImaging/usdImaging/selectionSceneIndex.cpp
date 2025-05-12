@@ -745,6 +745,8 @@ std::vector<_PrimAndNestedInstanceIndices>
 _ComputeSceneIndexPrimsAndInstanceIndices(
     const SdfPath &usdPath, HdSceneIndexBaseRefPtr const &sceneIndex)
 {
+    TRACE_FUNCTION();
+    
     static const _PrimAndNestedInstanceIndices root{
         SdfPath::AbsoluteRootPath(), {}};
 
@@ -873,7 +875,12 @@ UsdImagingSelectionSceneIndex::AddSelection(
             HdSelectionsSchema::GetDefaultLocator()};
         entries.push_back({dirtiedPrim, locators});
     }
-    _SendPrimsDirtied(entries);
+
+    {
+        TRACE_FUNCTION_SCOPE("_SendPrimsDirtied");
+
+        _SendPrimsDirtied(entries);
+    }
 }
 
 void
@@ -901,6 +908,8 @@ UsdImagingSelectionSceneIndex::ClearSelection()
     _selectionInfo->primToSelections.clear();
 
     if (!entries.empty()) {
+        TRACE_FUNCTION_SCOPE("_SendPrimsDirtied");
+
         _SendPrimsDirtied(entries);
     }
 }
