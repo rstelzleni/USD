@@ -105,12 +105,25 @@ def SublayerOperationProcessingApiSchema():
 
     assert foo.HasAPI(Usd.ColorSpaceAPI)
 
+def SublayerOperationProcessingActive():
+    entry = Usd.Stage.CreateNew("entry.usda")
+    foo = entry.DefinePrim("/foo")
+
+    model = Usd.Stage.CreateNew("model.usda")
+    prim = model.OverridePrim("/foo")
+    prim.SetActive(False)
+
+    assert foo.IsActive()
+    entry.GetRootLayer().subLayerPaths.append("model.usda")
+    assert not foo.IsActive()
+
 def Main(argv):
     RenamingSpec()
     ChangeInsignificantSublayer()
     AddSublayerWithCycle()
     UnmuteWithCycle()
     SublayerOperationProcessingApiSchema()
+    SublayerOperationProcessingActive()
 
 if __name__ == "__main__":
     Main(sys.argv)
