@@ -6,17 +6,15 @@
 //
 #include "pxr/exec/exec/attributeInputNode.h"
 
+#include "pxr/exec/exec/typeRegistry.h"
+
 #include "pxr/exec/ef/time.h"
 #include "pxr/exec/vdf/connectorSpecs.h"
 #include "pxr/exec/vdf/context.h"
+#include "pxr/exec/vdf/rawValueAccessor.h"
 #include "pxr/exec/vdf/tokens.h"
 
-#include "pxr/base/gf/matrix4d.h"
-#include "pxr/base/gf/vec3f.h"
-#include "pxr/base/gf/vec3d.h"
-#include "pxr/base/vt/types.h"
 #include "pxr/base/vt/value.h"
-#include "pxr/exec/ef/time.h"
 #include "pxr/usd/sdf/valueTypeName.h"
 #include "pxr/usd/usd/timeCode.h"
 
@@ -74,29 +72,10 @@ Exec_AttributeInputNode::Compute(VdfContext const &context) const
         Exec_AttributeInputNodeTokens->time).GetTimeCode();
 
     if (VtValue resolvedValue; _attribute->Get(&resolvedValue, time)) {
-        // TODO: This will be replaced with more general, registration-based
-        // type dispatch
-        switch (resolvedValue.GetKnownValueTypeIndex()) {
-        case VtGetKnownValueTypeIndex<double>():
-            context.SetOutput(resolvedValue.UncheckedGet<double>());
-            break;
-        case VtGetKnownValueTypeIndex<int>():
-            context.SetOutput(resolvedValue.UncheckedGet<int>());
-            break;
-        case VtGetKnownValueTypeIndex<GfMatrix4d>():
-            context.SetOutput(resolvedValue.UncheckedGet<GfMatrix4d>());
-            break;
-        case VtGetKnownValueTypeIndex<GfVec3f>():
-            context.SetOutput(resolvedValue.UncheckedGet<GfVec3f>());
-            break;
-        case VtGetKnownValueTypeIndex<GfVec3d>():
-            context.SetOutput(resolvedValue.UncheckedGet<GfVec3d>());
-            break;
-        default:
-            TF_CODING_ERROR(
-                "Support for computing attributes of type '%s' is not yet "
-                "implemented.", resolvedValue.GetType().GetTypeName().c_str());
-        }
+        VdfRawValueAccessor(context).SetOutputVector(
+            *GetOutput(VdfTokens->out),
+            VdfMask::AllOnes(1),
+            ExecTypeRegistry::GetInstance().CreateVector(resolvedValue));
     }
 }
 
