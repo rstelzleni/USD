@@ -242,7 +242,9 @@ HgiVulkanDevice::HgiVulkanDevice(HgiVulkanInstance* instance)
     extensions.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
     #ifdef VK_USE_PLATFORM_METAL_EXT
-    extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (IsSupportedExtension(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     #endif
 
     // Enabling certain features may incure a performance hit
