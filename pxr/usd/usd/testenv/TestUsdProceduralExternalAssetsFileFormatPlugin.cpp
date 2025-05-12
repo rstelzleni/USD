@@ -187,7 +187,7 @@ Test_UsdProceduralExternalAssetsFileFormatPlugin_FileFormat::WriteToString(
     std::string* str,
     const std::string& comment) const
 {
-    // Write the contents as an sdf text file.
+    // Write the contents as an usda text file.
     return SdfFileFormat::FindById(
         SdfUsdaFileFormatTokens->Id)->WriteToString(layer, str, comment);
 }
@@ -198,7 +198,7 @@ Test_UsdProceduralExternalAssetsFileFormatPlugin_FileFormat::WriteToStream(
     std::ostream& out,
     size_t indent) const
 {
-    // Write the contents as an sdf text file.
+    // Write the contents as an usda text file.
     return SdfFileFormat::FindById(
         SdfUsdaFileFormatTokens->Id)->WriteToStream(spec, out, indent);
 }

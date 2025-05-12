@@ -426,8 +426,7 @@ class TestUsdFlattenLayerStack(unittest.TestCase):
         tagToExtension = {
             '': '.usda',
             'test.usda': '.usda',
-            'test.usdc': '.usdc',
-            'test.sdf': '.sdf'
+            'test.usdc': '.usdc'
         }
         for (tag, extension) in tagToExtension.items():
             layer = Usd.FlattenLayerStack(src_layer_stack, tag=tag)
