@@ -177,16 +177,19 @@ HdRenderIndex::HdRenderIndex(
     if (_IsEnabledSceneIndexEmulation()) {
         _emulationSceneIndex = HdLegacyPrimSceneIndex::New();
 
+        // The legacy prim scene index holds prims contributed from
+        // upstream scene delegates.  Convert any legacy subsets
+        // to HdGeomSubsetSchema.
+        HdLegacyGeomSubsetSceneIndexRefPtr legacyGeomSubsetSceneIndex =
+            HdLegacyGeomSubsetSceneIndex::New(_emulationSceneIndex);
+
         _mergingSceneIndex = HdMergingSceneIndex::New();
         _mergingSceneIndex->AddInputScene(
-            _emulationBatchingCtx->Append(_emulationSceneIndex),
+            _emulationBatchingCtx->Append(legacyGeomSubsetSceneIndex),
             SdfPath::AbsoluteRootPath());
 
         _terminalSceneIndex =
             _mergingBatchingCtx->Append(_mergingSceneIndex);
-
-        _terminalSceneIndex = HdLegacyGeomSubsetSceneIndex::New(
-            _terminalSceneIndex);
 
         _terminalSceneIndex =
             HdSceneIndexAdapterSceneDelegate::AppendDefaultSceneFilters(
