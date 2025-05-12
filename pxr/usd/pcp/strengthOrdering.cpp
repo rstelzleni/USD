@@ -215,11 +215,11 @@ PcpCompareSiblingNodeStrength(
             // For example, consider a simple chain of references with
             // a specializes arc at the end:
             //
-            // @root.sdf@</A> -ref-> @ref.sdf@</Ref_1> 
-            //                -ref-> @ref2.sdf@</Ref_2>
-            //                -ref-> @ref3.sdf@</Ref_3> -spec-> @ref3.sdf@</S>
+            // @root.usda@</A> -ref-> @ref.usda@</Ref_1> 
+            //                -ref-> @ref2.usda@</Ref_2>
+            //                -ref-> @ref3.usda@</Ref_3> -spec-> @ref3.usda@</S>
             //
-            // The implied opinions due to @ref3.sdf@</S> are:
+            // The implied opinions due to @ref3.usda@</S> are:
             //
             // @ref2.usda@</S> (origin = @ref3.usda@</S>, 
             //                  distance from origin root = 1)

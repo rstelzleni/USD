@@ -1,8 +1,8 @@
-Loading @SpecializesAndAncestralArcs4/root.sdf@
+Loading @SpecializesAndAncestralArcs4/root.usda@
 
 ------------------------------------------------------------------------
 Layer Stack:
-     root.sdf
+     root.usda
 
 ------------------------------------------------------------------------
 Results for composing </Parent/Child>
@@ -11,7 +11,7 @@ Node 0:
     Type:                     root
     DependencyType:           root
     Source path:              </Parent/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              <NONE>
     Target layer stack:       NONE
     Map to parent:
@@ -29,15 +29,15 @@ Node 0:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </Parent/Child> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </Parent/Child> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 Node 1:
     Parent node:              0
     Type:                     inherit
     DependencyType:           non-virtual, purely-direct
     Source path:              </Parent/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Origin node:              9
     Sibling # at origin:      0
     Map to parent:
@@ -57,15 +57,15 @@ Node 1:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </Parent/Sibling> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </Parent/Sibling> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 Node 2:
     Parent node:              1
     Type:                     inherit
     DependencyType:           non-virtual, partly-direct
     Source path:              </PI/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Sibling>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PI -> /Parent
@@ -84,15 +84,15 @@ Node 2:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PI/Sibling> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </PI/Sibling> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 Node 3:
     Parent node:              2
     Type:                     specialize
     DependencyType:           none
     Source path:              </PIS/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </PI/Sibling>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PIS -> /PI
@@ -115,9 +115,9 @@ Node 4:
     Type:                     inherit
     DependencyType:           partly-direct, virtual
     Source path:              </PISI/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </PIS/Sibling>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PISI -> /PIS
@@ -144,9 +144,9 @@ Node 5:
     Type:                     inherit
     DependencyType:           ancestral, non-virtual
     Source path:              </PI/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PI -> /Parent
@@ -164,15 +164,15 @@ Node 5:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PI/Child> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </PI/Child> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 Node 6:
     Parent node:              5
     Type:                     specialize
     DependencyType:           none
     Source path:              </PIS/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </PI/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PIS -> /PI
@@ -194,9 +194,9 @@ Node 7:
     Type:                     inherit
     DependencyType:           ancestral, virtual
     Source path:              </PISI/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </PIS/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PISI -> /PIS
@@ -221,9 +221,9 @@ Node 8:
     Type:                     reference
     DependencyType:           ancestral, non-virtual
     Source path:              </PR/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/ref.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/ref.usda@
     Target path:              </Parent/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         /PR -> /Parent
     Map to root:
@@ -239,15 +239,15 @@ Node 8:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PR/Child> ref.sdf - @SpecializesAndAncestralArcs4/ref.sdf@
+      </PR/Child> ref.usda - @SpecializesAndAncestralArcs4/ref.usda@
 Node 9:
     Parent node:              8
     Type:                     inherit
     DependencyType:           non-virtual, partly-direct
     Source path:              </PR/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/ref.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/ref.usda@
     Target path:              </PR/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/ref.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/ref.usda@
     Map to parent:
         / -> /
         /PR/Sibling -> /PR/Child
@@ -265,7 +265,7 @@ Node 9:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PR/Sibling> ref.sdf - @SpecializesAndAncestralArcs4/ref.sdf@
+      </PR/Sibling> ref.usda - @SpecializesAndAncestralArcs4/ref.usda@
 
 
 Node 10:
@@ -273,9 +273,9 @@ Node 10:
     Type:                     specialize
     DependencyType:           non-virtual, partly-direct
     Source path:              </PIS/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Origin node:              3
     Sibling # at origin:      0
     Map to parent:
@@ -297,15 +297,15 @@ Node 10:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PIS/Sibling> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </PIS/Sibling> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 Node 11:
     Parent node:              10
     Type:                     inherit
     DependencyType:           non-virtual, partly-direct
     Source path:              </PISI/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </PIS/Sibling>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PISI -> /PIS
@@ -324,7 +324,7 @@ Node 11:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PISI/Sibling> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </PISI/Sibling> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 
 
 Node 12:
@@ -332,9 +332,9 @@ Node 12:
     Type:                     specialize
     DependencyType:           ancestral, non-virtual
     Source path:              </PIS/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Origin node:              6
     Sibling # at origin:      0
     Map to parent:
@@ -354,15 +354,15 @@ Node 12:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PIS/Child> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </PIS/Child> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 Node 13:
     Parent node:              12
     Type:                     inherit
     DependencyType:           ancestral, non-virtual
     Source path:              </PISI/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </PIS/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.sdf@
+    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Map to parent:
         / -> /
         /PISI -> /PIS
@@ -380,21 +380,21 @@ Node 13:
     Has specs:                TRUE
     Has symmetry:             FALSE
     Prim stack:
-      </PISI/Child> root.sdf - @SpecializesAndAncestralArcs4/root.sdf@
+      </PISI/Child> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 
 
 
 
 
 Prim Stack:
-    root.sdf             /Parent/Child
-    root.sdf             /Parent/Sibling
-    root.sdf             /PI/Sibling
-    root.sdf             /PI/Child
-    ref.sdf              /PR/Child
-    ref.sdf              /PR/Sibling
-    root.sdf             /PIS/Sibling
-    root.sdf             /PISI/Sibling
-    root.sdf             /PIS/Child
-    root.sdf             /PISI/Child
+    root.usda            /Parent/Child
+    root.usda            /Parent/Sibling
+    root.usda            /PI/Sibling
+    root.usda            /PI/Child
+    ref.usda             /PR/Child
+    ref.usda             /PR/Sibling
+    root.usda            /PIS/Sibling
+    root.usda            /PISI/Sibling
+    root.usda            /PIS/Child
+    root.usda            /PISI/Child
 

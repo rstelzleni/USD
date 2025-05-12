@@ -2260,33 +2260,33 @@ _EvalRefOrPayloadArcs(PcpNodeRef node,
             // For example, consider two prim indexes /A and /B:
             //
             //                    ref              ref 
-            // /A: @root.sdf@</A> ---> @a.sdf@</A> ---> @model.sdf@</Model>
+            // /A: @root.usda@</A> ---> @a.usda@</A> ---> @model.usda@</Model>
             //
             //                    ref              ref 
-            // /B: @root.sdf@</B> ---> @b.sdf@</B> ---> @model.sdf@</Model>
+            // /B: @root.usda@</B> ---> @b.usda@</B> ---> @model.usda@</Model>
             //
-            // If expression variables are only authored on root.sdf, the
+            // If expression variables are only authored on root.usda, the
             // override source for all downstream layer stacks will be
-            // root.sdf. This means the model.sdf layer stack in /A and /B are
+            // root.usda. This means the model.usda layer stack in /A and /B are
             // the same object.
             // 
             // If we instead used the layer stack identifier of this node as the
             // expression variable override source, the identifiers for the
-            // model.sdf layer stack in /A and /B would differ, even though they
+            // model.usda layer stack in /A and /B would differ, even though they
             // would be equivalent since they'd have the same layers and
             // composed expression variables.
             //
             // The approach we take maximizes sharing but requires that change
             // processing triggers resyncs when an override source changes.  For
             // example, if expression variables are additionally authored on
-            // a.sdf, change processing needs to determine that that layer stack
-            // now provides the variable overrides instead of root.sdf, which
+            // a.usda, change processing needs to determine that that layer stack
+            // now provides the variable overrides instead of root.usda, which
             // means that /A needs to be resynced so that the reference to
-            // model.sdf is recomputed. At that point, the model.sdf layer
+            // model.usda is recomputed. At that point, the model.usda layer
             // stacks in /A and /B are no longer equivalent and become two
             // different objects since they have different composed expression
-            // variables. If the variables in a.sdf were then removed, change
-            // processing should again resync /A, at which point the model.sdf
+            // variables. If the variables in a.usda were then removed, change
+            // processing should again resync /A, at which point the model.usda
             // layer stacks in /A and /B would be the same object once more.
             const PcpLayerStackIdentifier layerStackIdentifier(
                 layer, SdfLayerHandle(), pathResolverContext,
