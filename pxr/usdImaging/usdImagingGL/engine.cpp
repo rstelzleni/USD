@@ -249,17 +249,35 @@ UsdImagingGLEngine::_DestroyHydraObjects()
         _taskControllerSceneIndex = TfNullPtr;
     }
     if (_GetUseSceneIndices()) {
-        TRACE_SCOPE("UsdImaging scene indices");
         if (_renderIndex && _sceneIndex) {
-            _renderIndex->RemoveSceneIndex(_sceneIndex);
-            _stageSceneIndex = nullptr;
-            _rootOverridesSceneIndex = nullptr;
-            _selectionSceneIndex = nullptr;
-            _displayStyleSceneIndex = nullptr;
-            _sceneIndex = nullptr;
+            {
+                TRACE_SCOPE("Remove terminal UsdImaging scene index");
+                // Remove the terminal scene index of the UsdImaging scene
+                // index graph from the render index's merging scene index.
+                // This should result in removed/added notices that are
+                // processed by downstream scene index plugins.
+                _renderIndex->RemoveSceneIndex(_sceneIndex);
+            }
+
+            {
+                TRACE_SCOPE("Destroy UsdImaging scene indices");
+    
+                // The destruction order below is the reverse of the creation 
+                // order.
+                _sceneIndex = nullptr;
+                _displayStyleSceneIndex = nullptr;
+                _selectionSceneIndex = nullptr;
+                
+                // "Override" scene indices.
+                _rootOverridesSceneIndex = nullptr;
+                _lightPruningSceneIndex = nullptr;
+                _materialPruningSceneIndex = nullptr;
+                
+                _stageSceneIndex = nullptr;
+            }
         }
     } else {
-        TRACE_SCOPE("UsdImaging delegate");
+        TRACE_SCOPE("Destroy UsdImaging delegate");
         _sceneDelegate = nullptr;
     }
 
@@ -273,8 +291,17 @@ UsdImagingGLEngine::_DestroyHydraObjects()
         }
     }
 
-    _renderIndex = nullptr;
-    _renderDelegate = nullptr;
+    {
+        // This should trigger the destruction of registered scene index
+        // plugins that were added to the scene index graph.
+        TRACE_SCOPE("Destroy scene index plugins and render index.");
+        _renderIndex = nullptr;
+    }
+
+    {
+        TRACE_SCOPE("Destroy render delegate");
+        _renderDelegate = nullptr;
+    }
 }
 
 UsdImagingGLEngine::~UsdImagingGLEngine()
@@ -349,8 +376,7 @@ UsdImagingGLEngine::PrepareBatch(
                 }
             }
 
-            // XXX(USD-7113): Add pruning based on _rootPath,
-            // _excludedPrimPaths
+            // XXX(USD-7113): Add pruning based on _rootPath
 
             // XXX(USD-7114): Add draw mode support based on
             // params.enableUsdDrawModes.
