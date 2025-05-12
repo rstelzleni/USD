@@ -17,7 +17,7 @@ from .common import Timer
 from .appController import AppController
 from .settings import ConfigManager
 
-from pxr import UsdAppUtils
+from pxr import Sdf, UsdUtils, UsdAppUtils
 
 
 class InvalidUsdviewOption(Exception):
@@ -325,6 +325,13 @@ class Launcher(object):
 
         # Verify that the camera path is either an absolute path, or is just
         # the name of a camera.
+        if not arg_parse_result.camera:
+            from pxr import Sdf
+            primaryCameraName = UsdUtils.GetPrimaryCameraName()
+            if primaryCameraName:
+                arg_parse_result.camera = Sdf.Path(primaryCameraName)
+            else:
+                arg_parse_result.camera = Sdf.Path.emptyPath
         if arg_parse_result.camera:
             camPath = arg_parse_result.camera
             if camPath.isEmpty:
