@@ -165,6 +165,8 @@ _GetInstanceIndices(
     HdSceneIndexBaseRefPtr const &sceneIndex,
     HdInstanceIndicesVectorSchema & instanceIndicesVector)
 {
+    TRACE_FUNCTION();
+
     const size_t n = instanceIndicesVector.GetNumElements();
     if (n == 0) {
         return {};
@@ -238,17 +240,25 @@ _AddToSelection(
         selectionSchema.GetNestedInstanceIndices();
 
     {
-        std::unique_lock lock(resultMutex);
         if (instanceIndicesVectorSchema.GetNumElements() > 0) {
-            result->AddInstance(
-                HdSelection::HighlightModeSelect,
-                primPath,
-                // The information in the schema is nested, that is it
-                // the instance id for each nesting level.
-                // HdSelection only expects one number for each selected
-                // instance encoding the selection of all levels.
-                _GetInstanceIndices(sceneIndex, instanceIndicesVectorSchema));
+            const VtIntArray instanceIndices = 
+                _GetInstanceIndices(sceneIndex, instanceIndicesVectorSchema);
+
+            {
+                std::unique_lock lock(resultMutex);
+
+                result->AddInstance(
+                    HdSelection::HighlightModeSelect,
+                    primPath,
+                    // The information in the schema is nested, that is it
+                    // the instance id for each nesting level.
+                    // HdSelection only expects one number for each selected
+                    // instance encoding the selection of all levels.
+                    instanceIndices);
+            }
         } else {
+            std::unique_lock lock(resultMutex);
+
             result->AddRprim(
                 HdSelection::HighlightModeSelect,
                 primPath);
