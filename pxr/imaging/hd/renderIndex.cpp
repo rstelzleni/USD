@@ -994,11 +994,15 @@ HdRenderIndex::_ConfigureReprs()
                                  HdBasisCurvesGeomStyleWire);
     HdBasisCurves::ConfigureRepr(HdReprTokens->wireOnSurf,
                                  HdBasisCurvesGeomStylePatch);
+    HdBasisCurves::ConfigureRepr(HdReprTokens->solidWireOnSurf,
+                                 HdBasisCurvesGeomStylePatch);
     HdBasisCurves::ConfigureRepr(HdReprTokens->refined,
                                  HdBasisCurvesGeomStylePatch);
     HdBasisCurves::ConfigureRepr(HdReprTokens->refinedWire,
                                  HdBasisCurvesGeomStyleWire);
     HdBasisCurves::ConfigureRepr(HdReprTokens->refinedWireOnSurf,
+                                 HdBasisCurvesGeomStylePatch);
+    HdBasisCurves::ConfigureRepr(HdReprTokens->refinedSolidWireOnSurf,
                                  HdBasisCurvesGeomStylePatch);
     HdBasisCurves::ConfigureRepr(HdReprTokens->points,
                                  HdBasisCurvesGeomStylePoints);
@@ -1011,11 +1015,15 @@ HdRenderIndex::_ConfigureReprs()
                             HdPointsGeomStylePoints);
     HdPoints::ConfigureRepr(HdReprTokens->wireOnSurf,
                             HdPointsGeomStylePoints);
+    HdPoints::ConfigureRepr(HdReprTokens->solidWireOnSurf,
+                            HdPointsGeomStylePoints);
     HdPoints::ConfigureRepr(HdReprTokens->refined,
                             HdPointsGeomStylePoints);
     HdPoints::ConfigureRepr(HdReprTokens->refinedWire,
                             HdPointsGeomStylePoints);
     HdPoints::ConfigureRepr(HdReprTokens->refinedWireOnSurf,
+                            HdPointsGeomStylePoints);
+    HdPoints::ConfigureRepr(HdReprTokens->refinedSolidWireOnSurf,
                             HdPointsGeomStylePoints);
     HdPoints::ConfigureRepr(HdReprTokens->points,
                             HdPointsGeomStylePoints);
