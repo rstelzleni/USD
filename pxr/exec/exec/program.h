@@ -237,11 +237,11 @@ private:
     // Unregisters an input node from authored value initialization.
     void _UnregisterInputNode(const Exec_AttributeInputNode *inputNode);
 
-    // Flags the array of _timeDependentInputs as invalid.
-    void _InvalidateTimeDependentInputs();
+    // Flags the array of _timeDependentInputNodeOutputs as invalid.
+    void _InvalidateTimeDependentInputNodeOutputs();
 
-    // Rebuilds the array of _timeDependentInputs.
-    const VdfMaskedOutputVector &_CollectTimeDependentInputs();
+    // Rebuilds the array of _timeDependentInputNodeOutputs.
+    const VdfMaskedOutputVector &_CollectTimeDependentInputNodeOutputs();
 
 private:
     // The compiled data flow network.
@@ -270,11 +270,11 @@ private:
     _InputNodesMap _inputNodes;
 
     // Array of outputs on input nodes, which are time dependent.
-    VdfMaskedOutputVector _timeDependentInputs;
+    VdfMaskedOutputVector _timeDependentInputNodeOutputs;
 
-    // Flag indicating whether the _timeDependentInputs array is up-to-date or
-    // must be re-computed.
-    std::atomic<bool> _timeDependentInputsValid;
+    // Flag indicating whether the _timeDependentInputNodeOutputs array is
+    // up-to-date or must be re-computed.
+    std::atomic<bool> _timeDependentInputNodeOutputsValid;
 
     // Input nodes currently queued for initialization.
     std::vector<VdfId> _uninitializedInputNodes;

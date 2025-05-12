@@ -34,7 +34,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 static TfBits
-_FilterTimeDependentInputs(
+_FilterTimeDependentInputNodeOutputs(
     const VdfMaskedOutputVector &, const EfTime &, const EfTime &);
 
 class Exec_Program::_EditMonitor final : public VdfNetwork::EditMonitor {
@@ -61,6 +61,15 @@ public:
         // TODO: When we implement parallel node deletion, this needs to be made
         // thread-safe.
         _program->_compiledOutputCache.EraseByNodeId(node->GetId());
+
+        // Unregister this node if it is an attribute input node.
+        // 
+        // The edit monitor captures both node deletion through
+        // DisconnectAndDeleteNode() as well as isolated sub-network deletion.
+        if (const Exec_AttributeInputNode *const inputNode = 
+                dynamic_cast<const Exec_AttributeInputNode *const>(node)) {
+            _program->_UnregisterInputNode(inputNode);
+        }
     }
 
 private:
@@ -69,7 +78,7 @@ private:
 
 Exec_Program::Exec_Program()
     : _timeInputNode(new EfTimeInputNode(&_network))
-    , _timeDependentInputsValid(true)
+    , _timeDependentInputNodeOutputsValid(true)
     , _editMonitor(std::make_unique<_EditMonitor>(this))
 {
     _network.RegisterEditMonitor(_editMonitor.get());
@@ -153,7 +162,7 @@ Exec_Program::InvalidateAuthoredValues(
         if (TF_VERIFY(inputNode)) {
             const bool isTimeDependent = inputNode->MaybeTimeVarying();
             if (entry.isTimeDependent != isTimeDependent) {
-                _InvalidateTimeDependentInputs();
+                _InvalidateTimeDependentInputNodeOutputs();
                 isTimeDependencyChange = true;
                 entry.isTimeDependent = isTimeDependent;
             }
@@ -223,8 +232,8 @@ Exec_Program::InitializeTime(
     TRACE_FUNCTION();
 
     // Gather up the set of inputs that are currently time-dependent.
-    const VdfMaskedOutputVector &timeDependentInputs =
-        _CollectTimeDependentInputs();
+    const VdfMaskedOutputVector &timeDependentInputNodeOutputs =
+        _CollectTimeDependentInputNodeOutputs();
 
     // When moving to- or from the default time, we need to invalidate all
     // time-dependent inputs.
@@ -234,14 +243,18 @@ Exec_Program::InitializeTime(
     // Construct a bit set that filters the array of time dependent inputs down
     // to the ones that actually changed going from oldTime to newTime.
     const TfBits filter = didChangeDefault
-        ? TfBits(timeDependentInputs.size(), 0, timeDependentInputs.size() - 1)
-        : _FilterTimeDependentInputs(timeDependentInputs, oldTime, newTime);
+        ? TfBits(
+            timeDependentInputNodeOutputs.size(), 
+            0,
+            timeDependentInputNodeOutputs.size() - 1)
+        : _FilterTimeDependentInputNodeOutputs(
+            timeDependentInputNodeOutputs, oldTime, newTime);
 
     // Perform executor invalidation, and notify requests of the time change.
     const std::vector<const VdfNode *> *leafNodes = nullptr;
     WorkWithScopedDispatcher(
-        [&filter, &timeDependentInputs, &executor, &timeOutput, &newTime,
-            &leafNodes, &leafNodeCache = _leafNodeCache]
+        [&filter, &timeDependentInputNodeOutputs, &executor, &timeOutput,
+            &newTime, &leafNodes, &leafNodeCache = _leafNodeCache]
         (WorkDispatcher &dispatcher){
         // Executor invalidation task.
         dispatcher.Run([&](){
@@ -249,7 +262,7 @@ Exec_Program::InitializeTime(
             VdfMaskedOutputVector invalidationRequest;
             invalidationRequest.reserve(filter.GetNumSet());
             for (size_t i : filter.GetAllSetView()) {
-                invalidationRequest.push_back(timeDependentInputs[i]);
+                invalidationRequest.push_back(timeDependentInputNodeOutputs[i]);
             }
 
             // Invalidate values on the executor.
@@ -266,7 +279,8 @@ Exec_Program::InitializeTime(
         dispatcher.Run([&](){
             // Find the leaf nodes that are dependent on the values that are
             // changing from oldTime to newTime.
-            leafNodes = &(leafNodeCache.FindNodes(timeDependentInputs, filter));
+            leafNodes = &(leafNodeCache.FindNodes(
+                timeDependentInputNodeOutputs, filter));
         });
     });
 
@@ -349,12 +363,6 @@ Exec_Program::DisconnectAndDeleteNode(VdfNode *const node)
         }
     }
 
-    // Unregister this node if it is an attribute input node.
-    if (const Exec_AttributeInputNode *const inputNode = 
-            dynamic_cast<const Exec_AttributeInputNode *const>(node)) {
-        _UnregisterInputNode(inputNode);
-    }
-
     // This node cannot be isolated, and its inputs do not require
     // recompilation, because they are all about to be deleted.
     _potentiallyIsolatedNodes.erase(node);
@@ -411,7 +419,7 @@ Exec_Program::_RegisterInputNode(const Exec_AttributeInputNode *const inputNode)
     // If this is a time varying input, we need to invalidate the cached
     // subset of time varying input nodes.
     if (isTimeDependent) {
-        _InvalidateTimeDependentInputs();
+        _InvalidateTimeDependentInputNodeOutputs();
     }
 }
 
@@ -429,27 +437,27 @@ Exec_Program::_UnregisterInputNode(
     // subset of time varying input nodes.
     const bool wasTimeDependent = it->second.isTimeDependent;
     if (wasTimeDependent) {
-        _InvalidateTimeDependentInputs();
+        _InvalidateTimeDependentInputNodeOutputs();
     }
     
     _inputNodes.unsafe_erase(attributePath);
 }
 
 void
-Exec_Program::_InvalidateTimeDependentInputs()
+Exec_Program::_InvalidateTimeDependentInputNodeOutputs()
 {
     // We set an atomic flag here instead of fiddling with the
-    // _timeDependentInputs array directly, so that we don't have to worry
-    // about making the latter a concurrent data structure.
-    _timeDependentInputsValid.store(false, std::memory_order_release);
+    // _timeDependentInputNodeOutputs array directly, so that we don't have to 
+    // worry about making the latter a concurrent data structure.
+    _timeDependentInputNodeOutputsValid.store(false, std::memory_order_release);
 }
 
 const VdfMaskedOutputVector &
-Exec_Program::_CollectTimeDependentInputs()
+Exec_Program::_CollectTimeDependentInputNodeOutputs()
 {
     // If the cached array of time-dependent inputs is still valid, return it.
-    if (_timeDependentInputsValid.load(std::memory_order_acquire)) {
-        return _timeDependentInputs;
+    if (_timeDependentInputNodeOutputsValid.load(std::memory_order_acquire)) {
+        return _timeDependentInputNodeOutputs;
     }
 
     TRACE_FUNCTION();
@@ -458,15 +466,14 @@ Exec_Program::_CollectTimeDependentInputs()
     // pessimally size it to accommodate all inputs, and keep track of how many
     // entries have really been populated. We will shrink the array later.
     std::atomic<size_t> num(0);
-    _timeDependentInputs.resize(_inputNodes.size());
+    _timeDependentInputNodeOutputs.resize(_inputNodes.size());
 
     // Iterate over all the inputs and filter the ones that are currently time
     // dependent.
     Exec_ParallelForRange(_inputNodes,
-        [&num, &result = _timeDependentInputs, &network = _network]
+        [&num, &result = _timeDependentInputNodeOutputs, &network = _network]
         (const _InputNodesMap::range_type &range){
-        for (auto it = range.begin(); it != range.end(); ++it) {
-            const _InputNodeEntry &entry = it->second;
+        for (const auto &[path, entry] : range) {
             if (entry.isTimeDependent) {
                 VdfNode *const node = network.GetNodeById(entry.nodeId);
                 if (TF_VERIFY(node)) {
@@ -478,23 +485,23 @@ Exec_Program::_CollectTimeDependentInputs()
     });
 
     // Shrink the array to only contain the entries we just populated.
-    _timeDependentInputs.resize(num.load());
+    _timeDependentInputNodeOutputs.resize(num.load());
 
     // The array of time-dependent inputs is valid again. Return it.
-    _timeDependentInputsValid.store(true, std::memory_order_release);
-    return _timeDependentInputs;
+    _timeDependentInputNodeOutputsValid.store(true, std::memory_order_release);
+    return _timeDependentInputNodeOutputs;
 }
 
 static TfBits
-_FilterTimeDependentInputs(
-    const VdfMaskedOutputVector &timeDependentInputs,
+_FilterTimeDependentInputNodeOutputs(
+    const VdfMaskedOutputVector &timeDependentInputNodeOutputs,
     const EfTime &oldTime,
     const EfTime &newTime)
 {
     TRACE_FUNCTION();
 
     // One bitset per thread.
-    const size_t numInputs = timeDependentInputs.size();
+    const size_t numInputs = timeDependentInputNodeOutputs.size();
     tbb::enumerable_thread_specific<TfBits> threadBits([numInputs](){
         return TfBits(numInputs);
     });
@@ -503,27 +510,29 @@ _FilterTimeDependentInputs(
     // changes between oldTime and newTime. If so, set the corresponding bit
     // in the bit set.
     WorkWithScopedParallelism(
-        [&numInputs, &timeDependentInputs, &oldTime, &newTime, &threadBits](){
+        [&numInputs, &timeDependentInputNodeOutputs, &oldTime, &newTime,
+            &threadBits](){
         WorkParallelForN(numInputs,[&](size_t b, size_t e){
             TfBits *const bits = &threadBits.local();
             for (size_t i = b; i != e; ++i) {
                 const VdfNode &node =
-                    timeDependentInputs[i].GetOutput()->GetNode();
+                    timeDependentInputNodeOutputs[i].GetOutput()->GetNode();
                 const Exec_AttributeInputNode *const inputNode =
                         dynamic_cast<const Exec_AttributeInputNode*>(&node);
-                if (TF_VERIFY(inputNode)) {
-                    if (inputNode->IsTimeVarying(oldTime, newTime)) {
-                        bits->Set(i);
-                    }
+                if (TF_VERIFY(inputNode) && inputNode->IsTimeVarying(
+                        oldTime, newTime)) {
+                    bits->Set(i);
                 }
             }
         });
     });
 
     // Combine the thread-local bit sets into a single bit set and return it.
-    return threadBits.combine([](const TfBits &lhs, const TfBits &rhs){
-        return lhs | rhs;
+    TfBits result(numInputs);
+    threadBits.combine_each([&result](const TfBits &bits){
+        return result | bits;
     });
+    return result;
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
