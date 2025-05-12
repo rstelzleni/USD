@@ -196,6 +196,9 @@ HgiVulkanGraphicsPipeline::HgiVulkanGraphicsPipeline(
         rasterState.pNext = &conservativeRasterState;
     }
 
+    const bool multisampleEnabled =
+        desc.multiSampleState.sampleCount > HgiSampleCount1;
+
     // Use Bresenham alogirthm for line rendering when not using MSAA to match
     // OpenGL.
     const bool bresenhamLineRendering = ((
@@ -204,7 +207,7 @@ HgiVulkanGraphicsPipeline::HgiVulkanGraphicsPipeline(
         inputAssembly.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
         inputAssembly.topology ==
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY) &&
-        desc.multiSampleState.sampleCount <= HgiSampleCount1
+            !multisampleEnabled
     );
 
     VkPipelineRasterizationLineStateCreateInfoKHR lineState {
@@ -231,11 +234,13 @@ HgiVulkanGraphicsPipeline::HgiVulkanGraphicsPipeline(
         HgiVulkanConversions::GetSampleCount(ms.sampleCount);
     multisampleState.sampleShadingEnable = VK_FALSE;
     multisampleState.minSampleShading = 0.5f;
+    // Disable alpha-to-coverage and alpha-to-one when sample count is 1. This 
+    // is to match the GL behavior.
     multisampleState.alphaToCoverageEnable = ms.alphaToCoverageEnable &&
-        !bresenhamLineRendering;
+        multisampleEnabled;
     multisampleState.alphaToOneEnable = ms.alphaToOneEnable &&
         _device->GetDeviceCapabilities().vkDeviceFeatures2.features.alphaToOne
-        && !bresenhamLineRendering;
+        && multisampleEnabled;
     pipeCreateInfo.pMultisampleState = &multisampleState;
 
     //
