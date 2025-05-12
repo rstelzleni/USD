@@ -22,6 +22,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class TsSpline;
 
 /// \class UsdAttributeQuery
 ///
@@ -157,6 +158,13 @@ public:
     /// \sa UsdAttributeQuery::GetTimeSamplesInInterval
     USD_API
     bool GetTimeSamples(std::vector<double>* times) const;
+
+    /// Returns a copy of the TsSpline associated with the resolved value.
+    ///
+    /// If the resolve value source is not a Spline, an empty Spline is 
+    /// returned.
+    USD_API
+    TsSpline GetSpline() const;
 
     /// Populates a vector with authored sample times in \p interval.
     /// Returns false only on an error.

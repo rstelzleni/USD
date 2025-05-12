@@ -85,6 +85,7 @@ _TestSplineAndAttr(
     // Lets also try UsdAttributeQuery matching the spline value and the attr
     // value.
     UsdAttributeQuery attrQuery(attr);
+    TF_AXIOM(attrQuery.GetSpline() == spline);
     VtValue queryValue;
     bool querySuccess = attrQuery.Get(&queryValue, 1.0);
     if (!querySuccess || !splineSuccess) {

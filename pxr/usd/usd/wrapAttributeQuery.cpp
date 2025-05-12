@@ -142,6 +142,8 @@ void wrapUsdAttributeQuery()
              &UsdAttributeQuery::ValueMightBeTimeVarying)
 
         .def("Get", _Get, arg("time")=UsdTimeCode::Default())
+        .def("GetSpline", &UsdAttributeQuery::GetSpline,
+             return_value_policy<return_by_value>())
          
         ;
 
