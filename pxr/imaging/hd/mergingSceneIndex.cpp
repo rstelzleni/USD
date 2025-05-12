@@ -333,6 +333,8 @@ HdMergingSceneIndex::_PrimsAdded(
         return;
     }
 
+    TRACE_FUNCTION();
+
     // Confirm that the type here is not masked by a stronger contributing
     // input. We still send it along as an add because a weaker input providing
     // potential data sources (at any container depth) does not directly
