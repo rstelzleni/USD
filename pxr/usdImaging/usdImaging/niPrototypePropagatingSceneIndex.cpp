@@ -344,6 +344,13 @@ UsdImagingNiPrototypePropagatingSceneIndex(
         HdSceneIndexObserverPtr(&_mergingSceneIndexObserver));
 
     _Populate(sceneIndices.instanceAggregationSceneIndex);
+
+    if (!prototypeName.IsEmpty()) {
+        SetDisplayName(
+            TfStringPrintf(
+                "Propagating native prototype %s",
+                prototypeName.GetText()));
+    }
 }
 
 UsdImagingNiPrototypePropagatingSceneIndex::

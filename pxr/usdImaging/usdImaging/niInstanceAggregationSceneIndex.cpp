@@ -922,6 +922,9 @@ public:
     PrimsRenamed(const HdSceneIndexBase &sender,
                  const RenamedPrimEntries &entries) override;
 
+    const HdSceneIndexBaseRefPtr &GetInputScene() const {
+        return _inputScene;
+    }
 
 private:
     using _Map0 = std::map<TfToken, std::shared_ptr<SdfPathSet>>;
@@ -1651,6 +1654,12 @@ UsdImaging_NiInstanceAggregationSceneIndex::
 
 std::vector<HdSceneIndexBaseRefPtr>
 UsdImaging_NiInstanceAggregationSceneIndex::GetInputScenes() const
+{
+    return { _instanceObserver->GetInputScene() };
+}
+
+std::vector<HdSceneIndexBaseRefPtr>
+UsdImaging_NiInstanceAggregationSceneIndex::GetEncapsulatedScenes() const
 {
     return { _instanceObserver->GetRetainedSceneIndex() };
 }
