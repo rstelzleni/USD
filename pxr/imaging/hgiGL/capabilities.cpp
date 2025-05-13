@@ -28,7 +28,7 @@ TF_DEFINE_ENV_SETTING(HGIGL_ENABLE_SHADER_DRAW_PARAMETERS, true,
                       "Use GL shader draw params if available (OpenGL 4.5+)");
 TF_DEFINE_ENV_SETTING(HGIGL_ENABLE_BINDLESS_TEXTURE, false,
                       "Use GL bindless texture extension");
-TF_DEFINE_ENV_SETTING(HGIGL_ENABLE_NATIVE_ROUND_POINTS, true,
+TF_DEFINE_ENV_SETTING(HGIGL_ENABLE_NATIVE_ROUND_POINTS, false,
                       "Use GL builtin smooth points");
 TF_DEFINE_ENV_SETTING(HGIGL_GLSL_VERSION, 0,
                       "GLSL version");
