@@ -84,17 +84,16 @@ UsdImagingDataSourcePrimvars::GetNames()
 
     TfTokenVector result;
 
-    // XXX This code accepts relationships in the primvars: namespace,
-    // in addition to attributes, which seems like a point of
-    // divergence from UsdGeomPrimvarsAPI.
-    std::vector<UsdProperty> props =
-         _usdPrim.GetAuthoredPropertiesInNamespace("primvars:");
-    result.reserve(props.size());
-    for (UsdProperty const& prop : props) {
-        static const size_t prefixLength = 9; // len("primvars:")
-        TfToken primvarName(prop.GetName().data() + prefixLength);
-        if (!_RejectPrimvar(primvarName)) {
-            result.push_back(primvarName);
+    // Enumerate primvar names using UsdGeomPrimvarsAPI.
+    // This API filters out supporting attributes such as
+    // "primvars:indexedPrimvar:indices".
+    const std::vector<UsdGeomPrimvar> primvars =
+         UsdGeomPrimvarsAPI(_usdPrim).GetAuthoredPrimvars();
+    result.reserve(primvars.size());
+    for (const UsdGeomPrimvar& primvar : primvars) {
+        const TfToken name = primvar.GetPrimvarName();
+         if (!_RejectPrimvar(name)) {
+            result.push_back(name);
         }
     }
 
