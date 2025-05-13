@@ -25,6 +25,10 @@ pxr_library(execGeom
         plugInfo.json
 )
 
+#
+# Tests
+#
+
 pxr_build_test(testExecGeomXformable
     LIBRARIES
         tf
@@ -51,4 +55,24 @@ pxr_register_test(testExecGeomXformable
 pxr_install_test_dir(
     SRC testenv/testExecGeomXformable
     DEST testExecGeomXformable
+)
+
+pxr_build_test(testExecGeomXformable_Perf
+    LIBRARIES
+        tf
+        trace
+        esf
+        exec
+        execGeom
+        execUsd
+        sdf
+        usd
+        usdGeom
+    CPPFILES
+        testenv/testExecGeomXformable_Perf.cpp
+)
+
+pxr_register_test(testExecGeomXformable_Perf
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf 5 7"
+    EXPECTED_RETURN_CODE 0
 )
