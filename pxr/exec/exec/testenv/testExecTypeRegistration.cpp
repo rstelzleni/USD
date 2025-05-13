@@ -7,13 +7,16 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/typeRegistry.h"
+#include "pxr/exec/exec/valueExtractor.h"
 
 #include "pxr/usd/sdf/timeCode.h"
 #include "pxr/usd/sdf/types.h"
 
 #include "pxr/base/gf/vec3d.h"
 #include "pxr/base/tf/diagnostic.h"
+#include "pxr/base/tf/errorMark.h"
 #include "pxr/base/tf/stringUtils.h"
+#include "pxr/base/tf/type.h"
 #include "pxr/base/vt/types.h"
 
 PXR_NAMESPACE_USING_DIRECTIVE
@@ -38,6 +41,19 @@ struct TestExecTypeRegistrationValue
         return true;
     }
 };
+
+// A type that is not registered with the execution type registry.
+struct TestExecTypeRegistrationUnregistered
+{
+    bool operator==(const TestExecTypeRegistrationUnregistered &) const {
+        return true;
+    }
+};
+
+TF_REGISTRY_FUNCTION(TfType)
+{
+    TfType::Define<TestExecTypeRegistrationUnregistered>();
+}
 
 static void
 TestBasicRegistration()
@@ -192,11 +208,103 @@ TestCreateVector()
     }
 }
 
+static void
+TestExtractValue()
+{
+    const auto &reg = ExecTypeRegistry::GetInstance();
+
+    // Get the extractors for GfVec3d and VtArray<GfVec3d>.
+    const auto vec3dExtractor = reg.GetExtractor(TfType::Find<GfVec3d>());
+    const auto vec3dArrayExtractor = reg.GetExtractor(
+        TfType::Find<VtArray<GfVec3d>>());
+    TF_AXIOM(vec3dExtractor);
+    TF_AXIOM(vec3dArrayExtractor);
+
+    // Construct a vector of one element and a vector of many (three)
+    // elements.
+    const VdfVector single = VdfTypedVector<GfVec3d>(GfVec3d(-1.));
+    const VdfVector many = [] {
+        const size_t len = 3;
+        VdfVector vec = VdfTypedVector<GfVec3d>::CreateWithSize(len);
+        auto accessor = vec.GetReadWriteAccessor<GfVec3d>();
+        for (size_t i=0; i<len; ++i) {
+            accessor[i] = GfVec3d(-1.*i);
+        }
+        return vec;
+    }();
+
+    const VdfMask singleMask = VdfMask::AllOnes(1);
+    const VdfMask manyMask = VdfMask::AllOnes(many.GetSize());
+
+    // Test extracting a value from a vector of length 1 into VtValue as a
+    // scalar.
+    {
+        const VtValue val = vec3dExtractor(single, singleMask);
+        TF_AXIOM(val.IsHolding<GfVec3d>());
+        const GfVec3d &vec = val.UncheckedGet<GfVec3d>();
+        ASSERT_EQ(vec, GfVec3d(-1.));
+    }
+
+    // Test extracting a value from a vector of length 1 into VtValue as an
+    // array.
+    {
+        const VtValue val = vec3dArrayExtractor(single, singleMask);
+        TF_AXIOM(val.IsHolding<VtArray<GfVec3d>>());
+        const VtArray<GfVec3d> &arr = val.UncheckedGet<VtArray<GfVec3d>>();
+        ASSERT_EQ(arr[0], GfVec3d(-1.));
+    }
+
+    // Test extracting a value from a vector of length 3 into VtValue as an
+    // array.
+    {
+        const VtValue val = vec3dArrayExtractor(many, manyMask);
+        TF_AXIOM(val.IsHolding<VtArray<GfVec3d>>());
+        const VtArray<GfVec3d> &arr = val.UncheckedGet<VtArray<GfVec3d>>();
+        ASSERT_EQ(arr[0], GfVec3d(-0.));
+        ASSERT_EQ(arr[1], GfVec3d(-1.));
+        ASSERT_EQ(arr[2], GfVec3d(-2.));
+    }
+
+    // Test extracting a single value from a vector of length 3 into a VtValue
+    // as a scalar.
+    {
+        VdfMask mask(many.GetSize());
+        mask.SetIndex(1);
+        const VtValue val = vec3dExtractor(many, mask);
+        TF_AXIOM(val.IsHolding<GfVec3d>());
+        const GfVec3d &vec = val.UncheckedGet<GfVec3d>();
+        ASSERT_EQ(vec, GfVec3d(-1.));
+    }
+
+    // Test looking up an extractor for the unknown type.
+    {
+        TfErrorMark m;
+        const auto unknownExtractor = reg.GetExtractor(TfType());
+        TF_AXIOM(!m.IsClean());
+        m.Clear();
+        TF_AXIOM(!unknownExtractor);
+    }
+
+    // Test looking up an extractor for a type that is known to TfType
+    // but is not an execution type.
+    {
+        const TfType t = TfType::Find<TestExecTypeRegistrationUnregistered>();
+        TF_AXIOM(t);
+
+        TfErrorMark m;
+        const auto invalidExtractor = reg.GetExtractor(t);
+        TF_AXIOM(!m.IsClean());
+        m.Clear();
+        TF_AXIOM(!invalidExtractor);
+    }
+}
+
 int
 main()
 {
     TestBasicRegistration();
     TestCreateVector();
+    TestExtractValue();
 
     return 0;
 }

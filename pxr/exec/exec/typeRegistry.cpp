@@ -7,8 +7,10 @@
 #include "pxr/exec/exec/typeRegistry.h"
 
 #include "pxr/exec/exec/registrationBarrier.h"
+#include "pxr/exec/exec/valueExtractor.h"
 
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/vdf/mask.h"
 
 #include "pxr/usd/sdf/path.h"
 #include "pxr/usd/sdf/schema.h"
@@ -100,6 +102,32 @@ ExecTypeRegistry::CreateVector(const VtValue &value) const
             return _CreateVector<T>::Create(value);
         }
     });
+}
+
+Exec_ValueExtractor
+ExecTypeRegistry::GetExtractor(const TfType type) const
+{
+    if (const auto it = _extractors.find(type); it != _extractors.end()) {
+        return it->second;
+    }
+
+    // We could check for an unknown type before looking up in extractors but
+    // finding a known type is the expected case so we always do that first.
+    if (type) {
+        TF_CODING_ERROR("No extractor found for type '%s'",
+                        type.GetTypeName().c_str());
+    }
+    else {
+        TF_CODING_ERROR("No extractor found for unknown type");
+    }
+    return Exec_ValueExtractor();
+}
+
+void
+ExecTypeRegistry::_RegisterExtractor(
+    const TfType type, const Exec_ValueExtractorFunction &extractor)
+{
+    _extractors.emplace(type, extractor);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

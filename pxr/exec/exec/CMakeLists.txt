@@ -23,6 +23,7 @@ pxr_library(exec
         registerSchema.h
         request.h
         types.h
+        valueExtractorFunction.h
 
     PUBLIC_CLASSES
         builtinComputations
@@ -63,6 +64,7 @@ pxr_library(exec
         uncompilationRuleSet
         uncompilationTable
         uncompiler
+        valueExtractor
 
     RESOURCE_FILES
         plugInfo.json
