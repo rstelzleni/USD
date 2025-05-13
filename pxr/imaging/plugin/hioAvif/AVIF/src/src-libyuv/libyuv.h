@@ -11,11 +11,11 @@
 #ifndef INCLUDE_LIBYUV_H_
 #define INCLUDE_LIBYUV_H_
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/planar_functions.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/row.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale_row.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/version.h"
+#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "AVIF/src/src-libyuv/libyuv/planar_functions.h"
+#include "AVIF/src/src-libyuv/libyuv/row.h"
+#include "AVIF/src/src-libyuv/libyuv/scale.h"
+#include "AVIF/src/src-libyuv/libyuv/scale_row.h"
+#include "AVIF/src/src-libyuv/libyuv/version.h"
 
 #endif  // INCLUDE_LIBYUV_H_

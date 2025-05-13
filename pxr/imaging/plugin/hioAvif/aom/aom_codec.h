@@ -97,8 +97,8 @@
 extern "C" {
 #endif
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_image.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aom_integer.h"
+#include "aom/aom_image.h"
+#include "aom/aom_integer.h"
 
 /*!\brief Decorator indicating a function is deprecated */
 #ifndef AOM_DEPRECATED

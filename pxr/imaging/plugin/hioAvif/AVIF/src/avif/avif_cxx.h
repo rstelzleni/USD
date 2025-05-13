@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/avif.h"
+#include "AVIF/src/avif/avif.h"
 
 namespace avif
 {

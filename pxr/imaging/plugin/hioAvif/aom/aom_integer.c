@@ -10,7 +10,7 @@
  */
 #include <assert.h>
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_integer.h"
+#include "aom/aom_integer.h"
 
 static const size_t kMaximumLeb128Size = 8;
 static const uint8_t kLeb128ByteMask = 0x7f;  // Binary: 01111111

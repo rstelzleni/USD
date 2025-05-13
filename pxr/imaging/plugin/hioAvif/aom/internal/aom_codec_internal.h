@@ -45,9 +45,9 @@
  */
 #ifndef AOM_AOM_INTERNAL_AOM_CODEC_INTERNAL_H_
 #define AOM_AOM_INTERNAL_AOM_CODEC_INTERNAL_H_
-#include "pxr/imaging/plugin/hioAvif/aom/aom_decoder.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aom_encoder.h"
-#include "pxr/imaging/plugin/hioAvif/aom/internal/common/args_helper.h"
+#include "aom/aom_decoder.h"
+#include "aom/aom_encoder.h"
+#include "aom/internal/common/args_helper.h"
 #include <stdarg.h>
 
 #ifdef __cplusplus

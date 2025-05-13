@@ -17,7 +17,7 @@
 #ifndef AOM_AOM_INTERNAL_AOM_IMAGE_INTERNAL_H_
 #define AOM_AOM_INTERNAL_AOM_IMAGE_INTERNAL_H_
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_image.h"
+#include "aom/aom_image.h"
 
 #ifdef __cplusplus
 extern "C" {

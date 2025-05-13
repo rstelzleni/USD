@@ -30,7 +30,7 @@ ARCH_PRAGMA_UNUSED_FUNCTION
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/tf/type.h"
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/avif.h"
+#include "AVIF/src/avif/avif.h"
 
 #if defined(PXR_STATIC)
 #   define HIOAVIF_API

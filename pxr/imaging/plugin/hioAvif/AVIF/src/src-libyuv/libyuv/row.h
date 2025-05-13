@@ -14,7 +14,7 @@
 #include <stddef.h>  // For NULL
 #include <stdlib.h>  // For malloc
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
 
 #define align_buffer_64(var, size)                                         \
   void* var##_mem = malloc((size) + 63);                      /* NOLINT */ \

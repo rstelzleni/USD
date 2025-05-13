@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale.h"
+#include "AVIF/src/src-libyuv/libyuv/scale.h"
 
 #include <assert.h>
 #include <string.h>
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/planar_functions.h"  // For CopyARGB
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/row.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale_row.h"
+#include "AVIF/src/src-libyuv/libyuv/planar_functions.h"  // For CopyARGB
+#include "AVIF/src/src-libyuv/libyuv/row.h"
+#include "AVIF/src/src-libyuv/libyuv/scale_row.h"
 
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;

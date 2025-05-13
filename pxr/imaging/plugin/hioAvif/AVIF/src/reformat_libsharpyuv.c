@@ -1,7 +1,7 @@
 // Copyright 2022 Google LLC
 // SPDX-License-Identifier: BSD-2-Clause
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/internal.h"
+#include "AVIF/src/avif/internal.h"
 
 #if defined(AVIF_LIBSHARPYUV_ENABLED)
 #include <sharpyuv/sharpyuv.h>

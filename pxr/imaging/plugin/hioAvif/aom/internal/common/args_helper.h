@@ -12,7 +12,7 @@
 #ifndef AOM_COMMON_ARGS_HELPER_H_
 #define AOM_COMMON_ARGS_HELPER_H_
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_encoder.h"
+#include "aom/aom_encoder.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,7 @@
 // Copyright 2021 Joe Drago. All rights reserved.
 // SPDX-License-Identifier: BSD-2-Clause
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/internal.h"
+#include "AVIF/src/avif/internal.h"
 
 #include <stdarg.h>
 #include <stdio.h>

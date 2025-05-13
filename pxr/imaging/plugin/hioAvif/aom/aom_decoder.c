@@ -14,7 +14,7 @@
  *
  */
 #include <string.h>
-#include "pxr/imaging/plugin/hioAvif/aom/internal/aom_codec_internal.h"
+#include "aom/internal/aom_codec_internal.h"
 
 #define SAVE_STATUS(ctx, var) (ctx ? (ctx->err = var) : var)
 

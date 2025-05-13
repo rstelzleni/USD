@@ -11,7 +11,7 @@
 #ifndef INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 #define INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
 
 void CopyPlane(const uint8_t* src_y,
                int src_stride_y,

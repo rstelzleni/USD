@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_integer.h"
+#include "aom/aom_integer.h"
 
 /*!\brief Current ABI version number
  *

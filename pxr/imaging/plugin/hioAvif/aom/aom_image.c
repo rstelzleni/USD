@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_image.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aom_integer.h"
-#include "pxr/imaging/plugin/hioAvif/aom/internal/aom_image_internal.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aom_mem/aom_mem.h"
+#include "aom/aom_image.h"
+#include "aom/aom_integer.h"
+#include "aom/internal/aom_image_internal.h"
+#include "aom_mem/aom_mem.h"
 
 static INLINE unsigned int align_image_dimension(unsigned int d,
                                                  unsigned int subsampling,

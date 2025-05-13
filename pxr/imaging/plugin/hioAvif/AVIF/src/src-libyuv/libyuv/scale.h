@@ -11,7 +11,7 @@
 #ifndef INCLUDE_LIBYUV_SCALE_H_
 #define INCLUDE_LIBYUV_SCALE_H_
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
 
 // Supported filtering.
 typedef enum FilterMode {

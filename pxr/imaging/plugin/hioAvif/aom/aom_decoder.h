@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-#include "pxr/imaging/plugin/hioAvif/aom/aom_codec.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aom_frame_buffer.h"
+#include "aom/aom_codec.h"
+#include "aom/aom_frame_buffer.h"
 
 /*!\brief Current ABI version number
  *

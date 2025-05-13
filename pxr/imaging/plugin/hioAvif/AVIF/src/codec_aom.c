@@ -1,7 +1,7 @@
 // Copyright 2019 Joe Drago. All rights reserved.
 // SPDX-License-Identifier: BSD-2-Clause
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/internal.h"
+#include "AVIF/src/avif/internal.h"
 
 // These are for libaom to deal with
 #ifdef __clang__
@@ -12,13 +12,13 @@
 #endif
 
 #if defined(AVIF_CODEC_AOM_ENCODE)
-#include "pxr/imaging/plugin/hioAvif/aom/aom_encoder.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aomcx.h"
+#include "aom/aom_encoder.h"
+#include "aom/aomcx.h"
 #endif
 
 #if defined(AVIF_CODEC_AOM_DECODE)
-#include "pxr/imaging/plugin/hioAvif/aom/aom_decoder.h"
-#include "pxr/imaging/plugin/hioAvif/aom/aomdx.h"
+#include "aom/aom_decoder.h"
+#include "aom/aomdx.h"
 #endif
 
 #ifdef __clang__

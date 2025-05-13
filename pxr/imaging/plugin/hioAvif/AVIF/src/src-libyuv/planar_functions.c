@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/planar_functions.h"
+#include "AVIF/src/src-libyuv/libyuv/planar_functions.h"
 
 #include <assert.h>
 #include <string.h>  // for memset()
 
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/row.h"
-#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale_row.h"  // for ScaleRowDown2
+#include "AVIF/src/src-libyuv/libyuv/row.h"
+#include "AVIF/src/src-libyuv/libyuv/scale_row.h"  // for ScaleRowDown2
 
 // Copy a plane of data
 void CopyPlane(const uint8_t* src_y,
