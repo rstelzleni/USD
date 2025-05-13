@@ -47,13 +47,13 @@ Exec_OutputProvidingCompilationTask::_Compile(
                 *_outputKey.GetProviderObject(),
                 &_nodeJournal);
 
-        _inputSources.resize(_inputKeys.size());
-        _inputJournals.resize(_inputKeys.size());
-        const size_t numInputKeys = _inputKeys.size();
+        const size_t numInputKeys = _inputKeys->Get().size();
+        _inputSources.resize(numInputKeys);
+        _inputJournals.resize(numInputKeys);
         for (size_t i = 0; i < numInputKeys; ++i) {
             deps.NewSubtask<Exec_InputResolvingCompilationTask>(
                 compilationState,
-                _inputKeys[i],
+                _inputKeys->Get()[i],
                 _outputKey.GetProviderObject(),
                 &_inputSources[i],
                 &_inputJournals[i]);
@@ -84,7 +84,7 @@ Exec_OutputProvidingCompilationTask::_Compile(
                 _inputJournals[i],
                 _inputSources[i],
                 node,
-                _inputKeys[i].inputName);
+                _inputKeys->Get()[i].inputName);
         }
 
         // Return the compiled output to the calling task.

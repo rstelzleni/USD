@@ -9,6 +9,7 @@
 #include "pxr/exec/exec/callbackNode.h"
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/base/tf/delegatedCountPtr.h"
 #include "pxr/exec/vdf/connectorSpecs.h"
 
 #include <utility>
@@ -45,18 +46,18 @@ Exec_PluginComputationDefinition::Exec_PluginComputationDefinition(
     TfType resultType,
     const TfToken &computationName,
     ExecCallbackFn &&callback,
-    Exec_InputKeyVector &&inputKeys)
+    Exec_InputKeyVectorRefPtr &&inputKeys)
     : Exec_ComputationDefinition(
         resultType,
         computationName)
     , _callback(std::move(callback))
-    , _inputKeys(std::move(inputKeys))
+    , _inputKeys(inputKeys)
 {
 }
 
 Exec_PluginComputationDefinition::~Exec_PluginComputationDefinition() = default;
 
-Exec_InputKeyVector
+Exec_InputKeyVectorConstRefPtr
 Exec_PluginComputationDefinition::GetInputKeys(
     const EsfObjectInterface &,
     EsfJournal *) const
@@ -80,8 +81,8 @@ Exec_PluginComputationDefinition::CompileNode(
     }
 
     VdfInputSpecs inputSpecs;
-    inputSpecs.Reserve(_inputKeys.size());
-    for (const Exec_InputKey &inputKey : _inputKeys) {
+    inputSpecs.Reserve(_inputKeys->Get().size());
+    for (const Exec_InputKey &inputKey : _inputKeys->Get()) {
         inputSpecs.ReadConnector(inputKey.resultType, inputKey.inputName);
     }
 

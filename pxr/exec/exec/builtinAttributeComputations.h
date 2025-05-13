@@ -8,6 +8,7 @@
 #define PXR_EXEC_EXEC_BUILTIN_ATTRIBUTE_COMPUTATIONS_H
 
 #include "pxr/exec/exec/computationDefinition.h"
+#include "pxr/exec/exec/inputKey.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -29,7 +30,7 @@ public:
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const override;
 
-    Exec_InputKeyVector GetInputKeys(
+    Exec_InputKeyVectorConstRefPtr GetInputKeys(
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const override;
 
@@ -37,6 +38,12 @@ public:
         const EsfObjectInterface &providerObject,
         EsfJournal *nodeJournal,
         Exec_Program *program) const override;
+
+private:
+    static Exec_InputKeyVectorConstRefPtr _MakeInputKeys();
+
+private:
+    const Exec_InputKeyVectorConstRefPtr _inputKeys;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -52,10 +52,15 @@ public:
     /// Returns the keys that indicate how to source the input values required
     /// to evaluate the computation when the provider is \p providerObject.
     ///
+    /// Keys are returned by a reference-counted pointer. The keys may be shared
+    /// by the definition, or they may be created specifically for the
+    /// given \p providerObject. If the definition has no inputs, this returns
+    /// a valid pointer to an empty vector. It never returns a null pointer.
+    ///
     /// Any scene access needed to determine the input keys is recorded in
     /// \p journal.
     ///
-    virtual Exec_InputKeyVector GetInputKeys(
+    virtual Exec_InputKeyVectorConstRefPtr GetInputKeys(
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const = 0;
 
@@ -101,11 +106,11 @@ public:
         TfType resultType,
         const TfToken &computationName,
         ExecCallbackFn &&callback,
-        Exec_InputKeyVector &&inputKeys);
+        Exec_InputKeyVectorRefPtr &&inputKeys);
 
     ~Exec_PluginComputationDefinition() override;
 
-    Exec_InputKeyVector GetInputKeys(
+    Exec_InputKeyVectorConstRefPtr GetInputKeys(
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const override;
 
@@ -116,7 +121,7 @@ public:
 
 private:
     const ExecCallbackFn _callback;
-    const Exec_InputKeyVector _inputKeys;
+    const Exec_InputKeyVectorConstRefPtr _inputKeys;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

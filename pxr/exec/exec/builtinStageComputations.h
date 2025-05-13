@@ -26,7 +26,7 @@ public:
     
     ~Exec_TimeComputationDefinition() override;
 
-    Exec_InputKeyVector GetInputKeys(
+    Exec_InputKeyVectorConstRefPtr GetInputKeys(
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const override;
 

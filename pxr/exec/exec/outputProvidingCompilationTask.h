@@ -54,7 +54,7 @@ private:
 
     // The input keys, which are recorded during the first stage of this task,
     // and queried during the second stage.
-    Exec_InputKeyVector _inputKeys;
+    Exec_InputKeyVectorConstRefPtr _inputKeys;
 
     // Some nodes only have one input, and many inputs only source from one
     // output, hence the choice of TfSmallVector.

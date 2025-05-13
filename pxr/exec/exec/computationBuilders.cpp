@@ -78,6 +78,7 @@ struct Exec_PrimComputationBuilder::_Data
         const TfToken &computationName_)
     : schemaType(schemaType_)
     , computationName(computationName_)
+    , inputKeys(Exec_InputKeyVector::MakeShared())
     {
     }
 
@@ -85,7 +86,7 @@ struct Exec_PrimComputationBuilder::_Data
     const TfToken computationName;
     TfType resultType;
     ExecCallbackFn callback;
-    Exec_InputKeyVector inputKeys;
+    Exec_InputKeyVectorRefPtr inputKeys;
 };
 
 Exec_PrimComputationBuilder::Exec_PrimComputationBuilder(
@@ -118,8 +119,8 @@ void
 Exec_PrimComputationBuilder::_AddInputKey(
     const Exec_ComputationBuilderValueSpecifierBase *const valueSpecifier)
 {
-    _data->inputKeys.push_back({});
-    valueSpecifier->_GetInputKey(&_data->inputKeys.back());
+    _data->inputKeys->Get().push_back({});
+    valueSpecifier->_GetInputKey(&_data->inputKeys->Get().back());
 }
 
 //

@@ -24,7 +24,6 @@
 
 #include <memory>
 #include <set>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -89,7 +88,7 @@ public:
             const TfToken &computationName,
             TfType resultType,
             ExecCallbackFn &&callback,
-            Exec_InputKeyVector &&inputKeys);
+            Exec_InputKeyVectorRefPtr &&inputKeys);
     };
 
 private:
@@ -131,7 +130,7 @@ private:
         const TfToken &computationName,
         TfType resultType,
         ExecCallbackFn &&callback,
-        Exec_InputKeyVector &&inputKeys);
+        Exec_InputKeyVectorRefPtr &&inputKeys);
 
     void _RegisterBuiltinStageComputation(
         const TfToken &computationName,
@@ -215,7 +214,7 @@ _RegisterPrimComputation(
     const TfToken &computationName,
     TfType resultType,
     ExecCallbackFn &&callback,
-    Exec_InputKeyVector &&inputKeys)
+    Exec_InputKeyVectorRefPtr &&inputKeys)
 {
     _GetInstanceForRegistration()._RegisterPrimComputation(
         schemaType,

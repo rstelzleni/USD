@@ -308,7 +308,7 @@ TestComputationRegistration()
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(
-            primCompDef->GetInputKeys(*prim, nullJournal).size(),
+            primCompDef->GetInputKeys(*prim, nullJournal)->Get().size(),
             0);
     }
 
@@ -320,7 +320,7 @@ TestComputationRegistration()
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(
-            primCompDef->GetInputKeys(*prim, nullJournal).size(),
+            primCompDef->GetInputKeys(*prim, nullJournal)->Get().size(),
             0);
     }
 
@@ -332,7 +332,7 @@ TestComputationRegistration()
         TF_AXIOM(primCompDef);
 
         ASSERT_EQ(
-            primCompDef->GetInputKeys(*prim, nullJournal).size(),
+            primCompDef->GetInputKeys(*prim, nullJournal)->Get().size(),
             0);
     }
 
@@ -353,13 +353,13 @@ TestComputationRegistration()
 
         const auto inputKeys =
             primCompDef->GetInputKeys(*prim, nullJournal);
-        ASSERT_EQ(inputKeys.size(), 4);
+        ASSERT_EQ(inputKeys->Get().size(), 4);
 
-        _PrintInputKeys(inputKeys);
+        _PrintInputKeys(inputKeys->Get());
 
         size_t index = 0;
         {
-            const Exec_InputKey &key = inputKeys[index++];
+            const Exec_InputKey &key = inputKeys->Get()[index++];
             ASSERT_EQ(key.inputName, _tokens->primComputation);
             ASSERT_EQ(key.computationName, _tokens->primComputation);
             ASSERT_EQ(key.resultType, TfType::Find<double>());
@@ -370,7 +370,7 @@ TestComputationRegistration()
         }
 
         {
-            const Exec_InputKey &key = inputKeys[index++];
+            const Exec_InputKey &key = inputKeys->Get()[index++];
             ASSERT_EQ(key.inputName, _tokens->attributeComputation);
             ASSERT_EQ(key.computationName, _tokens->attributeComputation);
             ASSERT_EQ(key.resultType, TfType::Find<int>());
@@ -382,7 +382,7 @@ TestComputationRegistration()
         }
 
         {
-            const Exec_InputKey &key = inputKeys[index++];
+            const Exec_InputKey &key = inputKeys->Get()[index++];
             ASSERT_EQ(key.inputName, _tokens->attributeName);
             ASSERT_EQ(
                 key.computationName, ExecBuiltinComputations->computeValue);
@@ -395,7 +395,7 @@ TestComputationRegistration()
         }
 
         {
-            const Exec_InputKey &key = inputKeys[index++];
+            const Exec_InputKey &key = inputKeys->Get()[index++];
             ASSERT_EQ(key.inputName, _tokens->namespaceAncestorInput);
             ASSERT_EQ(key.computationName, _tokens->primComputation);
             ASSERT_EQ(key.resultType, TfType::Find<bool>());
@@ -415,11 +415,11 @@ TestComputationRegistration()
 
         const auto inputKeys =
             primCompDef->GetInputKeys(*prim, nullJournal);
-        ASSERT_EQ(inputKeys.size(), 1);
+        ASSERT_EQ(inputKeys->Get().size(), 1);
 
-        _PrintInputKeys(inputKeys);
+        _PrintInputKeys(inputKeys->Get());
 
-        const Exec_InputKey &key = inputKeys[0];
+        const Exec_InputKey &key = inputKeys->Get()[0];
         ASSERT_EQ(key.inputName, ExecBuiltinComputations->computeTime);
         ASSERT_EQ(key.computationName, ExecBuiltinComputations->computeTime);
         ASSERT_EQ(key.resultType, TfType::Find<EfTime>());
@@ -438,11 +438,11 @@ TestComputationRegistration()
 
         const auto inputKeys =
             primCompDef->GetInputKeys(*prim, nullJournal);
-        ASSERT_EQ(inputKeys.size(), 1);
+        ASSERT_EQ(inputKeys->Get().size(), 1);
 
-        _PrintInputKeys(inputKeys);
+        _PrintInputKeys(inputKeys->Get());
 
-        const Exec_InputKey &key = inputKeys[0];
+        const Exec_InputKey &key = inputKeys->Get()[0];
         ASSERT_EQ(key.inputName, ExecBuiltinComputations->computeValue);
         ASSERT_EQ(key.computationName, ExecBuiltinComputations->computeValue);
         ASSERT_EQ(key.resultType, TfType::Find<double>());
@@ -485,7 +485,7 @@ TestDerivedSchemaComputationRegistration()
         // stronger one).
         const auto inputKeys =
             primCompDef->GetInputKeys(*prim, nullJournal);
-        ASSERT_EQ(inputKeys.size(), 1);
+        ASSERT_EQ(inputKeys->Get().size(), 1);
     }
 
     {

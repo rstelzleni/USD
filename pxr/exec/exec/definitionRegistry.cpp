@@ -217,7 +217,7 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
     const TfToken &computationName,
     TfType resultType,
     ExecCallbackFn &&callback,
-    Exec_InputKeyVector &&inputKeys)
+    Exec_InputKeyVectorRefPtr &&inputKeys)
 {
     if (schemaType.IsUnknown()) {
         TF_CODING_ERROR(
