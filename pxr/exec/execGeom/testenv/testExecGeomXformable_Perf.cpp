@@ -22,6 +22,7 @@
 #include "pxr/usd/sdf/path.h"
 #include "pxr/usd/usd/stage.h"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
@@ -69,7 +70,7 @@ _CreatePrimsRecursive(
                 SdfGetValueTypeNameForValue(transformValue));
         transformAttr->SetDefaultValue(transformValue);
 
-        if (currentDepth == treeDepth) {
+        if (currentDepth+1 == treeDepth) {
             leafPrims->push_back(primSpec->GetPath());
         }
 
@@ -183,6 +184,9 @@ TestExecGeomXformable_Perf(
     std::vector<SdfPath> leafPrims;
     const UsdStageConstRefPtr usdStage =
         _CreateStage(branchingFactor, treeDepth, &leafPrims);
+
+    // Make sure we ended up with the correct number of leaf nodes.
+    TF_AXIOM(leafPrims.size() == std::pow(branchingFactor, treeDepth-1));
 
     TraceCollector::GetInstance().SetEnabled(true);
 
