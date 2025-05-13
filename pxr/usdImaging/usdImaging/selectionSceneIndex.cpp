@@ -913,6 +913,8 @@ UsdImagingSelectionSceneIndex::ClearSelection()
 
     HdSceneIndexObserver::DirtiedPrimEntries entries;
     if (_IsObserved()) {
+        TRACE_FUNCTION_SCOPE("_Create prims dirtied entries");
+
         entries.reserve(_selectionInfo->primToSelections.size());
         for (const auto &primAndSelections : _selectionInfo->primToSelections) {
             static const HdDataSourceLocatorSet locators{
