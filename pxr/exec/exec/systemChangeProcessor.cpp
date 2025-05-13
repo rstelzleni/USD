@@ -11,7 +11,6 @@
 
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/smallVector.h"
-#include "pxr/exec/ef/timeInterval.h"
 #include "pxr/usd/sdf/path.h"
 #include "pxr/usd/sdf/schema.h"
 
@@ -22,9 +21,9 @@ struct ExecSystem::_ChangeProcessor::_State {
         : uncompiler(system->_program.get())
     {}
 
-    // Accumulate invalid authored values so that program and executor
-    // invalidation can be batch-processed.
-    TfSmallVector<ExecInvalidAuthoredValue, 1> invalidAuthoredValues;
+    // Accumulate scene paths to attributes with invalid authored values, so
+    // that program and executor invalidation can be batch-processed.
+    TfSmallVector<SdfPath, 1> attributesWithInvalidAuthoredValues;
     
     Exec_Uncompiler uncompiler;
 };
@@ -58,24 +57,15 @@ ExecSystem::_ChangeProcessor::DidChangeInfoOnly(
     const TfTokenVector &changedFields)
 {
     if (path.IsPropertyPath()) {
+        bool didRecordAuthoredValueChange = false;
         for (const TfToken &field : changedFields) {
-            if (field == SdfFieldKeys->Default) {
-                _state->invalidAuthoredValues.emplace_back(
-                    path, EfTimeInterval::GetFullInterval());
+            if (!didRecordAuthoredValueChange &&
+                    (field == SdfFieldKeys->Default ||
+                    field == SdfFieldKeys->Spline ||
+                    field == SdfFieldKeys->TimeSamples)) {
+                _state->attributesWithInvalidAuthoredValues.push_back(path);
+                didRecordAuthoredValueChange = true;
             }
-
-            else if (field == SdfFieldKeys->Spline) {
-                // TODO: Determine changed interval based on previous spline
-                // value.
-                _state->invalidAuthoredValues.emplace_back(
-                    path, EfTimeInterval::GetFullInterval());
-            }
-
-            else if (field == SdfFieldKeys->TimeSamples) {
-                _state->invalidAuthoredValues.emplace_back(
-                    path, EfTimeInterval::GetFullInterval());
-            }
-
         }
     }
 }
@@ -83,8 +73,9 @@ ExecSystem::_ChangeProcessor::DidChangeInfoOnly(
 void
 ExecSystem::_ChangeProcessor::_PostProcessChanges()
 {
-    if (!_state->invalidAuthoredValues.empty()) {
-        _system->_InvalidateAuthoredValues(_state->invalidAuthoredValues);
+    if (!_state->attributesWithInvalidAuthoredValues.empty()) {
+        _system->_InvalidateAuthoredValues(
+            _state->attributesWithInvalidAuthoredValues);
     }
 }
 

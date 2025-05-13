@@ -15,7 +15,6 @@
 #include "pxr/exec/vdf/tokens.h"
 
 #include "pxr/base/vt/value.h"
-#include "pxr/usd/sdf/valueTypeName.h"
 #include "pxr/usd/usd/timeCode.h"
 
 #include <utility>
@@ -27,42 +26,44 @@ TF_DEFINE_PUBLIC_TOKENS(
 
 Exec_AttributeInputNode::Exec_AttributeInputNode(
     VdfNetwork *const network,
-    EsfAttribute &&attribute,
-    EsfJournal *const journal)
+    EsfAttributeQuery &&attributeQuery,
+    TfType valueType)
     : VdfNode(
         network,
         VdfInputSpecs().ReadConnector(
             TfType::Find<EfTime>(),
             Exec_AttributeInputNodeTokens->time),
         VdfOutputSpecs().Connector(
-            attribute->GetValueTypeName(journal)
-                .GetScalarType().GetType(),
+            valueType,
             TfToken(VdfTokens->out)))
-    , _attribute(std::move(attribute))
+    , _attributeQuery(std::move(attributeQuery))
+    , _isTimeDependent(false)
 {
+    UpdateTimeDependence();
 }
 
 Exec_AttributeInputNode::~Exec_AttributeInputNode() = default;
 
-bool
-Exec_AttributeInputNode::IsTimeVarying(
-    const EfTime &from,
-    const EfTime &to) const
+void
+Exec_AttributeInputNode::UpdateValueResolutionState()
 {
-    if (!_attribute->ValueMightBeTimeVarying()) {
-        return false;
-    }
-
-    VtValue fromValue, toValue;
-    _attribute->Get(&fromValue, from.GetTimeCode());
-    _attribute->Get(&toValue, to.GetTimeCode());
-    return fromValue != toValue;
+    _attributeQuery->Initialize();
+    TF_VERIFY(_attributeQuery->IsValid());
 }
 
 bool
-Exec_AttributeInputNode::MaybeTimeVarying() const
+Exec_AttributeInputNode::UpdateTimeDependence()
 {
-    return _attribute->ValueMightBeTimeVarying();
+    const bool wasTimeDependent = _isTimeDependent;
+    _isTimeDependent = _attributeQuery->ValueMightBeTimeVarying();
+    return wasTimeDependent != _isTimeDependent;
+}
+
+bool
+Exec_AttributeInputNode::IsTimeVarying(
+    const EfTime &from, const EfTime &to) const
+{
+    return _attributeQuery->IsTimeVarying(from.GetTimeCode(), to.GetTimeCode());
 }
 
 void
@@ -71,7 +72,7 @@ Exec_AttributeInputNode::Compute(VdfContext const &context) const
     const UsdTimeCode time = context.GetInputValue<EfTime>(
         Exec_AttributeInputNodeTokens->time).GetTimeCode();
 
-    if (VtValue resolvedValue; _attribute->Get(&resolvedValue, time)) {
+    if (VtValue resolvedValue; _attributeQuery->Get(&resolvedValue, time)) {
         VdfRawValueAccessor(context).SetOutputVector(
             *GetOutput(VdfTokens->out),
             VdfMask::AllOnes(1),
@@ -112,7 +113,7 @@ Exec_AttributeInputNode::_ComputeOutputDependencyMask(
     
     // If the node is potentially time-varying, there is a dependency.
     // Otherwise, there is not.
-    return MaybeTimeVarying() ? VdfMask::AllOnes(1) : VdfMask();
+    return IsTimeDependent() ? VdfMask::AllOnes(1) : VdfMask();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

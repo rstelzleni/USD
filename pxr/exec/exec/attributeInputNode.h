@@ -9,15 +9,17 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/attributeQuery.h"
 #include "pxr/exec/vdf/node.h"
 
 #include "pxr/base/tf/staticTokens.h"
+#include "pxr/base/ts/spline.h"
+
+#include <optional>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 class EfTime;
-class EsfJournal;
 
 #define EXEC_ATTRIBUTE_INPUT_NODE_TOKENS  \
     (time)
@@ -29,37 +31,55 @@ TF_DECLARE_PUBLIC_TOKENS(
 class Exec_AttributeInputNode final : public VdfNode
 {
 public:
-    /// Create a node that provides the resolved value of \p attribute at the
-    /// current evaluation time.
+    /// Create a node that provides the resolved value through \p attributeQuery
+    /// at the current evaluation time.
     ///
     Exec_AttributeInputNode(
         VdfNetwork *network,
-        EsfAttribute &&attribute,
-        EsfJournal *journal);
+        EsfAttributeQuery &&attributeQuery,
+        TfType valueType);
 
     ~Exec_AttributeInputNode() override;
+
+    /// Update the internal state to ensure that resolved values are sourced
+    /// correctly.
+    /// 
+    /// Where resolved values for the corresponding attribute come from can be
+    /// affected by scene changes, such as info changes.
+    /// 
+    void UpdateValueResolutionState();
 
     /// Returns the scene path to the attribute that the input value is sourced
     /// from.
     /// 
     SdfPath GetAttributePath() const {
-        return _attribute->GetPath(nullptr);
+        return _attributeQuery->GetPath();
     }
 
-    /// Returns `true` if the resolved value of the attribute is different on
-    /// time \p from and time \p to.
-    /// 
-    /// \note
-    /// This does *not* examine times between \p from and \p to in order to
-    /// determine if there is a difference in resolved values on in-between
-    /// times.
+    /// Updates the input's time dependence.
     ///
+    /// This queries the corresponding attribute to determine whether it is
+    /// time dependent and returns `true` if there was a change in time
+    /// dependence.
+    ///
+    bool UpdateTimeDependence();
+
+    /// Returns `true` if the input is time dependent.
+    bool IsTimeDependent() const {
+        return _isTimeDependent;
+    }
+
+    /// Returns `true` if the resolved input value at time \p from is different
+    /// from the value at time \p to.
+    /// 
     bool IsTimeVarying(const EfTime &from, const EfTime &to) const;
 
-    /// Returns `true` if the attribute might be time-varying, and returns
-    /// `false` if the attribute is definitely not time-varying.
-    ///
-    bool MaybeTimeVarying() const;
+    /// Returns the corresponding attribute's spline, if the strongest opinion
+    /// resolves to a spline.
+    /// 
+    std::optional<TsSpline> GetSpline() const {
+        return _attributeQuery->GetSpline();
+    }
 
     /// VdfNode::Compute() override.
     void Compute(VdfContext const& ctx) const override;
@@ -77,9 +97,11 @@ private:
         const VdfOutput &output) const override;
 
 private:
-    // TODO: Long-term, we will need some kind of handle to the attribute that
-    // is stable across namespace edits.
-    const EsfAttribute _attribute;
+    // TODO: Once we stop treating namespace edits as resyncs, we will need to
+    // re-initialize the attribute query in response to edits like rename and
+    // reparent.
+    EsfAttributeQuery _attributeQuery;
+    bool _isTimeDependent;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

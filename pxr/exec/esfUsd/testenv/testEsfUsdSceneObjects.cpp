@@ -12,13 +12,17 @@
 #include "pxr/base/tf/token.h"
 #include "pxr/base/tf/type.h"
 #include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/attributeQuery.h"
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/prim.h"
 #include "pxr/exec/esf/property.h"
 #include "pxr/exec/esf/stage.h"
 #include "pxr/usd/sdf/layer.h"
 #include "pxr/usd/sdf/types.h"
+#include "pxr/usd/usd/attribute.h"
+#include "pxr/usd/usd/attributeQuery.h"
 #include "pxr/usd/usd/stage.h"
+#include "pxr/usd/usd/timeCode.h"
 #include "pxr/usd/usdGeom/scope.h"
 
 #include <vector>
@@ -44,6 +48,10 @@ struct Fixture
             ) {
                 int attr1 = 1
                 int ns1:ns2:attr2 = 2
+                double attr3.spline = {
+                    1: 0,
+                    2: 1,
+                }
             }
             )usd");
         TF_AXIOM(importedLayer);
@@ -134,11 +142,61 @@ void TestAttribute(Fixture &fixture)
     TF_AXIOM(attr->IsValid(fixture.journal));
 
     TF_AXIOM(attr->GetValueTypeName(fixture.journal) == SdfValueTypeNames->Int);
+}
 
-    VtValue value;
-    TF_AXIOM(attr->Get(&value, UsdTimeCode::Default()));
-    TF_AXIOM(value.IsHolding<int>());
-    TF_AXIOM(value.UncheckedGet<int>() == 1);
+
+void TestAttributeQuery(Fixture &fixture)
+{
+    // Tests that ExecUsd_AttributeQuery behaves as UsdAttributeQuery.
+
+    const UsdAttribute usdAttr =
+        fixture.stage->GetAttributeAtPath(SdfPath("/Prim1.attr1"));
+    const UsdAttributeQuery usdQuery(usdAttr);
+
+    const EsfAttribute esfAttr = EsfUsdSceneAdapter::AdaptAttribute(usdAttr);
+    const EsfAttributeQuery esfQuery = esfAttr->GetQuery();
+
+    VtValue esfValue, usdValue;
+    TF_AXIOM(esfQuery->IsValid() == usdQuery.IsValid());
+    TF_AXIOM(esfQuery->Get(&esfValue, UsdTimeCode::Default()) ==
+        usdQuery.Get(&usdValue, UsdTimeCode::Default()));
+    TF_AXIOM(esfValue.IsHolding<int>() == usdValue.IsHolding<int>());
+    TF_AXIOM((esfValue.UncheckedGet<int>() == 
+        usdValue.UncheckedGet<int>()) == 1);
+
+    TF_AXIOM(esfQuery->GetPath() == SdfPath("/Prim1.attr1"));
+    TF_AXIOM(esfQuery->GetSpline().has_value() == usdQuery.HasSpline());
+    TF_AXIOM(esfQuery->ValueMightBeTimeVarying() ==
+        usdQuery.ValueMightBeTimeVarying());
+    TF_AXIOM(!esfQuery->IsTimeVarying(
+        UsdTimeCode::Default(), UsdTimeCode(0.0)));
+}
+
+void TestSplineAttributeQuery(Fixture &fixture)
+{
+    // Tests ExecUsd_AttributeQuery with a time-varying spline attribute.
+
+    const UsdAttribute usdAttr =
+        fixture.stage->GetAttributeAtPath(SdfPath("/Prim1.attr3"));
+    const UsdAttributeQuery usdQuery(usdAttr);
+
+    const EsfAttribute esfAttr = EsfUsdSceneAdapter::AdaptAttribute(usdAttr);
+    const EsfAttributeQuery esfQuery = esfAttr->GetQuery();
+
+    VtValue esfValue, usdValue;
+    TF_AXIOM(esfQuery->IsValid() == usdQuery.IsValid());
+    TF_AXIOM(esfQuery->Get(&esfValue, UsdTimeCode(2.0)) ==
+        usdQuery.Get(&usdValue, UsdTimeCode(2.0)));
+    TF_AXIOM(esfValue.IsHolding<double>() == usdValue.IsHolding<double>());
+    TF_AXIOM((esfValue.UncheckedGet<double>() == 
+        usdValue.UncheckedGet<double>()) == 1.0);
+
+    TF_AXIOM(esfQuery->GetPath() == SdfPath("/Prim1.attr3"));
+    TF_AXIOM(esfQuery->GetSpline().has_value() == usdQuery.HasSpline());
+    TF_AXIOM(esfQuery->ValueMightBeTimeVarying() ==
+        usdQuery.ValueMightBeTimeVarying());
+    TF_AXIOM(esfQuery->IsTimeVarying(UsdTimeCode(1.0), UsdTimeCode(2.0)));
+    TF_AXIOM(!esfQuery->IsTimeVarying(UsdTimeCode(2.0), UsdTimeCode(3.0)));
 }
 
 }
@@ -150,7 +208,9 @@ int main()
         TestObject,
         TestPrim,
         TestProperty,
-        TestAttribute
+        TestAttribute,
+        TestAttributeQuery,
+        TestSplineAttributeQuery
     };
     for (auto test : tests) {
         Fixture fixture;

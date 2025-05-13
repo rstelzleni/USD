@@ -6,9 +6,12 @@
 //
 #include "pxr/exec/esfUsd/attribute.h"
 
+#include "pxr/exec/esfUsd/attributeQuery.h"
+
 #include "pxr/exec/esf/attribute.h"
 #include "pxr/usd/sdf/valueTypeName.h"
 #include "pxr/usd/usd/attribute.h"
+#include "pxr/usd/usd/attributeQuery.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -23,16 +26,13 @@ EsfUsd_Attribute::_GetValueTypeName() const
     return _GetWrapped().GetTypeName();
 }
 
-bool
-EsfUsd_Attribute::_Get(VtValue *value, UsdTimeCode time) const
+EsfAttributeQuery
+EsfUsd_Attribute::_GetQuery() const
 {
-    return _GetWrapped().Get(value, time);
-}
-
-bool
-EsfUsd_Attribute::_ValueMightBeTimeVarying() const
-{
-    return _GetWrapped().ValueMightBeTimeVarying();
+    return {
+        std::in_place_type<EsfUsd_AttributeQuery>,
+        UsdAttributeQuery(_GetWrapped())
+    };
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

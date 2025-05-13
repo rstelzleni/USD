@@ -7,6 +7,7 @@ pxr_library(exec
         esf
         tf
         trace
+        ts
         sdf
         usd
         vdf

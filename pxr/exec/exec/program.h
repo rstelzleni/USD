@@ -11,10 +11,10 @@
 
 #include "pxr/exec/exec/attributeInputNode.h"
 #include "pxr/exec/exec/compiledOutputCache.h"
-#include "pxr/exec/exec/types.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
 #include "pxr/base/tf/bits.h"
+#include "pxr/base/ts/spline.h"
 #include "pxr/exec/ef/leafNodeCache.h"
 #include "pxr/exec/ef/time.h"
 #include "pxr/exec/vdf/maskedOutput.h"
@@ -27,6 +27,7 @@
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 #include <unordered_set>
@@ -147,13 +148,8 @@ public:
     }
 
     /// Notifies the program of authored value invalidation.
-    ///
-    /// \return a vector of invalid leaf nodes, a bit set indicating which 
-    /// \p invalidProperties are compiled, and a time interval indicating the
-    /// combined invalidation interval.
-    /// 
     Exec_AuthoredValueInvalidationResult InvalidateAuthoredValues(
-        TfSpan<ExecInvalidAuthoredValue> invalidProperties);
+        TfSpan<const SdfPath> invalidProperties);
 
     /// Initializes all invalid input nodes in the network.
     void InitializeInputNodes(VdfExecutorInterface *executor);
@@ -232,7 +228,7 @@ private:
     void _AddNode(const EsfJournal &journal, const VdfNode *node);
 
     // Registers an input node for authored value initialization.
-    void _RegisterInputNode(const Exec_AttributeInputNode *inputNode);
+    void _RegisterInputNode(Exec_AttributeInputNode *inputNode);
 
     // Unregisters an input node from authored value initialization.
     void _UnregisterInputNode(const Exec_AttributeInputNode *inputNode);
@@ -262,8 +258,8 @@ private:
 
     // Collection of compiled input nodes.
     struct _InputNodeEntry {
-        VdfId nodeId;
-        bool isTimeDependent;
+        Exec_AttributeInputNode *node;
+        std::optional<TsSpline> oldSpline;
     };
     using _InputNodesMap =
         tbb::concurrent_unordered_map<SdfPath, _InputNodeEntry, SdfPath::Hash>;

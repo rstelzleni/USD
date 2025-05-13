@@ -16,6 +16,8 @@
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/base/tf/type.h"
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/esf/attribute.h"
+#include "pxr/usd/sdf/valueTypeName.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -80,10 +82,14 @@ Exec_ComputeValueComputationDefinition::CompileNode(
         return nullptr;
     }
 
+    const EsfAttribute providerAttribute = providerObject.AsAttribute();
+    const SdfValueTypeName valueTypeName =
+        providerAttribute->GetValueTypeName(nodeJournal);
+
     return program->CreateNode<Exec_AttributeInputNode>(
         *nodeJournal,
-        providerObject.AsAttribute(),
-        nodeJournal);
+        providerAttribute->GetQuery(),
+        valueTypeName.GetScalarType().GetType());
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

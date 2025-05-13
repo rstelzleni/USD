@@ -15,6 +15,7 @@ pxr_library(esf
 
     PUBLIC_CLASSES
         attribute
+        attributeQuery
         editReason
         fixedSizePolymorphicHolder
         object

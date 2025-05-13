@@ -10,7 +10,6 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/api.h"
-#include "pxr/exec/exec/types.h"
 
 #include "pxr/exec/esf/stage.h"
 
@@ -25,6 +24,7 @@ class EfTime;
 class Exec_Program;
 class Exec_RequestImpl;
 class ExecValueKey;
+class SdfPath;
 template <typename> class TfSpan;
 class VdfExecutorErrorLogger;
 class VdfExecutorInterface;
@@ -92,8 +92,7 @@ private:
 
     // Notifies the system of authored value invalidation.
     EXEC_API
-    void _InvalidateAuthoredValues(
-        TfSpan<ExecInvalidAuthoredValue> invalidProperties);
+    void _InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties);
 
     // Notifies the system of changes to time.
     EXEC_API

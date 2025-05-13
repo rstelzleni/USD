@@ -19,15 +19,15 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class SdfPath;
 class VdfNode;
 
 /// Communicates the results of authored value invalidation.
 class Exec_AuthoredValueInvalidationResult
 {
 public:
-    /// The array of invalid properties. These entries contain the scene
-    /// description path along with the invalid time range for said properties.
-    TfSpan<ExecInvalidAuthoredValue> invalidProperties;
+    /// The array of invalid properties.
+    TfSpan<const SdfPath> invalidProperties;
 
     /// Bit set with the same size as invalidProperties, denoting which of the
     /// invalid properties are compiled in the exec network.

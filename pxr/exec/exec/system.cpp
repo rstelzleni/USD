@@ -14,7 +14,6 @@
 
 #include "pxr/exec/ef/executor.h"
 #include "pxr/exec/ef/time.h"
-#include "pxr/exec/ef/timeInterval.h"
 #include "pxr/exec/vdf/dataManagerVector.h"
 #include "pxr/exec/vdf/executorErrorLogger.h"
 #include "pxr/exec/vdf/parallelDataManagerVector.h"
@@ -151,8 +150,7 @@ ExecSystem::_InvalidateAll()
 }
 
 void
-ExecSystem::_InvalidateAuthoredValues(
-    TfSpan<ExecInvalidAuthoredValue> invalidProperties)
+ExecSystem::_InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 {
     TRACE_FUNCTION();
 

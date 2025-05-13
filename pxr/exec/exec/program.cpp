@@ -33,6 +33,11 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+static EfTimeInterval
+_ComputeInvalidInterval(
+    const std::optional<TsSpline> &,
+    const std::optional<TsSpline> &);
+
 static TfBits
 _FilterTimeDependentInputNodeOutputs(
     const VdfMaskedOutputVector &, const EfTime &, const EfTime &);
@@ -114,8 +119,7 @@ Exec_Program::Connect(
 }
 
 Exec_AuthoredValueInvalidationResult
-Exec_Program::InvalidateAuthoredValues(
-    TfSpan<ExecInvalidAuthoredValue> invalidProperties)
+Exec_Program::InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 {
     TRACE_FUNCTION();
 
@@ -129,7 +133,7 @@ Exec_Program::InvalidateAuthoredValues(
     bool isTimeDependencyChange = false;
 
     for (size_t i = 0; i < numInvalidProperties; ++i) {
-        const auto &[path, interval] = invalidProperties[i];
+        const SdfPath &path = invalidProperties[i];
         const auto it = _inputNodes.find(path);
 
         // Not every invalid property is also an input to the exec network.
@@ -147,37 +151,39 @@ Exec_Program::InvalidateAuthoredValues(
 
         // Get the input node from the network.
         _InputNodeEntry &entry = it->second;
-        VdfNode *const node = _network.GetNodeById(entry.nodeId);
+        Exec_AttributeInputNode *const node = entry.node;
 
-        // We expect uncompiled input nodes to have been removed from the
-        // _inputNodes array by now.
-        if (!TF_VERIFY(node)) {
-            continue;
-        }
+        // Make sure that the input node's internal value resolution state is
+        // updated after scene changes that could affect where resolved values
+        // are sourced from.
+        node->UpdateValueResolutionState();
 
         // Figure out if the input node's time dependence has changed based on
         // the authored value change.
-        const Exec_AttributeInputNode *const inputNode =
-            dynamic_cast<Exec_AttributeInputNode*>(node);
-        if (TF_VERIFY(inputNode)) {
-            const bool isTimeDependent = inputNode->MaybeTimeVarying();
-            if (entry.isTimeDependent != isTimeDependent) {
-                _InvalidateTimeDependentInputNodeOutputs();
-                isTimeDependencyChange = true;
-                entry.isTimeDependent = isTimeDependent;
-            }
+        if (node->UpdateTimeDependence()) {
+            _InvalidateTimeDependentInputNodeOutputs();
+            isTimeDependencyChange = true;
         }
 
         // If this is an input node to the exec network, we need to make sure
         // that it is re-initialized before the next round of evaluation.
-        _uninitializedInputNodes.push_back(entry.nodeId);
+        _uninitializedInputNodes.push_back(node->GetId());
 
         // Queue the input node's output(s) for leaf node invalidation.
         leafInvalidationRequest.emplace_back(
             node->GetOutput(), VdfMask::AllOnes(1));
 
-        // Accumulate the invalid time interval.
-        totalInvalidInterval |= interval;
+        // Accumulate the invalid time interval, but only if the interval
+        // accumulated so far isn't already the full interval.
+        std::optional<TsSpline> newSpline = node->GetSpline();
+        if (!totalInvalidInterval.IsFullInterval()) {
+            totalInvalidInterval |= _ComputeInvalidInterval(
+                entry.oldSpline, newSpline);
+        }
+
+        // Retain the new spline so we can compare it against future authored
+        // value changes.
+        entry.oldSpline = std::move(newSpline);
     }
 
     // Find all the leaf nodes reachable from the input nodes.
@@ -408,17 +414,16 @@ Exec_Program::_AddNode(const EsfJournal &journal, const VdfNode *node)
 }
 
 void
-Exec_Program::_RegisterInputNode(const Exec_AttributeInputNode *const inputNode)
+Exec_Program::_RegisterInputNode(Exec_AttributeInputNode *const inputNode)
 {
-    const bool isTimeDependent = inputNode->MaybeTimeVarying();
     const auto [it, emplaced] = _inputNodes.emplace(
         inputNode->GetAttributePath(), 
-        _InputNodeEntry{inputNode->GetId(), isTimeDependent});
+        _InputNodeEntry{inputNode});
     TF_VERIFY(emplaced);
 
     // If this is a time varying input, we need to invalidate the cached
     // subset of time varying input nodes.
-    if (isTimeDependent) {
+    if (inputNode->IsTimeDependent()) {
         _InvalidateTimeDependentInputNodeOutputs();
     }
 }
@@ -435,8 +440,7 @@ Exec_Program::_UnregisterInputNode(
 
     // If this was a time varying input, we need to invalidate the cached
     // subset of time varying input nodes.
-    const bool wasTimeDependent = it->second.isTimeDependent;
-    if (wasTimeDependent) {
+    if (inputNode->IsTimeDependent()) {
         _InvalidateTimeDependentInputNodeOutputs();
     }
     
@@ -474,12 +478,10 @@ Exec_Program::_CollectTimeDependentInputNodeOutputs()
         [&num, &result = _timeDependentInputNodeOutputs, &network = _network]
         (const _InputNodesMap::range_type &range){
         for (const auto &[path, entry] : range) {
-            if (entry.isTimeDependent) {
-                VdfNode *const node = network.GetNodeById(entry.nodeId);
-                if (TF_VERIFY(node)) {
-                    result[num++] = VdfMaskedOutput(
-                        node->GetOutput(), VdfMask::AllOnes(1));
-                }
+            Exec_AttributeInputNode *const node = entry.node;
+            if (TF_VERIFY(node) && node->IsTimeDependent()) {
+                result[num++] = VdfMaskedOutput(
+                    node->GetOutput(), VdfMask::AllOnes(1));
             }
         }
     });
@@ -490,6 +492,45 @@ Exec_Program::_CollectTimeDependentInputNodeOutputs()
     // The array of time-dependent inputs is valid again. Return it.
     _timeDependentInputNodeOutputsValid.store(true, std::memory_order_release);
     return _timeDependentInputNodeOutputs;
+}
+
+static EfTimeInterval
+_ComputeInvalidInterval(
+    const std::optional<TsSpline> &oldSpline,
+    const std::optional<TsSpline> &newSpline)
+{
+    // If either the new- or old value (or both) resolve to anything but a 
+    // spline (fallback, default, or time samples) we invalidate the full
+    // interval: Both fallback and default values apply over all time, and time
+    // samples typically encode such dense data that we do not want to incur
+    // the cost of detailed analysis of that data.
+    const bool hasOldSpline = oldSpline.has_value();
+    const bool hasNewSpline = newSpline.has_value();
+    if (!hasOldSpline || !hasNewSpline) {
+        return EfTimeInterval::GetFullInterval();
+    }
+
+    TRACE_FUNCTION();
+
+    // If we are going from an empty spline to a non-empty spline or vice-versa,
+    // invalidate the full interval.
+    if (oldSpline->IsEmpty() != newSpline->IsEmpty()) {
+        return EfTimeInterval::GetFullInterval();
+    }
+
+    // If loop parameters changed, we invalidate the full interval.
+    if (oldSpline->HasLoops() != newSpline->HasLoops()) {
+        return EfTimeInterval::GetFullInterval();
+    }
+
+    // If both splines are empty, nothing is invalid.
+    if (oldSpline->IsEmpty() && newSpline->IsEmpty()) {
+        return EfTimeInterval();
+    }
+
+    // TODO: Compute the change interval between oldSpline and newSpline. For
+    // the time-being, let's over-invalidate the time range.
+    return EfTimeInterval::GetFullInterval();
 }
 
 static TfBits

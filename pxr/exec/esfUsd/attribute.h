@@ -12,6 +12,7 @@
 #include "pxr/exec/esfUsd/property.h"
 
 #include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/attributeQuery.h"
 #include "pxr/usd/usd/attribute.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -36,8 +37,7 @@ public:
 private:
     // EsfAttributeInterface implementation.
     SdfValueTypeName _GetValueTypeName() const final;
-    bool _Get(VtValue *value, UsdTimeCode time) const final;
-    bool _ValueMightBeTimeVarying() const final;
+    EsfAttributeQuery _GetQuery() const final;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

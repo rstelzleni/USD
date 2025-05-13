@@ -19,7 +19,6 @@
 #include "pxr/pxr.h"
 
 #include <functional>
-#include <tuple>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -32,12 +31,6 @@ using ExecCallbackFn = std::function<void (const class VdfContext &context)>;
 /// Exec_DefinitionRegistry itself, to allow that type to remain private.
 /// 
 struct ExecDefinitionRegistryTag {};
-
-/// The path to a scene object for which the authored value has been invalidated
-/// along with a time interval denoting the invalid time range.
-/// 
-using ExecInvalidAuthoredValue =
-    std::tuple<const class SdfPath, class EfTimeInterval>;
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

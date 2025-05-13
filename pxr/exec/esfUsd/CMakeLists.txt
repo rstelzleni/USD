@@ -17,6 +17,7 @@ pxr_library(esfUsd
 
     PRIVATE_CLASSES
         attribute
+        attributeQuery
         object
         prim
         property
