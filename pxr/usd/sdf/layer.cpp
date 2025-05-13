@@ -1291,7 +1291,7 @@ SdfLayer::SetTimeSample(const SdfPath& path, double time,
 
     if (value.IsHolding<SdfAnimationBlock>()) {
         TF_CODING_ERROR(
-            "Animation block can not be authored on a time sample."
+            "Animation block cannot be authored on a time sample."
             "SdfAnimationBlock can only be authored as the default value to "
             "block animation from weaker layer.");
         return;
@@ -1331,10 +1331,18 @@ SdfLayer::SetTimeSample(const SdfPath& path, double time,
 // cache the value of typeid(SdfValueBlock)
 namespace 
 {
-    const TfType& _GetSdfValueBlockType() 
+    const std::type_info& _GetSdfValueBlockTypeid() 
     {
-        static const TfType blockType = TfType::Find<SdfValueBlock>();
-        return blockType;
+        static const std::type_info& typeidSdfValueBlock = 
+            typeid(SdfValueBlock);
+        return typeidSdfValueBlock;
+    }
+
+    const std::type_info& _GetSdfAnimationBlockTypeid()
+    {
+        static const std::type_info& typeidSdfAnimationBlock = 
+            typeid(SdfAnimationBlock);
+        return typeidSdfAnimationBlock;
     }
 }
 
@@ -1351,7 +1359,15 @@ SdfLayer::SetTimeSample(const SdfPath& path, double time,
         return;
     }
 
-    if (value.valueType == _GetSdfValueBlockType().GetTypeid()) {
+    if (TfSafeTypeCompare(value.valueType, _GetSdfAnimationBlockTypeid())) {
+        TF_CODING_ERROR(
+            "Animation block cannot be authored on a time sample."
+            "SdfAnimationBlock can only be authored as the default value to "
+            "block animation from weaker layer.");
+        return;
+    }
+
+    if (TfSafeTypeCompare(value.valueType, _GetSdfValueBlockTypeid())) {
         _PrimSetTimeSample(path, time, value);
         return;
     }
