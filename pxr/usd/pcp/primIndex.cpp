@@ -709,6 +709,24 @@ struct Task {
 
     static constexpr Tasks AllTasks = ~0;
 
+    static constexpr Tasks VariantsAndDynamicPayloadTasks = 
+        Task::EvalNodeVariantSets
+        | Task::EvalNodeDynamicPayloads
+        ;
+
+    static constexpr Tasks AncestralVariantsAndDynamicPayloadTasks = 
+        Task::EvalNodeAncestralVariantSets
+        | Task::EvalNodeAncestralDynamicPayloads
+        ;
+
+    static constexpr Tasks ExpressedArcTasks =
+        Task::EvalNodeSpecializes
+        | Task::EvalNodeInherits
+        | Task::EvalNodePayloads
+        | Task::EvalNodeReferences
+        | Task::EvalNodeRelocations
+        ;
+
     // This sorts tasks in priority order from lowest priority to highest
     // priority, so highest priority tasks come last.
     struct PriorityOrder {
@@ -1232,12 +1250,7 @@ struct Pcp_PrimIndexer
     // Add this node and its children to the task queues.  
     inline void
     _AddTasksForNodeRecursively(
-        const PcpNodeRef& n, 
-        bool skipTasksForExpressedArcs,
-        bool skipCompletedNodesForImpliedSpecializes,
-        bool evaluateUnresolvedPrimPathErrors,
-        bool evaluateAncestralVariantsAndDynamicPayloads,
-        bool isUsd) 
+        const PcpNodeRef& n, Task::Tasks tasks, bool isUsd)
     {
 #ifdef PCP_DIAGNOSTIC_VALIDATION
         TF_VERIFY(seen.count(n) == 0, "Already processed <%s>",
@@ -1246,63 +1259,24 @@ struct Pcp_PrimIndexer
 #endif // PCP_DIAGNOSTIC_VALIDATION
 
         TF_FOR_ALL(child, Pcp_GetChildrenRange(n)) {
-            _AddTasksForNodeRecursively(
-                *child, 
-                skipTasksForExpressedArcs, 
-                skipCompletedNodesForImpliedSpecializes,
-                evaluateUnresolvedPrimPathErrors,
-                evaluateAncestralVariantsAndDynamicPayloads,
-                isUsd);
+            _AddTasksForNodeRecursively(*child, tasks, isUsd);
         }
-
-        Task::Tasks tasks = Task::None;
 
         // Only reference and payload arcs require the source prim to provide
         // opinions, so we only enqueue this task for those arcs.
+        const bool evaluateUnresolvedPrimPathErrors = 
+            tasks & Task::EvalUnresolvedPrimPathError;
         if (evaluateUnresolvedPrimPathErrors &&
-            (n.GetArcType() == PcpArcTypeReference ||
-             n.GetArcType() == PcpArcTypePayload)) {
-            tasks |= Task::EvalUnresolvedPrimPathError;
+            (n.GetArcType() != PcpArcTypeReference &&
+             n.GetArcType() != PcpArcTypePayload)) {
+            tasks &= ~Task::EvalUnresolvedPrimPathError;
         }
 
-        // If the caller tells us the new node and its children were already
-        // indexed, we do not need to re-scan them for certain arcs based on
-        // what was already completed.
-        if (skipCompletedNodesForImpliedSpecializes) {
-            // In this case, we only need to add tasks that come after 
-            // implied specializes.
-            if (evaluateVariantsAndDynamicPayloads) {
-                tasks |= Task::EvalNodeVariantSets;
-                tasks |= Task::EvalNodeDynamicPayloads;
-            }
-        } else {
-            if (evaluateVariantsAndDynamicPayloads) {
-                tasks |= Task::EvalNodeVariantSets;
-                tasks |= Task::EvalNodeDynamicPayloads;
-            }
-
-            if (evaluateAncestralVariantsAndDynamicPayloads) {
-                tasks |= Task::EvalNodeAncestralDynamicPayloads;
-                tasks |= Task::EvalNodeAncestralVariantSets;
-            }
-
-            if (!skipTasksForExpressedArcs) {
-                // In some cases, we don't want to add the tasks for expressed 
-                // arcs because we're adding nodes from an already composed 
-                // subtree that has already processed these arcs. 
-                // 
-                // These cases include adding a subtree that was recursively 
-                // prim indexed for ancestral opinions or propagating a 
-                // specializes subtree back down to its origin node.
-                tasks |= Task::EvalNodeSpecializes;
-                tasks |= Task::EvalNodeInherits;
-                tasks |= Task::EvalNodePayloads;
-                tasks |= Task::EvalNodeReferences;
-                tasks |= Task::EvalNodeRelocations;
-            }
-            if (n.GetArcType() == PcpArcTypeRelocate) {
-                tasks |= Task::EvalImpliedRelocations;
-            }
+        const bool evaluateImpliedRelocations =
+            tasks & Task::EvalImpliedRelocations;
+        if (evaluateImpliedRelocations && 
+            n.GetArcType() != PcpArcTypeRelocate) {
+            tasks &= ~Task::EvalImpliedRelocations;
         }
 
         // Preflight scan for arc types that are present in specs.
@@ -1310,7 +1284,7 @@ struct Pcp_PrimIndexer
         // data access locality, since we avoid interleaving tasks that
         // re-visit sites later only to determine there is no work to do.
         tasks &= _ScanArcs(n);
-        if (evaluateAncestralVariantsAndDynamicPayloads) {
+        if (tasks & Task::AncestralVariantsAndDynamicPayloadTasks) {
             tasks &= _ScanAncestralArcs(n);
         }
 
@@ -1341,25 +1315,41 @@ struct Pcp_PrimIndexer
         }
     }
 
-    void AddTasksForRootNode(const PcpNodeRef& rootNode) {
-        return _AddTasksForNodeRecursively(
-            rootNode, 
-            /*skipTasksForExpressedArcs=*/false,
-            /*skipCompletedNodesForImpliedSpecializes=*/false,
-            /*evaluateUnresolvedPrimPathErrors=*/false,
-            /*evaluateAncestralVariantsAndDynamicPayloads=*/false,
-            /*isUsd=*/inputs.usd);
+    // Enqueue initial set of tasks for the root node of a prim index.
+    void AddTasksForRootNode(const PcpNodeRef& rootNode) 
+    {
+        Task::Tasks tasks = Task::AllTasks;
+
+        // Don't need to evaluate these tasks because they're not relevant
+        // when we're just starting a prim indexing computation.
+        tasks &= ~Task::AncestralVariantsAndDynamicPayloadTasks;
+        tasks &= ~Task::EvalUnresolvedPrimPathError;
+
+        if (!evaluateVariantsAndDynamicPayloads) {
+            tasks &= ~Task::VariantsAndDynamicPayloadTasks;
+        }
+
+        return _AddTasksForNodeRecursively(rootNode, tasks, inputs.usd);
     }
 
-    void AddTasksForNode(
-        const PcpNodeRef& n, 
-        bool skipTasksForExpressedArcs,
-        bool skipCompletedNodesForImpliedSpecializes,
-        bool evaluateAncestralVariantsAndDynamicPayloads) {
-
+    // Enqueue initial set of tasks for the given node. By default, this
+    // set includes:
+    //
+    //   - ExpressedArcTasks
+    //   - VariantsAndDynamicPayloadTasks
+    //   - AncestralVariantsAndDynamicPayloadTasks
+    //   - EvalNodeRelocations and EvalNodeImpliedRelocations
+    //   - EvalUnresolvedPrimPathError
+    //
+    // Tasks may be removed based on the given node or state of the
+    // Pcp_PrimIndexer. The tasks bitmask may also be used to remove
+    // any of these tasks. Note that any tasks in the bitmask that are
+    // not in the above set will be ignored.
+    void AddTasksForNode(const PcpNodeRef& n, Task::Tasks tasks)
+    {
         // Any time we add an edge to the graph, we may need to update
         // implied class edges.
-        if (!skipCompletedNodesForImpliedSpecializes) {
+        if (tasks & Task::EvalImpliedClasses) {
             if (PcpIsClassBasedArc(n.GetArcType())) {
                 // The new node is itself class-based.  Find the starting
                 // prim of the chain of classes the node is a part of, and 
@@ -1375,6 +1365,9 @@ struct Pcp_PrimIndexer
                 // merging the subgraph into the parent graph.
                 AddTask(Task(Task::EvalImpliedClasses, n));
             }
+        }
+
+        if (tasks & Task::EvalImpliedSpecializes) {
             if (evaluateImpliedSpecializes) {
                 if (PcpNodeRef base = 
                     _FindStartingNodeForImpliedSpecializes(n)) {
@@ -1393,23 +1386,24 @@ struct Pcp_PrimIndexer
             }
         }
 
+        if (!evaluateVariantsAndDynamicPayloads) {
+            tasks &= ~Task::VariantsAndDynamicPayloadTasks;
+        }
+
         // Only check for unresolved prim path errors if we're not in a
         // recursive prim indexing call. Combined with the associated task
         // being lowest in priority, this ensures that all possible
         // sources of opinions are added to the prim index before this
         // check occurs.
         const bool evaluateUnresolvedPrimPathErrors = !previousFrame;
+        if (!evaluateUnresolvedPrimPathErrors) {
+            tasks &= ~Task::EvalUnresolvedPrimPathError;
+        }
 
         // Recurse over all of the rest of the nodes.  (We assume that any
         // embedded class hierarchies have already been propagated to
         // the top node n, letting us avoid redundant work.)
-        _AddTasksForNodeRecursively(
-            n, 
-            skipTasksForExpressedArcs, 
-            skipCompletedNodesForImpliedSpecializes,
-            evaluateUnresolvedPrimPathErrors,
-            evaluateAncestralVariantsAndDynamicPayloads,
-            inputs.usd);
+        _AddTasksForNodeRecursively(n, tasks, inputs.usd);
 
         _DebugPrintTasks("After AddTasksForNode");
     }
@@ -1680,13 +1674,8 @@ public:
     // index.
     bool skipDuplicateNodes = false;
 
-    // If set to true, implied specializes tasks will be skipped for
-    // the subtree of new nodes.
-    bool skipImpliedSpecializesCompletedNodes = false;
-
-    // If set to true, tasks for "expressed arcs" will be skipped for
-    // the subtree of new nodes.
-    bool skipTasksForExpressedArcs = false;
+    // Indexing tasks to enqueue for the new node being added.
+    Task::Tasks tasks = Task::AllTasks;
 };
 
 } // end anonymous namespace
@@ -1721,8 +1710,7 @@ _AddArc(
         "namespaceDepth: %d\n"
         "directNodeShouldContributeSpecs: %s\n"
         "includeAncestralOpinions: %s\n"
-        "skipDuplicateNodes: %s%s\n"
-        "skipImpliedSpecializesCompletedNodes: %s\n\n",
+        "skipDuplicateNodes: %s%s\n",
         origin ? Pcp_FormatSite(origin.GetSite()).c_str() : "<None>",
         arcSiblingNum,
         namespaceDepth,
@@ -1733,8 +1721,7 @@ _AddArc(
             TfStringPrintf(
                 " (prev. frame: %s)", 
                 indexer->previousFrame->skipDuplicateNodes ? "true" : "false")
-            .c_str() : "",
-        opts.skipImpliedSpecializesCompletedNodes ? "true" : "false");
+            .c_str() : "");
 
     if (!TF_VERIFY(!mapExpr.IsNull())) {
         return PcpNodeRef();
@@ -1934,23 +1921,27 @@ _AddArc(
         return PcpNodeRef();
     }
 
+    Task::Tasks tasks = opts.tasks;
+
     // If we evaluated ancestral opinions, it it means the nested
     // call to Pcp_BuildPrimIndex() has already evaluated refs, payloads,
     // and inherits on this subgraph, so we can skip those tasks in this case 
     // too. However, we skipped all ancestral variants, so if we're evaluating
     // variants we need to consider those as well.
-    opts.skipTasksForExpressedArcs |= opts.includeAncestralOpinions;
+    if (opts.includeAncestralOpinions) {
+        tasks &= ~Task::ExpressedArcTasks;
+    }
 
     const bool evaluateAncestralVariantsAndDynamicPayloads =
         indexer->evaluateVariantsAndDynamicPayloads && 
         opts.includeAncestralOpinions;
 
+    if (!evaluateAncestralVariantsAndDynamicPayloads) {
+        tasks &= ~Task::AncestralVariantsAndDynamicPayloadTasks;
+    }
+
     // Enqueue tasks to evaluate the new nodes.
-    indexer->AddTasksForNode(
-        newNode, 
-        opts.skipTasksForExpressedArcs,
-        opts.skipImpliedSpecializesCompletedNodes,
-        evaluateAncestralVariantsAndDynamicPayloads);
+    indexer->AddTasksForNode(newNode, tasks);
 
     // If the arc targets a site that is itself private, issue an error.
     if (newNode.GetPermission() == SdfPermissionPrivate) {
@@ -3700,9 +3691,14 @@ _PropagateNodeToParent(
 
                 _ArcOptions opts;
                 opts.directNodeShouldContributeSpecs = !srcNode.IsInert();
-                opts.skipImpliedSpecializesCompletedNodes = 
-                    skipImpliedSpecializes;
-                opts.skipTasksForExpressedArcs = skipTasksForExpressedArcs;
+                if (skipImpliedSpecializes) {
+                    // In this case, we only need to add tasks that come after
+                    // implied specializes.
+                    opts.tasks = Task::VariantsAndDynamicPayloadTasks;
+                }
+                else if (skipTasksForExpressedArcs) {
+                    opts.tasks = ~Task::ExpressedArcTasks;
+                }
 
                 newNode = _AddArc(
                     indexer,
