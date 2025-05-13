@@ -1,5 +1,22 @@
 # Change Log
 
+## [25.05.01] - 2025-05-19
+
+### USD
+
+- Fix GfColor construction when converting color spaces.
+
+- Fixed crash when sampling a float or half-valued TsSpline.
+  (Issue: [#3614](https://github.com/PixarAnimationStudios/OpenUSD/issues/3614)
+
+- Fixed bug where UsdStage would not update when a sublayer was added or removed.
+  (Issue: [#3615](https://github.com/PixarAnimationStudios/OpenUSD/issues/3615)
+
+### UsdImaging
+
+- Fixed typo in release notes for environment variable used to enable scene
+  indexes. The correct variable is `USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX`.
+
 ## [25.05] - 2025-04-28
 
 We anticipate moving to the [VFX Reference Platform CY2023](https://vfxplatform.com/)
