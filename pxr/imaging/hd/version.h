@@ -107,8 +107,9 @@
 // 77 -> 78: Removed the widget renderTag and added a displayInOverlay boolean
 //           attribute to serve the same purpose that widget signified.
 // 78 -> 79: Added Hgi::GarbageCollect.
+// 79 -> 80: Added refinedSolidWireOnSurf and solidWireOnSurf to HD_REPR_TOKENS.
 
-#define HD_API_VERSION 79
+#define HD_API_VERSION 80
 
 // 1  ->  2: SimpleLighting -> FallbackLighting
 #define HD_SHADER_API 2
