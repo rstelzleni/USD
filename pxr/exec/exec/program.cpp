@@ -75,6 +75,8 @@ public:
                 dynamic_cast<const Exec_AttributeInputNode *const>(node)) {
             _program->_UnregisterInputNode(inputNode);
         }
+
+        _program->_nodeRecompilationInfoTable.WillDeleteNode(node);
     }
 
 private:

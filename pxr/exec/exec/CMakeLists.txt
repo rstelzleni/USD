@@ -57,6 +57,8 @@ pxr_library(exec
         inputResolver
         inputResolvingCompilationTask
         leafCompilationTask
+        nodeRecompilationInfo
+        nodeRecompilationInfoTable
         outputKey
         outputProvidingCompilationTask
         program

@@ -11,6 +11,7 @@
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/base/tf/delegatedCountPtr.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/ef/leafNode.h"
 #include "pxr/exec/esf/editReason.h"
@@ -18,9 +19,13 @@
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 
+#include <initializer_list>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 static Exec_InputKey _MakeInputKey(const ExecValueKey &valueKey);
+static Exec_InputKeyVectorConstRefPtr _MakeInputKeyVector(
+    const ExecValueKey &valueKey);
 
 void
 Exec_LeafCompilationTask::_Compile(
@@ -87,6 +92,11 @@ Exec_LeafCompilationTask::_Compile(
         // must be collected eagerly.
         leafNode->SetDebugName(_valueKey.GetDebugName());
 
+        compilationState.GetProgram()->SetNodeRecompilationInfo(
+            leafNode, 
+            _valueKey.GetProvider(), 
+            _MakeInputKeyVector(_valueKey));
+
         compilationState.GetProgram()->Connect(
             _journal,
             TfSpan<const VdfMaskedOutput>(&sourceOutput, 1),
@@ -107,6 +117,13 @@ _MakeInputKey(const ExecValueKey &valueKey)
             ExecProviderResolution::DynamicTraversal::Local},
         false /* optional */
     };
+}
+
+Exec_InputKeyVectorConstRefPtr
+_MakeInputKeyVector(const ExecValueKey &valueKey)
+{
+    return TfMakeDelegatedCountPtr<const Exec_InputKeyVector>(
+        std::initializer_list<Exec_InputKey>({_MakeInputKey(valueKey)}));
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

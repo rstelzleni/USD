@@ -11,6 +11,8 @@
 
 #include "pxr/exec/exec/attributeInputNode.h"
 #include "pxr/exec/exec/compiledOutputCache.h"
+#include "pxr/exec/exec/inputKey.h"
+#include "pxr/exec/exec/nodeRecompilationInfoTable.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
 #include "pxr/base/tf/bits.h"
@@ -220,6 +222,28 @@ public:
         return _uncompilationTable.Find(changedPath);
     }
 
+    /// Sets recompilation info for the given \p node after it has been
+    /// compiled.
+    ///
+    /// This information will be retrieved during recompilation when inputs of
+    /// \p node need to be recompiled.
+    ///
+    void SetNodeRecompilationInfo(
+        const VdfNode *node,
+        const EsfObject &provider,
+        Exec_InputKeyVectorConstRefPtr &&inputKeys) {
+        _nodeRecompilationInfoTable.SetNodeRecompilationInfo(
+            node,
+            provider,
+            std::move(inputKeys));
+    }
+
+    /// Retrieves the recompilation information stored for \p node.
+    const Exec_NodeRecompilationInfo *GetNodeRecompilationInfo(
+        const VdfNode *node) const {
+        return _nodeRecompilationInfoTable.GetNodeRecompilationInfo(node);
+    }
+
     /// Writes the compiled network to a file at \p filename.
     void GraphNetwork(const char *filename) const;
 
@@ -285,6 +309,9 @@ private:
 
     // Inputs that were disconnected during uncompilation.
     std::unordered_set<VdfInput *> _inputsRequiringRecompilation;
+
+    // Stores recompilation info for every node.
+    Exec_NodeRecompilationInfoTable _nodeRecompilationInfoTable;
 };
 
 

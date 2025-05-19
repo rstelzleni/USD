@@ -8,6 +8,7 @@
 
 #include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/computationDefinition.h"
+#include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
@@ -78,6 +79,11 @@ Exec_OutputProvidingCompilationTask::_Compile(
         node->SetDebugNameCallback([keyIdentity]{
             return keyIdentity.GetDebugName();
         });
+
+        compilationState.GetProgram()->SetNodeRecompilationInfo(
+            node,
+            _outputKey.GetProviderObject(),
+            Exec_InputKeyVectorConstRefPtr(_inputKeys));
 
         for (size_t i = 0; i < _inputSources.size(); ++i) {
             compilationState.GetProgram()->Connect(
