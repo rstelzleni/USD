@@ -106,13 +106,13 @@ pxr_build_test(testExecComputationRegistration
         testenv/testExecComputationRegistration.cpp
 )
 
-pxr_install_test_dir(
-    SRC testenv/testExecComputationRegistration
-    DEST testExecComputationRegistration
-)
-
 # Tests that rely on plugins aren't currently supported in static builds.
 if (BUILD_SHARED_LIBS)
+    pxr_install_test_dir(
+        SRC testenv/testExecComputationRegistration
+        DEST testExecComputationRegistration
+    )
+
     pxr_register_test(testExecComputationRegistration
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecComputationRegistration"
         EXPECTED_RETURN_CODE 0

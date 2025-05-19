@@ -29,22 +29,23 @@ pxr_library(execGeom
 # Tests
 #
 
-pxr_build_test(testExecGeomXformable
-    LIBRARIES
-        tf
-        trace
-        esf
-        exec
-        execUsd
-        sdf
-        usd
-        usdGeom
-    CPPFILES
-        testenv/testExecGeomXformable.cpp
-)
-
-# Tests that rely on plugins aren't currently supported in static builds.
+# Test plugins and the tests that rely on them aren't currently supported in
+# static builds.
 if (BUILD_SHARED_LIBS)
+    pxr_build_test(testExecGeomXformable
+        LIBRARIES
+            tf
+            trace
+            esf
+            exec
+            execUsd
+            sdf
+            usd
+            usdGeom
+        CPPFILES
+            testenv/testExecGeomXformable.cpp
+    )
+
     pxr_register_test(testExecGeomXformable
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable"
         EXPECTED_RETURN_CODE 0
@@ -52,29 +53,26 @@ if (BUILD_SHARED_LIBS)
         DIFF_COMPARE testCompiler.out
         TESTENV testExecGeomXformable
     )
-endif()
 
-pxr_install_test_dir(
-    SRC testenv/testExecGeomXformable
-    DEST testExecGeomXformable
-)
+    pxr_install_test_dir(
+        SRC testenv/testExecGeomXformable
+        DEST testExecGeomXformable
+    )
 
-pxr_build_test(testExecGeomXformable_Perf
-    LIBRARIES
-        tf
-        trace
-        esf
-        exec
-        execUsd
-        sdf
-        usd
-        usdGeom
-    CPPFILES
-        testenv/testExecGeomXformable_Perf.cpp
-)
+    pxr_build_test(testExecGeomXformable_Perf
+        LIBRARIES
+            tf
+            trace
+            esf
+            exec
+            execUsd
+            sdf
+            usd
+            usdGeom
+        CPPFILES
+            testenv/testExecGeomXformable_Perf.cpp
+    )
 
-# Tests that rely on plugins aren't currently supported in static builds.
-if (BUILD_SHARED_LIBS)
     pxr_register_test(testExecGeomXformable_Perf
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
                  --branchingFactor 5 --treeDepth 7 --spy"
