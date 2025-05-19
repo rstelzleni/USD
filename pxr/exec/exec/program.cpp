@@ -7,6 +7,7 @@
 #include "pxr/exec/exec/program.h"
 
 #include "pxr/exec/exec/authoredValueInvalidationResult.h"
+#include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
 #include "pxr/exec/exec/parallelForRange.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
 
@@ -15,6 +16,7 @@
 #include "pxr/base/trace/trace.h"
 #include "pxr/base/work/loops.h"
 #include "pxr/base/work/withScopedParallelism.h"
+#include "pxr/exec/ef/leafNode.h"
 #include "pxr/exec/ef/time.h"
 #include "pxr/exec/ef/timeInputNode.h"
 #include "pxr/exec/ef/timeInterval.h"
@@ -120,6 +122,64 @@ Exec_Program::Connect(
         inputNode->GetId(), inputName, journal);
 }
 
+Exec_DisconnectedInputsInvalidationResult
+Exec_Program::InvalidateDisconnectedInputs()
+{
+    TRACE_FUNCTION();
+
+    std::vector<const VdfNode *> disconnectedLeafNodes;
+    VdfMaskedOutputVector invalidationRequest;
+    invalidationRequest.reserve(_inputsRequiringRecompilation.size());
+
+    for (VdfInput *const input : _inputsRequiringRecompilation) {
+        VdfNode &node = input->GetNode();
+
+        // Accumulate all disconnected leaf nodes. These nodes are no longer
+        // reachable via the leaf node traversal below, and thus must be
+        // recorded separately.
+        if (EfLeafNode::IsALeafNode(node)) {
+            disconnectedLeafNodes.push_back(&node);
+        }
+
+        // On speculation nodes, find the output corresponding to the input and
+        // record it for the traversal.
+        // 
+        // TODO: We should add VdfNode::ComputeDependencyOnInput API to solve
+        // this more generically.
+        else if (node.IsSpeculationNode()) {
+            VdfOutput *const correspondingOutput =
+                node.GetOutput(input->GetName());
+            if (TF_VERIFY(correspondingOutput)) {
+                invalidationRequest.emplace_back(
+                    correspondingOutput,
+                    VdfMask::AllOnes(correspondingOutput->GetNumDataEntries()));
+            }
+        }
+
+        // For all other types of nodes, collect all outputs for the traversal.
+        else {
+            for (const auto &[name, output] : node.GetOutputsIterator()) {
+                invalidationRequest.emplace_back(
+                    output, VdfMask::AllOnes(output->GetNumDataEntries()));
+            }
+        }
+    }
+
+    // Find all the leaf nodes reachable from the disconnected inputs.
+    // We won't ask the leaf node cache to incur the cost of performing
+    // incremental updates on the resulting cached traversal, because it is not
+    // guaranteed that we will repeatedly see the exact same authored value
+    // invalidation across rounds of structural change processing (in contrast
+    // to time invalidation).
+    const std::vector<const VdfNode *> &leafNodes = _leafNodeCache.FindNodes(
+        invalidationRequest, /* updateIncrementally = */ false);
+
+    return Exec_DisconnectedInputsInvalidationResult{
+        std::move(invalidationRequest),
+        leafNodes,
+        std::move(disconnectedLeafNodes)};
+}
+
 Exec_AuthoredValueInvalidationResult
 Exec_Program::InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 {
@@ -208,35 +268,8 @@ Exec_Program::InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 }
 
 Exec_TimeChangeInvalidationResult
-Exec_Program::InitializeTime(
-    const EfTime &newTime,
-    VdfExecutorInterface *const executor)
+Exec_Program::InvalidateTime(const EfTime &oldTime, const EfTime &newTime)
 {
-    // Returned as a sentinel if there are no invalid leaf nodes.
-    static const std::vector<const VdfNode *> noInvalidLeafNodes;
-
-    // Retrieve the old time from the executor data manager.
-    const VdfOutput &timeOutput = *_timeInputNode->GetOutput();
-    const VdfVector *const oldTimeVector = executor->GetOutputValue(
-        timeOutput, VdfMask::AllOnes(1));
-
-    // If there isn't already a time value stored in the executor data manager,
-    // perform first time initialization and return.
-    if (!oldTimeVector) {
-        executor->SetOutputValue(
-            timeOutput, VdfTypedVector<EfTime>(newTime), VdfMask::AllOnes(1));
-        return Exec_TimeChangeInvalidationResult{
-            noInvalidLeafNodes, newTime, newTime};
-    }
-
-    // Get the old time value from the vector. If there is no change in time,
-    // we can return without performing invalidation.
-    const EfTime oldTime = oldTimeVector->GetReadAccessor<EfTime>()[0];
-    if (oldTime == newTime) {
-        return Exec_TimeChangeInvalidationResult{
-            noInvalidLeafNodes, oldTime, newTime};
-    }
-
     TRACE_FUNCTION();
 
     // Gather up the set of inputs that are currently time-dependent.
@@ -258,49 +291,43 @@ Exec_Program::InitializeTime(
         : _FilterTimeDependentInputNodeOutputs(
             timeDependentInputNodeOutputs, oldTime, newTime);
 
-    // Perform executor invalidation, and notify requests of the time change.
+    // Compute the executor invalidation request, and gather leaf nodes for
+    // exec request notification.
+    VdfMaskedOutputVector invalidationRequest;
     const std::vector<const VdfNode *> *leafNodes = nullptr;
     WorkWithScopedDispatcher(
-        [&filter, &timeDependentInputNodeOutputs, &executor, &timeOutput,
-            &newTime, &leafNodes, &leafNodeCache = _leafNodeCache]
+        [&filter, &timeDependentInputNodeOutputs, &invalidationRequest,
+            &leafNodes, &leafNodeCache = _leafNodeCache]
         (WorkDispatcher &dispatcher){
-        // Executor invalidation task.
+        // Turn the invalid time-dependent inputs into a request.
         dispatcher.Run([&](){
-            // Turn the invalid time-dependent inputs into a request.
-            VdfMaskedOutputVector invalidationRequest;
             invalidationRequest.reserve(filter.GetNumSet());
             for (size_t i : filter.GetAllSetView()) {
                 invalidationRequest.push_back(timeDependentInputNodeOutputs[i]);
             }
-
-            // Invalidate values on the executor.
-            executor->InvalidateValues(invalidationRequest);
-
-            // Set the new time value on the executor.
-            executor->SetOutputValue(
-                timeOutput,
-                VdfTypedVector<EfTime>(newTime),
-                VdfMask::AllOnes(1));
         });
 
-        // Find invalid leaf nodes and notify requests.
+        // Find the leaf nodes that are dependent on the values that are
+        // changing from oldTime to newTime.
         dispatcher.Run([&](){
-            // Find the leaf nodes that are dependent on the values that are
-            // changing from oldTime to newTime.
             leafNodes = &(leafNodeCache.FindNodes(
                 timeDependentInputNodeOutputs, filter));
         });
     });
 
     TF_VERIFY(leafNodes);
-    return Exec_TimeChangeInvalidationResult{*leafNodes, oldTime, newTime};
+    return Exec_TimeChangeInvalidationResult{
+        std::move(invalidationRequest),
+        *leafNodes,
+        oldTime,
+        newTime};
 }
 
-void
-Exec_Program::InitializeInputNodes(VdfExecutorInterface *const executor)
+VdfMaskedOutputVector
+Exec_Program::ResetUninitializedInputNodes()
 {
     if (_uninitializedInputNodes.empty()) {
-        return;
+        return {};
     }
 
     TRACE_FUNCTION();
@@ -324,11 +351,7 @@ Exec_Program::InitializeInputNodes(VdfExecutorInterface *const executor)
 
     _uninitializedInputNodes.clear();
 
-    // Make sure that the executor data manager is properly invalidated for any
-    // input nodes that were just initialized.
-    if (!invalidationRequest.empty()) {
-        executor->InvalidateValues(invalidationRequest);
-    }
+    return invalidationRequest;
 }
 
 void

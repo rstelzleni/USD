@@ -8,6 +8,7 @@
 
 #include "pxr/exec/exec/authoredValueInvalidationResult.h"
 #include "pxr/exec/exec/cacheView.h"
+#include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
 #include "pxr/exec/exec/system.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
 #include "pxr/exec/exec/typeRegistry.h"
@@ -45,9 +46,6 @@ Exec_RequestImpl::DidInvalidateComputedValues(
 
     TRACE_FUNCTION();
 
-    // Make sure the _leafOutputToIndexMap is ready for use.
-    _UpdateLeafOutputToIndexMap();
-
     // This is considered new invalidation only if the invalidation interval
     // isn't already fully contained in the last invalidation interval.
     const EfTimeInterval &invalidInterval = invalidationResult.invalidInterval;
@@ -60,34 +58,54 @@ Exec_RequestImpl::DidInvalidateComputedValues(
 
     // Build a set of invalid indices from the provided invalid leaf nodes.
     ExecRequestIndexSet invalidIndices;
-    for (const VdfNode *const leafNode : invalidationResult.invalidLeafNodes) {
-        // Every invalid leaf node should still be connected to a source output.
-        const VdfMaskedOutput mo = EfLeafNode::GetSourceMaskedOutput(*leafNode);
-        if (!TF_VERIFY(mo)) {
-            continue;
-        }
-
-        // All requests are notified about all computed value invalidation, but
-        // not all the invalid leaf nodes may be included in this particular
-        // request.
-        const auto it = _leafOutputToIndex.find(mo);
-        if (it == _leafOutputToIndex.end()) {
-            continue;
-        }
-
-        // Determine if invalidation has already been sent out for the invalid
-        // index. If not, record this index as being invalid.
-        const size_t index = it->second;
-        if (isNewlyInvalidInterval || !_lastInvalidatedIndices.IsSet(index)) {
-            invalidIndices.insert(index);
-        }
-        _lastInvalidatedIndices.Set(index); 
-    }
+    _InvalidateLeafOutputs(
+        isNewlyInvalidInterval,
+        invalidationResult.invalidLeafNodes,
+        &invalidIndices);
 
     // TODO: Handle invalid properties which are not computed through exec.
     // In doing so we must dispatch to the derived class in order to let the
     // specific scene description library determine properties, which do not
     // require execution.
+
+    // Only invoke the invalidation callback if there are any invalid indices
+    // from this request.
+    if (!invalidIndices.empty()) {
+        TRACE_FUNCTION_SCOPE("value invalidation callback");
+        _valueCallback(invalidIndices, invalidInterval);
+    }
+}
+
+void 
+Exec_RequestImpl::DidInvalidateComputedValues(
+    const Exec_DisconnectedInputsInvalidationResult &invalidationResult)
+{
+    if (!_valueCallback || _leafOutputs.empty()) {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    // For topological edits like disconnected inputs we always invalidate over
+    // the entire time range. This is considered new invalidation if the last
+    // invalidation interval isn't already over the entire time range.
+    const EfTimeInterval &invalidInterval = EfTimeInterval::GetFullInterval();
+    const bool isNewlyInvalidInterval =
+        !_lastInvalidatedInterval.IsFullInterval();
+    if (isNewlyInvalidInterval) {
+        _lastInvalidatedInterval = invalidInterval;
+    }
+
+    // Build a set of invalid indices from the provided invalid leaf nodes.
+    ExecRequestIndexSet invalidIndices;
+    _InvalidateLeafOutputs(
+        isNewlyInvalidInterval,
+        invalidationResult.invalidLeafNodes,
+        &invalidIndices);
+    _InvalidateLeafOutputs(
+        isNewlyInvalidInterval,
+        invalidationResult.disconnectedLeafNodes,
+        &invalidIndices);
 
     // Only invoke the invalidation callback if there are any invalid indices
     // from this request.
@@ -107,22 +125,13 @@ Exec_RequestImpl::DidChangeTime(
 
     TRACE_FUNCTION();
 
-    // Make sure the _leafOutputToIndexMap is ready for use.
-    _UpdateLeafOutputToIndexMap();
-
     // Build a set of invalid indices from the provided invalid leaf nodes.
     ExecRequestIndexSet invalidIndices;
     for (const VdfNode *const leafNode : invalidationResult.invalidLeafNodes) {
-        // Every invalid leaf node should still be connected to a source output.
-        const VdfMaskedOutput mo = EfLeafNode::GetSourceMaskedOutput(*leafNode);
-        if (!TF_VERIFY(mo)) {
-            continue;
-        }
-
         // All requests are notified about all time changes, but not all the
         // invalid leaf nodes may be included in this particular request.
-        const auto it = _leafOutputToIndex.find(mo);
-        if (it == _leafOutputToIndex.end()) {
+        const auto it = _leafNodeToIndex.find(leafNode->GetId());
+        if (it == _leafNodeToIndex.end()) {
             continue;
         }
 
@@ -170,11 +179,15 @@ Exec_RequestImpl::_Compile(
 
     // After compiling new outputs, we need to invalidate all data dependent on
     // the compiled network and the set of compiled leaf outputs.
-    _leafOutputToIndex.clear();
     _computeRequest.reset();
     _schedule.reset();
     _lastInvalidatedIndices.Resize(_leafOutputs.size());
     _lastInvalidatedIndices.ClearAll();
+
+    // We must greedily build the leaf node to index map. When requests are
+    // informed of network edits, some leaf nodes may have already been
+    // disconnected from their source output.
+    _BuildLeafNodeToIndexMap();
 }
 
 void
@@ -224,20 +237,61 @@ Exec_RequestImpl::_CacheValues(ExecSystem *const system)
 }
 
 void
-Exec_RequestImpl::_UpdateLeafOutputToIndexMap()
+Exec_RequestImpl::_BuildLeafNodeToIndexMap()
 {
-    if (_leafOutputToIndex.size() == _leafOutputs.size()) {
+    // We only need to populate this map for client notification, so if there
+    // are no callbacks registered, we can avoid doing the work.
+    if (!_valueCallback && !_timeCallback) {
         return;
     }
 
     TRACE_FUNCTION();
 
-    // Invalid leaf outputs will need to be converted into indices for client
+    // Invalid leaf nodes will need to be converted into indices for client
     // notification. Here, we build a data structure for efficient lookup.
-    _leafOutputToIndex.clear();
-    _leafOutputToIndex.reserve(_leafOutputs.size());
+    _leafNodeToIndex.clear();
+    _leafNodeToIndex.reserve(_leafOutputs.size());
     for (size_t i = 0; i < _leafOutputs.size(); ++i) {
-        _leafOutputToIndex.emplace(_leafOutputs[i], i);
+        const VdfMaskedOutput &sourceOutput = _leafOutputs[i];
+        for (const VdfConnection *const connection :
+                sourceOutput.GetOutput()->GetConnections()) {
+            const VdfNode &targetNode = connection->GetTargetNode();
+            if (EfLeafNode::IsALeafNode(targetNode)) {
+                _leafNodeToIndex.emplace(targetNode.GetId(), i);
+            }
+        }
+    }
+}
+
+void
+Exec_RequestImpl::_InvalidateLeafOutputs(
+    const bool isNewlyInvalidInterval,
+    const std::vector<const VdfNode *> &leafNodes,
+    ExecRequestIndexSet *const invalidIndices)
+{
+    if (leafNodes.empty() || !TF_VERIFY(invalidIndices)) {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    // Build a set of invalid indices from the provided invalid leaf nodes.
+    for (const VdfNode *const leafNode : leafNodes) {
+        // All requests are notified about all computed value invalidation, but
+        // not all the invalid leaf nodes may be included in this particular
+        // request.
+        const auto it = _leafNodeToIndex.find(leafNode->GetId());
+        if (it == _leafNodeToIndex.end()) {
+            continue;
+        }
+
+        // Determine if invalidation has already been sent out for the invalid
+        // index. If not, record this index as being invalid.
+        const size_t index = it->second;
+        if (isNewlyInvalidInterval || !_lastInvalidatedIndices.IsSet(index)) {
+            invalidIndices->insert(index);
+        }
+        _lastInvalidatedIndices.Set(index); 
     }
 }
 

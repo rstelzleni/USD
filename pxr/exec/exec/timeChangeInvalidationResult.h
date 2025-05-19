@@ -10,6 +10,7 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/vdf/maskedOutputVector.h"
 
 #include <vector>
 
@@ -21,6 +22,10 @@ class VdfNode;
 class Exec_TimeChangeInvalidationResult
 {
 public:
+    /// The time-dependent outputs to traverse and invalidate as a consequence
+    /// of the time changing from oldTime to newTime.
+    VdfMaskedOutputVector invalidationRequest;
+
     /// The leaf nodes which are invalid as a result of the time change. This is
     /// the array of time-dependent leaf nodes filtered by the collection of
     /// leaf nodes reachable from the inputs where there is *actually* a value

@@ -105,6 +105,7 @@ Exec_Uncompiler::_ProcessUncompilationRuleSet(
         // uncompiled. Otherwise, only uncompile the input on that node.
         if (rule.inputName.IsEmpty()) {
             _program->DisconnectAndDeleteNode(node);
+            _didUncompile = true;
         }
         else {
             // TODO: Disconnecting the input does not delete the node, nor does
@@ -116,6 +117,7 @@ Exec_Uncompiler::_ProcessUncompilationRuleSet(
             // this from being a problem, but it needs to be corrected when
             // we handle namespace edits.
             _program->DisconnectInput(node->GetInput(rule.inputName));
+            _didUncompile = true;
         }
 
         // The rule has triggered and is no longer valid.

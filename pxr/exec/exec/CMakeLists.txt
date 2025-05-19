@@ -39,6 +39,7 @@ pxr_library(exec
     PRIVATE_HEADERS
         authoredValueInvalidationResult.h
         compilationState.h
+        disconnectedInputsInvalidationResult.h
         inputKey.h
         parallelForRange.h
         timeChangeInvalidationResult.h

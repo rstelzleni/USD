@@ -9,8 +9,6 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/exec/exec/types.h"
-
 #include "pxr/exec/ef/timeInterval.h"
 #include "pxr/base/tf/bits.h"
 #include "pxr/base/tf/span.h"

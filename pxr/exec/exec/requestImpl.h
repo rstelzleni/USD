@@ -14,12 +14,12 @@
 #include "pxr/exec/exec/types.h"
 
 #include "pxr/base/tf/bits.h"
+#include "pxr/base/tf/pxrTslRobinMap/robin_map.h"
 #include "pxr/exec/ef/timeInterval.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/types.h"
 
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -27,6 +27,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 class EfTime;
 class Exec_AuthoredValueInvalidationResult;
 class Exec_CacheView;
+class Exec_DisconnectedInputsInvalidationResult;
 class Exec_TimeChangeInvalidationResult;
 class ExecSystem;
 class ExecValueKey;
@@ -44,11 +45,18 @@ class Exec_RequestImpl
 {
 public:
     /// Notify the request of invalid computed values as a consequence of
-    /// authored value, or structural invalidation.
+    /// authored value invalidation.
     /// 
     EXEC_API
     void DidInvalidateComputedValues(
         const Exec_AuthoredValueInvalidationResult &invalidationResult);
+
+    /// Notify the request of invalid computed values as a consequence of
+    /// uncompilation.
+    /// 
+    EXEC_API
+    void DidInvalidateComputedValues(
+        const Exec_DisconnectedInputsInvalidationResult &invalidationResult);
 
     /// Notify the request of time having changed.
     EXEC_API
@@ -80,18 +88,26 @@ protected:
     Exec_CacheView _CacheValues(ExecSystem *system);
 
 private:
-    // Ensures the _leafOutputToIndex map is up-to-date.
+    // Ensures the _leafNodeToIndex map is up-to-date.
     EXEC_API
-    void _UpdateLeafOutputToIndexMap();
+    void _BuildLeafNodeToIndexMap();
+
+    // Turns invalid leaf nodes into a set of requested - and not previously
+    // invalidated - indices.
+    // 
+    EXEC_API
+    void _InvalidateLeafOutputs(
+        bool isNewlyInvalidInterval,
+        const std::vector<const VdfNode *> &leafNodes,
+        ExecRequestIndexSet *invalidIndices);
 
 private:
     // The compiled leaf output.
     std::vector<VdfMaskedOutput> _leafOutputs;
 
-    // Maps leaf outputs to their index in the array of valueKeys the request
+    // Maps leaf nodes to their index in the array of valueKeys the request
     // was built with.
-    std::unordered_map<VdfMaskedOutput, size_t, VdfMaskedOutput::Hash>
-        _leafOutputToIndex;
+    pxr_tsl::robin_map<VdfId, size_t> _leafNodeToIndex;
 
     // The compute request to cache values with.
     std::unique_ptr<VdfRequest> _computeRequest;

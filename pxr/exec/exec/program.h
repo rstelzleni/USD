@@ -41,6 +41,7 @@ class EfTime;
 class EfTimeInputNode;
 class EsfJournal;
 class Exec_AuthoredValueInvalidationResult;
+class Exec_DisconnectedInputsInvalidationResult;
 class Exec_TimeChangeInvalidationResult;
 class TfBits;
 template <typename> class TfSpan;
@@ -149,16 +150,30 @@ public:
         return _network.GetVersion();
     }
 
-    /// Notifies the program of authored value invalidation.
+    /// Gathers the information required to invalidate the system and notify
+    /// requests after uncompilation.
+    /// 
+    Exec_DisconnectedInputsInvalidationResult InvalidateDisconnectedInputs();
+
+    /// Gathers the information required to invalidate the system and notify
+    /// requests after authored value invalidation.
+    /// 
     Exec_AuthoredValueInvalidationResult InvalidateAuthoredValues(
         TfSpan<const SdfPath> invalidProperties);
 
-    /// Initializes all invalid input nodes in the network.
-    void InitializeInputNodes(VdfExecutorInterface *executor);
+    /// Resets the accumulated set of uninitialized input nodes.
+    /// 
+    /// Returns an executor invalidation requests with all the uninitialized
+    /// input node outputs for the call site to perform initialization and
+    /// executor invalidation.
+    /// 
+    VdfMaskedOutputVector ResetUninitializedInputNodes();
 
-    /// Initializes time in the network.
-    Exec_TimeChangeInvalidationResult InitializeTime(
-        const EfTime &newTime, VdfExecutorInterface *executor);
+    /// Gathers the information required to invalidate the system and notify
+    /// requests after time has changed.
+    /// 
+    Exec_TimeChangeInvalidationResult InvalidateTime(
+        const EfTime &oldTime, const EfTime &newTime);
 
     /// Returns the time input node.
     ///

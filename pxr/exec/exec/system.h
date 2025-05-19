@@ -90,6 +90,10 @@ private:
     EXEC_API
     void _InvalidateAll();
 
+    // Notifies the system of invalidation due to uncompilation.
+    EXEC_API
+    void _InvalidateDisconnectedInputs();
+
     // Notifies the system of authored value invalidation.
     EXEC_API
     void _InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties);

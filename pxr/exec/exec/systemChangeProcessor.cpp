@@ -25,6 +25,7 @@ struct ExecSystem::_ChangeProcessor::_State {
     // that program and executor invalidation can be batch-processed.
     TfSmallVector<SdfPath, 1> attributesWithInvalidAuthoredValues;
     
+    // Uncompile changed network.
     Exec_Uncompiler uncompiler;
 };
 
@@ -73,6 +74,10 @@ ExecSystem::_ChangeProcessor::DidChangeInfoOnly(
 void
 ExecSystem::_ChangeProcessor::_PostProcessChanges()
 {
+    if (_state->uncompiler.DidUncompile()) {
+        _system->_InvalidateDisconnectedInputs();
+    }
+
     if (!_state->attributesWithInvalidAuthoredValues.empty()) {
         _system->_InvalidateAuthoredValues(
             _state->attributesWithInvalidAuthoredValues);

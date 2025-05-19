@@ -8,12 +8,14 @@
 
 #include "pxr/exec/exec/authoredValueInvalidationResult.h"
 #include "pxr/exec/exec/compiler.h"
+#include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
 #include "pxr/exec/exec/program.h"
 #include "pxr/exec/exec/requestImpl.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
 
 #include "pxr/exec/ef/executor.h"
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/ef/timeInputNode.h"
 #include "pxr/exec/vdf/dataManagerVector.h"
 #include "pxr/exec/vdf/executorErrorLogger.h"
 #include "pxr/exec/vdf/parallelDataManagerVector.h"
@@ -24,6 +26,7 @@
 #include "pxr/base/tf/span.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/base/work/loops.h"
+#include "pxr/base/work/withScopedParallelism.h"
 
 #include <utility>
 
@@ -97,13 +100,20 @@ ExecSystem::_CacheValues(
 {
     TRACE_FUNCTION();
 
-    VdfExecutorInterface *const executor = _GetMainExecutor();
-
     // TODO: Change time here, if we decide to make time a parameter to
     // CacheValues().
 
-    // Initialize the input nodes in the exec network.
-    _program->InitializeInputNodes(executor);
+    // Reset the accumulated uninitialized input nodes on the program, and
+    // retain the invalidation request for executor invalidation below.
+    VdfMaskedOutputVector invalidationRequest =
+        _program->ResetUninitializedInputNodes();
+
+    // Make sure that the executor data manager is properly invalidated for any
+    // input nodes that were just initialized.
+    VdfExecutorInterface *const executor = _GetMainExecutor();
+    if (!invalidationRequest.empty()) {
+        executor->InvalidateValues(invalidationRequest);
+    }
 
     // Run the executor to compute the values.
     VdfExecutorErrorLogger errorLogger;
@@ -150,6 +160,43 @@ ExecSystem::_InvalidateAll()
 }
 
 void
+ExecSystem::_InvalidateDisconnectedInputs()
+{
+    TRACE_FUNCTION();
+
+    Exec_DisconnectedInputsInvalidationResult invalidationResult =
+        _program->InvalidateDisconnectedInputs();
+
+    // Invalidate the executor and send request invalidation.
+    VdfExecutorInterface *const executor = _GetMainExecutor();
+    WorkWithScopedDispatcher(
+        [&executor, &invalidationResult, &requests = _requests]
+        (WorkDispatcher &dispatcher){
+        // Invalidate the executor data manager.
+        dispatcher.Run([&](){
+            if (!invalidationResult.invalidationRequest.empty()) {
+                executor->InvalidateValues(
+                    invalidationResult.invalidationRequest);
+            }
+        });
+
+        // Notify all the requests of computed value invalidation. Not all the
+        // requests will contain all the invalid leaf nodes, and the request
+        // impls are responsible for filtering the provided information.
+        // 
+        // TODO: Once we expect the system to contain more than a handful of
+        // requests, we should do this in parallel. We might still want to
+        // invoke the invalidation callbacks serially, though.
+        dispatcher.Run([&](){
+            for (const auto &requestImpl : requests) {
+                requestImpl->DidInvalidateComputedValues(invalidationResult);
+            }
+        });
+
+    });
+}
+
+void
 ExecSystem::_InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 {
     TRACE_FUNCTION();
@@ -179,29 +226,71 @@ ExecSystem::_InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 }
 
 void
-ExecSystem::_ChangeTime(const EfTime &time)
+ExecSystem::_ChangeTime(const EfTime &newTime)
 {
-    // Greedily initialize the time on the executor.
-    const Exec_TimeChangeInvalidationResult invalidationResult =
-        _program->InitializeTime(time, _GetMainExecutor());
+    // Retrieve the old time from the executor data manager.
+    const VdfMaskedOutput timeOutput = VdfMaskedOutput(
+        _program->GetTimeInputNode()->GetOutput(),
+        VdfMask::AllOnes(1));
+    VdfExecutorInterface *const executor = _GetMainExecutor();
+    const VdfVector *const oldTimeVector = executor->GetOutputValue(
+        *timeOutput.GetOutput(), timeOutput.GetMask());
 
-    // Bail out if the time change did not result in invalidation, for example
-    // when changing to a time that was already set, or when initializing time
-    // for the first time.
-    if (invalidationResult.invalidLeafNodes.empty()) {
+    // If there isn't already a time value stored in the executor data manager,
+    // perform first time initialization and return.
+    if (!oldTimeVector) {
+        executor->SetOutputValue(
+            *timeOutput.GetOutput(),
+            VdfTypedVector<EfTime>(newTime),
+            timeOutput.GetMask());
         return;
     }
 
-    // Notify all the requests of the time change. Not all the requests will
-    // contain all the leaf nodes affected by the time change, and the request
-    // impls are responsible for filtering the provided information.
-    // 
-    // TODO: Once we expect the system to contain more than a handful of
-    // requests, we should do this in parallel. We might still want to invoke
-    // the invalidation callbacks serially, though.
-    for (const auto &requestImpl : _requests) {
-        requestImpl->DidChangeTime(invalidationResult);
+    // Get the old time value from the vector. If there is no change in time,
+    // we can return without performing invalidation.
+    const EfTime oldTime = oldTimeVector->GetReadAccessor<EfTime>()[0];
+    if (oldTime == newTime) {
+        return;
     }
+
+    TRACE_FUNCTION();
+
+    // Invalidate time on the program.
+    const Exec_TimeChangeInvalidationResult invalidationResult =
+        _program->InvalidateTime(oldTime, newTime);
+
+    // Invalidate the executor and send request invalidation notification.
+    WorkWithScopedDispatcher(
+        [&executor, &invalidationResult, &timeOutput, &newTime,
+             &requests = _requests]
+        (WorkDispatcher &dispatcher){
+        // Invalidate values on the executor and set the new time.
+        if (!invalidationResult.invalidationRequest.empty()) {
+            dispatcher.Run([&](){     
+                executor->InvalidateValues(
+                    invalidationResult.invalidationRequest);
+                executor->SetOutputValue(
+                    *timeOutput.GetOutput(),
+                    VdfTypedVector<EfTime>(newTime),
+                    timeOutput.GetMask());
+            });
+        }
+
+        // Notify all the requests of the time change. Not all the requests will
+        // contain all the leaf nodes affected by the time change, and the
+        // request impls are responsible for filtering the provided information.
+        // 
+        // TODO: Once we expect the system to contain more than a handful of
+        // requests, we should do this in parallel. We might still want to
+        // invoke the invalidation callbacks serially, though.
+        if (!invalidationResult.invalidLeafNodes.empty()) {
+            dispatcher.Run([&](){
+                for (const auto &requestImpl : requests) {
+                    requestImpl->DidChangeTime(invalidationResult);
+                }
+            });
+        }
+    });
 }
 
 void
