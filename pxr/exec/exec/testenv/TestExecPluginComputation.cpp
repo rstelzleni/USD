@@ -20,7 +20,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (myComputation)
     );
 
-EXEC_REGISTER_SCHEMA(TestExecPluginComputationSchema) 
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecPluginComputationSchema) 
 {
     // Register a computation that the test looks for first, causing this plugin
     // to be loaded.
@@ -42,14 +42,15 @@ EXEC_REGISTER_SCHEMA(TestExecPluginComputationSchema)
 
 // Register a computation on a different schema, to confirm that the computation
 // is defined when we load plugins for the schema above.
-EXEC_REGISTER_SCHEMA(TestExecExtraPluginComputationSchema) 
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecExtraPluginComputationSchema) 
 {
     self.PrimComputation(_tokens->myComputation)
         .Callback(+[](const VdfContext &ctx) { return 42.0; });
 }
 
 // Register a computaiton for a schema that's already been registered.
-EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
+    TestExecComputationRegistrationCustomSchema)
 {
     self.PrimComputation(_tokens->myComputation)
         .Callback(+[](const VdfContext &ctx) { return 42.0; })

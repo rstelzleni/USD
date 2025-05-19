@@ -23,7 +23,7 @@ TF_DEFINE_PRIVATE_TOKENS(
 struct MySchemaType {};
 
 
-EXEC_REGISTER_SCHEMA(MySchemaType)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(MySchemaType)
 {
     self.PrimComputation(_tokens->primComputation)
         .Callback<int>(+[](const VdfContext &ctx) {

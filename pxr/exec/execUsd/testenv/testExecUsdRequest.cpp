@@ -27,7 +27,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (xf)
     );
 
-EXEC_REGISTER_SCHEMA(TestExecUsdRequestComputedTransform)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRequestComputedTransform)
 {
     self.PrimComputation(_tokens->computeXf)
         .Callback(+[](const VdfContext &ctx) {

@@ -56,13 +56,14 @@ TF_DEFINE_PRIVATE_TOKENS(
 );
 
 // A type that is not registered with TfType.
-EXEC_REGISTER_SCHEMA(TestUnknownSchemaType)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestUnknownSchemaType)
 {
     self.PrimComputation(_tokens->unknownSchemaTypeComputation)
         .Callback<double>(+[](const VdfContext &) { return 1.0; });
 }
 
-EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
+    TestExecComputationRegistrationCustomSchema)
 {
     self.PrimComputation(_tokens->emptyComputation);
 
@@ -116,7 +117,8 @@ EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationCustomSchema)
         .Callback(+[](const VdfContext &) { return 1.0; });
 }
 
-EXEC_REGISTER_SCHEMA(TestExecComputationRegistrationDerivedCustomSchema)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
+    TestExecComputationRegistrationDerivedCustomSchema)
 {
     self.PrimComputation(_tokens->derivedSchemaComputation)
         .Callback(+[](const VdfContext &) { return 1.0; });
@@ -140,7 +142,7 @@ namespace client_namespace {
 struct TestNamespacedSchemaType {};
 
 
-EXEC_REGISTER_SCHEMA(TestNamespacedSchemaType)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestNamespacedSchemaType)
 {
     self.PrimComputation(_tokens->noInputsComputation)
         .Callback(+[](const VdfContext &) { return 1.0; });

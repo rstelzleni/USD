@@ -65,7 +65,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (xf)
 );
 
-EXEC_REGISTER_SCHEMA(UsdGeomXform)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(UsdGeomXform)
 {
     self.PrimComputation(_tokens->computeXf)
     .Callback<GfMatrix4d>(+[](const VdfContext &ctx) {

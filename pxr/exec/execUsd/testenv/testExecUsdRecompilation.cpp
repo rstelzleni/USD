@@ -51,7 +51,7 @@ CommonComputationCallback(const VdfContext &ctx)
     return 42;
 }
 
-EXEC_REGISTER_SCHEMA(TestExecUsdRecompilationCustomSchema)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRecompilationCustomSchema)
 {
     // Computation depends on customAttr only.
     self.PrimComputation(_tokens->computeUsingCustomAttr)

@@ -94,7 +94,7 @@ PXR_NAMESPACE_CLOSE_SCOPE
 
 // TestExecInputResolverCustomSchema is a codeless schema that's loaded for this
 // test only. The schema is loaded from testenv/testExecInputResolver/resources.
-EXEC_REGISTER_SCHEMA(TestExecInputResolverCustomSchema)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecInputResolverCustomSchema)
 {
     self.PrimComputation(_tokens->customComputation)
         .Callback<int>(+[](const VdfContext &){ return 0; });

@@ -48,7 +48,7 @@ _CommonComputationCallback(const VdfContext &ctx)
     return inputValue ? *inputValue : 0;
 }
 
-EXEC_REGISTER_SCHEMA(TestExecUsdUncompilationCustomSchema)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdUncompilationCustomSchema)
 {
     self.PrimComputation(_tokens->constantComputation)
         .Callback<int>(+[](const VdfContext &){ return 42; });

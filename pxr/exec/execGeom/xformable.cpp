@@ -40,7 +40,7 @@ _ComputeLocalToWorldTransform(const VdfContext &ctx)
     }
 }
 
-EXEC_REGISTER_SCHEMA(UsdGeomXformable)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(UsdGeomXformable)
 {
     self.PrimComputation(ExecGeomXformableTokens->computeTransform)
         .Callback<GfMatrix4d>(&_ComputeLocalToWorldTransform)
