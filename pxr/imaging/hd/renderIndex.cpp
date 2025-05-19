@@ -188,13 +188,16 @@ HdRenderIndex::HdRenderIndex(
 
         // The legacy prim scene index holds prims contributed from
         // upstream scene delegates.  Convert any legacy subsets
-        // to HdGeomSubsetSchema.
+        // to HdGeomSubsetSchema.  Since legacy prims are typically
+        // populated iteratively, use notice batching upstream from
+        // scanning for geom subsets.
         HdLegacyGeomSubsetSceneIndexRefPtr legacyGeomSubsetSceneIndex =
-            HdLegacyGeomSubsetSceneIndex::New(_emulationSceneIndex);
+            HdLegacyGeomSubsetSceneIndex::New(
+                _emulationBatchingCtx->Append(_emulationSceneIndex));
 
         _mergingSceneIndex = HdMergingSceneIndex::New();
         _mergingSceneIndex->AddInputScene(
-            _emulationBatchingCtx->Append(legacyGeomSubsetSceneIndex),
+            legacyGeomSubsetSceneIndex,
             SdfPath::AbsoluteRootPath());
 
         _terminalSceneIndex =
