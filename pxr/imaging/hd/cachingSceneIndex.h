@@ -23,7 +23,7 @@ TF_DECLARE_REF_PTRS(HdCachingSceneIndex);
 ///
 /// \class HdCachingSceneIndex
 ///
-/// A scene index that caches the prim data source.
+/// A scene index that caches the prim data source and child prim paths.
 ///
 class HdCachingSceneIndex : public HdSingleInputFilteringSceneIndexBase
 {
@@ -65,14 +65,16 @@ protected:
 
 private:
     // Implemented similarly to HdFlatteningSceneIndex - without flattening.
-    
+
     // Consolidate _recentPrims into _prims.
     void _ConsolidateRecentPrims();
 
-    // members
-    using _PrimTable = SdfPathTable<std::optional<HdSceneIndexPrim>>;
-    _PrimTable _prims;
+    // Consolidate _recentChildPaths into _childPaths.
+    void _ConsolidateRecentChildPaths();
 
+    // Consolidate both.
+    void _ConsolidateRecent();
+    
     struct _PathHashCompare {
         static bool equal(const SdfPath &a, const SdfPath &b) {
             return a == b;
@@ -81,9 +83,21 @@ private:
             return hash_value(path);
         }
     };
+    
+    // members
+    using _PrimTable = SdfPathTable<std::optional<HdSceneIndexPrim>>;
+    _PrimTable _prims;
+
     using _RecentPrimTable =
         tbb::concurrent_hash_map<SdfPath, HdSceneIndexPrim, _PathHashCompare>;
     mutable _RecentPrimTable _recentPrims;
+
+    using _ChildPathsTable = SdfPathTable<std::optional<SdfPathVector>>;
+    _ChildPathsTable _childPaths;
+
+    using _RecentChildPathsTable =
+        tbb::concurrent_hash_map<SdfPath, SdfPathVector, _PathHashCompare>;
+    mutable _RecentChildPathsTable _recentChildPaths;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

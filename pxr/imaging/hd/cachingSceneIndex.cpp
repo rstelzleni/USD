@@ -23,9 +23,9 @@ HdSceneIndexPrim
 HdCachingSceneIndex::GetPrim(const SdfPath &primPath) const
 {
     TRACE_FUNCTION();
-    
+
     // Check the hierarchy cache
-    const _PrimTable::const_iterator i = _prims.find(primPath);
+    const auto i = _prims.find(primPath);
     // SdfPathTable will default-construct entries for ancestors
     // as needed to represent hierarchy, so double-check the
     // dataSource to confirm presence os a cached prim
@@ -33,26 +33,28 @@ HdCachingSceneIndex::GetPrim(const SdfPath &primPath) const
         return *i->second;
     }
 
+    using Accessor = _RecentPrimTable::const_accessor;
+    
     // Check the recent prims cache
     {
         // Use a scope to minimize lifetime of tbb accessor
         // for maximum concurrency
-        _RecentPrimTable::const_accessor accessor;
+        Accessor accessor;
         if (_recentPrims.find(accessor, primPath)) {
             return accessor->second;
         }
     }
 
     // No cache entry found; query input scene
-    HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(primPath);
+    const HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(primPath);
 
     // Store in the recent prims cache
-    if (!_recentPrims.insert(std::make_pair(primPath, prim))) {
+    if (!_recentPrims.insert({primPath, prim})) {
         // Another thread inserted this entry.  Since dataSources
         // are stateful, return that one.
-        _RecentPrimTable::accessor accessor;
+        Accessor accessor;
         if (TF_VERIFY(_recentPrims.find(accessor, primPath))) {
-            prim = accessor->second;
+            return accessor->second;
         }
     }
     return prim;
@@ -61,8 +63,33 @@ HdCachingSceneIndex::GetPrim(const SdfPath &primPath) const
 SdfPathVector
 HdCachingSceneIndex::GetChildPrimPaths(const SdfPath &primPath) const
 {
-    // we don't change topology so we can dispatch to input
-    return _GetInputSceneIndex()->GetChildPrimPaths(primPath);
+    TRACE_FUNCTION();
+
+    const auto i = _childPaths.find(primPath);
+    if (i != _childPaths.end() && i->second) {
+        return *i->second;
+    }
+
+    using Accessor = _RecentChildPathsTable::const_accessor;
+    
+    {
+        Accessor accessor;
+        if (_recentChildPaths.find(accessor, primPath)) {
+            return accessor->second;
+        }
+    }
+
+    const SdfPathVector childPrimPaths =
+        _GetInputSceneIndex()->GetChildPrimPaths(primPath);
+
+    if (!_recentChildPaths.insert({primPath, childPrimPaths})) {
+        Accessor accessor;
+        if (TF_VERIFY(_recentChildPaths.find(accessor, primPath))) {
+            return accessor->second;
+        }
+    }
+    
+    return childPrimPaths;
 }
 
 void
@@ -72,16 +99,31 @@ HdCachingSceneIndex::_PrimsAdded(
 {
     TRACE_FUNCTION();
 
-    _ConsolidateRecentPrims();
+    _ConsolidateRecent();
 
     for (const HdSceneIndexObserver::AddedPrimEntry &entry : entries) {
-        const _PrimTable::iterator i = _prims.find(entry.primPath);
+        const auto i = _prims.find(entry.primPath);
         if (i != _prims.end() && i->second) {
             WorkSwapDestroyAsync(i->second->dataSource);
             i->second = std::nullopt;
         }
+
+        _childPaths[SdfPath::AbsoluteRootPath()] = std::nullopt;
+        if (!entry.primPath.IsAbsoluteRootPath()) {
+            for (const SdfPath &prefix : entry.primPath.GetPrefixes()) {
+                const auto it = _childPaths.find(prefix);
+                if (it == _childPaths.end()) {
+                    break;
+                }
+                if (!it->second) {
+                    continue;
+                }
+                WorkSwapDestroyAsync(*it->second);
+                it->second = std::nullopt;
+            }
+        }
     }
-    
+
     _SendPrimsAdded(entries);
 }
 
@@ -92,7 +134,7 @@ HdCachingSceneIndex::_PrimsRemoved(
 {
     TRACE_FUNCTION();
 
-    _ConsolidateRecentPrims();
+    _ConsolidateRecent();
 
     for (const HdSceneIndexObserver::RemovedPrimEntry &entry : entries) {
         if (entry.primPath.IsAbsoluteRootPath()) {
@@ -100,15 +142,42 @@ HdCachingSceneIndex::_PrimsRemoved(
             // shutdown operation.
             _prims.ClearInParallel();
             TfReset(_prims);
+            _childPaths.ClearInParallel();
+            TfReset(_childPaths);
+            break;
         } else {
-            const auto startEndIt = _prims.FindSubtreeRange(entry.primPath);
-            for (auto it = startEndIt.first; it != startEndIt.second; ++it) {
-                if (it->second) {
-                    WorkSwapDestroyAsync(it->second->dataSource);
+            {
+                const auto startEndIt =
+                    _prims.FindSubtreeRange(entry.primPath);
+                for (auto it = startEndIt.first;
+                     it != startEndIt.second;
+                     ++it) {
+                    if (it->second) {
+                        WorkSwapDestroyAsync(it->second->dataSource);
+                    }
+                }
+                if (startEndIt.first != startEndIt.second) {
+                    _prims.erase(startEndIt.first);
                 }
             }
-            if (startEndIt.first != startEndIt.second) {
-                _prims.erase(startEndIt.first);
+            {
+                const auto it =
+                    _childPaths.find(entry.primPath.GetParentPath());
+                if (it != _childPaths.end()) {
+                    if (it->second) {
+                        WorkSwapDestroyAsync(*it->second);
+                        it->second = std::nullopt;
+                    }
+                    const auto startEndIt =
+                        _childPaths.FindSubtreeRange(entry.primPath);
+                    for (auto it = startEndIt.first;
+                         it != startEndIt.second;
+                         ++it) {
+                        if (it->second) {
+                            WorkSwapDestroyAsync(*it->second);
+                        }
+                    }
+                }
             }
         }
     }
@@ -123,7 +192,12 @@ HdCachingSceneIndex::_PrimsDirtied(
 {
     TRACE_FUNCTION();
 
-    _ConsolidateRecentPrims();
+    // Note that calling _ConsolidateRecentPrims() here is sufficient.
+    // Though that also means that subsequent
+    // calls to GetPrim() would not have the benefit
+    // of needing to do look-ups in only one
+    // table.
+    _ConsolidateRecent();
 
     for (const HdSceneIndexObserver::DirtiedPrimEntry &entry : entries) {
         if (entry.dirtyLocators.Contains(HdDataSourceLocator::EmptyLocator())) {
@@ -147,6 +221,24 @@ HdCachingSceneIndex::_ConsolidateRecentPrims()
         _prims[entry.first] = std::move(entry.second);
     }
     _recentPrims.clear();
+}
+
+void
+HdCachingSceneIndex::_ConsolidateRecentChildPaths()
+{
+    TRACE_FUNCTION();
+
+    for (auto &entry: _recentChildPaths) {
+        _childPaths[entry.first] = std::move(entry.second);
+    }
+    _recentChildPaths.clear();
+}
+
+void
+HdCachingSceneIndex::_ConsolidateRecent()
+{
+    _ConsolidateRecentPrims();
+    _ConsolidateRecentChildPaths();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
