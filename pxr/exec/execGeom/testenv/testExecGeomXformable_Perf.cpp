@@ -15,6 +15,7 @@
 #include "pxr/base/arch/timing.h"
 #include "pxr/base/gf/matrix4d.h"
 #include "pxr/base/gf/vec3d.h"
+#include "pxr/base/tf/pxrCLI11/CLI11.h"
 #include "pxr/base/trace/aggregateNode.h"
 #include "pxr/base/trace/collector.h"
 #include "pxr/base/trace/reporter.h"
@@ -33,51 +34,63 @@
 #include <vector>
 
 PXR_NAMESPACE_USING_DIRECTIVE
+using namespace pxr_CLI;
 
-// Recursively creates a hierarchy of Xform prims.
+// Creates a hierarchy of Xform prims.
 static void
-_CreatePrimsRecursive(
-    const SdfPrimSpecHandle parent,
-    const size_t branchingFactor,
-    const size_t treeDepth,
-    const size_t currentDepth,
+_CreateDescendantPrims(
+    const SdfPrimSpecHandle root,
+    const unsigned branchingFactor,
+    const unsigned treeDepth,
     std::vector<SdfPath> *const leafPrims)
 {
-    if (currentDepth >= treeDepth) {
-        return;
-    }
+    // Traversal state vector: Each entry contains the parent prim spec and
+    // the current traversal depth.
+    std::vector<std::pair<SdfPrimSpecHandle, unsigned>>
+        traversalState{{root, 1}};
 
-    for (size_t i=0; i<branchingFactor; ++i) {
-        const SdfPrimSpecHandle primSpec =
-            SdfPrimSpec::New(
-                parent, TfStringPrintf("Prim%zu", i), SdfSpecifierDef, "Xform");
-        TF_AXIOM(primSpec);
+    while (!traversalState.empty()) {
+        auto [parent, currentDepth] = traversalState.back();
+        traversalState.pop_back();
 
-        const VtValue xformOpValue(VtStringArray({"xformOp:transform"}));
-        const SdfAttributeSpecHandle xformOpAttr =
-            SdfAttributeSpec::New(
-                primSpec,
-                "xformOpOrder",
-                SdfGetValueTypeNameForValue(xformOpValue),
-                SdfVariabilityUniform);
-        xformOpAttr->SetDefaultValue(xformOpValue);
-
-        GfMatrix4d transform{1};
-        transform.SetTranslate(GfVec3d(1, 0, 0));
-        const VtValue transformValue{transform};
-        const SdfAttributeSpecHandle transformAttr =
-            SdfAttributeSpec::New(
-                primSpec,
-                "xformOps:transform",
-                SdfGetValueTypeNameForValue(transformValue));
-        transformAttr->SetDefaultValue(transformValue);
-
-        if (currentDepth+1 == treeDepth) {
-            leafPrims->push_back(primSpec->GetPath());
+        ++currentDepth;
+        if (currentDepth > treeDepth) {
+            continue;
         }
 
-        _CreatePrimsRecursive(
-            primSpec, branchingFactor, treeDepth, currentDepth+1, leafPrims);
+        for (unsigned i=0; i<branchingFactor; ++i) {
+            const SdfPrimSpecHandle primSpec =
+                SdfPrimSpec::New(
+                    parent,
+                    TfStringPrintf("Prim%u", i),
+                    SdfSpecifierDef, "Xform");
+            TF_AXIOM(primSpec);
+
+            const VtValue xformOpValue(VtStringArray({"xformOp:transform"}));
+            const SdfAttributeSpecHandle xformOpAttr =
+                SdfAttributeSpec::New(
+                    primSpec,
+                    "xformOpOrder",
+                    SdfGetValueTypeNameForValue(xformOpValue),
+                    SdfVariabilityUniform);
+            xformOpAttr->SetDefaultValue(xformOpValue);
+
+            GfMatrix4d transform{1};
+            transform.SetTranslate(GfVec3d(1, 0, 0));
+            const VtValue transformValue{transform};
+            const SdfAttributeSpecHandle transformAttr =
+                SdfAttributeSpec::New(
+                    primSpec,
+                    "xformOps:transform",
+                    SdfGetValueTypeNameForValue(transformValue));
+            transformAttr->SetDefaultValue(transformValue);
+
+            if (currentDepth == treeDepth) {
+                leafPrims->push_back(primSpec->GetPath());
+            }
+
+            traversalState.emplace_back(primSpec, currentDepth);
+        }
     }
 }
 
@@ -85,10 +98,24 @@ _CreatePrimsRecursive(
 // given branching factor and depth.
 static UsdStageConstRefPtr
 _CreateStage(
-    const size_t branchingFactor,
-    const size_t treeDepth,
+    const unsigned branchingFactor,
+    const unsigned treeDepth,
     std::vector<SdfPath> *const leafPrims)
 {
+    TRACE_FUNCTION();
+
+    std::cout << "Creating Xform tree with branching factor "
+              << branchingFactor << " and tree depth "
+              << treeDepth << "\n";
+
+    const unsigned long numPrims =
+        branchingFactor == 1
+        ? treeDepth
+        : (std::pow(branchingFactor, treeDepth) - 1) / (branchingFactor - 1);
+    const unsigned long numLeafPrims = std::pow(branchingFactor, treeDepth-1);
+    std::cout << "The tree will contain " << numPrims
+              << " prims and " << numLeafPrims << " leaf prims.\n";
+
     const SdfLayerRefPtr layer = SdfLayer::CreateAnonymous(".usda");
 
     const SdfPrimSpecHandle primSpec =
@@ -112,8 +139,11 @@ _CreateStage(
             SdfGetValueTypeNameForValue(transformValue));
     transformAttr->SetDefaultValue(transformValue);
 
-    _CreatePrimsRecursive(
-        primSpec, branchingFactor, treeDepth, 1, leafPrims);
+    _CreateDescendantPrims(
+        primSpec, branchingFactor, treeDepth, leafPrims);
+
+    // Make sure we ended up with the correct number of leaf nodes.
+    TF_AXIOM(leafPrims->size() == numLeafPrims);
 
     const UsdStageConstRefPtr usdStage = UsdStage::Open(layer);
     TF_AXIOM(usdStage);
@@ -131,7 +161,7 @@ _FindTraceNode(
 {
     for (const TraceAggregateNodePtr &child : parent->GetChildren()) {
         // We look for a key that ends with the search string, rather than
-        // require an exact match to account for the fact that in the cmake
+        // require an exact match to account for the fact that in pxr-namespaced
         // builds, trace function keys are generated from namespaced symbols.
         if (TfStringEndsWith(child->GetKey().GetString(), key)) {
             return child;
@@ -178,19 +208,17 @@ _WritePerfstats(const TraceReporterPtr &globalReporter)
 
 static void
 TestExecGeomXformable_Perf(
-    size_t branchingFactor,
-    size_t treeDepth)
+    unsigned branchingFactor,
+    unsigned treeDepth,
+    bool outputAsSpy)
 {
+    TraceCollector::GetInstance().SetEnabled(true);
+
     // Instantiate a hierarchy of Xform prims on a stage and get access to the
     // leaf prims.
     std::vector<SdfPath> leafPrims;
     const UsdStageConstRefPtr usdStage =
         _CreateStage(branchingFactor, treeDepth, &leafPrims);
-
-    // Make sure we ended up with the correct number of leaf nodes.
-    TF_AXIOM(leafPrims.size() == std::pow(branchingFactor, treeDepth-1));
-
-    TraceCollector::GetInstance().SetEnabled(true);
 
     // Call IsValid on an attribute as a way to ensure that the
     // UsdSchemaRegistry has been populated before starting compilation.
@@ -228,8 +256,13 @@ TestExecGeomXformable_Perf(
     globalReporter->UpdateTraceTrees();
 
     {
-        std::ofstream traceFile("test.spy");
-        globalReporter->SerializeProcessedCollections(traceFile);
+        if (outputAsSpy) {
+            std::ofstream traceFile("test.spy");
+            globalReporter->SerializeProcessedCollections(traceFile);
+        } else {
+            std::ofstream traceFile("test.trace");
+            globalReporter->Report(traceFile);
+        }
     }
 
     _WritePerfstats(globalReporter);
@@ -238,28 +271,35 @@ TestExecGeomXformable_Perf(
 int 
 main(int argc, char **argv) 
 {
-    if (argc < 3) {
-        static const std::string usage = R"usage(
-usage: testExecGeomXformable_Perf <branchingFactor> <treeDepth>
+    unsigned numThreads = WorkGetConcurrencyLimit();
+    unsigned branchingFactor = 0;
+    unsigned treeDepth = 0;
+    bool outputAsSpy = false;
 
-Creates a transform hierarchy by building a regular tree of Xform prims where
-each prim has <branchingFactor> children with an overall tree depth of
-<treeDepth>.
+    // Set up arguments and their defaults
+    CLI::App app(
+        "Creates a transform hierarchy by building a regular tree of Xform "
+        "prims where each prim has <branchingFactor> children with an overall "
+        "tree depth of <treeDepth>.",
+        "testExecGeomXformable_Perf");
+    app.add_option(
+        "--branchingFactor", branchingFactor,
+        "Branching factor used to build the Xform tree")
+        ->required(true);
+    app.add_option(
+        "--treeDepth", treeDepth,
+        "The depth of the Xform tree to build.")
+        ->required(true);
+    app.add_option(
+        "--numThreads", numThreads, "Number of threads to use");
+    app.add_flag(
+        "--spy", outputAsSpy,
+        "Report traces in .spy format.");
 
-)usage";
-        std::cerr << usage;
-        return 1;
-    }
+    CLI11_PARSE(app, argc, argv);
 
-    const int branchingFactor = std::atoi(argv[1]);
-    const int treeDepth = std::atoi(argv[2]);
+    std::cout << "Running with " << numThreads << " threads.\n";
+    WorkSetConcurrencyLimit(numThreads);
 
-    std::cout << "Creating Xform tree with branching factor "
-              << branchingFactor << " and tree depth "
-              << treeDepth << "\n";
-
-    // TODO: Support single-threaded versions of this test.
-    WorkSetMaximumConcurrencyLimit();
-
-    TestExecGeomXformable_Perf(branchingFactor, treeDepth);
+    TestExecGeomXformable_Perf(branchingFactor, treeDepth, outputAsSpy);
 }
