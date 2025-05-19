@@ -89,6 +89,13 @@ pxr_register_test(testExecGeomXformable_Perf_Chain
     EXPECTED_RETURN_CODE 0
 )
 
+pxr_register_test(testExecGeomXformable_Perf_Wide
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
+             --branchingFactor 19530 --treeDepth 2 --spy"
+    EXPECTED_RETURN_CODE 0
+    ENV TF_FATAL_VERIFY=1
+)
+
 pxr_register_test(testExecGeomXformable_Perf_Large
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
              --branchingFactor 5 --treeDepth 10"
