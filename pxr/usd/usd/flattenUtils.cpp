@@ -178,6 +178,19 @@ _Reduce(const VtValue &lhs, const VtValue &rhs, const TfToken &field)
         // if the weaker value is a block, return the stronger value.
         return lhs;
     }
+    if (lhs.IsHolding<SdfAnimationBlock>() && 
+            (rhs.IsHolding<SdfTimeSampleMap>() || rhs.IsHolding<TsSpline>())) {
+        // If stronger is an animation block and weaker is a time sample map or
+        // spline, return the stronger value, that is, the animation block.
+        return lhs;
+    }
+    if (lhs.IsHolding<SdfAnimationBlock>() &&
+            !(rhs.IsHolding<SdfTimeSampleMap>() || rhs.IsHolding<TsSpline>())) {
+        // If the stronger value is an animation block and the weaker value is
+        // not a time sample map or spline (default values), return the
+        // weaker default value.
+        return rhs;
+    }
     if (lhs.GetType() != rhs.GetType()) {
         // If the types do not match, there is no reduction rule for
         // combining them, so just use the stronger value.

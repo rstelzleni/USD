@@ -6470,9 +6470,10 @@ protected:
 
         // Try to read value from scene description.
         if (std::forward<GetValueFn>(getValue)()) {
-            // If this is a value block, set _done to stop composing, and
-            // swap back the composed value so far.
-            if (Usd_ValueContainsBlock(_value)) {
+            // If this is a value block or an animation block, set _done to 
+            // stop composing, and swap back the composed value so far.
+            if (Usd_ValueContainsBlock<SdfValueBlock>(_value) || 
+                    Usd_ValueContainsBlock<SdfAnimationBlock>(_value)) {
                 if (array) {
                     _UncheckedSwap(_value, tmpExprs);
                 }
@@ -7054,8 +7055,10 @@ UsdStage::_SetValueImpl(
                         attr.GetPath().GetText(), time.GetValue());
         return false;
     }
-    // if we are setting a value block, we don't want type checking
-    if (!Usd_ValueContainsBlock(&newValue)) {
+    // if we are setting a value block or an animation block, we don't want 
+    // type checking
+    if (! (Usd_ValueContainsBlock<SdfValueBlock>(&newValue) ||
+           Usd_ValueContainsBlock<SdfAnimationBlock>(&newValue))) {
         // Find the attribute's value type.
         const TfType valType = _GetAttributeValueType(attr);
         if (!valType) {
@@ -8159,8 +8162,19 @@ public:
                 attr, SdfFieldKeys->Default, TfToken(), 
                 /*useFallbacks=*/true, &composer);
 
-            return valueFound && 
-                (!Usd_ClearValueIfBlocked<SdfAbstractDataValue>(&out));
+            if (!out.isAnimationBlock) {
+                // We can only stop here if the value is not an animation block,
+                // as if the strongest value is an animation block, we must walk
+                // the node graph to get the next stronger non-animation block
+                // value.
+                return valueFound && 
+                    (!Usd_ClearValueIfBlocked<
+                        SdfValueBlock, SdfAbstractDataValue>(&out));
+            }
+            // Clear the animation block and continue walking to find next
+            // stronger non-animation block default.
+            Usd_ClearValueIfBlocked<
+                SdfAnimationBlock, SdfAbstractDataValue>(&out);
         }
 
         // Otherwise we have numeric time and need to get the value with
@@ -8325,7 +8339,17 @@ struct Usd_AttrGetUntypedValueHelper {
             bool valueFound = stage._GetMetadata(
                 attr, SdfFieldKeys->Default, TfToken(), 
                 /*useFallbacks=*/true, result);
-            return valueFound && (!Usd_ClearValueIfBlocked(result));
+            if (!result->IsHolding<SdfAnimationBlock>()) {
+                // We can only stop here if the value is not an animation block,
+                // as if the strongest value is an animation block, we must walk
+                // the node graph to get the next stronger non-animation block
+                // value.
+                return valueFound && 
+                    (!Usd_ClearValueIfBlocked<SdfValueBlock>(result));
+            }
+            // Clear the animation block and continue walking to find next
+            // stronger non-animation block default.
+            Usd_ClearValueIfBlocked<SdfAnimationBlock>(result);
         }
 
         Usd_UntypedInterpolator interpolator(attr, result);
@@ -8589,6 +8613,14 @@ struct UsdStage::_ExtraResolveInfo
     // If the resolve info source is UsdResolveInfoSourceValueClips this will 
     // be the Usd_ClipSet containing values for the attribute.
     Usd_ClipSetRefPtr clipSet;
+
+    // If we found a default value of animation block as the strongest value
+    // source, we need to keep walking the pcp node graph, until we have found a 
+    // non-animation block default value and ignoring any animation via spline 
+    // or time samples in weaker layer. processingAnimationBlock helps us keep
+    // track of this strongest animation block value source, to ignore any
+    // spline / time sample value sources in the weaker layers.
+    bool processingAnimationBlock = false;
 };
 
 Usd_AssetPathContext
@@ -8878,12 +8910,14 @@ struct UsdStage::_ResolveInfoResolver
             localTime = layerToStageOffset.GetInverse() * (*time);
         }
 
-        if (_HasTimeSamples(layer, specPath,
+        if (!_extraInfo->processingAnimationBlock &&
+            _HasTimeSamples(layer, specPath,
                             localTime ? std::addressof(*localTime) : nullptr,
                             &_extraInfo->lowerSample, 
                             &_extraInfo->upperSample)) {
             _resolveInfo->_source = UsdResolveInfoSourceTimeSamples;
-        } else if (layer->HasField(specPath, SdfFieldKeys->Spline)) {
+        } else if (!_extraInfo->processingAnimationBlock &&
+                layer->HasField(specPath, SdfFieldKeys->Spline)) {
             _resolveInfo->_source = UsdResolveInfoSourceSpline;
             // In order to optimize read only / playback workflow, we save the
             // spline in the resolve info. Do note that with every resync /
@@ -8902,6 +8936,17 @@ struct UsdStage::_ResolveInfoResolver
             else if (defValue == Usd_DefaultValueResult::Blocked) {
                 _resolveInfo->_valueIsBlocked = true;
                 return ProcessFallback();
+            }
+            else if (defValue == Usd_DefaultValueResult::BlockedAnimation) {
+                // We need to keep on walking back and only consider default
+                // values, since we found an AnimationBlock, which blocks any
+                // spline or time samples value and will only allow default
+                // values on the attribute to shine through.
+                // Note that since AnimationBlock is itself a default, we keep
+                // on walking up the node graph until a non-animation block
+                // default is found.
+                _extraInfo->processingAnimationBlock = true;
+                return false;
             }
         }
 
@@ -8937,6 +8982,11 @@ struct UsdStage::_ResolveInfoResolver
         else if (defValue == Usd_DefaultValueResult::Blocked) {
             _resolveInfo->_valueIsBlocked = true;
             return ProcessFallback();
+        }
+        else if (defValue == Usd_DefaultValueResult::BlockedAnimation) {
+            // We need to keep on walking back and only consider non animation
+            // block default values.
+            return false;
         }
 
         return false;
