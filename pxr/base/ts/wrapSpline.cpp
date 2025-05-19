@@ -194,6 +194,9 @@ void wrapSpline()
 
         .def("HasValueBlockAtTime", &This::HasValueBlockAtTime)
 
+        .def("IsSupportedValueType",
+            &This::IsSupportedValueType)
+        .staticmethod("IsSupportedValueType")
         ;
 
     VtValueFromPython<TsSpline>();
