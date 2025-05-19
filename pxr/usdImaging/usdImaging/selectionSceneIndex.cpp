@@ -16,6 +16,7 @@
 #include "pxr/imaging/hd/sceneIndexPrimView.h"
 #include "pxr/imaging/hd/selectionSchema.h"
 #include "pxr/imaging/hd/selectionsSchema.h"
+#include "pxr/imaging/hd/tokens.h"
 #include "pxr/base/trace/trace.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -816,6 +817,45 @@ _ComputeSceneIndexPrimsAndInstanceIndices(
     return result;
 }
 
+bool
+_PrimTypeSupportsSelection(const TfToken &primType)
+{
+    TRACE_FUNCTION();
+
+    if (primType.IsEmpty()) {
+        return false;
+    }
+    for (const TfToken &t : {
+            // "Rprims"
+
+            // Most frequent ones on top
+            HdPrimTypeTokens->mesh,
+            HdPrimTypeTokens->basisCurves,
+            HdPrimTypeTokens->points,
+            HdPrimTypeTokens->nurbsPatch,
+            HdPrimTypeTokens->nurbsCurves,
+            HdPrimTypeTokens->volume,
+            HdPrimTypeTokens->tetMesh,
+            HdPrimTypeTokens->geomSubset,
+            HdPrimTypeTokens->plane,
+
+            HdPrimTypeTokens->capsule,
+            HdPrimTypeTokens->capsule_1,
+            HdPrimTypeTokens->cone,
+            HdPrimTypeTokens->cube,
+            HdPrimTypeTokens->cylinder,
+            HdPrimTypeTokens->cylinder_1,
+            HdPrimTypeTokens->sphere,
+            HdPrimTypeTokens->model }) {
+        if (primType == t) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 // For each seed, traverses the name space children and collects them
 // recursively as follows:
 // - If it is just a normal prim, add it to the result.
@@ -887,7 +927,9 @@ _ExpandToDescendants(
                     primAndNestedInstanceIndices,
                     &seeds);
 
-                result.push_back(std::move(primAndNestedInstanceIndices));
+                if (_PrimTypeSupportsSelection(prim.primType)) {
+                    result.push_back(std::move(primAndNestedInstanceIndices));
+                }
             }
         }
 
