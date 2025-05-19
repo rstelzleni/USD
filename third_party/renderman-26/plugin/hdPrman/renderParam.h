@@ -635,10 +635,6 @@ private:
     HdRenderPassAovBindingVector _lastBindings;
 
     // Solaris Legacy Sample & Display Filter Support
-    std::unordered_map<RtUString, riley::ShadingNode> _displayFilters;
-    std::unordered_map<RtUString, riley::ShadingNode> _sampleFilters;
-    bool _displayFiltersDirty;
-    bool _sampleFiltersDirty;
     riley::SampleFilterId _sampleFilterId;
     riley::DisplayFilterId _displayFilterId;    
 
