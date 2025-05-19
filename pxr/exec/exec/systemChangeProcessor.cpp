@@ -17,8 +17,8 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 struct ExecSystem::_ChangeProcessor::_State {
-    _State(ExecSystem *const system)
-        : uncompiler(system->_program.get())
+    explicit _State(ExecSystem *const system)
+        : uncompiler(system->_program.get(), system->_runtime.get())
     {}
 
     // Accumulate scene paths to attributes with invalid authored values, so

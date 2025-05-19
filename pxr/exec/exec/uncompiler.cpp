@@ -7,6 +7,7 @@
 #include "pxr/exec/exec/uncompiler.h"
 
 #include "pxr/exec/exec/program.h"
+#include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/uncompilationRuleSet.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
@@ -105,6 +106,7 @@ Exec_Uncompiler::_ProcessUncompilationRuleSet(
         // uncompiled. Otherwise, only uncompile the input on that node.
         if (rule.inputName.IsEmpty()) {
             _program->DisconnectAndDeleteNode(node);
+            _runtime->ClearData(*node);
             _didUncompile = true;
         }
         else {

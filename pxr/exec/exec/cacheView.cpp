@@ -6,7 +6,6 @@
 //
 #include "pxr/exec/exec/cacheView.h"
 
-#include "pxr/exec/vdf/executorInterface.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/vector.h"
 
@@ -17,7 +16,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 bool
 Exec_CacheView::Extract(int idx, VtValue *result) const
 {
-    if (!_executor) {
+    if (!_dataManager) {
         TF_CODING_ERROR("Cannot extract from invalid view");
         return false;
     }
@@ -32,7 +31,7 @@ Exec_CacheView::Extract(int idx, VtValue *result) const
         return false;
     }
 
-    const VdfVector *v = _executor->GetOutputValue(
+    const VdfVector *v = _dataManager->GetOutputValue(
         *mo.GetOutput(), mo.GetMask());
     if (!v) {
         TF_CODING_ERROR("No value cached for output '%s' (idx=%d)",

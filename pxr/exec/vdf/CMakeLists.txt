@@ -25,6 +25,7 @@ pxr_library(vdf
         parallelSpeculationExecutorEngine.h
         dataManagerBasedExecutor.h
         dataManagerBasedSubExecutor.h
+        dataManagerFacade.h
         defaultInitAllocator.h
         estimateSize.h
         execNodeDebugName.h

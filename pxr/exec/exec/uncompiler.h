@@ -16,6 +16,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 class Exec_Program;
+class Exec_Runtime;
 class Exec_UncompilationRuleSet;
 class SdfPath;
 
@@ -23,8 +24,9 @@ class SdfPath;
 class Exec_Uncompiler
 {
 public:
-    explicit Exec_Uncompiler(Exec_Program *program)
+    Exec_Uncompiler(Exec_Program *program, Exec_Runtime *runtime)
         : _program(program)
+        , _runtime(runtime)
         , _didUncompile(false)
     {}
 
@@ -60,6 +62,7 @@ private:
 
 private:
     Exec_Program *_program;
+    Exec_Runtime *_runtime;
     bool _didUncompile;
 };
 

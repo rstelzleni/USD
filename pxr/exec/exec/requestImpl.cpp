@@ -9,6 +9,7 @@
 #include "pxr/exec/exec/authoredValueInvalidationResult.h"
 #include "pxr/exec/exec/cacheView.h"
 #include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
+#include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/system.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
 #include "pxr/exec/exec/typeRegistry.h"
@@ -233,7 +234,8 @@ Exec_RequestImpl::_CacheValues(ExecSystem *const system)
     system->_CacheValues(*_schedule, *_computeRequest);
 
     // Return an exec cache view for the computed values.
-    return Exec_CacheView(system->_GetMainExecutor(), _leafOutputs);
+    return Exec_CacheView(
+        system->_runtime->GetDataManager(), _leafOutputs);
 }
 
 void

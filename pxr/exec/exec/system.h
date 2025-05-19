@@ -23,11 +23,10 @@ PXR_NAMESPACE_OPEN_SCOPE
 class EfTime;
 class Exec_Program;
 class Exec_RequestImpl;
+class Exec_Runtime;
 class ExecValueKey;
 class SdfPath;
 template <typename> class TfSpan;
-class VdfExecutorErrorLogger;
-class VdfExecutorInterface;
 class VdfMaskedOutput;
 class VdfRequest;
 class VdfSchedule;
@@ -76,13 +75,9 @@ protected:
     class _ChangeProcessor;
 
 private:
-    // Requires access to _Compile
+    // Requires access to _CacheValues and _Compile.
     friend class Exec_RequestImpl;
     std::vector<VdfMaskedOutput> _Compile(TfSpan<const ExecValueKey> valueKeys);
-
-    // Returns a pointer to the main executor.
-    EXEC_API
-    VdfExecutorInterface *_GetMainExecutor();
 
     // Discards all internal state, and constructs new internal data structures
     // leaving the system in the same state as if it was newly constructed.
@@ -102,17 +97,11 @@ private:
     EXEC_API
     void _ChangeTime(const EfTime &time);
 
-    // Reports any executor errors raised during a round of evaluation.
-    EXEC_API
-    void _ReportExecutorErrors(const VdfExecutorErrorLogger &errorLogger) const;
-
 private:
     EsfStage _stage;
 
     std::unique_ptr<Exec_Program> _program;
-
-    class _ExecutorState;
-    std::unique_ptr<_ExecutorState> _executorState;
+    std::unique_ptr<Exec_Runtime> _runtime;
 
     tbb::concurrent_vector<std::shared_ptr<Exec_RequestImpl>> _requests;
 };
