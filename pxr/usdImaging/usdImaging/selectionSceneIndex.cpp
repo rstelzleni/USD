@@ -840,11 +840,9 @@ _PrimTypeSupportsSelection(const TfToken &primType)
             HdPrimTypeTokens->plane,
 
             HdPrimTypeTokens->capsule,
-            HdPrimTypeTokens->capsule_1,
             HdPrimTypeTokens->cone,
             HdPrimTypeTokens->cube,
             HdPrimTypeTokens->cylinder,
-            HdPrimTypeTokens->cylinder_1,
             HdPrimTypeTokens->sphere,
             HdPrimTypeTokens->model }) {
         if (primType == t) {
