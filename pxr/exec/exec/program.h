@@ -160,6 +160,16 @@ public:
     Exec_TimeChangeInvalidationResult InitializeTime(
         const EfTime &newTime, VdfExecutorInterface *executor);
 
+    /// Returns the time input node.
+    ///
+    /// Unlike most nodes, a program always has exactly one time input node.
+    /// Compilation may not create additional time input nodes and
+    /// uncompilation may not remove the time input node.
+    ///
+    EfTimeInputNode *GetTimeInputNode() const {
+        return _timeInputNode;
+    }
+
     /// Returns the node with the given \p nodeId, or nullptr if no such node
     /// exists.
     ///
@@ -321,11 +331,9 @@ NodeType *Exec_Program::CreateNode(
     NodeCtorArgs... nodeCtorArgs)
 {
     static_assert(std::is_base_of_v<VdfNode, NodeType>);
-
-    // The time node is a special case.
-    if constexpr (std::is_same_v<EfTimeInputNode, NodeType>) {
-        return _timeInputNode;
-    }
+    static_assert(!std::is_same_v<EfTimeInputNode, NodeType>,
+                  "CreateNode may not construct additional EfTimeInputNodes. "
+                  "Use GetTimeInputNode() to access the time node.");
 
     NodeType *const node = new NodeType(
         &_network, std::forward<NodeCtorArgs>(nodeCtorArgs)...);

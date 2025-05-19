@@ -51,7 +51,7 @@ Exec_TimeComputationDefinition::CompileNode(
         return nullptr;
     }
 
-    return program->CreateNode<EfTimeInputNode>(*nodeJournal);
+    return program->GetTimeInputNode();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
