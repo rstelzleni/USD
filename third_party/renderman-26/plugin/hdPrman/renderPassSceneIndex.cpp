@@ -277,9 +277,11 @@ HdPrman_RenderPassSceneIndex::GetPrim(
 
     HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(primPath);
 
-    // All other overrides happen in the prim-level data source.
-    prim.dataSource = HdPrman_RenderPass_PrimDataSource::New(
-        TfCreateWeakPtr(this), primPath, prim);
+    if (prim.dataSource) {
+        // All other overrides happen in the prim-level data source.
+        prim.dataSource = HdPrman_RenderPass_PrimDataSource::New(
+            TfCreateWeakPtr(this), primPath, prim);
+    }
 
     return prim;
 }
