@@ -6,8 +6,6 @@
 //
 #include "pxr/pxr.h"
 
-#include "pxr/exec/execGeom/tokens.h"
-
 #include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
@@ -239,7 +237,7 @@ TestExecGeomXformable_Perf(
     for (const SdfPath &path : leafPrims) {
         UsdPrim prim = usdStage->GetPrimAtPath(path);
         TF_AXIOM(prim.IsValid());
-        valueKeys.emplace_back(prim, ExecGeomXformableTokens->computeTransform);
+        valueKeys.emplace_back(prim, TfToken("computeTransform"));
     }
 
     const ExecUsdRequest request = execSystem.BuildRequest(std::move(valueKeys));

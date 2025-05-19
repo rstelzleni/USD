@@ -6,8 +6,6 @@
 //
 #include "pxr/pxr.h"
 
-#include "pxr/exec/execGeom/tokens.h"
-
 #include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
@@ -70,9 +68,12 @@ TestExecGeomXformable()
 
     ExecUsdSystem execSystem(usdStage);
 
+    // Note that we deliberately avoid using the token defined in
+    // execGeom/tokens.h, and more importantly, linking with execGeom, so that
+    // this test relies on plugin loading.
     std::vector<ExecUsdValueKey> valueKeys {
         {usdStage->GetPrimAtPath(SdfPath("/Root/A1/B")),
-         ExecGeomXformableTokens->computeTransform}
+         TfToken("computeTransform")}
     };
 
     const ExecUsdRequest request = execSystem.BuildRequest(std::move(valueKeys));

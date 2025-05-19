@@ -14,6 +14,7 @@
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/types.h"
 
+#include "pxr/base/plug/notice.h"
 #include "pxr/base/tf/hash.h"
 #include "pxr/base/tf/singleton.h"
 #include "pxr/base/tf/token.h"
@@ -77,18 +78,24 @@ public:
         const TfToken &computationName,
         EsfJournal *journal) const;
 
-    // Only computation builders can register plugin computations.
-    class RegisterPluginComputationAccess
+    // Provides selective access for computation builder classes.
+    class ComputationBuilderAccess
     {
+        friend class Exec_ComputationBuilder;
         friend class Exec_PrimComputationBuilder;
 
-        // Registers a prim computation for \p schemaType.
         inline static void _RegisterPrimComputation(
             TfType schemaType,
             const TfToken &computationName,
             TfType resultType,
             ExecCallbackFn &&callback,
             Exec_InputKeyVectorRefPtr &&inputKeys);
+
+        static void _SetComputationRegistrationComplete(
+            const TfType schemaType) {
+            _GetInstanceForRegistration()._SetComputationRegistrationComplete(
+                schemaType);
+        }
     };
 
 private:
@@ -106,7 +113,7 @@ private:
     EXEC_API
     static Exec_DefinitionRegistry& _GetInstanceForRegistration();
 
-    // a structure that contains the definitions for all computations that can
+    // A structure that contains the definitions for all computations that can
     // be found on a prim of a given type.
     //
     struct _ComposedPrimDefinition {
@@ -146,6 +153,24 @@ private:
 
     void _RegisterBuiltinComputations();
 
+    // Should be called when plugin computation registration for \p schemaType
+    // is complete.
+    //
+    void _SetComputationRegistrationComplete(const TfType schemaType);
+
+    // Load plugin computations for the given schemaType, if we haven't loaded
+    // them yet.
+    //
+    // Returns false if no plugin computations are registered for the given
+    // schemaType.
+    //
+    bool _EnsurePluginComputationsLoaded(const TfType schemaType) const;
+
+    // Notifies if there is an attempt to register plugin computations after the
+    // registry is already initialized, which is not suported.
+    //
+    void _DidRegisterPlugins(const PlugNotice::DidRegisterPlugins &notice);
+
 private:
 
     // This barrier ensures singleton access returns a fully-constructed
@@ -164,7 +189,10 @@ private:
     };
 
     // Map from schemaType to plugin prim computation definitions.
-    std::unordered_map<
+    //
+    // This is a concurrent map to allow computation lookup to happen in
+    // parallel with loading of plugin computations.
+    tbb::concurrent_unordered_map<
         TfType,
         std::set<
             Exec_PluginComputationDefinition,
@@ -181,6 +209,15 @@ private:
         _ComposedPrimDefinition,
         TfHash>
     _composedPrimDefinitions;
+
+    // Map from schema type to a bool that indicates whether or not any plugin
+    // computations are registered for the schema.
+    //
+    // This is a concurrent map to allow computation lookup to happen in
+    // parallel with lazy loading of plugin computations; and also to allow
+    // multiple threads to safely race when ensuring that plugins are loaded
+    mutable tbb::concurrent_unordered_map<TfType, bool, TfHash>
+    _computationsRegisteredForSchema;
 
     // Map from computationName to builtin stage computation
     // definition.
@@ -208,11 +245,10 @@ private:
 };
 
 void
-Exec_DefinitionRegistry::RegisterPluginComputationAccess::
-_RegisterPrimComputation(
-    TfType schemaType,
+Exec_DefinitionRegistry::ComputationBuilderAccess::_RegisterPrimComputation(
+    const TfType schemaType,
     const TfToken &computationName,
-    TfType resultType,
+    const TfType resultType,
     ExecCallbackFn &&callback,
     Exec_InputKeyVectorRefPtr &&inputKeys)
 {

@@ -35,7 +35,6 @@ pxr_build_test(testExecGeomXformable
         trace
         esf
         exec
-        execGeom
         execUsd
         sdf
         usd
@@ -63,7 +62,6 @@ pxr_build_test(testExecGeomXformable_Perf
         trace
         esf
         exec
-        execGeom
         execUsd
         sdf
         usd

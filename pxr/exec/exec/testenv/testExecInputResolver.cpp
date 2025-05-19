@@ -451,8 +451,8 @@ int main()
     // Load the custom schema.
     const PlugPluginPtrVector testPlugins = PlugRegistry::GetInstance()
         .RegisterPlugins(TfAbsPath("resources"));
-    TF_AXIOM(testPlugins.size() == 1);
-    TF_AXIOM(testPlugins[0]->GetName() == "testExecInputResolver");
+    ASSERT_EQ(testPlugins.size(), 1);
+    ASSERT_EQ(testPlugins[0]->GetName(), "testExecInputResolver");
 
     const TfType customSchemaType =
         TfType::FindByName("TestExecInputResolverCustomSchema");

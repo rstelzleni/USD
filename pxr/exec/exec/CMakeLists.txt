@@ -73,6 +73,25 @@ pxr_library(exec
         plugInfo.json
 )
 
+#
+# Tests
+#
+
+# Build test plugins
+
+pxr_build_test_shared_lib(TestExecPluginComputation
+    INSTALL_PREFIX ExecPlugins
+    LIBRARIES
+        gf
+        tf
+        exec
+        
+    CPPFILES
+        testenv/TestExecPluginComputation.cpp
+)
+
+# Build tests
+
 pxr_build_test(testExecComputationRegistration
     LIBRARIES
         ef

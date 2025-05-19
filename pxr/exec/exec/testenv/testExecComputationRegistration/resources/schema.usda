@@ -27,3 +27,15 @@ class DerivedCustomSchema "DerivedCustomSchema" (
 )
 {
 }
+
+class CustomSchema "PluginComputationSchema" (
+    inherits = </Typed>
+)
+{
+}
+
+class CustomSchema "ExtraPluginComputationSchema" (
+    inherits = </Typed>
+)
+{
+}

@@ -40,19 +40,30 @@ struct Exec_InputKey;
 
 /// \defgroup group_Exec_ComputationDefinitionLanguage Computation Definition Language
 ///
-/// Exec computations are defined using the domain-specific **Computation
+/// Plugin computations are defined using the domain-specific **Computation
 /// Definition Language**.
 ///
-/// Computations are associated with the schemas that define them. A schema that
-/// defines computations must invoke the EXEC_REGISTER_SCHEMA() macro to
-/// instantiate the preamble that is followed by a block of code that uses
-/// [computation registrations](#group_Exec_ComputationRegistrations) to define
-/// computations. Most of the language is dedicated to expressing [input
-/// registrations](#group_Exec_InputRegistrations), which provide exec
-/// compilation with the information it needs to compile the input connections
-/// that supply input values when the network is evaluated.
+/// Each plugin computation is registered for a particular schema, either typed
+/// or applied. When a computation is requested on a provider prim or attribute,
+/// if the requested computation name is not a [builtin
+/// computation](#group_Exec_Builtin_Computations) name, exec compilation
+/// considers the computations registered for the typed schema for the prim, the
+/// ancestor schema types, and API schemas applied to the prim, and looks for a
+/// computation of the requested name.
+///
+/// To define computations for a schema, the plugin code must invoke the
+/// EXEC_REGISTER_SCHEMA() macro. The macro invocation is immediately followed
+/// by a block of code that uses [computation
+/// registrations](#group_Exec_ComputationRegistrations) that registers the
+/// associated plugin computations. Most of the language is dedicated to
+/// expressing [input registrations](#group_Exec_InputRegistrations), which
+/// provide exec compilation with the information it needs to compile the input
+/// connections that supply input values when the network is evaluated.
 ///
 /// # Example
+///
+/// The following cpp file could be used in a plugin library to define the
+/// `computeMyAttributeValue` prim computation for the `MySchemaType` schema:
 ///
 /// ```{.cpp}
 /// #include "pxr/exec/exec/registerSchema.h"
@@ -69,6 +80,20 @@ struct Exec_InputKey;
 ///         .Inputs(
 ///             AttributeValue<double>(_tokens->myAttribute).Required());
 /// }
+/// ```
+///
+/// The library's `plugInfo.json` must contain the following data in the `Info`
+/// block in order for the execution system to load the library when
+/// computations are requested on a prim that uses `MySchemaType`:
+///
+/// ```
+///     "Info": {
+///         "Exec" : {
+///             "RegistersComputationsForSchemas": [
+///                 "MySchemaType"
+///             ]
+///         }
+///     }
 /// ```
 
 /// \defgroup group_Exec_ComputationRegistrations Computation Registrations
@@ -670,6 +695,9 @@ class Exec_ComputationBuilder
     Exec_ComputationBuilder(TfType schemaType);
 
 public:
+    EXEC_API
+    ~Exec_ComputationBuilder();
+
     /// Allows access to the constructor.
     ///
     /// Only schema computation registration functions should create computation

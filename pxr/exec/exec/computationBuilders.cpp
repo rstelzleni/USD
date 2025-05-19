@@ -98,8 +98,7 @@ Exec_PrimComputationBuilder::Exec_PrimComputationBuilder(
 
 Exec_PrimComputationBuilder::~Exec_PrimComputationBuilder()
 {
-    Exec_DefinitionRegistry::RegisterPluginComputationAccess::
-    _RegisterPrimComputation(
+    Exec_DefinitionRegistry::ComputationBuilderAccess::_RegisterPrimComputation(
         _data->schemaType,
         _data->computationName,
         _data->resultType,
@@ -131,6 +130,12 @@ Exec_ComputationBuilder::Exec_ComputationBuilder(
     const TfType schemaType)
     : _schemaType(schemaType)
 {
+}
+
+Exec_ComputationBuilder::~Exec_ComputationBuilder()
+{
+    Exec_DefinitionRegistry::ComputationBuilderAccess::
+        _SetComputationRegistrationComplete(_schemaType);
 }
 
 Exec_PrimComputationBuilder 

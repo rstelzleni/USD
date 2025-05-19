@@ -2,7 +2,10 @@
     "Plugins": [
         {
             "Info": {
-                "Types": {
+                "Exec" : {
+                    "RegistersComputationsForSchemas": [
+                        "UsdGeomXformable"
+                    ]
                 }
             },
             "LibraryPath": "@PLUG_INFO_LIBRARY_PATH@",

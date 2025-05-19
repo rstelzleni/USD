@@ -13,9 +13,17 @@
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
 
+#include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/prim.h"
+
 #include "pxr/base/arch/hints.h"
+#include "pxr/base/js/types.h"
+#include "pxr/base/js/utils.h"
+#include "pxr/base/plug/plugin.h"
+#include "pxr/base/plug/registry.h"
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/instantiateSingleton.h"
+#include "pxr/base/tf/staticData.h"
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/esf/attribute.h"
@@ -30,12 +38,18 @@ TF_INSTANTIATE_SINGLETON(Exec_DefinitionRegistry);
 Exec_DefinitionRegistry::Exec_DefinitionRegistry()
     : _registrationBarrier(std::make_unique<Exec_RegistrationBarrier>())
 {
+    TRACE_FUNCTION();
+
     // Ensure the type registry is initialized before the definition registry so
     // that computation registrations will be able to look up value types.
     ExecTypeRegistry::GetInstance();
 
     // Populate the registry with builtin computation definitions.
     _RegisterBuiltinComputations();
+
+    TfNotice::Register(
+        TfCreateWeakPtr(this),
+        &Exec_DefinitionRegistry::_DidRegisterPlugins);
 
     // Calling SetInstanceConstructed() makes it possible to call
     // TfSingleton<>::GetInstance() before this constructor has finished.
@@ -126,14 +140,13 @@ Exec_DefinitionRegistry::GetComputationDefinition(
 
     // Get the composed prim definition, creating it if necesseary, and use it
     // to look up the computation, or to determine that the requested
-    // computation isn't defined for this prim.
+    // computation isn't provided by this prim.
     auto composedDefIt = _composedPrimDefinitions.find(schemaType);
     if (composedDefIt == _composedPrimDefinitions.end()) {
         // Note that we allow concurrent callers to race to compose prim
         // definitions, since it is safe to do so and we don't expect it to
         // happen in the common case.
-        _ComposedPrimDefinition primDef =
-            _ComposePrimDefinition(schemaType);
+        _ComposedPrimDefinition primDef = _ComposePrimDefinition(schemaType);
 
         composedDefIt = _composedPrimDefinitions.emplace(
             schemaType, std::move(primDef)).first;
@@ -177,6 +190,13 @@ Exec_DefinitionRegistry::_ComposePrimDefinition(
     // registered. Add all plugin computations registered for each type to the
     // composed prim definition.
     //
+    // Note that we allow concurrent callers to race to load plugins. Plugin
+    // loading is serialized by PlugPlugin. Also, importantly, invocation of
+    // registry functions, and therefore the registration of plugin
+    // computations, is serialized by TfRegistryManager. However, computation
+    // registration *can* happen concurrently with computation lookup and prim
+    // definition composition.
+    //
     // TODO: Add support for computations that are registered for applied
     // schemas. To do that, instead of keying off the schema type we will need
     // to use a "configuration key" that combines the typed schema with applied
@@ -191,6 +211,9 @@ Exec_DefinitionRegistry::_ComposePrimDefinition(
     _ComposedPrimDefinition primDef;
 
     for (const TfType type : schemaAncestorTypes) {
+        if (!_EnsurePluginComputationsLoaded(type)) {
+            continue;
+        }
 
         // TODO: For all but the first type, it makes sense to look in
         // _composedPrimDefinitions to see if we have already composed the base
@@ -344,6 +367,130 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputations()
               _builtinPrimComputationDefinitions.size() +
               _builtinAttributeComputationDefinitions.size() ==
               ExecBuiltinComputations->GetComputationTokens().size());
+}
+
+namespace {
+
+// A structure used to statically initialize a map from schema type names to
+// plugins that define computations for the named schema.
+//
+// The plugInfo that we look for here is of the form:
+//
+//     "Info": {
+//         "Exec" : {
+//             "RegistersComputationsForSchemas": [
+//                 "MySchemaType"
+//             ]
+//         }
+//     }
+//
+struct _ExecPluginData {
+    _ExecPluginData() {
+
+        // For each plugin found by plugin discovery, look for the metadata that
+        // tells us which schemas that plugin defines computations for.
+        for (const PlugPluginPtr &plugin :
+                 PlugRegistry::GetInstance().GetAllPlugins()) {
+            _GetPluginMetadata(plugin);
+        }
+    }
+
+    void _GetPluginMetadata(const PlugPluginPtr &plugin) {
+        const JsOptionalValue metadataValue =
+            JsFindValue(plugin->GetMetadata(), "Exec");
+        if (!metadataValue) {
+            return;
+        }
+
+        const JsOptionalValue schemasValue =
+            JsFindValue(
+                metadataValue->GetJsObject(),
+                "RegistersComputationsForSchemas");
+        if (!schemasValue) {
+            return;
+        }
+
+        const JsArray &array = schemasValue->GetJsArray();
+        for (const JsValue &schemaName : array) {
+            const TfType schemaType =
+                TfType::FindByName(schemaName.Get<std::string>());
+            if (TF_VERIFY(!schemaType.IsUnknown())) {
+                execSchemaPlugins.emplace(schemaType, plugin);
+            }
+        }
+    }
+
+    std::unordered_map<TfType, PlugPluginPtr, TfHash>
+    execSchemaPlugins;
+};
+
+} // anonymous namespace
+
+static TfStaticData<_ExecPluginData> execPluginData;
+
+void
+Exec_DefinitionRegistry::_DidRegisterPlugins(
+    const PlugNotice::DidRegisterPlugins &notice)
+{
+    const bool foundExecRegistration = [&] {
+        for (const PlugPluginPtr &plugin : notice.GetNewPlugins()) {
+            if (JsFindValue(plugin->GetMetadata(), "Exec")) {
+                return true;
+            }
+        }
+        return false;
+    }();
+
+    if (foundExecRegistration) {
+        TF_CODING_ERROR(
+            "Illegal attempt to register plugins that contain exec "
+            "registrations after the exec definition registry has been "
+            "initialized.");
+    }
+}
+
+bool
+Exec_DefinitionRegistry::_EnsurePluginComputationsLoaded(
+    const TfType schemaType) const
+{
+    // If plugin computations were already registered for this schema type or we
+    // already determined that no computations are registered for this schema,
+    // we can return early.
+    if (const auto it = _computationsRegisteredForSchema.find(schemaType);
+        it != _computationsRegisteredForSchema.end()) {
+        return it->second;
+    }
+
+    TRACE_FUNCTION();
+
+    // If a plugin defines computations for this schema, load it.
+    if (const auto it = execPluginData->execSchemaPlugins.find(schemaType);
+        it != execPluginData->execSchemaPlugins.end()) {
+
+        if (const PlugPluginPtr plugin = it->second; TF_VERIFY(plugin)) {
+            plugin->Load();
+            return true;
+        }
+    }
+
+    // Record the fact that no plugin compuations are registered for this schema
+    // type.
+    _computationsRegisteredForSchema.emplace(schemaType, false);
+
+    return false;
+}
+
+void
+Exec_DefinitionRegistry::_SetComputationRegistrationComplete(
+    const TfType schemaType)
+{
+    const bool emplaced =
+        _computationsRegisteredForSchema.emplace(schemaType, true).second;
+    if (!emplaced) {
+        TF_CODING_ERROR(
+            "Duplicate registrations of plugin computations for schema %s.",
+            schemaType.GetTypeName().c_str());
+    }
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -11,3 +11,11 @@ class DerivedCustomSchema "DerivedCustomSchema"
 {
 }
 
+class DerivedCustomSchema "PluginComputationSchema"
+{
+}
+
+class DerivedCustomSchema "ExtraPluginComputationSchema"
+{
+}
+
