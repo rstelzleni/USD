@@ -60,7 +60,7 @@ Exec_DefinitionRegistry::Exec_DefinitionRegistry()
 // This must be defined in the cpp file, or we get undefined symbols when
 // linking.
 // 
-Exec_DefinitionRegistry&
+const Exec_DefinitionRegistry&
 Exec_DefinitionRegistry::GetInstance()
 {
     Exec_DefinitionRegistry &instance =

@@ -51,7 +51,7 @@ public:
     /// registered their computations.
     ///
     EXEC_API
-    static Exec_DefinitionRegistry& GetInstance();
+    static const Exec_DefinitionRegistry& GetInstance();
 
     /// Returns the definition for the prim computation named
     /// \p computationName registered for \p providerPrim.
