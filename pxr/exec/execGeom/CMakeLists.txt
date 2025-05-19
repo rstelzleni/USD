@@ -72,7 +72,8 @@ pxr_build_test(testExecGeomXformable_Perf
         testenv/testExecGeomXformable_Perf.cpp
 )
 
-# pxr_register_test(testExecGeomXformable_Perf
-#     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf 5 7"
-#     EXPECTED_RETURN_CODE 0
-# )
+pxr_register_test(testExecGeomXformable_Perf
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf 5 7"
+    EXPECTED_RETURN_CODE 0
+    ENV TF_FATAL_VERIFY=1
+)
