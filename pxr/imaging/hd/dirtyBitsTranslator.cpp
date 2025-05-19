@@ -443,11 +443,11 @@ HdDirtyBitsTranslator::BprimDirtyBitsToLocatorSet(TfToken const& primType,
         if (bits & HdRenderSettings::DirtyNamespacedSettings) {
             set->append(HdRenderSettingsSchema::GetNamespacedSettingsLocator());
         }
-        if (bits & HdRenderSettings::DirtyRenderingColorSpace) {
-            set->append(HdRenderSettingsSchema::GetRenderingColorSpaceLocator());
-        }
         if (bits & HdRenderSettings::DirtyRenderProducts) {
             set->append(HdRenderSettingsSchema::GetRenderProductsLocator());
+        }
+        if (bits & HdRenderSettings::DirtyRenderingColorSpace) {
+            set->append(HdRenderSettingsSchema::GetRenderingColorSpaceLocator());
         }
         if (bits & HdRenderSettings::DirtyShutterInterval) {
             set->append(HdRenderSettingsSchema::GetShutterIntervalLocator());
@@ -1141,14 +1141,16 @@ HdDirtyBitsTranslator::BprimLocatorSetToDirtyBits(
                 end, &it)) {
             bits |= HdRenderSettings::DirtyNamespacedSettings;
         }
+        // In lexicographic ordering of camel case strings, uppercase comes 
+        // before lowercase, so renderProducts < renderingColorSpace
+        if (_FindLocator(HdRenderSettingsSchema::GetRenderProductsLocator(),
+                end, &it)) {
+            bits |= HdRenderSettings::DirtyRenderProducts;
+        }
         if (_FindLocator(
                 HdRenderSettingsSchema::GetRenderingColorSpaceLocator(),
                 end, &it)) {
             bits |= HdRenderSettings::DirtyRenderingColorSpace;
-        }
-        if (_FindLocator(HdRenderSettingsSchema::GetRenderProductsLocator(),
-                end, &it)) {
-            bits |= HdRenderSettings::DirtyRenderProducts;
         }
         if (_FindLocator(
                 HdRenderSettingsSchema::GetShutterIntervalLocator(),
