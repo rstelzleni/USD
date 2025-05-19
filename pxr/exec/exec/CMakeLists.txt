@@ -111,10 +111,13 @@ pxr_install_test_dir(
     DEST testExecComputationRegistration
 )
 
-pxr_register_test(testExecComputationRegistration
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecComputationRegistration"
-    EXPECTED_RETURN_CODE 0
-)
+# Tests that rely on plugins aren't currently supported in static builds.
+if (BUILD_SHARED_LIBS)
+    pxr_register_test(testExecComputationRegistration
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecComputationRegistration"
+        EXPECTED_RETURN_CODE 0
+    )
+endif()
 
 pxr_build_test(testExecInputResolver
     LIBRARIES

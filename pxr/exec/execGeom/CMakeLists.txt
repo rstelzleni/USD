@@ -43,13 +43,16 @@ pxr_build_test(testExecGeomXformable
         testenv/testExecGeomXformable.cpp
 )
 
-pxr_register_test(testExecGeomXformable
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable"
-    EXPECTED_RETURN_CODE 0
-    POST_COMMAND "${PYTHON_EXECUTABLE} normalizeDotFile.py testCompiler.dot testCompiler.out"
-    DIFF_COMPARE testCompiler.out
-    TESTENV testExecGeomXformable
-)
+# Tests that rely on plugins aren't currently supported in static builds.
+if (BUILD_SHARED_LIBS)
+    pxr_register_test(testExecGeomXformable
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable"
+        EXPECTED_RETURN_CODE 0
+        POST_COMMAND "${PYTHON_EXECUTABLE} normalizeDotFile.py testCompiler.dot testCompiler.out"
+        DIFF_COMPARE testCompiler.out
+        TESTENV testExecGeomXformable
+    )
+endif()
 
 pxr_install_test_dir(
     SRC testenv/testExecGeomXformable
@@ -70,34 +73,37 @@ pxr_build_test(testExecGeomXformable_Perf
         testenv/testExecGeomXformable_Perf.cpp
 )
 
-pxr_register_test(testExecGeomXformable_Perf
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-             --branchingFactor 5 --treeDepth 7 --spy"
-    EXPECTED_RETURN_CODE 0
-    ENV TF_FATAL_VERIFY=1
-)
+# Tests that rely on plugins aren't currently supported in static builds.
+if (BUILD_SHARED_LIBS)
+    pxr_register_test(testExecGeomXformable_Perf
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
+                 --branchingFactor 5 --treeDepth 7 --spy"
+        EXPECTED_RETURN_CODE 0
+        ENV TF_FATAL_VERIFY=1
+    )
 
-pxr_register_test(testExecGeomXformable_Perf_SingleThreaded
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-             --branchingFactor 5 --treeDepth 7 --numThreads 1 --spy"
-    EXPECTED_RETURN_CODE 0
-)
+    pxr_register_test(testExecGeomXformable_Perf_SingleThreaded
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
+                 --branchingFactor 5 --treeDepth 7 --numThreads 1 --spy"
+        EXPECTED_RETURN_CODE 0
+    )
 
-pxr_register_test(testExecGeomXformable_Perf_Chain
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-             --branchingFactor 1 --treeDepth 19531 --spy"
-    EXPECTED_RETURN_CODE 0
-)
+    pxr_register_test(testExecGeomXformable_Perf_Chain
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
+                 --branchingFactor 1 --treeDepth 19531 --spy"
+        EXPECTED_RETURN_CODE 0
+    )
 
-pxr_register_test(testExecGeomXformable_Perf_Wide
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-             --branchingFactor 19530 --treeDepth 2 --spy"
-    EXPECTED_RETURN_CODE 0
-    ENV TF_FATAL_VERIFY=1
-)
+    pxr_register_test(testExecGeomXformable_Perf_Wide
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
+                 --branchingFactor 19530 --treeDepth 2 --spy"
+        EXPECTED_RETURN_CODE 0
+        ENV TF_FATAL_VERIFY=1
+    )
 
-pxr_register_test(testExecGeomXformable_Perf_Large
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-             --branchingFactor 5 --treeDepth 10"
-    EXPECTED_RETURN_CODE 0
-)
+    pxr_register_test(testExecGeomXformable_Perf_Large
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
+                 --branchingFactor 5 --treeDepth 10"
+        EXPECTED_RETURN_CODE 0
+    )
+endif()
