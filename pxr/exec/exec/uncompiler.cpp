@@ -105,8 +105,8 @@ Exec_Uncompiler::_ProcessUncompilationRuleSet(
         // If the rule's input name is empty, then the entire node should be
         // uncompiled. Otherwise, only uncompile the input on that node.
         if (rule.inputName.IsEmpty()) {
-            _program->DisconnectAndDeleteNode(node);
             _runtime->ClearData(*node);
+            _program->DisconnectAndDeleteNode(node);
             _didUncompile = true;
         }
         else {
