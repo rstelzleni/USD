@@ -55,6 +55,7 @@ pxr_library(exec
         compilerTaskSync
         computationDefinition
         definitionRegistry
+        inputRecompilationTask
         inputResolver
         inputResolvingCompilationTask
         leafCompilationTask

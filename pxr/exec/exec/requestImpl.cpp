@@ -163,13 +163,12 @@ Exec_RequestImpl::_Compile(
         return;
     }
 
-    // If there is a schedule and it has not been invalidated it's safe to
-    // assume that the network hasn't changed and that we don't need to compile.
-    if (_schedule && _schedule->IsValid()) {
-        return;
-    }
-
-    // Compile the value keys.
+    // Even if the request is already compiled, we always need to perform
+    // recompilation, because doing so might make new connections that
+    // invalidate the request's schedule.
+    //
+    // TODO: If the network doesn't need to be modified at all, then we should
+    // avoid repopulating _leafOutputs.
     _leafOutputs = system->_Compile(valueKeys);
     if (!TF_VERIFY(_leafOutputs.size() == valueKeys.size())) {
         // If we somehow got the wrong number of outputs from compilation, we
@@ -178,7 +177,12 @@ Exec_RequestImpl::_Compile(
         _leafOutputs.assign(valueKeys.size(), VdfMaskedOutput());
     }
 
-    // After compiling new outputs, we need to invalidate all data dependent on
+    // If the schedule is still valid, then we are done.
+    if (_schedule && _schedule->IsValid()) {
+        return;
+    }
+
+    // After rescheduling, we need to invalidate all data dependent on
     // the compiled network and the set of compiled leaf outputs.
     _computeRequest.reset();
     _schedule.reset();

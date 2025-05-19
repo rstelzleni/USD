@@ -70,6 +70,41 @@ pxr_register_test(testExecUsdExternalRegistration
     EXPECTED_RETURN_CODE 0
 )
 
+pxr_build_test(testExecUsdRecompilation
+    LIBRARIES
+        exec
+        execUsd
+        plug
+        sdf
+        tf
+        usd
+        vdf
+    CPPFILES
+        testenv/testExecUsdRecompilation.cpp
+)
+
+pxr_install_test_dir(
+    SRC testenv/testExecUsdRecompilation
+    DEST testExecUsdRecompilation
+)
+
+pxr_register_test(testExecUsdRecompilation
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdRecompilation"
+    EXPECTED_RETURN_CODE 0
+    POST_COMMAND "${PYTHON_EXECUTABLE} normalizeDotFiles.py                    \
+        TestRecompileDisconnectedAttributeInput-1.dot                          \
+        TestRecompileDisconnectedAttributeInput-2.dot                          \
+        TestRecompileMultipleRequests-1.dot                                    \
+        TestRecompileMultipleRequests-2.dot                                    \
+        TestRecompileMultipleRequests-3.dot                                    \
+        "
+    DIFF_COMPARE TestRecompileDisconnectedAttributeInput-1.out
+    DIFF_COMPARE TestRecompileDisconnectedAttributeInput-2.out
+    DIFF_COMPARE TestRecompileMultipleRequests-1.out
+    DIFF_COMPARE TestRecompileMultipleRequests-2.out
+    DIFF_COMPARE TestRecompileMultipleRequests-3.out
+)
+
 pxr_build_test(testExecUsdRequest
     LIBRARIES
         gf
