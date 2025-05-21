@@ -427,9 +427,11 @@ Exec_Program::DisconnectInput(VdfInput *const input)
 }
 
 void
-Exec_Program::GraphNetwork(const char *const filename) const
+Exec_Program::GraphNetwork(
+    const char *const filename,
+    const VdfGrapherOptions &grapherOptions) const
 {
-    VdfGrapher::GraphToFile(_network, filename);
+    VdfGrapher::GraphToFile(_network, filename, grapherOptions);
 }
 
 void

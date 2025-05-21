@@ -15,6 +15,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class VdfGrapherOptions;
+
 /// Utility class with various diagnostic functions for ExecSystem.
 class ExecSystem::Diagnostics
 {
@@ -33,6 +35,14 @@ public:
     ///
     EXEC_API
     void GraphNetwork(const char *filename) const;
+
+    /// Produces a dot graph of the currently compiled exec network according to
+    /// the provided \p grapherOptions and writes its contents to \p filename.
+    ///
+    EXEC_API
+    void GraphNetwork(
+        const char *filename,
+        const VdfGrapherOptions &grapherOptions) const;
 
 private:
     ExecSystem *const _system;

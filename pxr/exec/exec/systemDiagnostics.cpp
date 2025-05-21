@@ -9,6 +9,7 @@
 #include "pxr/exec/exec/program.h"
 
 #include "pxr/base/tf/diagnostic.h"
+#include "pxr/exec/vdf/grapherOptions.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -27,7 +28,16 @@ ExecSystem::Diagnostics::InvalidateAll()
 void
 ExecSystem::Diagnostics::GraphNetwork(const char *filename) const
 {
-    _system->_program->GraphNetwork(filename);
+    VdfGrapherOptions grapherOptions;
+    _system->_program->GraphNetwork(filename, grapherOptions);
+}
+
+void
+ExecSystem::Diagnostics::GraphNetwork(
+    const char *filename,
+    const VdfGrapherOptions &grapherOptions) const
+{
+    _system->_program->GraphNetwork(filename, grapherOptions);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

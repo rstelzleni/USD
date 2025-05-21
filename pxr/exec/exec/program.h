@@ -46,6 +46,7 @@ class Exec_TimeChangeInvalidationResult;
 class TfBits;
 template <typename> class TfSpan;
 class VdfExecutorInterface;
+class VdfGrapherOptions;
 class VdfInput;
 class VdfNode;
 
@@ -270,7 +271,9 @@ public:
     }
 
     /// Writes the compiled network to a file at \p filename.
-    void GraphNetwork(const char *filename) const;
+    void GraphNetwork(
+        const char *filename,
+        const VdfGrapherOptions &grapherOptions) const;
 
 private:
     // Updates data structures for a newly-added node.
