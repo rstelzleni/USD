@@ -78,6 +78,18 @@ public:
         const TfToken &computationName,
         EsfJournal *journal) const;
 
+    /// Returns the definition for the computation named \p computationName
+    /// registered for \p providerObject.
+    ///
+    /// Any scene access needed to determine the input keys is recorded in
+    /// \p journal.
+    ///
+    EXEC_API
+    const Exec_ComputationDefinition *GetComputationDefinition(
+        const EsfObjectInterface &providerObject,
+        const TfToken &computationName,
+        EsfJournal *journal) const;
+
     // Provides selective access for computation builder classes.
     class ComputationBuilderAccess
     {

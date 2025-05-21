@@ -24,8 +24,6 @@
 #include "pxr/base/work/loops.h"
 #include "pxr/base/work/withScopedParallelism.h"
 #include "pxr/exec/ef/leafNode.h"
-#include "pxr/exec/esf/attribute.h"
-#include "pxr/exec/esf/prim.h"
 #include "pxr/exec/vdf/request.h"
 #include "pxr/exec/vdf/schedule.h"
 #include "pxr/exec/vdf/scheduler.h"
@@ -179,24 +177,8 @@ _GetValueExtractor(
     }
 
     const TfToken &computationName = vk.GetComputationName();
-    const Exec_ComputationDefinition *def = nullptr;
-    if (provider->IsPrim()) {
-        def = defReg.GetComputationDefinition(
-            *provider->AsPrim(),
-            computationName,
-            nullptr);
-    }
-    else if (provider->IsAttribute()) {
-        def = defReg.GetComputationDefinition(
-            *provider->AsAttribute(),
-            computationName,
-            nullptr);
-    }
-    else {
-        TF_CODING_ERROR("Provider '%s' is not a prim or attribute",
-                        provider->GetPath(nullptr).GetText());
-        return Exec_ValueExtractor();
-    }
+    const Exec_ComputationDefinition *def = defReg.GetComputationDefinition(
+        *provider, computationName, /* journal */ nullptr);
 
     if (!def) {
         TF_CODING_ERROR("Failed to find computation '%s' on provider '%s'",

@@ -14,6 +14,7 @@
 #include "pxr/exec/exec/types.h"
 
 #include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/prim.h"
 
 #include "pxr/base/arch/hints.h"
@@ -26,8 +27,6 @@
 #include "pxr/base/tf/staticData.h"
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/trace/trace.h"
-#include "pxr/exec/esf/attribute.h"
-#include "pxr/exec/esf/prim.h"
 
 #include <utility>
 
@@ -176,6 +175,38 @@ Exec_DefinitionRegistry::GetComputationDefinition(
     (void)owningPrim;
     (void)primSchemaType;
     return nullptr;
+}
+
+const Exec_ComputationDefinition *
+Exec_DefinitionRegistry::GetComputationDefinition(
+    const EsfObjectInterface &providerObject,
+    const TfToken &computationName,
+    EsfJournal *journal) const
+{
+    if (providerObject.IsPrim()) {
+        return GetComputationDefinition(
+            *providerObject.AsPrim(),
+            computationName,
+            journal);
+    }
+    else if (providerObject.IsAttribute()) {
+        return GetComputationDefinition(
+            *providerObject.AsAttribute(),
+            computationName,
+            journal);
+    }
+    else {
+        const SdfPath providerPath =
+            providerObject.GetPath(/* journal */ nullptr);
+        TF_CODING_ERROR(
+            "Provider '%s' is not a prim or attribute",
+            providerPath.GetText());
+        // Add a resync dependency on the provider.  If the object at this
+        // path is removed and replaced with an object of a supported type, a
+        // computation definition could be found for the new provider.
+        journal->Add(providerPath, EsfEditReason::ResyncedObject);
+        return nullptr;
+    }
 }
 
 Exec_DefinitionRegistry::_ComposedPrimDefinition
