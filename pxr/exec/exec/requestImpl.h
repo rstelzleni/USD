@@ -99,7 +99,7 @@ private:
     EXEC_API
     void _InvalidateLeafOutputs(
         bool isNewlyInvalidInterval,
-        const std::vector<const VdfNode *> &leafNodes,
+        TfSpan<const VdfNode *const> leafNodes,
         ExecRequestIndexSet *invalidIndices);
 
 private:

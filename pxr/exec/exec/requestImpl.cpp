@@ -360,7 +360,7 @@ Exec_RequestImpl::_BuildLeafNodeToIndexMap()
 void
 Exec_RequestImpl::_InvalidateLeafOutputs(
     const bool isNewlyInvalidInterval,
-    const std::vector<const VdfNode *> &leafNodes,
+    TfSpan<const VdfNode *const> leafNodes,
     ExecRequestIndexSet *const invalidIndices)
 {
     if (leafNodes.empty() || !TF_VERIFY(invalidIndices)) {
