@@ -86,7 +86,7 @@ jobs:
     needs:
       - Validation
     if: ${{ (github.event_name == 'pull_request' && needs.Validation.outputs.validation-failed != 'true') || github.event_name == 'push' }}
-    runs-on: macos-13
+    runs-on: macos-15
     env:
       PYTHON_VERSION: "3.11"
     timeout-minutes: 120
@@ -110,7 +110,7 @@ jobs:
       - name: Install dependencies
         run: |
           export PATH=/Applications/CMake.app/Contents/bin:$PATH
-          sudo xcode-select -s /Applications/Xcode_14.1.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
           # Set SYSTEM_VERSION_COMPAT while installing Python packages to
           # accommodate the macOS version numbering change from 10.x to 11
           export SYSTEM_VERSION_COMPAT=1
