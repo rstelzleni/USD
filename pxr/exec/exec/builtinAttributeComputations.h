@@ -30,6 +30,9 @@ public:
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const override;
 
+    TfType GetExtractionType(
+        const EsfObjectInterface &providerObject) const override;
+
     Exec_InputKeyVectorConstRefPtr GetInputKeys(
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const override;

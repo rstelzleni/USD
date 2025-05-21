@@ -38,6 +38,17 @@ Exec_ComputationDefinition::GetResultType(
     return _resultType;
 }
 
+TfType
+Exec_ComputationDefinition::GetExtractionType(
+    const EsfObjectInterface &) const
+{
+    // TODO: Currently, a computation cannot specify an extraction type that
+    // differs from its result type.  Extend the definition language to allow
+    // authors to specify whether the extracted value should be a scalar or
+    // array.
+    return _resultType;
+}
+
 //
 // Exec_PluginComputationDefinition
 //

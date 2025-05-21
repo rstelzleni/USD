@@ -49,6 +49,12 @@ public:
         const EsfObjectInterface &providerObject,
         EsfJournal *journal) const;
 
+    /// Returns the type of values returned to external clients of execution
+    /// that request this computation.
+    ///
+    virtual TfType GetExtractionType(
+        const EsfObjectInterface &providerObject) const;
+
     /// Returns the keys that indicate how to source the input values required
     /// to evaluate the computation when the provider is \p providerObject.
     ///

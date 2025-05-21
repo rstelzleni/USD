@@ -18,6 +18,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class Exec_ValueExtractor;
 class VdfMaskedOutput;
 class VtValue;
 
@@ -45,14 +46,13 @@ private:
     friend class Exec_RequestImpl;
     Exec_CacheView(
         const VdfDataManagerFacade dataManager,
-        TfSpan<const VdfMaskedOutput> outputs)
-        : _dataManager(dataManager)
-        , _outputs(outputs)
-    {}
+        TfSpan<const VdfMaskedOutput> outputs,
+        TfSpan<const Exec_ValueExtractor> extractors);
 
 private:
     std::optional<const VdfDataManagerFacade> _dataManager;
     const TfSpan<const VdfMaskedOutput> _outputs{};
+    const TfSpan<const Exec_ValueExtractor> _extractors{};
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

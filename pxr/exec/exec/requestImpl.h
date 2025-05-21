@@ -29,6 +29,7 @@ class Exec_AuthoredValueInvalidationResult;
 class Exec_CacheView;
 class Exec_DisconnectedInputsInvalidationResult;
 class Exec_TimeChangeInvalidationResult;
+class Exec_ValueExtractor;
 class ExecSystem;
 class ExecValueKey;
 template <typename> class TfSpan;
@@ -104,6 +105,9 @@ private:
 private:
     // The compiled leaf output.
     std::vector<VdfMaskedOutput> _leafOutputs;
+
+    // Value extractors corresponding to each requested value.
+    std::vector<Exec_ValueExtractor> _extractors;
 
     // Maps leaf nodes to their index in the array of valueKeys the request
     // was built with.

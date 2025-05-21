@@ -21,6 +21,17 @@
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
+#define ASSERT_EQ(expr, expected)                                       \
+    [&] {                                                               \
+        auto&& expr_ = expr;                                            \
+        if (expr_ != expected) {                                        \
+            TF_FATAL_ERROR(                                             \
+                "Expected " TF_PP_STRINGIZE(expr) " == '%s'; got '%s'", \
+                TfStringify(expected).c_str(),                          \
+                TfStringify(expr_).c_str());                            \
+        }                                                               \
+     }()
+
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
     (computeXf)
@@ -79,6 +90,14 @@ CreateTestStage()
             {
                 matrix4d xf = ( (5, 0, 0, 0), (0, 5, 0, 0), (0, 0, 5, 0), (0, 0, 0, 1) )
             }
+            def ComputedTransform "A3"
+            {
+                matrix4d xf = ( (7, 0, 0, 0), (0, 7, 0, 0), (0, 0, 7, 0), (0, 0, 0, 1) )
+                def ComputedTransform "B"
+                {
+                    matrix4d xf = ( (3, 0, 0, 0), (0, 3, 0, 0), (0, 0, 3, 0), (0, 0, 0, 1) )
+                }
+            }
         }
         )usda");
     TF_AXIOM(importedLayer);
@@ -102,6 +121,7 @@ main(int argc, char* argv[])
         {stage->GetPrimAtPath(SdfPath("/Root/A1")), _tokens->computeXf},
         {stage->GetPrimAtPath(SdfPath("/Root/A1/B")), _tokens->computeXf},
         {stage->GetPrimAtPath(SdfPath("/Root/A2")), _tokens->computeXf},
+        {stage->GetPrimAtPath(SdfPath("/Root/A3/B")), _tokens->computeXf},
     });
     TF_AXIOM(request.IsValid());
 
@@ -110,19 +130,37 @@ main(int argc, char* argv[])
 
     ExecUsdCacheView view = system.CacheValues(request);
 
-    // Value extraction is currently unimplemented so temporarily indicate
-    // that error messages are expected here.
-    fprintf(stderr, "--- BEGIN EXPECTED ERROR ---\n");
     // Extract values concurrently and repeatedly from the same index.
     WorkParallelForN(
         12345,
         [view](int i, int n) {
             for (; i!=n; ++i) {
                 VtValue v;
-                view.Extract(i%4, &v);
+                TF_AXIOM(view.Extract(i%4, &v));
             }
         });
-    fprintf(stderr, "--- END EXPECTED ERROR ---\n");
+
+    // Assert that the request values are as expected.
+    VtValue v;
+    TF_AXIOM(view.Extract(0, &v));
+    TF_AXIOM(v.IsHolding<GfMatrix4d>());
+    ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.));
+
+    TF_AXIOM(view.Extract(1, &v));
+    TF_AXIOM(v.IsHolding<GfMatrix4d>());
+    ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(2.));
+
+    TF_AXIOM(view.Extract(2, &v));
+    TF_AXIOM(v.IsHolding<GfMatrix4d>());
+    ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(6.));
+
+    TF_AXIOM(view.Extract(3, &v));
+    TF_AXIOM(v.IsHolding<GfMatrix4d>());
+    ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(5.));
+
+    TF_AXIOM(view.Extract(4, &v));
+    TF_AXIOM(v.IsHolding<GfMatrix4d>());
+    ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(21.));
 
     return 0;
 }

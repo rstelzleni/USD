@@ -8,18 +8,24 @@
 
 #include "pxr/exec/exec/authoredValueInvalidationResult.h"
 #include "pxr/exec/exec/cacheView.h"
+#include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
 #include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/system.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
 #include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/exec/types.h"
+#include "pxr/exec/exec/valueExtractor.h"
 #include "pxr/exec/exec/valueKey.h"
 
 #include "pxr/base/tf/bits.h"
 #include "pxr/base/tf/span.h"
 #include "pxr/base/trace/trace.h"
+#include "pxr/base/work/loops.h"
+#include "pxr/base/work/withScopedParallelism.h"
 #include "pxr/exec/ef/leafNode.h"
+#include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/prim.h"
 #include "pxr/exec/vdf/request.h"
 #include "pxr/exec/vdf/schedule.h"
 #include "pxr/exec/vdf/scheduler.h"
@@ -154,6 +160,54 @@ Exec_RequestImpl::DidChangeTime(
     }
 }
 
+// Returns a value extractor suitable for the given value key according to its
+// computation definition.
+//
+// If any errors occur (e.g. invalid provider, invalid computation name,
+// unhandled provider type,) returns an invalid extractor.
+//
+static Exec_ValueExtractor
+_GetValueExtractor(
+    const Exec_DefinitionRegistry &defReg,
+    const ExecTypeRegistry &typeReg,
+    const ExecValueKey &vk)
+{
+    const EsfObject &provider = vk.GetProvider();
+    if (!provider->IsValid(nullptr)) {
+        TF_CODING_ERROR("Invalid provider");
+        return Exec_ValueExtractor();
+    }
+
+    const TfToken &computationName = vk.GetComputationName();
+    const Exec_ComputationDefinition *def = nullptr;
+    if (provider->IsPrim()) {
+        def = defReg.GetComputationDefinition(
+            *provider->AsPrim(),
+            computationName,
+            nullptr);
+    }
+    else if (provider->IsAttribute()) {
+        def = defReg.GetComputationDefinition(
+            *provider->AsAttribute(),
+            computationName,
+            nullptr);
+    }
+    else {
+        TF_CODING_ERROR("Provider '%s' is not a prim or attribute",
+                        provider->GetPath(nullptr).GetText());
+        return Exec_ValueExtractor();
+    }
+
+    if (!def) {
+        TF_CODING_ERROR("Failed to find computation '%s' on provider '%s'",
+                        computationName.GetText(),
+                        provider->GetPath(nullptr).GetText());
+        return Exec_ValueExtractor();
+    }
+
+    return typeReg.GetExtractor(def->GetExtractionType(*provider));
+}
+
 void
 Exec_RequestImpl::_Compile(
     ExecSystem *const system,
@@ -169,12 +223,46 @@ Exec_RequestImpl::_Compile(
     //
     // TODO: If the network doesn't need to be modified at all, then we should
     // avoid repopulating _leafOutputs.
-    _leafOutputs = system->_Compile(valueKeys);
-    if (!TF_VERIFY(_leafOutputs.size() == valueKeys.size())) {
-        // If we somehow got the wrong number of outputs from compilation, we
-        // have no idea if the indices correspond correctly so zero out all
-        // the outputs.
+
+    TRACE_FUNCTION();
+
+    // Compile the value keys.
+    WorkWithScopedDispatcher([this, system, valueKeys] (WorkDispatcher &d) {
+
+        d.Run([system, valueKeys, &leafOutputs = _leafOutputs] {
+            leafOutputs = system->_Compile(valueKeys);
+        });
+
+        {
+            TRACE_FUNCTION_SCOPE("collect value extractors");
+
+            // Collect the extractors.  This is redundant work as compilation
+            // must also look up the computation definitions for each value
+            // key.  However, it is more direct and easier to understand than
+            // carving a special-purpose return path for the definition
+            // through the generic compilation tasks.
+            const auto &defReg = Exec_DefinitionRegistry::GetInstance();
+            const auto &typeReg = ExecTypeRegistry::GetInstance();
+            _extractors.assign(valueKeys.size(), Exec_ValueExtractor());
+            WorkParallelForN(
+                valueKeys.size(),
+                [valueKeys, &defReg, &typeReg, &extractors = _extractors]
+                (size_t i, size_t n) {
+                    for (; i<n; ++i) {
+                        extractors[i] = _GetValueExtractor(
+                            defReg, typeReg, valueKeys[i]);
+                    }
+                });
+        }
+    });
+
+    if (!TF_VERIFY(_leafOutputs.size() == valueKeys.size()) ||
+        !TF_VERIFY(_extractors.size() == valueKeys.size())) {
+        // If we somehow got the wrong number of outputs from compilation or
+        // the wrong number of extractors, we have no idea if the indices
+        // correspond correctly so zero out all the outputs & extractors.
         _leafOutputs.assign(valueKeys.size(), VdfMaskedOutput());
+        _extractors.assign(valueKeys.size(), Exec_ValueExtractor());
     }
 
     // If the schedule is still valid, then we are done.
@@ -239,7 +327,7 @@ Exec_RequestImpl::_CacheValues(ExecSystem *const system)
 
     // Return an exec cache view for the computed values.
     return Exec_CacheView(
-        system->_runtime->GetDataManager(), _leafOutputs);
+        system->_runtime->GetDataManager(), _leafOutputs, _extractors);
 }
 
 void

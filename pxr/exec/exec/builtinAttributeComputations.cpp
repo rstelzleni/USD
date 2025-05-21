@@ -50,6 +50,20 @@ Exec_ComputeValueComputationDefinition::GetResultType(
     const SdfValueTypeName valueTypeName =
         providerAttribute->GetValueTypeName(journal);
 
+    return valueTypeName.GetScalarType().GetType();
+}
+
+TfType
+Exec_ComputeValueComputationDefinition::GetExtractionType(
+    const EsfObjectInterface &providerObject) const
+{
+    if (!TF_VERIFY(providerObject.IsAttribute())) {
+        return {};
+    }
+    const EsfAttribute providerAttribute = providerObject.AsAttribute();
+    const SdfValueTypeName valueTypeName =
+        providerAttribute->GetValueTypeName(/* journal */ nullptr);
+
     return valueTypeName.GetType();
 }
 
