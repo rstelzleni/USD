@@ -30,22 +30,29 @@ PXR_NAMESPACE_USING_DIRECTIVE
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
     (computeXf)
+    (scale)
     (xf)
     );
 
-EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRequestComputedTransform)
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
+    TestExecUsdRequestInvalidationComputedTransform)
 {
     self.PrimComputation(_tokens->computeXf)
         .Callback(+[](const VdfContext &ctx) {
+            const double fallbackScale = 1.0;
+            const double scale = *ctx.GetInputValuePtr<double>(
+                _tokens->scale, &fallbackScale);
+
             const GfMatrix4d id(1);
-            const GfMatrix4d &xf = *ctx.GetInputValuePtr<GfMatrix4d>(
-                _tokens->xf, &id);
+            const GfMatrix4d xf = *ctx.GetInputValuePtr<GfMatrix4d>(
+                _tokens->xf, &id) * scale;
             const GfMatrix4d &parentXf = *ctx.GetInputValuePtr<GfMatrix4d>(
                 _tokens->computeXf, &id);
             return xf * parentXf;
         })
         .Inputs(
             AttributeValue<GfMatrix4d>(_tokens->xf),
+            AttributeValue<double>(_tokens->scale),
             NamespaceAncestor<GfMatrix4d>(_tokens->computeXf)
         );
 }
@@ -76,6 +83,11 @@ CreateTestStage()
             def ComputedTransform "A1"
             {
                 matrix4d xf = ( (2, 0, 0, 0), (0, 2, 0, 0), (0, 0, 2, 0), (0, 0, 0, 1) )
+                double scale = 1
+                double scale.spline = {
+                    1: 1,
+                    2: 2,
+                }
                 def ComputedTransform "B"
                 {
                     matrix4d xf = ( (3, 0, 0, 0), (0, 3, 0, 0), (0, 0, 3, 0), (0, 0, 0, 1) )
@@ -116,8 +128,8 @@ struct _InvalidationState {
         numInvoked = 0;
     }
 
-    // The invalidation callback invoked by the request.
-    void Callback(
+    // The value invalidation callback invoked by the request.
+    void ValueCalback(
         const ExecRequestIndexSet &invalidIndices,
         const EfTimeInterval &invalidInterval)
     {
@@ -130,6 +142,21 @@ struct _InvalidationState {
 
         // Combine the invalid interval.
         interval |= invalidInterval;
+
+        // Increment the number of times the callback has been invoked.
+        ++numInvoked;
+    }
+
+    // The time invalidation callback invoked by the request
+    void TimeCallback(
+        const ExecRequestIndexSet &invalidIndices)
+    {
+        // Add all invalid indices to the map and increment the invalidation
+        // count for each entry.
+        for (const int i : invalidIndices) {
+            auto [it, emplaced] = indices.emplace(i, 0);
+            ++it->second;
+        }
 
         // Increment the number of times the callback has been invoked.
         ++numInvoked;
@@ -183,9 +210,11 @@ main(int argc, char* argv[])
             {stage->GetPrimAtPath(SdfPath("/Root/A1/B")), _tokens->computeXf},
             {stage->GetPrimAtPath(SdfPath("/Root/A2")), _tokens->computeXf},
         },
-        std::bind(&_InvalidationState::Callback, &invalidation,
+        std::bind(&_InvalidationState::ValueCalback, &invalidation,
             std::placeholders::_1,
-            std::placeholders::_2));
+            std::placeholders::_2),
+        std::bind(&_InvalidationState::TimeCallback, &invalidation,
+            std::placeholders::_1));
     TF_AXIOM(request.IsValid());
 
     system.PrepareRequest(request);
@@ -260,6 +289,31 @@ main(int argc, char* argv[])
     TF_AXIOM(invalidation.numInvoked == 1);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,1}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
+
+    // The exec system should be initialized with the default time, so there
+    // should be no time invalidation here.
+    invalidation.Reset();
+    system.ChangeTime(UsdTimeCode::Default());
+    TF_AXIOM(invalidation.numInvoked == 0);
+
+    // /Root/A1.scale is not varying between the default time and frame 1, so 
+    // there should not be invalidation.
+    invalidation.Reset();
+    system.ChangeTime(UsdTimeCode(1.0));
+    TF_AXIOM(invalidation.numInvoked == 0);
+
+    // /Root/A1.scale 's spline value is different on frame 2, so we should be
+    // able to observe invalidation.
+    invalidation.Reset();
+    system.ChangeTime(UsdTimeCode(2.0));
+    TF_AXIOM(invalidation.numInvoked == 1);
+    TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,0}));
+    TF_AXIOM(invalidation.interval.IsEmpty());
+
+    // The knot value on frame 2 should be held over the following frames.
+    invalidation.Reset();
+    system.ChangeTime(UsdTimeCode(3.0));
+    TF_AXIOM(invalidation.numInvoked == 0);
 
     return 0;
 }

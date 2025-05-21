@@ -27,6 +27,7 @@ TF_DECLARE_REF_PTRS(UsdStage);
 class ExecUsdCacheView;
 class ExecUsdRequest;
 class ExecUsdValueKey;
+class UsdTimeCode;
 
 /// The implementation of a system to procedurally compute values based on USD
 /// scene description and computation definitions.
@@ -49,6 +50,23 @@ public:
 
     EXECUSD_API
     ~ExecUsdSystem();
+
+    /// Changes the \p time at which values are computed.
+    /// 
+    /// Calling this method re-resolves time-dependent inputs from the scene
+    /// graph at the new \p time, and determines which of these inputs are
+    /// *actually* changing between the old and new time. Computed values that
+    /// are dependent on the changing inputs are then invalidated, and requests
+    /// are notified of the time change.
+    /// 
+    /// \note
+    /// When computing multiple requests over multiple times, it is much more
+    /// efficient to compute all requests at the same time, before moving on to
+    /// the next time. Doing so, allows time-dependent intermediate results to
+    /// remain cached and be re-used across the multiple calls to CacheValues().
+    ///
+    EXECUSD_API
+    void ChangeTime(UsdTimeCode time);
 
     /// Builds a request for the given \p valueKeys.
     ///

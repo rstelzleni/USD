@@ -34,6 +34,47 @@ ExecSystem::ExecSystem(EsfStage &&stage)
 ExecSystem::~ExecSystem() = default;
 
 void
+ExecSystem::_ChangeTime(const EfTime &newTime)
+{
+    const auto [timeChanged, oldTime] =
+        _runtime->SetTime(*_program->GetTimeInputNode(), newTime);
+    if (!timeChanged) {
+        return;
+    }
+
+    TRACE_FUNCTION();
+
+    // Invalidate time on the program.
+    const Exec_TimeChangeInvalidationResult invalidationResult =
+        _program->InvalidateTime(oldTime, newTime);
+
+    // Invalidate the executor and send request invalidation notification.
+    WorkWithScopedDispatcher(
+        [&runtime = _runtime, &invalidationResult, &requests = _requests]
+        (WorkDispatcher &dispatcher){
+        // Invalidate values on the executor and set the new time.
+        dispatcher.Run([&](){
+            runtime->InvalidateValues(invalidationResult.invalidationRequest);
+        });
+
+        // Notify all the requests of the time change. Not all the requests will
+        // contain all the leaf nodes affected by the time change, and the
+        // request impls are responsible for filtering the provided information.
+        // 
+        // TODO: Once we expect the system to contain more than a handful of
+        // requests, we should do this in parallel. We might still want to
+        // invoke the invalidation callbacks serially, though.
+        if (!invalidationResult.invalidLeafNodes.empty()) {
+            dispatcher.Run([&](){
+                for (const auto &requestImpl : requests) {
+                    requestImpl->DidChangeTime(invalidationResult);
+                }
+            });
+        }
+    });
+}
+
+void
 ExecSystem::_InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl)
 {
     _requests.push_back(std::move(impl));
@@ -142,47 +183,6 @@ ExecSystem::_InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
     for (const auto &requestImpl : _requests) {
         requestImpl->DidInvalidateComputedValues(invalidationResult);
     } 
-}
-
-void
-ExecSystem::_ChangeTime(const EfTime &newTime)
-{
-    const auto [timeChanged, oldTime] =
-        _runtime->SetTime(*_program->GetTimeInputNode(), newTime);
-    if (!timeChanged) {
-        return;
-    }
-
-    TRACE_FUNCTION();
-
-    // Invalidate time on the program.
-    const Exec_TimeChangeInvalidationResult invalidationResult =
-        _program->InvalidateTime(oldTime, newTime);
-
-    // Invalidate the executor and send request invalidation notification.
-    WorkWithScopedDispatcher(
-        [&runtime = _runtime, &invalidationResult, &requests = _requests]
-        (WorkDispatcher &dispatcher){
-        // Invalidate values on the executor and set the new time.
-        dispatcher.Run([&](){
-            runtime->InvalidateValues(invalidationResult.invalidationRequest);
-        });
-
-        // Notify all the requests of the time change. Not all the requests will
-        // contain all the leaf nodes affected by the time change, and the
-        // request impls are responsible for filtering the provided information.
-        // 
-        // TODO: Once we expect the system to contain more than a handful of
-        // requests, we should do this in parallel. We might still want to
-        // invoke the invalidation callbacks serially, though.
-        if (!invalidationResult.invalidLeafNodes.empty()) {
-            dispatcher.Run([&](){
-                for (const auto &requestImpl : requests) {
-                    requestImpl->DidChangeTime(invalidationResult);
-                }
-            });
-        }
-    });
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

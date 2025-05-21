@@ -50,6 +50,12 @@ ExecUsdSystem::ExecUsdSystem(const UsdStageConstRefPtr &stage)
 
 ExecUsdSystem::~ExecUsdSystem() = default;
 
+void
+ExecUsdSystem::ChangeTime(const UsdTimeCode time)
+{
+    _ChangeTime(EfTime(time));
+}
+
 ExecUsdRequest
 ExecUsdSystem::BuildRequest(
     std::vector<ExecUsdValueKey> &&valueKeys,

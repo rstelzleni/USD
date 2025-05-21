@@ -55,6 +55,15 @@ protected:
     EXEC_API
     ~ExecSystem();
 
+    /// Changes time on the system.
+    /// 
+    /// This stores the new time value in the time input node output,
+    /// invalidates all time dependent computed values, and notifies requests of
+    /// the change in time.
+    /// 
+    EXEC_API
+    void _ChangeTime(const EfTime &time);
+
     /// Transfer ownership of a newly-created request impl to the system.
     ///
     /// The system is responsible for managing the lifetime of the impl in
@@ -92,10 +101,6 @@ private:
     // Notifies the system of authored value invalidation.
     EXEC_API
     void _InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties);
-
-    // Notifies the system of changes to time.
-    EXEC_API
-    void _ChangeTime(const EfTime &time);
 
 private:
     EsfStage _stage;

@@ -6,7 +6,7 @@
         {
             "Info": {
                 "Types": {
-                    "TestExecUsdRequestComputedTransform": {
+                    "TestExecUsdRequestInvalidationComputedTransform": {
                         "alias": {
                             "UsdSchemaBase": "ComputedTransform"
                         }, 

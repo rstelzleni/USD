@@ -8,5 +8,6 @@ class ComputedTransform "ComputedTransform" (
 )
 {
     matrix4d xf = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1) )
+    double scale = 1
 }
 

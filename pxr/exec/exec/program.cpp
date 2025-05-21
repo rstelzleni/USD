@@ -275,21 +275,11 @@ Exec_Program::InvalidateTime(const EfTime &oldTime, const EfTime &newTime)
     // Gather up the set of inputs that are currently time-dependent.
     const VdfMaskedOutputVector &timeDependentInputNodeOutputs =
         _CollectTimeDependentInputNodeOutputs();
-
-    // When moving to- or from the default time, we need to invalidate all
-    // time-dependent inputs.
-    const bool didChangeDefault = 
-        oldTime.GetTimeCode().IsDefault() != newTime.GetTimeCode().IsDefault();
     
     // Construct a bit set that filters the array of time dependent inputs down
     // to the ones that actually changed going from oldTime to newTime.
-    const TfBits filter = didChangeDefault
-        ? TfBits(
-            timeDependentInputNodeOutputs.size(), 
-            0,
-            timeDependentInputNodeOutputs.size() - 1)
-        : _FilterTimeDependentInputNodeOutputs(
-            timeDependentInputNodeOutputs, oldTime, newTime);
+    const TfBits filter = _FilterTimeDependentInputNodeOutputs(
+        timeDependentInputNodeOutputs, oldTime, newTime);
 
     // Compute the executor invalidation request, and gather leaf nodes for
     // exec request notification.
@@ -598,7 +588,7 @@ _FilterTimeDependentInputNodeOutputs(
     // Combine the thread-local bit sets into a single bit set and return it.
     TfBits result(numInputs);
     threadBits.combine_each([&result](const TfBits &bits){
-        return result | bits;
+        return result |= bits;
     });
     return result;
 }
