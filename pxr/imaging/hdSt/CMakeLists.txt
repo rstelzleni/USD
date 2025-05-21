@@ -780,6 +780,7 @@ pxr_register_test(testHdStBarAllocationLimit
     TESTENV testHdStBarAllocationLimit
     ENV
         TF_DEBUG=HD_SAFE_MODE
+        HD_MAX_VBO_SIZE=268435456 # 2^28
 )
 pxr_register_test(testHdStBasicDrawing_Adaptive_lighting_lv1_hull
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHdStBasicDrawing --offscreen --lighting --repr hull --refineLevel 1 --write testHdStBasicDrawing_adaptive_lighting_lv1_hull.png"
@@ -2321,6 +2322,7 @@ pxr_register_test(testHdStBufferAggregation
     TESTENV testHdStBufferAggregation
     ENV
         TF_DEBUG=HD_SAFE_MODE
+        HD_MAX_VBO_SIZE=268435456 # 2^28
 )
 pxr_register_test(testHdStBufferArray
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHdStBufferArray"
