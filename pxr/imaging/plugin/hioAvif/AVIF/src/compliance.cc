@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-#include "AVIF/src/avif/internal.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/internal.h"
 
 // From ../ext/ComplianceWarden/src/utils/
 #include "box_reader_impl.h"

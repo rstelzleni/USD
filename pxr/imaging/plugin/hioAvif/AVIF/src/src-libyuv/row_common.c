@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "AVIF/src/src-libyuv/libyuv/row.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/row.h"
 
 #include <assert.h>
 #include <string.h>  // For memcpy and memset.
 
-#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
 
 #define STATIC_CAST(type, expr) (type)(expr)
 

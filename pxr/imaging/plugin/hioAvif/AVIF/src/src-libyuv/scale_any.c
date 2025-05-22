@@ -10,10 +10,10 @@
 
 #include <string.h>  // For memset/memcpy
 
-#include "AVIF/src/src-libyuv/libyuv/scale.h"
-#include "AVIF/src/src-libyuv/libyuv/scale_row.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale_row.h"
 
-#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
 
 // Scale up horizontally 2 times using linear filter.
 #define SUH2LANY(NAME, SIMD, C, MASK, PTYPE)                       \

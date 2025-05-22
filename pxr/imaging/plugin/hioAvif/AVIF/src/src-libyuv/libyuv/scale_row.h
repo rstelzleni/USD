@@ -11,8 +11,8 @@
 #ifndef INCLUDE_LIBYUV_SCALE_ROW_H_
 #define INCLUDE_LIBYUV_SCALE_ROW_H_
 
-#include "AVIF/src/src-libyuv/libyuv/basic_types.h"
-#include "AVIF/src/src-libyuv/libyuv/scale.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/basic_types.h"
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/src-libyuv/libyuv/scale.h"
 
 // Scale ARGB vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,

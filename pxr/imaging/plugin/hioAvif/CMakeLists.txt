@@ -18,36 +18,42 @@ pxr_plugin(hioAvif
         aom/aom_image.h
         aom/aom_integer.h
         aom/aomdx.h
+        aom/aom_external_partition.h
+        aom/internal/aom_codec_internal.h
+        aom/internal/aom_image_internal.h
+        aom_dsp/aom_dsp_common.h
+        aom_dsp/aom_filter.h
         aom_dsp/binary_codes_reader.h
         aom_dsp/bitreader.h
-        aom_dsp/aom_dsp_common.h
         aom_dsp/bitreader_buffer.h
         aom_dsp/blend.h
         aom_dsp/entcode.h
         aom_dsp/entdec.h
+        aom_dsp/flow_estimation/corner_detect.h
+        aom_dsp/flow_estimation/flow_estimation.h
+        aom_dsp/grain_params.h
         aom_dsp/grain_table.h
-        aom_dsp/aom_filter.h
-        aom_dsp/grain_synthesis.h
         aom_dsp/intrapred_common.h
+        aom_dsp/odintrin.h
         aom_dsp/prob.h
+        aom_dsp/pyramid.h
         aom_dsp/recenter.h
         aom_dsp/txfm_common.h
         aom_mem/aom_mem.h
         aom_mem/include/aom_mem_intrnl.h
-        aom_ports/bitops.h
         aom_ports/aom_once.h
+        aom_ports/aom_timer.h
+        aom_ports/bitops.h
         aom_ports/mem.h
         aom_ports/mem_ops.h
         aom_ports/mem_ops_aligned.h
-        aom_ports/msvc.h
-        aom_ports/system_state.h
-        aom_ports/aom_timer.h
-        aom_scale/aom_scale.h
+        aom_ports/sanitizer.h
         aom_scale/yv12config.h
         aom_util/aom_thread.h
+        aom_util/aom_pthread.h
         av1/av1_iface_common.h
-        av1/common/av1_common_int.h
         av1/common/alloccommon.h
+        av1/common/av1_common_int.h
         av1/common/av1_inv_txfm1d.h
         av1/common/av1_inv_txfm1d_cfg.h
         av1/common/av1_loopfilter.h
@@ -65,15 +71,15 @@ pxr_plugin(hioAvif
         av1/common/enums.h
         av1/common/filter.h
         av1/common/frame_buffers.h
+        av1/common/idct.h
         av1/common/mv.h
         av1/common/mvref_common.h
-        av1/common/idct.h
         av1/common/obmc.h
         av1/common/obu_util.h
-        av1/common/odintrin.h
         av1/common/pred_common.h
         av1/common/quant_common.h
         av1/common/reconinter.h
+        av1/common/reconinter_template.inc
         av1/common/reconintra.h
         av1/common/resize.h
         av1/common/restoration.h
@@ -87,20 +93,14 @@ pxr_plugin(hioAvif
         av1/common/txb_common.h
         av1/common/warped_motion.h
         av1/decoder/decodeframe.h
-        av1/decoder/decoder.h
         av1/decoder/decodemv.h
+        av1/decoder/decoder.h
         av1/decoder/decodetxb.h
         av1/decoder/detokenize.h
         av1/decoder/dthread.h
+        av1/decoder/grain_synthesis.h
         av1/decoder/obu.h
-        config/aom_config.h
-        config/aom_dsp_rtcd.h
-        config/aom_scale_rtcd.h
-        config/aom_version.h
-        config/av1_rtcd.h
-        aom/internal/aom_codec_internal.h
-        aom/internal/aom_image_internal.h
-        aom/internal/common/args_helper.h
+        common/args_helper.h
         AVIF/src/avif/avif.h
         AVIF/src/avif/internal.h
         AVIF/src/src-libyuv/libyuv/basic_types.h
@@ -110,29 +110,28 @@ pxr_plugin(hioAvif
         AVIF/src/src-libyuv/libyuv/scale.h
         AVIF/src/src-libyuv/libyuv/scale_row.h
         AVIF/src/src-libyuv/libyuv/version.h
-        
+
     CPPFILES
-        aom/aom_codec.c
-        aom/aom_decoder.c
-        aom/aom_image.c
-        aom/aom_integer.c
+        aom/src/aom_codec.c
+        aom/src/aom_decoder.c
+        aom/src/aom_image.c
+        aom/src/aom_integer.c
         aom_dsp/aom_convolve.c
         aom_dsp/aom_dsp_rtcd.c
         aom_dsp/binary_codes_reader.c
         aom_dsp/bitreader.c
         aom_dsp/bitreader_buffer.c
         aom_dsp/blend_a64_hmask.c
-        aom_dsp/blend_a64_vmask.c
         aom_dsp/blend_a64_mask.c
+        aom_dsp/blend_a64_vmask.c
         aom_dsp/entcode.c
         aom_dsp/entdec.c
-        aom_dsp/grain_synthesis.c
         aom_dsp/intrapred.c
         aom_dsp/loopfilter.c
+        aom_dsp/odintrin.c
+        aom_dsp/pyramid.c
         aom_mem/aom_mem.c
         aom_scale/aom_scale_rtcd.c
-        aom_scale/generic/aom_scale.c
-        aom_scale/generic/gen_scalers.c
         aom_scale/generic/yv12config.c
         aom_scale/generic/yv12extend.c
         aom_util/aom_thread.c
@@ -141,39 +140,41 @@ pxr_plugin(hioAvif
         av1/common/av1_inv_txfm1d.c
         av1/common/av1_inv_txfm2d.c
         av1/common/av1_loopfilter.c
-        av1/common/av1_txfm.c
         av1/common/av1_rtcd.c
+        av1/common/av1_txfm.c
         av1/common/blockd.c
         av1/common/cdef.c
         av1/common/cdef_block.c
         av1/common/cfl.c
+        av1/common/common_data.c
         av1/common/convolve.c
-        av1/common/entropymode.c 
         av1/common/entropy.c
+        av1/common/entropymode.c
         av1/common/entropymv.c
         av1/common/frame_buffers.c
         av1/common/idct.c
         av1/common/mvref_common.c
         av1/common/obu_util.c
         av1/common/pred_common.c
-        av1/common/quant_common.c        
+        av1/common/quant_common.c
         av1/common/reconinter.c
         av1/common/reconintra.c
         av1/common/resize.c
         av1/common/restoration.c
-        av1/common/av1_scale.c
+        av1/common/scale.c
         av1/common/scan.c
         av1/common/seg_common.c
         av1/common/thread_common.c
+        av1/common/tile_common.c
         av1/common/timing.c
         av1/common/txb_common.c
-        av1/common/tile_common.c
         av1/common/warped_motion.c
         av1/decoder/decodeframe.c
         av1/decoder/decodemv.c
         av1/decoder/decoder.c
         av1/decoder/decodetxb.c
         av1/decoder/detokenize.c
+        av1/decoder/grain_synthesis.c
         av1/decoder/obu.c
         AVIF/src/alpha.c
         AVIF/src/avif.c

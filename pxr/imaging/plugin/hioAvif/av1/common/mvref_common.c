@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Alliance for Open Media. All rights reserved
+ * Copyright (c) 2016, Alliance for Open Media. All rights reserved.
  *
  * This source code is subject to the terms of the BSD 2 Clause License and
  * the Alliance for Open Media Patent License 1.0. If the BSD 2 Clause License
@@ -16,14 +16,15 @@
 
 // Although we assign 32 bit integers, all the values are strictly under 14
 // bits.
-static int div_mult[32] = { 0,    16384, 8192, 5461, 4096, 3276, 2730, 2340,
-                            2048, 1820,  1638, 1489, 1365, 1260, 1170, 1092,
-                            1024, 963,   910,  862,  819,  780,  744,  712,
-                            682,  655,   630,  606,  585,  564,  546,  528 };
+static const int div_mult[32] = { 0,    16384, 8192, 5461, 4096, 3276, 2730,
+                                  2340, 2048,  1820, 1638, 1489, 1365, 1260,
+                                  1170, 1092,  1024, 963,  910,  862,  819,
+                                  780,  744,   712,  682,  655,  630,  606,
+                                  585,  564,   546,  528 };
 
 // TODO(jingning): Consider the use of lookup table for (num / den)
 // altogether.
-static AOM_INLINE void get_mv_projection(MV *output, MV ref, int num, int den) {
+void av1_get_mv_projection(MV *output, MV ref, int num, int den) {
   den = AOMMIN(den, MAX_FRAME_DISTANCE);
   num = num > 0 ? AOMMIN(num, MAX_FRAME_DISTANCE)
                 : AOMMAX(num, -MAX_FRAME_DISTANCE);
@@ -71,7 +72,7 @@ void av1_copy_frame_mvs(const AV1_COMMON *const cm,
   }
 }
 
-static AOM_INLINE void add_ref_mv_candidate(
+static inline void add_ref_mv_candidate(
     const MB_MODE_INFO *const candidate, const MV_REFERENCE_FRAME rf[2],
     uint8_t *refmv_count, uint8_t *ref_match_count, uint8_t *newmv_count,
     CANDIDATE_MV *ref_mv_stack, uint16_t *ref_mv_weight,
@@ -139,12 +140,13 @@ static AOM_INLINE void add_ref_mv_candidate(
   }
 }
 
-static AOM_INLINE void scan_row_mbmi(
-    const AV1_COMMON *cm, const MACROBLOCKD *xd, int mi_col,
-    const MV_REFERENCE_FRAME rf[2], int row_offset, CANDIDATE_MV *ref_mv_stack,
-    uint16_t *ref_mv_weight, uint8_t *refmv_count, uint8_t *ref_match_count,
-    uint8_t *newmv_count, int_mv *gm_mv_candidates, int max_row_offset,
-    int *processed_rows) {
+static inline void scan_row_mbmi(const AV1_COMMON *cm, const MACROBLOCKD *xd,
+                                 int mi_col, const MV_REFERENCE_FRAME rf[2],
+                                 int row_offset, CANDIDATE_MV *ref_mv_stack,
+                                 uint16_t *ref_mv_weight, uint8_t *refmv_count,
+                                 uint8_t *ref_match_count, uint8_t *newmv_count,
+                                 int_mv *gm_mv_candidates, int max_row_offset,
+                                 int *processed_rows) {
   int end_mi = AOMMIN(xd->width, cm->mi_params.mi_cols - mi_col);
   end_mi = AOMMIN(end_mi, mi_size_wide[BLOCK_64X64]);
   const int width_8x8 = mi_size_wide[BLOCK_8X8];
@@ -186,12 +188,13 @@ static AOM_INLINE void scan_row_mbmi(
   }
 }
 
-static AOM_INLINE void scan_col_mbmi(
-    const AV1_COMMON *cm, const MACROBLOCKD *xd, int mi_row,
-    const MV_REFERENCE_FRAME rf[2], int col_offset, CANDIDATE_MV *ref_mv_stack,
-    uint16_t *ref_mv_weight, uint8_t *refmv_count, uint8_t *ref_match_count,
-    uint8_t *newmv_count, int_mv *gm_mv_candidates, int max_col_offset,
-    int *processed_cols) {
+static inline void scan_col_mbmi(const AV1_COMMON *cm, const MACROBLOCKD *xd,
+                                 int mi_row, const MV_REFERENCE_FRAME rf[2],
+                                 int col_offset, CANDIDATE_MV *ref_mv_stack,
+                                 uint16_t *ref_mv_weight, uint8_t *refmv_count,
+                                 uint8_t *ref_match_count, uint8_t *newmv_count,
+                                 int_mv *gm_mv_candidates, int max_col_offset,
+                                 int *processed_cols) {
   int end_mi = AOMMIN(xd->height, cm->mi_params.mi_rows - mi_row);
   end_mi = AOMMIN(end_mi, mi_size_high[BLOCK_64X64]);
   const int n8_h_8 = mi_size_high[BLOCK_8X8];
@@ -233,12 +236,14 @@ static AOM_INLINE void scan_col_mbmi(
   }
 }
 
-static AOM_INLINE void scan_blk_mbmi(
-    const AV1_COMMON *cm, const MACROBLOCKD *xd, const int mi_row,
-    const int mi_col, const MV_REFERENCE_FRAME rf[2], int row_offset,
-    int col_offset, CANDIDATE_MV *ref_mv_stack, uint16_t *ref_mv_weight,
-    uint8_t *ref_match_count, uint8_t *newmv_count, int_mv *gm_mv_candidates,
-    uint8_t *refmv_count) {
+static inline void scan_blk_mbmi(const AV1_COMMON *cm, const MACROBLOCKD *xd,
+                                 const int mi_row, const int mi_col,
+                                 const MV_REFERENCE_FRAME rf[2], int row_offset,
+                                 int col_offset, CANDIDATE_MV *ref_mv_stack,
+                                 uint16_t *ref_mv_weight,
+                                 uint8_t *ref_match_count, uint8_t *newmv_count,
+                                 int_mv *gm_mv_candidates,
+                                 uint8_t *refmv_count) {
   const TileInfo *const tile = &xd->tile;
   POSITION mi_pos;
 
@@ -258,7 +263,7 @@ static AOM_INLINE void scan_blk_mbmi(
 
 static int has_top_right(const AV1_COMMON *cm, const MACROBLOCKD *xd,
                          int mi_row, int mi_col, int bs) {
-  const int sb_mi_size = mi_size_wide[cm->seq_params.sb_size];
+  const int sb_mi_size = mi_size_wide[cm->seq_params->sb_size];
   const int mask_row = mi_row & (sb_mi_size - 1);
   const int mask_col = mi_col & (sb_mi_size - 1);
 
@@ -347,15 +352,15 @@ static int add_tpl_ref_mv(const AV1_COMMON *cm, const MACROBLOCKD *xd,
   const int cur_frame_index = cm->cur_frame->order_hint;
   const RefCntBuffer *const buf_0 = get_ref_frame_buf(cm, rf[0]);
   const int frame0_index = buf_0->order_hint;
-  const int cur_offset_0 = get_relative_dist(&cm->seq_params.order_hint_info,
+  const int cur_offset_0 = get_relative_dist(&cm->seq_params->order_hint_info,
                                              cur_frame_index, frame0_index);
   int idx;
   const int allow_high_precision_mv = cm->features.allow_high_precision_mv;
   const int force_integer_mv = cm->features.cur_frame_force_integer_mv;
 
   int_mv this_refmv;
-  get_mv_projection(&this_refmv.as_mv, prev_frame_mvs->mfmv0.as_mv,
-                    cur_offset_0, prev_frame_mvs->ref_frame_offset);
+  av1_get_mv_projection(&this_refmv.as_mv, prev_frame_mvs->mfmv0.as_mv,
+                        cur_offset_0, prev_frame_mvs->ref_frame_offset);
   lower_mv_precision(&this_refmv.as_mv, allow_high_precision_mv,
                      force_integer_mv);
 
@@ -380,11 +385,11 @@ static int add_tpl_ref_mv(const AV1_COMMON *cm, const MACROBLOCKD *xd,
     // Process compound inter mode
     const RefCntBuffer *const buf_1 = get_ref_frame_buf(cm, rf[1]);
     const int frame1_index = buf_1->order_hint;
-    const int cur_offset_1 = get_relative_dist(&cm->seq_params.order_hint_info,
+    const int cur_offset_1 = get_relative_dist(&cm->seq_params->order_hint_info,
                                                cur_frame_index, frame1_index);
     int_mv comp_refmv;
-    get_mv_projection(&comp_refmv.as_mv, prev_frame_mvs->mfmv0.as_mv,
-                      cur_offset_1, prev_frame_mvs->ref_frame_offset);
+    av1_get_mv_projection(&comp_refmv.as_mv, prev_frame_mvs->mfmv0.as_mv,
+                          cur_offset_1, prev_frame_mvs->ref_frame_offset);
     lower_mv_precision(&comp_refmv.as_mv, allow_high_precision_mv,
                        force_integer_mv);
 
@@ -415,7 +420,7 @@ static int add_tpl_ref_mv(const AV1_COMMON *cm, const MACROBLOCKD *xd,
   return 1;
 }
 
-static AOM_INLINE void process_compound_ref_mv_candidate(
+static inline void process_compound_ref_mv_candidate(
     const MB_MODE_INFO *const candidate, const AV1_COMMON *const cm,
     const MV_REFERENCE_FRAME *const rf, int_mv ref_id[2][2],
     int ref_id_count[2], int_mv ref_diff[2][2], int ref_diff_count[2]) {
@@ -440,7 +445,7 @@ static AOM_INLINE void process_compound_ref_mv_candidate(
   }
 }
 
-static AOM_INLINE void process_single_ref_mv_candidate(
+static inline void process_single_ref_mv_candidate(
     const MB_MODE_INFO *const candidate, const AV1_COMMON *const cm,
     MV_REFERENCE_FRAME ref_frame, uint8_t *const refmv_count,
     CANDIDATE_MV ref_mv_stack[MAX_REF_MV_STACK_SIZE],
@@ -471,7 +476,7 @@ static AOM_INLINE void process_single_ref_mv_candidate(
   }
 }
 
-static AOM_INLINE void setup_ref_mv_list(
+static inline void setup_ref_mv_list(
     const AV1_COMMON *cm, const MACROBLOCKD *xd, MV_REFERENCE_FRAME ref_frame,
     uint8_t *const refmv_count,
     CANDIDATE_MV ref_mv_stack[MAX_REF_MV_STACK_SIZE],
@@ -838,7 +843,9 @@ void av1_find_best_ref_mvs(int allow_hp, int_mv *mvlist, int_mv *nearest_mv,
 void av1_setup_frame_buf_refs(AV1_COMMON *cm) {
   cm->cur_frame->order_hint = cm->current_frame.order_hint;
   cm->cur_frame->display_order_hint = cm->current_frame.display_order_hint;
-
+  cm->cur_frame->pyramid_level = cm->current_frame.pyramid_level;
+  cm->cur_frame->filter_level[0] = -1;
+  cm->cur_frame->filter_level[1] = -1;
   MV_REFERENCE_FRAME ref_frame;
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const RefCntBuffer *const buf = get_ref_frame_buf(cm, ref_frame);
@@ -854,10 +861,10 @@ void av1_setup_frame_sign_bias(AV1_COMMON *cm) {
   MV_REFERENCE_FRAME ref_frame;
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const RefCntBuffer *const buf = get_ref_frame_buf(cm, ref_frame);
-    if (cm->seq_params.order_hint_info.enable_order_hint && buf != NULL) {
+    if (cm->seq_params->order_hint_info.enable_order_hint && buf != NULL) {
       const int ref_order_hint = buf->order_hint;
       cm->ref_frame_sign_bias[ref_frame] =
-          (get_relative_dist(&cm->seq_params.order_hint_info, ref_order_hint,
+          (get_relative_dist(&cm->seq_params->order_hint_info, ref_order_hint,
                              (int)cm->current_frame.order_hint) <= 0)
               ? 0
               : 1;
@@ -930,10 +937,10 @@ static int motion_field_projection(AV1_COMMON *cm,
       &start_frame_buf->ref_order_hints[0];
   const int cur_order_hint = cm->cur_frame->order_hint;
   int start_to_current_frame_offset = get_relative_dist(
-      &cm->seq_params.order_hint_info, start_frame_order_hint, cur_order_hint);
+      &cm->seq_params->order_hint_info, start_frame_order_hint, cur_order_hint);
 
   for (MV_REFERENCE_FRAME rf = LAST_FRAME; rf <= INTER_REFS_PER_FRAME; ++rf) {
-    ref_offset[rf] = get_relative_dist(&cm->seq_params.order_hint_info,
+    ref_offset[rf] = get_relative_dist(&cm->seq_params->order_hint_info,
                                        start_frame_order_hint,
                                        ref_order_hints[rf - LAST_FRAME]);
   }
@@ -960,8 +967,9 @@ static int motion_field_projection(AV1_COMMON *cm,
             abs(start_to_current_frame_offset) <= MAX_FRAME_DISTANCE;
 
         if (pos_valid) {
-          get_mv_projection(&this_mv.as_mv, fwd_mv,
-                            start_to_current_frame_offset, ref_frame_offset);
+          av1_get_mv_projection(&this_mv.as_mv, fwd_mv,
+                                start_to_current_frame_offset,
+                                ref_frame_offset);
           pos_valid = get_block_position(cm, &mi_r, &mi_c, blk_row, blk_col,
                                          this_mv.as_mv, dir >> 1);
         }
@@ -980,10 +988,32 @@ static int motion_field_projection(AV1_COMMON *cm,
   return 1;
 }
 
-void av1_setup_motion_field(AV1_COMMON *cm) {
-  const OrderHintInfo *const order_hint_info = &cm->seq_params.order_hint_info;
+// cm->ref_frame_side is calculated here, and will be used in
+// av1_copy_frame_mvs() to affect how mvs are copied.
+void av1_calculate_ref_frame_side(AV1_COMMON *cm) {
+  const OrderHintInfo *const order_hint_info = &cm->seq_params->order_hint_info;
 
   memset(cm->ref_frame_side, 0, sizeof(cm->ref_frame_side));
+  if (!order_hint_info->enable_order_hint) return;
+
+  const int cur_order_hint = cm->cur_frame->order_hint;
+
+  for (int ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
+    const RefCntBuffer *const buf = get_ref_frame_buf(cm, ref_frame);
+    int order_hint = 0;
+
+    if (buf != NULL) order_hint = buf->order_hint;
+
+    if (get_relative_dist(order_hint_info, order_hint, cur_order_hint) > 0)
+      cm->ref_frame_side[ref_frame] = 1;
+    else if (order_hint == cur_order_hint)
+      cm->ref_frame_side[ref_frame] = -1;
+  }
+}
+
+void av1_setup_motion_field(AV1_COMMON *cm) {
+  const OrderHintInfo *const order_hint_info = &cm->seq_params->order_hint_info;
+
   if (!order_hint_info->enable_order_hint) return;
 
   TPL_MV_REF *tpl_mvs_base = cm->tpl_mvs;
@@ -995,7 +1025,6 @@ void av1_setup_motion_field(AV1_COMMON *cm) {
   }
 
   const int cur_order_hint = cm->cur_frame->order_hint;
-
   const RefCntBuffer *ref_buf[INTER_REFS_PER_FRAME];
   int ref_order_hint[INTER_REFS_PER_FRAME];
 
@@ -1008,11 +1037,6 @@ void av1_setup_motion_field(AV1_COMMON *cm) {
 
     ref_buf[ref_idx] = buf;
     ref_order_hint[ref_idx] = order_hint;
-
-    if (get_relative_dist(order_hint_info, order_hint, cur_order_hint) > 0)
-      cm->ref_frame_side[ref_frame] = 1;
-    else if (order_hint == cur_order_hint)
-      cm->ref_frame_side[ref_frame] = -1;
   }
 
   int ref_stamp = MFMV_STACK_SIZE - 1;
@@ -1049,7 +1073,7 @@ void av1_setup_motion_field(AV1_COMMON *cm) {
   if (ref_stamp >= 0) motion_field_projection(cm, LAST2_FRAME, 2);
 }
 
-static INLINE void record_samples(const MB_MODE_INFO *mbmi, int *pts,
+static inline void record_samples(const MB_MODE_INFO *mbmi, int *pts,
                                   int *pts_inref, int row_offset, int sign_r,
                                   int col_offset, int sign_c) {
   const int bw = block_size_wide[mbmi->bsize];
@@ -1219,7 +1243,7 @@ uint8_t av1_findSamples(const AV1_COMMON *cm, MACROBLOCKD *xd, int *pts,
 }
 
 void av1_setup_skip_mode_allowed(AV1_COMMON *cm) {
-  const OrderHintInfo *const order_hint_info = &cm->seq_params.order_hint_info;
+  const OrderHintInfo *const order_hint_info = &cm->seq_params->order_hint_info;
   SkipModeInfo *const skip_mode_info = &cm->current_frame.skip_mode_info;
 
   skip_mode_info->skip_mode_allowed = 0;
@@ -1311,8 +1335,8 @@ static int compare_ref_frame_info(const void *arg_a, const void *arg_b) {
   return info_a->map_idx - info_b->map_idx;
 }
 
-static AOM_INLINE void set_ref_frame_info(int *remapped_ref_idx, int frame_idx,
-                                          REF_FRAME_INFO *ref_info) {
+static inline void set_ref_frame_info(int *remapped_ref_idx, int frame_idx,
+                                      REF_FRAME_INFO *ref_info) {
   assert(frame_idx >= 0 && frame_idx < INTER_REFS_PER_FRAME);
 
   remapped_ref_idx[frame_idx] = ref_info->map_idx;
@@ -1323,11 +1347,11 @@ void av1_set_frame_refs(AV1_COMMON *const cm, int *remapped_ref_idx,
   int lst_frame_sort_idx = -1;
   int gld_frame_sort_idx = -1;
 
-  assert(cm->seq_params.order_hint_info.enable_order_hint);
-  assert(cm->seq_params.order_hint_info.order_hint_bits_minus_1 >= 0);
+  assert(cm->seq_params->order_hint_info.enable_order_hint);
+  assert(cm->seq_params->order_hint_info.order_hint_bits_minus_1 >= 0);
   const int cur_order_hint = (int)cm->current_frame.order_hint;
   const int cur_frame_sort_idx =
-      1 << cm->seq_params.order_hint_info.order_hint_bits_minus_1;
+      1 << cm->seq_params->order_hint_info.order_hint_bits_minus_1;
 
   REF_FRAME_INFO ref_frame_info[REF_FRAMES];
   int ref_flag_list[INTER_REFS_PER_FRAME] = { 0, 0, 0, 0, 0, 0, 0 };
@@ -1349,7 +1373,7 @@ void av1_set_frame_refs(AV1_COMMON *const cm, int *remapped_ref_idx,
     ref_frame_info[i].sort_idx =
         (offset == -1) ? -1
                        : cur_frame_sort_idx +
-                             get_relative_dist(&cm->seq_params.order_hint_info,
+                             get_relative_dist(&cm->seq_params->order_hint_info,
                                                offset, cur_order_hint);
     assert(ref_frame_info[i].sort_idx >= -1);
 
@@ -1360,11 +1384,11 @@ void av1_set_frame_refs(AV1_COMMON *const cm, int *remapped_ref_idx,
   // Confirm both LAST_FRAME and GOLDEN_FRAME are valid forward reference
   // frames.
   if (lst_frame_sort_idx == -1 || lst_frame_sort_idx >= cur_frame_sort_idx) {
-    aom_internal_error(&cm->error, AOM_CODEC_CORRUPT_FRAME,
+    aom_internal_error(cm->error, AOM_CODEC_CORRUPT_FRAME,
                        "Inter frame requests a look-ahead frame as LAST");
   }
   if (gld_frame_sort_idx == -1 || gld_frame_sort_idx >= cur_frame_sort_idx) {
-    aom_internal_error(&cm->error, AOM_CODEC_CORRUPT_FRAME,
+    aom_internal_error(cm->error, AOM_CODEC_CORRUPT_FRAME,
                        "Inter frame requests a look-ahead frame as GOLDEN");
   }
 

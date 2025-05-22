@@ -4,7 +4,7 @@
 #ifndef AVIF_INTERNAL_H
 #define AVIF_INTERNAL_H
 
-#include "AVIF/src/avif/avif.h" // IWYU pragma: export
+#include "pxr/imaging/plugin/hioAvif/AVIF/src/avif/avif.h" // IWYU pragma: export
 
 #ifdef __cplusplus
 extern "C" {
