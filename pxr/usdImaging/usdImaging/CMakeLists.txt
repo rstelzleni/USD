@@ -322,12 +322,15 @@ pxr_register_test(testUsdImagingExcluded
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingExcluded"
     EXPECTED_RETURN_CODE 0
 )
-pxr_register_test(testUsdImagingMaterialBinding
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingMaterialBinding"
-    EXPECTED_RETURN_CODE 0
-    ENV
-        USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
-)
+# Tests that rely on plugins aren't currently supported in static builds.
+if (BUILD_SHARED_LIBS)
+    pxr_register_test(testUsdImagingMaterialBinding
+        COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingMaterialBinding"
+        EXPECTED_RETURN_CODE 0
+        ENV
+            USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=1
+    )
+endif()
 pxr_register_test(testUsdImagingNestedInstancingCategories
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingNestedInstancingCategories"
     EXPECTED_RETURN_CODE 0
