@@ -175,7 +175,7 @@ _FindTraceNode(
 static double
 _GetInclusiveTimeInSeconds(const TraceAggregateNodePtr &node)
 {
-    return ArchTicksToSeconds(uint64_t(node->GetInclusiveTime() * 1e3));
+    return ArchTicksToSeconds(node->GetInclusiveTime());
 }
 
 // Given a parent trace node and a tag name, returns inclusive times for
