@@ -2659,6 +2659,7 @@ void
 SdfLayer::UpdateAssetInfo()
 {
     TRACE_FUNCTION();
+    TF_DESCRIBE_SCOPE("Updating asset info for layer: " + GetIdentifier());
     TF_DEBUG(SDF_LAYER).Msg("SdfLayer::UpdateAssetInfo('%s')\n",
                             GetIdentifier().c_str());
 
