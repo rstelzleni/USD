@@ -204,7 +204,9 @@ Exec_DefinitionRegistry::GetComputationDefinition(
         // Add a resync dependency on the provider.  If the object at this
         // path is removed and replaced with an object of a supported type, a
         // computation definition could be found for the new provider.
-        journal->Add(providerPath, EsfEditReason::ResyncedObject);
+        if (journal) {
+            journal->Add(providerPath, EsfEditReason::ResyncedObject);
+        }
         return nullptr;
     }
 }
