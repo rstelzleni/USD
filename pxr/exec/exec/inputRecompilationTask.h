@@ -45,8 +45,7 @@ private:
     // The input to be recompiled.
     VdfInput *const _input;
 
-    // The task uses this journal to resolve the input. It will be billed to
-    // the input when the input is re-connected.
+    // The task uses this journal to resolve the input.
     EsfJournal _journal;
 
     // The new source outputs for the input.

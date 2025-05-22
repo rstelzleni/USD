@@ -6,10 +6,10 @@
 //
 #include "pxr/exec/exec/inputRecompilationTask.h"
 
+#include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/nodeRecompilationInfo.h"
-#include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/program.h"
 
 #include "pxr/base/trace/trace.h"

@@ -6,8 +6,8 @@
 //
 #include "pxr/pxr.h"
 
-#include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/request.h"
+#include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
 
 #include "pxr/base/plug/plugin.h"
@@ -17,14 +17,13 @@
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/exec/exec/computationBuilders.h"
 #include "pxr/exec/exec/registerSchema.h"
-#include "pxr/exec/exec/request.h"
 #include "pxr/exec/exec/systemDiagnostics.h"
 #include "pxr/exec/vdf/context.h"
+#include "pxr/usd/sdf/layer.h"
 #include "pxr/usd/sdf/types.h"
 #include "pxr/usd/usd/common.h"
-#include "pxr/usd/usd/stage.h"
-#include "pxr/usd/sdf/layer.h"
 #include "pxr/usd/usd/prim.h"
+#include "pxr/usd/usd/stage.h"
 
 PXR_NAMESPACE_USING_DIRECTIVE;
 
@@ -80,9 +79,7 @@ public:
     ExecUsdRequest BuildRequest(
         std::vector<ExecUsdValueKey> &&valueKeys) {
         return _system->BuildRequest(
-            std::move(valueKeys));//,
-            // _ComputedValueInvalidationCallback,
-            // _TimeChangedInvalidationCallback);
+            std::move(valueKeys));
     }
 
     UsdPrim GetPrimAtPath(const char *const pathStr) const {
@@ -97,16 +94,6 @@ public:
         ExecSystem::Diagnostics diagnostics(&*_system);
         diagnostics.GraphNetwork(filename);
     }
-
-private:
-    static void
-    _ComputedValueInvalidationCallback(
-        const ExecRequestIndexSet &,
-        const class EfTimeInterval &) {}
-
-    static void
-    _TimeChangedInvalidationCallback(
-        const ExecRequestIndexSet &) {}
 
 private:
     UsdStageRefPtr _stage;
