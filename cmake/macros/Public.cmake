@@ -914,6 +914,12 @@ function(pxr_register_test TEST_NAME)
         set(testWrapperCmd ${testWrapperCmd} --expected-return-code=${bt_EXPECTED_RETURN_CODE})
     endif()
 
+    # Ensure that TF_FATAL_VERIFY is enabled for tests, so that failed verifies
+    # turn into test failures.
+    # Set this first, so that env vars passed to pxr_register_test can turn off
+    # TF_FATAL_VERIFY where desired.
+    set(testWrapperCmd ${testWrapperCmd} --env-var=TF_FATAL_VERIFY=1)
+
     if (bt_ENV)
         foreach(env ${bt_ENV})
             set(testWrapperCmd ${testWrapperCmd} --env-var=${env})
