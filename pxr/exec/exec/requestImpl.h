@@ -88,6 +88,14 @@ protected:
     EXEC_API
     Exec_CacheView _CacheValues(ExecSystem *system);
 
+    /// Returns true if the request needs to be compiled.
+    ///
+    /// A request may skip compilation if its schedule is up-to-date and there
+    /// is no pending recompilation in the network.
+    ///
+    EXEC_API
+    bool _RequiresCompilation(const ExecSystem *system) const;
+
 private:
     // Ensures the _leafNodeToIndex map is up-to-date.
     EXEC_API

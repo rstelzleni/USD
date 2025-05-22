@@ -110,6 +110,12 @@ ExecSystem::_Compile(TfSpan<const ExecValueKey> valueKeys)
     return compiler.Compile(valueKeys);
 }
 
+bool
+ExecSystem::_HasPendingRecompilation() const
+{
+    return !_program->GetInputsRequiringRecompilation().empty();
+}
+
 void
 ExecSystem::_InvalidateAll()
 {

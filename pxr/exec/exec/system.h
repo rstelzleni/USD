@@ -84,9 +84,13 @@ protected:
     class _ChangeProcessor;
 
 private:
-    // Requires access to _CacheValues and _Compile.
+    // Requires access to _CacheValues, _Compile, and _HasPendingRecompilation.
     friend class Exec_RequestImpl;
     std::vector<VdfMaskedOutput> _Compile(TfSpan<const ExecValueKey> valueKeys);
+
+    // Returns true if the program has inputs requiring recompilation.
+    EXEC_API
+    bool _HasPendingRecompilation() const;
 
     // Discards all internal state, and constructs new internal data structures
     // leaving the system in the same state as if it was newly constructed.

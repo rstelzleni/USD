@@ -312,6 +312,14 @@ Exec_RequestImpl::_CacheValues(ExecSystem *const system)
         system->_runtime->GetDataManager(), _leafOutputs, _extractors);
 }
 
+bool
+Exec_RequestImpl::_RequiresCompilation(const ExecSystem *const system) const
+{
+    return !_schedule
+        || !_schedule->IsValid()
+        || system->_HasPendingRecompilation();
+}
+
 void
 Exec_RequestImpl::_BuildLeafNodeToIndexMap()
 {

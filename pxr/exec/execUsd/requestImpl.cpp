@@ -59,12 +59,16 @@ ExecUsd_RequestImpl::~ExecUsd_RequestImpl() = default;
 void
 ExecUsd_RequestImpl::Compile(ExecUsdSystem *const system)
 {
-    TRACE_FUNCTION();
-
     if (!system) {
         TF_CODING_ERROR("Got null system");
         return;
     }
+
+    if (!_RequiresCompilation(system)) {
+        return;
+    }
+
+    TRACE_FUNCTION();
 
     const size_t numValueKeys = _valueKeys.size();
 
