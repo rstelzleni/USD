@@ -588,7 +588,7 @@ _FilterTimeDependentInputNodeOutputs(
     // Combine the thread-local bit sets into a single bit set and return it.
     TfBits result(numInputs);
     threadBits.combine_each([&result](const TfBits &bits){
-        return result |= bits;
+        result |= bits;
     });
     return result;
 }
