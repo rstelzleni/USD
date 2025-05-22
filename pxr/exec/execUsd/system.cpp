@@ -75,6 +75,8 @@ ExecUsdSystem::BuildRequest(
 void
 ExecUsdSystem::PrepareRequest(const ExecUsdRequest &request)
 {
+    TRACE_FUNCTION();
+
     std::shared_ptr<ExecUsd_RequestImpl> requestImpl = request._GetImpl();
     if (!requestImpl) {
         TF_CODING_ERROR("Cannot prepare an expired request");
@@ -88,6 +90,8 @@ ExecUsdSystem::PrepareRequest(const ExecUsdRequest &request)
 ExecUsdCacheView
 ExecUsdSystem::CacheValues(const ExecUsdRequest &request)
 {
+    TRACE_FUNCTION();
+
     std::shared_ptr<ExecUsd_RequestImpl> requestImpl = request._GetImpl();
     if (!requestImpl) {
         TF_CODING_ERROR("Cannot cache an expired request");

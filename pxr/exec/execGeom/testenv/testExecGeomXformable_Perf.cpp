@@ -6,6 +6,7 @@
 //
 #include "pxr/pxr.h"
 
+#include "pxr/exec/execUsd/cacheView.h"
 #include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
@@ -14,6 +15,7 @@
 #include "pxr/base/gf/matrix4d.h"
 #include "pxr/base/gf/vec3d.h"
 #include "pxr/base/tf/pxrCLI11/CLI11.h"
+#include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/trace/aggregateNode.h"
 #include "pxr/base/trace/collector.h"
 #include "pxr/base/trace/reporter.h"
@@ -28,6 +30,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -169,45 +172,137 @@ _FindTraceNode(
     return {};
 }
 
-static void
-_WritePerfstats(const TraceReporterPtr &globalReporter)
+static double
+_GetInclusiveTimeInSeconds(const TraceAggregateNodePtr &node)
 {
+    return ArchTicksToSeconds(uint64_t(node->GetInclusiveTime() * 1e3));
+}
+
+// Given a parent trace node and a tag name, returns inclusive times for
+// compilation, scheduling, cache values, and value extraction.
+static std::tuple<double, double, double, double>
+_GetExecTimes(
+    const TraceAggregateNodePtr &parentNode,
+    const std::string &tag)
+{
+    const TraceAggregateNodePtr tagNode = _FindTraceNode(parentNode, tag);
+    TF_AXIOM(tagNode);
+
+    const TraceAggregateNodePtr prepareNode =
+        _FindTraceNode(tagNode, "ExecUsdSystem::PrepareRequest");
+    TF_AXIOM(prepareNode);
+
+    const TraceAggregateNodePtr compileNode =
+        _FindTraceNode(prepareNode, "ExecUsd_RequestImpl::Compile");
+    TF_AXIOM(compileNode);
+    const double compileTime = _GetInclusiveTimeInSeconds(compileNode);
+
+    const TraceAggregateNodePtr scheduleNode =
+        _FindTraceNode(prepareNode, "VdfScheduler::Schedule");
+    TF_AXIOM(scheduleNode);
+    const double scheduleTime = _GetInclusiveTimeInSeconds(scheduleNode);
+
+    const TraceAggregateNodePtr cacheValuesNode =
+        _FindTraceNode(tagNode, "ExecUsdSystem::CacheValues");
+    TF_AXIOM(cacheValuesNode);
+    const double cacheValuesTime = _GetInclusiveTimeInSeconds(cacheValuesNode);
+
+    const TraceAggregateNodePtr extractValuesNode =
+        _FindTraceNode(tagNode, "Extract values");
+    TF_AXIOM(extractValuesNode);
+    const double extractValuesTime =
+        _GetInclusiveTimeInSeconds(extractValuesNode);
+
+    return {compileTime, scheduleTime, cacheValuesTime, extractValuesTime};
+}
+
+static void
+_WritePerfstats(
+    const TraceReporterPtr &globalReporter,
+    bool recompile)
+{
+    std::ofstream statsFile("perfstats.raw");
+    static const char *const metricTemplate =
+        "{'profile':'%s','metric':'time','value':%f,'samples':1}\n";
+
     const TraceAggregateNodePtr root =
         globalReporter->GetAggregateTreeRoot();
 
     const TraceAggregateNodePtr mainThreadNode =
         _FindTraceNode(root, "Main Thread");
     TF_AXIOM(mainThreadNode);
-    const double mainThreadTime =
-        ArchTicksToSeconds(
-            uint64_t(mainThreadNode->GetInclusiveTime() * 1e3));
+    const double mainThreadTime = _GetInclusiveTimeInSeconds(mainThreadNode);
 
-    const TraceAggregateNodePtr compileNode =
-        _FindTraceNode(mainThreadNode, "ExecUsd_RequestImpl::Compile");
-    TF_AXIOM(compileNode);
-    const double compileTime =
-        ArchTicksToSeconds(
-            uint64_t(compileNode->GetInclusiveTime() * 1e3));
+    auto [compileTime, scheduleTime, cacheValuesTime, extractValuesTime] =
+        _GetExecTimes(mainThreadNode, "Initial exec");
 
-    const TraceAggregateNodePtr scheduleNode =
-        _FindTraceNode(mainThreadNode, "VdfScheduler::Schedule");
-    TF_AXIOM(scheduleNode);
-    const double scheduleTime =
-        ArchTicksToSeconds(
-            uint64_t(scheduleNode->GetInclusiveTime() * 1e3));
+    statsFile << TfStringPrintf(
+        metricTemplate, "time", mainThreadTime);
+    statsFile << TfStringPrintf(
+        metricTemplate, "compile_time", compileTime);
+    statsFile << TfStringPrintf(
+        metricTemplate, "schedule_time", scheduleTime);
+    statsFile << TfStringPrintf(
+        metricTemplate, "cache_values_time", cacheValuesTime);
+    statsFile << TfStringPrintf(
+        metricTemplate, "extract_values_time", extractValuesTime);
 
-    std::ofstream statsFile("perfstats.raw");
-    static const char *const metricTemplate =
-        "{'profile':'%s','metric':'time','value':%f,'samples':1}\n";
-    statsFile << TfStringPrintf(metricTemplate, "time", mainThreadTime);
-    statsFile << TfStringPrintf(metricTemplate, "compile_time", compileTime);
-    statsFile << TfStringPrintf(metricTemplate, "schedule_time", scheduleTime);
+    if (!recompile) {
+        return;
+    }
+
+    // Scene edit 1
+
+    const TraceAggregateNodePtr sceneEdit1Node =
+        _FindTraceNode(mainThreadNode, "Scene edit 1");
+    TF_AXIOM(sceneEdit1Node);
+    const double sceneEdit1Time =
+        _GetInclusiveTimeInSeconds(sceneEdit1Node);
+
+    auto [recompile1Time, reschedule1Time,
+          cacheValues1Time, extractValues1Time] =
+        _GetExecTimes(mainThreadNode, "Post-scene edit 1");
+
+    statsFile << TfStringPrintf(
+        metricTemplate, "scene_edit_1_time", sceneEdit1Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "recompile_1_time", recompile1Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "reschedule_1_time", reschedule1Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "cache_values_1_time", cacheValues1Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "extract_values_1_time", extractValues1Time);
+
+    // Scene edit 2
+
+    const TraceAggregateNodePtr sceneEdit2Node =
+        _FindTraceNode(mainThreadNode, "Scene edit 2");
+    TF_AXIOM(sceneEdit2Node);
+    const double sceneEdit2Time =
+        _GetInclusiveTimeInSeconds(sceneEdit2Node);
+
+    auto [recompile2Time, reschedule2Time,
+          cacheValues2Time, extractValues2Time] =
+        _GetExecTimes(mainThreadNode, "Post-scene edit 2");
+
+    statsFile << TfStringPrintf(
+        metricTemplate, "scene_edit_2_time", sceneEdit2Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "recompile_2_time", recompile2Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "reschedule_2_time", reschedule2Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "cache_values_2_time", cacheValues2Time);
+    statsFile << TfStringPrintf(
+        metricTemplate, "extract_values_2_time", extractValues2Time);
 }
 
 static void
 TestExecGeomXformable_Perf(
     unsigned branchingFactor,
     unsigned treeDepth,
+    bool recompile,
     bool outputAsSpy)
 {
     TraceCollector::GetInstance().SetEnabled(true);
@@ -228,25 +323,142 @@ TestExecGeomXformable_Perf(
         TF_AXIOM(attribute.IsValid());
     }
 
+    TRACE_MARKER("Begin exec");
+
     ExecUsdSystem execSystem(usdStage);
 
-    // Create value keys that compute the transforms for all leaf prims in the
-    // namespace hierarchy.
-    std::vector<ExecUsdValueKey> valueKeys;
-    valueKeys.reserve(leafPrims.size());
-    for (const SdfPath &path : leafPrims) {
-        UsdPrim prim = usdStage->GetPrimAtPath(path);
-        TF_AXIOM(prim.IsValid());
-        valueKeys.emplace_back(prim, TfToken("computeTransform"));
+    // Create value keys that compute the transforms for all leaf prims in
+    // the namespace hierarchy.
+    ExecUsdRequest request = [&]{
+        TRACE_SCOPE("Build request 1");
+
+        std::vector<ExecUsdValueKey> valueKeys;
+        valueKeys.reserve(leafPrims.size());
+        for (const SdfPath &path : leafPrims) {
+            UsdPrim prim = usdStage->GetPrimAtPath(path);
+            TF_AXIOM(prim.IsValid());
+            valueKeys.emplace_back(prim, TfToken("computeTransform"));
+        }
+
+        return execSystem.BuildRequest(std::move(valueKeys));
+    }();
+    TF_AXIOM(request.IsValid());
+
+    {
+        TRACE_SCOPE("Initial exec");
+
+        execSystem.PrepareRequest(request);
+        TF_AXIOM(request.IsValid());
+
+        ExecUsdCacheView cache = execSystem.CacheValues(request);
+
+        {
+            TRACE_SCOPE("Extract values");
+
+            // The expected result translation, given that all transforms impart
+            // a unit translation in X, except the root.
+            GfVec3d expectedTranslation(treeDepth-1, 0, 0);
+
+            for (size_t idx=0; idx<leafPrims.size(); ++idx) {
+                VtValue value;
+                TF_AXIOM(cache.Extract(idx, &value));
+                const GfMatrix4d matrix = value.Get<GfMatrix4d>();
+                TF_AXIOM(matrix.ExtractTranslation() == expectedTranslation);
+            }
+        }
     }
 
-    const ExecUsdRequest request = execSystem.BuildRequest(std::move(valueKeys));
-    TF_AXIOM(request.IsValid());
+    if (recompile) {
+        // The first scene edit modifies changes the type of one child of the
+        // root prim from Xform to Scope. Currently, this recursively resyncs
+        // all descendant prims.
+        TRACE_MARKER("Scene edit 1");
 
-    execSystem.PrepareRequest(request);
-    TF_AXIOM(request.IsValid());
+        {
+            TRACE_SCOPE("Scene edit 1");
 
-    // TODO: Compute and extract values.
+            const SdfPrimSpecHandle rootChildSpec =
+                usdStage->GetRootLayer()->GetPrimAtPath(SdfPath("/Root/Prim0"));
+            TF_AXIOM(rootChildSpec);
+            rootChildSpec->SetTypeName("Scope");
+        }
+
+        TRACE_MARKER("Re-exec 1");
+
+        {
+            TRACE_SCOPE("Post-scene edit 1");
+
+            execSystem.PrepareRequest(request);
+            TF_AXIOM(request.IsValid());
+
+            ExecUsdCacheView cache = execSystem.CacheValues(request);
+
+            {
+                TRACE_SCOPE("Extract values");
+
+                for (size_t idx=0; idx<leafPrims.size(); ++idx) {
+                    VtValue value;
+                    TF_AXIOM(cache.Extract(idx, &value));
+                }
+            }
+        }
+
+        // The second scene edit changes the types for half of the leaf prims
+        // from Xform to Scope. This invalidates value keys, so we re-build the
+        // request for the leaf prims that remain unchanged.
+        //
+        // This is set up so that we end up with lots of isolated network that
+        // needs to be uncompiled.
+        //
+        TRACE_MARKER("Scene edit 2");
+
+        {
+            TRACE_SCOPE("Scene edit 2");
+
+            for (size_t i=leafPrims.size()/2; i<leafPrims.size(); ++i) {
+                const SdfPrimSpecHandle leafPrimSpec =
+                    usdStage->GetRootLayer()->GetPrimAtPath(leafPrims[i]);
+                TF_AXIOM(leafPrimSpec);
+                leafPrimSpec->SetTypeName("Scope");
+            }
+        }
+
+        TRACE_MARKER("Re-exec 2");
+
+        request = [&]{
+            TRACE_SCOPE("Build request 2");
+
+            std::vector<ExecUsdValueKey> valueKeys;
+            valueKeys.reserve(leafPrims.size());
+            for (size_t i=0; i<leafPrims.size()/2; ++i) {
+                UsdPrim prim = usdStage->GetPrimAtPath(leafPrims[i]);
+                TF_AXIOM(prim.IsValid());
+                valueKeys.emplace_back(prim, TfToken("computeTransform"));
+            }
+
+            return execSystem.BuildRequest(std::move(valueKeys));
+        }();
+        TF_AXIOM(request.IsValid());
+
+        {
+            TRACE_SCOPE("Post-scene edit 2");
+
+            execSystem.PrepareRequest(request);
+            TF_AXIOM(request.IsValid());
+
+            // TODO: Compute and extract values again.
+            ExecUsdCacheView cache = execSystem.CacheValues(request);
+
+            {
+                TRACE_SCOPE("Extract values");
+
+                for (size_t idx=0; idx<leafPrims.size()/2; ++idx) {
+                    VtValue value;
+                    TF_AXIOM(cache.Extract(idx, &value));
+                }
+            }
+        }
+    }
 
     TraceCollector::GetInstance().SetEnabled(false);
 
@@ -263,7 +475,7 @@ TestExecGeomXformable_Perf(
         }
     }
 
-    _WritePerfstats(globalReporter);
+    _WritePerfstats(globalReporter, recompile);
 }
 
 int 
@@ -273,6 +485,7 @@ main(int argc, char **argv)
     unsigned branchingFactor = 0;
     unsigned treeDepth = 0;
     bool outputAsSpy = false;
+    bool recompile = false;
 
     // Set up arguments and their defaults
     CLI::App app(
@@ -289,7 +502,10 @@ main(int argc, char **argv)
         "The depth of the Xform tree to build.")
         ->required(true);
     app.add_option(
-        "--numThreads", numThreads, "Number of threads to use");
+        "--numThreads", numThreads, "The number of threads to use");
+    app.add_flag(
+        "--recompile", recompile,
+        "Measure recompilation time in response to various scene edits.");
     app.add_flag(
         "--spy", outputAsSpy,
         "Report traces in .spy format.");
@@ -299,5 +515,5 @@ main(int argc, char **argv)
     std::cout << "Running with " << numThreads << " threads.\n";
     WorkSetConcurrencyLimit(numThreads);
 
-    TestExecGeomXformable_Perf(branchingFactor, treeDepth, outputAsSpy);
+    TestExecGeomXformable_Perf(branchingFactor, treeDepth, recompile, outputAsSpy);
 }

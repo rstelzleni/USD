@@ -75,26 +75,26 @@ if (BUILD_SHARED_LIBS)
 
     pxr_register_test(testExecGeomXformable_Perf
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-                 --branchingFactor 5 --treeDepth 7 --spy"
+                 --branchingFactor 5 --treeDepth 7 --recompile"
         EXPECTED_RETURN_CODE 0
         ENV TF_FATAL_VERIFY=1
     )
 
     pxr_register_test(testExecGeomXformable_Perf_SingleThreaded
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-                 --branchingFactor 5 --treeDepth 7 --numThreads 1 --spy"
+                 --branchingFactor 5 --treeDepth 7 --numThreads 1 --recompile"
         EXPECTED_RETURN_CODE 0
     )
 
     pxr_register_test(testExecGeomXformable_Perf_Chain
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-                 --branchingFactor 1 --treeDepth 19531 --spy"
+                 --branchingFactor 1 --treeDepth 19531"
         EXPECTED_RETURN_CODE 0
     )
 
     pxr_register_test(testExecGeomXformable_Perf_Wide
         COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecGeomXformable_Perf
-                 --branchingFactor 19530 --treeDepth 2 --spy"
+                 --branchingFactor 19530 --treeDepth 2"
         EXPECTED_RETURN_CODE 0
         ENV TF_FATAL_VERIFY=1
     )
