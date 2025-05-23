@@ -704,7 +704,7 @@ TestEdits()
 
     printf("Deleting branch: %s\n", connection->GetDebugName().c_str());
 
-    VdfIsolatedSubnetworkRefPtr subgraph =
+    std::unique_ptr<VdfIsolatedSubnetwork> subgraph =
         VdfIsolatedSubnetwork::IsolateBranch(connection, &filter);
 
     size_t num = subgraph->GetIsolatedNodes().size();

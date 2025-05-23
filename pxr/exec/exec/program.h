@@ -281,7 +281,7 @@ public:
     /// VdfIsolatedSubnetwork destructor will remove the objects before it
     /// deletes them.
     ///
-    VdfIsolatedSubnetworkRefPtr CreateIsolatedSubnetwork();
+    std::unique_ptr<VdfIsolatedSubnetwork> CreateIsolatedSubnetwork();
 
     /// Writes the compiled network to a file at \p filename.
     void GraphNetwork(

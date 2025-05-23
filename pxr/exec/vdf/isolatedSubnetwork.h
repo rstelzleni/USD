@@ -15,13 +15,9 @@
 #include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/types.h"
 
-#include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/hashset.h"
-#include "pxr/base/tf/refBase.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
-
-TF_DECLARE_REF_PTRS(VdfIsolatedSubnetwork);
 
 class VdfNode;
 
@@ -45,11 +41,14 @@ class VdfNode;
 ///
 /// 3. The objects are deleted when the VdfIsolatedSubnetwork is deleted.
 ///
-class VdfIsolatedSubnetwork : public TfRefBase
+class VdfIsolatedSubnetwork
 {
 public:
     VdfIsolatedSubnetwork(const VdfIsolatedSubnetwork &) = delete;
     VdfIsolatedSubnetwork &operator=(const VdfIsolatedSubnetwork &) = delete;
+
+    VDF_API
+    ~VdfIsolatedSubnetwork();
 
     /// A set of nodes used during deletion of sub-networks.
     using NodeSet = TfHashSet<VdfNode*, TfHash>;
@@ -62,13 +61,13 @@ public:
     ///
     /// Optional \p filter object can be used to prune the traversal.
     ///
-    /// Removes the isolated objects from the network and returns a strong
-    /// reference to the isolated network object that holds onto the isolated
+    /// Removes the isolated objects from the network and returns a unique
+    /// pointer to the isolated network object that holds onto the isolated
     /// nodes and connections. When the isolated network object is deleted, the
     /// isolated nodes and connections are deleted.
     ///
     VDF_API static
-    VdfIsolatedSubnetworkRefPtr IsolateBranch(
+    std::unique_ptr<VdfIsolatedSubnetwork> IsolateBranch(
         VdfConnection *connection,
         VdfNetwork::EditFilter *filter);
 
@@ -87,7 +86,7 @@ public:
     /// An error is emitted if \p node has output connections.
     ///
     VDF_API static
-    VdfIsolatedSubnetworkRefPtr IsolateBranch(
+    std::unique_ptr<VdfIsolatedSubnetwork> IsolateBranch(
         VdfNode *node,
         VdfNetwork::EditFilter *filter);
 
@@ -97,7 +96,7 @@ public:
     /// methods.
     ///
     VDF_API static
-    VdfIsolatedSubnetworkRefPtr New(VdfNetwork *network);
+    std::unique_ptr<VdfIsolatedSubnetwork> New(VdfNetwork *network);
 
     /// Isolates all nodes and connections reachable via input connections from
     /// \p connection that are not connected via additional output connections
@@ -155,8 +154,6 @@ public:
 
 private:
     VdfIsolatedSubnetwork(VdfNetwork *network);
-
-    ~VdfIsolatedSubnetwork();
 
     // Helper that checks if we can traverse a connection.  
     static bool _CanTraverse(

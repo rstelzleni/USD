@@ -136,7 +136,7 @@ Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
         // We hold onto the isolated subnetwork object until we are done
         // clearing node output data, because the subnetwork object's destructor
         // deletes the isolated nodes.
-        const VdfIsolatedSubnetworkRefPtr subnetwork =
+        const std::unique_ptr<VdfIsolatedSubnetwork> subnetwork =
             _program->CreateIsolatedSubnetwork();
 
         WorkWithScopedDispatcher(

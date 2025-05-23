@@ -416,12 +416,12 @@ Exec_Program::DisconnectInput(VdfInput *const input)
     }
 }
 
-VdfIsolatedSubnetworkRefPtr 
+std::unique_ptr<VdfIsolatedSubnetwork> 
 Exec_Program::CreateIsolatedSubnetwork()
 {
     TRACE_FUNCTION();
 
-    const VdfIsolatedSubnetworkRefPtr subnetwork =
+    std::unique_ptr<VdfIsolatedSubnetwork> subnetwork =
         VdfIsolatedSubnetwork::New(&_network);
 
     // TODO: We can probably modify VdfIsolatedSubnetwork to make it safe to

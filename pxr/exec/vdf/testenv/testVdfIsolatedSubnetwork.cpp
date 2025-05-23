@@ -397,7 +397,7 @@ TestIsolateBranch()
         "will remove the single connection regardless.\n");
 
     FilterNever never;
-    VdfIsolatedSubnetworkRefPtr branch =
+    std::unique_ptr<VdfIsolatedSubnetwork> branch =
         VdfIsolatedSubnetwork::IsolateBranch(connection, &never);
 
     TF_AXIOM(branch);
@@ -485,7 +485,7 @@ TestAddIsolatedBranch(bool explicitlyRemoveIsolatedObjects)
     TF_AXIOM(net.GetNumOwnedNodes() == 7);
 
     {
-        const VdfIsolatedSubnetworkRefPtr subnet =
+        const std::unique_ptr<VdfIsolatedSubnetwork> subnet =
             VdfIsolatedSubnetwork::New(&net);
         for (auto it = out.begin() + 2; it != out.end(); ++it) {
             subnet->AddIsolatedBranch(*it, &always);
@@ -505,7 +505,7 @@ TestAddIsolatedBranch(bool explicitlyRemoveIsolatedObjects)
     TF_AXIOM(net.GetNumOwnedNodes() == 4);
 
     {
-        const VdfIsolatedSubnetworkRefPtr subnet =
+        const std::unique_ptr<VdfIsolatedSubnetwork> subnet =
             VdfIsolatedSubnetwork::New(&net);
         for (auto it = out.begin(); it != out.begin() + 2; ++it) {
             subnet->AddIsolatedBranch(*it, &always);
@@ -548,7 +548,7 @@ TestErrorCases()
     mark.Clear();
 
     VdfNetwork network;
-    const VdfIsolatedSubnetworkRefPtr subnetwork =
+    const std::unique_ptr<VdfIsolatedSubnetwork> subnetwork =
         VdfIsolatedSubnetwork::New(&network);
     TF_AXIOM(mark.IsClean());
     TF_AXIOM(subnetwork);
@@ -599,7 +599,7 @@ TestErrorCases()
     // No error is emitted, but no nodes are isolated.
 
     VdfNetwork &network2 = graph.GetNetwork();
-    const VdfIsolatedSubnetworkRefPtr subnetwork2 =
+    const std::unique_ptr<VdfIsolatedSubnetwork> subnetwork2 =
         VdfIsolatedSubnetwork::New(&network2);
     TF_AXIOM(subnetwork2);
 

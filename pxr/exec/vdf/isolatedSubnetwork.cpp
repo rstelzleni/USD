@@ -14,7 +14,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-VdfIsolatedSubnetworkRefPtr
+std::unique_ptr<VdfIsolatedSubnetwork>
 VdfIsolatedSubnetwork::IsolateBranch(
     VdfConnection *const connection,
     VdfNetwork::EditFilter *const filter)
@@ -34,10 +34,10 @@ VdfIsolatedSubnetwork::IsolateBranch(
 
     isolated->RemoveIsolatedObjectsFromNetwork();
 
-    return TfCreateRefPtr(isolated);
+    return std::unique_ptr<VdfIsolatedSubnetwork>(isolated);
 }
 
-VdfIsolatedSubnetworkRefPtr
+std::unique_ptr<VdfIsolatedSubnetwork>
 VdfIsolatedSubnetwork::IsolateBranch(
     VdfNode *const node,
     VdfNetwork::EditFilter *const filter)
@@ -66,10 +66,10 @@ VdfIsolatedSubnetwork::IsolateBranch(
     
     isolated->RemoveIsolatedObjectsFromNetwork();
 
-    return TfCreateRefPtr(isolated);
+    return std::unique_ptr<VdfIsolatedSubnetwork>(isolated);
 }
 
-VdfIsolatedSubnetworkRefPtr
+std::unique_ptr<VdfIsolatedSubnetwork>
 VdfIsolatedSubnetwork::New(VdfNetwork *const network)
 {
     if (!network) {
@@ -77,7 +77,8 @@ VdfIsolatedSubnetwork::New(VdfNetwork *const network)
         return nullptr;
     }
 
-    return TfCreateRefPtr(new VdfIsolatedSubnetwork(network));
+    return std::unique_ptr<VdfIsolatedSubnetwork>(
+        new VdfIsolatedSubnetwork(network));
 }
 
 bool
