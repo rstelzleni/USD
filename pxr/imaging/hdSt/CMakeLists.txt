@@ -618,17 +618,12 @@ pxr_install_test_dir(
     DEST testHdStQualifiers
 )
 
-# XXX:
-# On Windows this test trips a TF_VERIFY in glPlatformDebugWindowWindows.cpp
-# in _MsgProc. The test seems to pass anyway, so disable TF_FATAL_VERIFY
-# to workaround this for now.
 pxr_register_test(testHdStQualifiers
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHdStQualifiers --offscreen --flatQF FlatMember --nopersQF NoPerspectiveMember --centroidQF CentroidMember --sampleQF SampleMember"
     EXPECTED_RETURN_CODE 0
     TESTENV testHdStQualifiers
     ENV
         TF_DEBUG=HD_SAFE_MODE
-        TF_FATAL_VERIFY=0
 )
 
 if (APPLE)
