@@ -1770,6 +1770,12 @@ def InstallUSD(context, force, buildArgs):
                 extraArgs.append('-DPXR_BUILD_PRMAN_PLUGIN=ON')
             else:
                 extraArgs.append('-DPXR_BUILD_PRMAN_PLUGIN=OFF')                
+
+            if MacOS():
+                if context.buildImageIO:
+                    extraArgs.append('-DPXR_BUILD_IMAGEIO_PLUGIN=ON')
+                else:
+                    extraArgs.append('-DPXR_BUILD_IMAGEIO_PLUGIN=OFF')
             
             if context.buildOIIO:
                 extraArgs.append('-DPXR_BUILD_OPENIMAGEIO_PLUGIN=ON')
@@ -2160,6 +2166,12 @@ subgroup.add_argument("--openimageio", dest="build_oiio", action="store_true",
                       help="Build OpenImageIO plugin for USD")
 subgroup.add_argument("--no-openimageio", dest="build_oiio", action="store_false",
                       help="Do not build OpenImageIO plugin for USD (default)")
+if MacOS():
+    group.add_argument("--imageio", dest="build_imageio", action="store_true", 
+                      default=True,
+                      help="Build the ImageIO.framework plugin for USD (default).")
+    group.add_argument("--no-imageio", dest="build_imageio", action="store_false",
+                       help="Do not build build the ImageIO.framework plugin for USD.")
 subgroup = group.add_mutually_exclusive_group()
 subgroup.add_argument("--opencolorio", dest="build_ocio", action="store_true", 
                       default=False,
@@ -2373,6 +2385,8 @@ class InstallContext:
         self.buildOIIO = ((args.build_oiio or (self.buildUsdImaging
                                                and self.buildTests))
                           and not embedded)
+        if MacOS():
+            self.buildImageIO = args.build_imageio
         self.buildOCIO = args.build_ocio and not embedded
 
         # - Alembic Plugin
@@ -2678,6 +2692,7 @@ summaryMsg += """\
     Imaging                     {buildImaging}
       Ptex support:             {enablePtex}
       OpenVDB support:          {enableOpenVDB}
+      ImageIO support:          {buildImageIO}
       OpenImageIO support:      {buildOIIO} 
       OpenColorIO support:      {buildOCIO} 
       Embree support:           {buildEmbree}
@@ -2743,6 +2758,7 @@ summaryMsg = summaryMsg.format(
     buildImaging=("On" if context.buildImaging else "Off"),
     enablePtex=("On" if context.enablePtex else "Off"),
     enableOpenVDB=("On" if context.enableOpenVDB else "Off"),
+    buildImageIO=("On" if (MacOS() and context.buildImageIO) else "Off"),
     buildOIIO=("On" if context.buildOIIO else "Off"),
     buildOCIO=("On" if context.buildOCIO else "Off"),
     buildEmbree=("On" if context.buildEmbree else "Off"),
