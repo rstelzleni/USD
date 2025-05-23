@@ -6,6 +6,7 @@
 //
 #include "pxr/pxr.h"
 
+#include "pxr/exec/execUsd/cacheView.h"
 #include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
@@ -41,17 +42,17 @@ def Xform "Root" (
     def Xform "A1"
     {
         uniform token[] xformOpOrder = [ "xformOp:transform" ]
-        matrix4d xformOps:transform = ( (2, 0, 0, 0), (0, 2, 0, 0), (0, 0, 2, 0), (0, 0, 0, 1) )
+        matrix4d xformOps:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (2, 0, 0, 1) )
         def Xform "B"
         {
             uniform token[] xformOpOrder = [ "xformOp:transform" ]
-            matrix4d xformOps:transform = ( (3, 0, 0, 0), (0, 3, 0, 0), (0, 0, 3, 0), (0, 0, 0, 1) )
+            matrix4d xformOps:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (3, 0, 0, 1) )
         }
     }
     def Xform "A2"
     {
         uniform token[] xformOpOrder = [ "xformOp:transform" ]
-        matrix4d xformOps:transform = ( (5, 0, 0, 0), (0, 5, 0, 0), (0, 0, 5, 0), (0, 0, 0, 1) )
+        matrix4d xformOps:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (5, 0, 0, 1) )
     }
 }
 )usda";
@@ -84,6 +85,13 @@ TestExecGeomXformable()
 
     ExecUsdSystem::Diagnostics execSystemDiagnostics(&execSystem);
     execSystemDiagnostics.GraphNetwork("testCompiler.dot");
+
+    ExecUsdCacheView cache = execSystem.CacheValues(request);
+
+    VtValue value;
+    TF_AXIOM(cache.Extract(0, &value));
+    const GfMatrix4d matrix = value.Get<GfMatrix4d>();
+    TF_AXIOM(GfIsClose(matrix.ExtractTranslation(), GfVec3d(5, 0, 0), 1e-6));
 
     TraceCollector::GetInstance().SetEnabled(false);
     
