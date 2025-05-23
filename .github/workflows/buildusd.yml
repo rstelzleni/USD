@@ -188,8 +188,8 @@ jobs:
       - name: Test USD
         working-directory: ./USDgen/build/OpenUSD
         run: |
-          call set PATH=D:\a\OpenUSD\OpenUSD\USDinst\bin;D:\a\OpenUSD\OpenUSD\USDinst\lib;D:\a\OpenUSD\OpenUSD\USDinst\share\usd\examples\plugin;D:\a\OpenUSD\OpenUSD\USDinst\plugin\usd;%PATH%
-          call set PYTHONPATH=D:\a\OpenUSD\OpenUSD\USDinst\lib\python;%PYTHONPATH%
+          call set PATH=${{ github.workspace }}\USDinst\bin;${{ github.workspace }}\USDinst\lib;${{ github.workspace }}\USDinst\share\usd\examples\plugin;${{ github.workspace }}\USDinst\plugin\usd;%PATH%
+          call set PYTHONPATH=${{ github.workspace }}\USDinst\lib\python;%PYTHONPATH%
           # Internal ticket USD-8035
           ctest -V -C Release --exclude-regex "TfPathUtils|testExecGeomXformable_Perf_Large"
         shell: cmd
