@@ -179,7 +179,8 @@ UsdImagingGLEngine::UsdImagingGLEngine(
       params.rendererPluginId,
       params.gpuEnabled,
       params.displayUnloadedPrimsWithBounds,
-      params.allowAsynchronousSceneProcessing)
+      params.allowAsynchronousSceneProcessing,
+      params.enableUsdDrawModes)
 {
 }
 
@@ -206,7 +207,8 @@ UsdImagingGLEngine::UsdImagingGLEngine(
     const TfToken& rendererPluginId,
     const bool gpuEnabled,
     const bool displayUnloadedPrimsWithBounds,
-    const bool allowAsynchronousSceneProcessing)
+    const bool allowAsynchronousSceneProcessing,
+    const bool enableUsdDrawModes)
     : _hgi()
     , _hgiDriver(driver)
     , _displayUnloadedPrimsWithBounds(displayUnloadedPrimsWithBounds)
@@ -220,6 +222,7 @@ UsdImagingGLEngine::UsdImagingGLEngine(
     , _invisedPrimPaths(invisedPaths)
     , _isPopulated(false)
     , _allowAsynchronousSceneProcessing(allowAsynchronousSceneProcessing)
+    , _enableUsdDrawModes(enableUsdDrawModes)
 {
     if (!_gpuEnabled && _hgiDriver.name == HgiTokens->renderDriver &&
         _hgiDriver.driver.IsHolding<Hgi*>()) {
@@ -378,9 +381,6 @@ UsdImagingGLEngine::PrepareBatch(
 
             // XXX(USD-7113): Add pruning based on _rootPath
 
-            // XXX(USD-7114): Add draw mode support based on
-            // params.enableUsdDrawModes.
-
             // XXX(USD-7115): Add invis overrides from _invisedPrimPaths.
 
             TF_VERIFY(_stageSceneIndex);
@@ -389,7 +389,7 @@ UsdImagingGLEngine::PrepareBatch(
         } else {
             TF_VERIFY(_sceneDelegate);
             _sceneDelegate->SetUsdDrawModesEnabled(
-                params.enableUsdDrawModes);
+                params.enableUsdDrawModes && _enableUsdDrawModes);
             _sceneDelegate->Populate(
                 stage->GetPrimAtPath(_rootPath),
                 _excludedPrimPaths);
@@ -1514,6 +1514,7 @@ UsdImagingGLEngine::_SetRenderDelegate(
 
     if (_GetUseSceneIndices()) {
         UsdImagingCreateSceneIndicesInfo info;
+        info.addDrawModeSceneIndex = _enableUsdDrawModes;
         info.displayUnloadedPrimsWithBounds = _displayUnloadedPrimsWithBounds;
         info.overridesSceneIndexCallback =
             std::bind(

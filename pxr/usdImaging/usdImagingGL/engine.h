@@ -104,6 +104,9 @@ public:
         /// scene indices that asynchronous processing is allowow. Applications
         /// should perodically call PollForAsynchronousUpdates on the engine.
         bool allowAsynchronousSceneProcessing = false;
+        /// \p enableUsdDrawModes enables the UsdGeomModelAPI draw mode
+        /// feature.
+        bool enableUsdDrawModes = true;
     };
 
     // ---------------------------------------------------------------------
@@ -135,9 +138,10 @@ public:
                                         SdfPath::AbsoluteRootPath(),
                        const HdDriver& driver = HdDriver(),
                        const TfToken& rendererPluginId = TfToken(),
-                       bool gpuEnabled = true,
-                       bool displayUnloadedPrimsWithBounds = false,
-                       bool allowAsynchronousSceneProcessing = false);
+                       const bool gpuEnabled = true,
+                       const bool displayUnloadedPrimsWithBounds = false,
+                       const bool allowAsynchronousSceneProcessing = false,
+                       const bool enableUsdDrawModes = true);
 
     // Disallow copies
     UsdImagingGLEngine(const UsdImagingGLEngine&) = delete;
@@ -829,6 +833,7 @@ private:
     std::unique_ptr<HdEngine> _engine;
 
     bool _allowAsynchronousSceneProcessing = false;
+    bool _enableUsdDrawModes = true;
 };
 
 
