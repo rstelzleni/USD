@@ -154,7 +154,7 @@ HdStMaterial::_ProcessTextureDescriptors(
         texturesFromStorm->push_back(
             { desc.name,
               desc.type,
-              textureHandle,
+              { textureHandle },
               _isInitialized
                   ? hash_value(desc.texturePrim)
                   : _GetTextureHandleHash(textureHandle) });
