@@ -106,7 +106,7 @@ ExecSystem::_CacheValues(
 std::vector<VdfMaskedOutput>
 ExecSystem::_Compile(TfSpan<const ExecValueKey> valueKeys)
 {
-    Exec_Compiler compiler(_stage, _program.get());
+    Exec_Compiler compiler(_stage, _program.get(), _runtime.get());
     return compiler.Compile(valueKeys);
 }
 

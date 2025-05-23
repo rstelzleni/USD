@@ -20,10 +20,10 @@ PXR_NAMESPACE_OPEN_SCOPE
 class EsfStage;
 class Exec_CompiledOutputCache;
 class Exec_Program;
+class Exec_Runtime;
 class ExecValueKey;
 template <typename> class TfSpan;
 class VdfMaskedOutput;
-class VdfNetwork;
 
 /// This class is responsible for compiling the data flow network for requested
 /// value keys.
@@ -31,7 +31,10 @@ class VdfNetwork;
 class Exec_Compiler
 {
 public:
-    Exec_Compiler(const EsfStage &stage, Exec_Program *program);
+    Exec_Compiler(
+        const EsfStage &stage,
+        Exec_Program *program,
+        Exec_Runtime *runtime);
     
     ~Exec_Compiler();
 
@@ -43,6 +46,7 @@ public:
 private:
     const EsfStage &_stage;
     Exec_Program *_program;
+    Exec_Runtime *_runtime;
 
     tbb::empty_task *_rootTask;
     tbb::task_group_context _taskGroupContext;

@@ -19,6 +19,7 @@
 #include "pxr/base/ts/spline.h"
 #include "pxr/exec/ef/leafNodeCache.h"
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/vdf/isolatedSubnetwork.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 #include "pxr/exec/vdf/maskedOutputVector.h"
 #include "pxr/exec/vdf/network.h"
@@ -269,6 +270,18 @@ public:
         const VdfNode *node) const {
         return _nodeRecompilationInfoTable.GetNodeRecompilationInfo(node);
     }
+
+    /// Starting from the set of potentially isolated nodes, creates a
+    /// subnetwork containing all isolated nodes and connections.
+    ///
+    /// \note
+    /// This method doesn't remove the isolated objects from the network; the
+    /// caller can either call
+    /// VdfIsolatedSubnetwork::RemoveIsolatedObjectsFromNetwork or the
+    /// VdfIsolatedSubnetwork destructor will remove the objects before it
+    /// deletes them.
+    ///
+    VdfIsolatedSubnetworkRefPtr CreateIsolatedSubnetwork();
 
     /// Writes the compiled network to a file at \p filename.
     void GraphNetwork(

@@ -10,12 +10,14 @@
 #include "pxr/exec/exec/inputRecompilationTask.h"
 #include "pxr/exec/exec/leafCompilationTask.h"
 #include "pxr/exec/exec/program.h"
+#include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/valueKey.h"
 
 #include "pxr/base/tf/span.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/base/work/loops.h"
 #include "pxr/base/work/withScopedParallelism.h"
+#include "pxr/exec/vdf/isolatedSubnetwork.h"
 #include "pxr/exec/vdf/maskedOutput.h"
 
 #include <unordered_set>
@@ -49,9 +51,11 @@ _SpawnInputRecompilationTask(
 
 Exec_Compiler::Exec_Compiler(
     const EsfStage &stage,
-    Exec_Program *program)
+    Exec_Program *program,
+    Exec_Runtime *runtime)
     : _stage(stage)
     , _program(program)
+    , _runtime(runtime)
     , _rootTask(nullptr)
     , _taskGroupContext(
         tbb::task_group_context::isolated,
@@ -125,6 +129,33 @@ Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
 
     // All inputs requiring recompilation have been recompiled.
     _program->ClearInputsRequiringRecompilation();
+
+    {
+        TRACE_FUNCTION_SCOPE("uncompiling isolated subnetwork");
+
+        // We hold onto the isolated subnetwork object until we are done
+        // clearing node output data, because the subnetwork object's destructor
+        // deletes the isolated nodes.
+        const VdfIsolatedSubnetworkRefPtr subnetwork =
+            _program->CreateIsolatedSubnetwork();
+
+        WorkWithScopedDispatcher(
+            [&subnetwork, runtime = _runtime]
+            (WorkDispatcher &dispatcher) {
+
+                dispatcher.Run([&subnetwork]{
+                    TRACE_FUNCTION_SCOPE("removing isolated objects");
+                    subnetwork->RemoveIsolatedObjectsFromNetwork();
+                });
+
+                {
+                    TRACE_FUNCTION_SCOPE("clearing data");
+                    for (VdfNode *const node : subnetwork->GetIsolatedNodes()) {
+                        runtime->ClearData(*node);
+                    }
+                }
+            });
+    }
 
     return leafOutputs;
 }

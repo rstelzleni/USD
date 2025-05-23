@@ -27,93 +27,135 @@ class VdfNode;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
-/// \class VdfIsolatedSubnetwork
+/// A VdfIsolatedSubnetwork builds a collection of VdfNode%s and VdfConnection%s
+/// that are disconnected from the owning network.
 ///
-/// A VdfIsolatedSubnetwork is a collection of VdfNodes and their connections 
-/// that are disconnected from their network.
+/// Building an isolated subnetwork proceeds in three phases:
+/// 
+/// 1. A traversal starts from one or more nodes or connections and proceeds in
+///    the input direction, and identifies all reachable objects that are not
+///    otherwise connected to the network. I.e., the traversal stops at nodes
+///    that have output connections that are not part of the isolated
+///    subnetwork.
 ///
-/// For the purpose of execution and graphing the nodes/connections being held
-/// on to appear to be deleted. WillDelete(); notices will be send out during
-/// the isolation process (even though objects are only removed not deleted).
-/// All notices will be sent out before nodes will be deleted, and before
-/// connections will be disconnected.
+/// 2. Isolated objects are removed from the network, which causes WillDelete
+///    notices to be sent, out even though objects have not yet been deleted.
+///    This process transfers ownership of network objects from the VdfNetwork
+///    to the VdfIsolatedSubnetwork.
 ///
-/// However, all objects within the isolated network have kept their identity,
-/// since no object has been deleted.
-///
-/// Ownership of the isolated nodes and connections has been transfered from
-/// the VdfNetwork to this object. As a result, deletion of a
-/// VdfIsolatedSubnetwork will result all nodes and connections will be deleted.
+/// 3. The objects are deleted when the VdfIsolatedSubnetwork is deleted.
 ///
 class VdfIsolatedSubnetwork : public TfRefBase
 {
 public:
+    VdfIsolatedSubnetwork(const VdfIsolatedSubnetwork &) = delete;
+    VdfIsolatedSubnetwork &operator=(const VdfIsolatedSubnetwork &) = delete;
 
-    // A set of nodes to paths used during deletion of sub-networks.
-    typedef TfHashSet<VdfNode *, TfHash> NodeSet;
+    /// A set of nodes used during deletion of sub-networks.
+    using NodeSet = TfHashSet<VdfNode*, TfHash>;
 
     /// Isolates all nodes and connections reachable via input connections from
-    /// \p connection that are forming a single branch (ie. that are not 
-    /// connected via additional output connections to other parts of the
-    /// network).
+    /// \p connection that are not connected via additional output connections
+    /// to other parts of the network.
     ///
-    /// Note that \p connection will be in the set of isolated objects.
+    /// Note that \p connection is added to the set of isolated objects.
     ///
-    /// Optional \p filter object can be used to fine tune edit operations on
-    /// the network.
+    /// Optional \p filter object can be used to prune the traversal.
     ///
-    /// Returns the isolated network. As soon as there are no more references
-    /// to the returned object, the actual nodes and connections will be
-    /// deleted.
-    ///
-    /// The source node of \p connection will be considered the root node of the
-    /// isolated branch.
+    /// Removes the isolated objects from the network and returns a strong
+    /// reference to the isolated network object that holds onto the isolated
+    /// nodes and connections. When the isolated network object is deleted, the
+    /// isolated nodes and connections are deleted.
     ///
     VDF_API static
     VdfIsolatedSubnetworkRefPtr IsolateBranch(
-        VdfConnection           *connection,
-        VdfNetwork::EditFilter  *filter);
+        VdfConnection *connection,
+        VdfNetwork::EditFilter *filter);
 
     /// Isolates all nodes and connections reachable via input connections from
-    /// \p node that are forming a single branch (ie. that are not connected
-    /// via additional output connections to other parts of the network).
+    /// \p node that are not connected via additional output connections to
+    /// other parts of the network.
     ///
-    /// Optional \p filter object can be used to fine tune edit operations on
-    /// the network.
+    /// Optional \p filter object can be used to prune the traversal.
     ///
-    /// Returns the isolated network. As soon as there are no more references
-    /// to the returned object, the actual nodes and connections will be
-    /// deleted.
+    /// Removes the isolated objects from the network and returns a strong
+    /// reference to the isolated network object that holds onto the isolated
+    /// nodes and connections. When the isolated network object is deleted, the
+    /// isolated nodes and connections are deleted.
     ///
-    /// \p node will be considered the root node of the isolated branch.
+    /// \note
+    /// An error is emitted if \p node has output connections.
     ///
     VDF_API static
     VdfIsolatedSubnetworkRefPtr IsolateBranch(
-        VdfNode                 *node,
-        VdfNetwork::EditFilter  *filter);
+        VdfNode *node,
+        VdfNetwork::EditFilter *filter);
+
+    /// Creates an empty isolated subnetwork.
+    ///
+    /// The subnetwork can be populated via calls to the AddIsolatedBranch
+    /// methods.
+    ///
+    VDF_API static
+    VdfIsolatedSubnetworkRefPtr New(VdfNetwork *network);
+
+    /// Isolates all nodes and connections reachable via input connections from
+    /// \p connection that are not connected via additional output connections
+    /// to other parts of the network.
+    ///
+    /// Note that \p connection is added to the set of isolated objects.
+    ///
+    /// Optional \p filter object can be used to prune the traversal.
+    /// 
+    /// \note
+    /// Isolated objects are not immediately removed from the network. See
+    /// RemoveIsolatedObjectsFromNetwork.
+    ///
+    VDF_API
+    bool AddIsolatedBranch(
+        VdfConnection *connection,
+        VdfNetwork::EditFilter *filter);
+
+    /// Isolates all nodes and connections reachable via input connections from
+    /// \p node that are not connected via additional output connections to
+    /// other parts of the network.
+    ///
+    /// Optional \p filter object can be used to prune the traversal.
+    ///
+    /// \note
+    /// If \p node has output connections or \p filter returns `false` for \p
+    /// node, no objects are added to the isolated subnetwork and `false` is
+    /// returned.
+    /// 
+    /// \note
+    /// Isolated objects are not immediately removed from the network. See
+    /// RemoveIsolatedObjectsFromNetwork.
+    ///
+    VDF_API
+    bool AddIsolatedBranch(
+        VdfNode *node,
+        VdfNetwork::EditFilter *filter);
+
+    /// Removes all isolated objects from the network.
+    ///
+    /// This method is called upon destruction, if it isn't called before then.
+    ///
+    VDF_API
+    void RemoveIsolatedObjectsFromNetwork();
 
     /// Returns the set of isolated nodes.
-    ///
-    const NodeSet &GetIsolatedNodes() const
-    {
+    const NodeSet &GetIsolatedNodes() const {
         return _nodes;
     }
 
     /// Returns the set of isolated nodes.
-    ///
-    const VdfConnectionSet &GetIsolatedConnections() const
-    {
+    const VdfConnectionSet &GetIsolatedConnections() const {
         return _connections;
     }
 
-// -----------------------------------------------------------------------------
-
 private:
-
-    // Ctor.
     VdfIsolatedSubnetwork(VdfNetwork *network);
 
-    // Dtor.
     ~VdfIsolatedSubnetwork();
 
     // Helper that checks if we can traverse a connection.  
@@ -127,19 +169,20 @@ private:
         VdfConnection          *connection,
         VdfNetwork::EditFilter *filter);
 
-    // Helper that removes all isolated objects from the network.
-    void _RemoveIsolatedObjectsFromNetwork();
-
 private:
 
     // The network
     VdfNetwork *_network;
 
-    // The set of nodes that are isolated.
+    // The set of isolated nodes.
     NodeSet _nodes;
     
-    // The set of connections that are isolated.
+    // The set of isolated connections.
     VdfConnectionSet _connections;
+
+    // Flag that indicates whether or not RemoveIsolatedObjectsFromNetwork has
+    // been called.
+    bool _removedIsolatedObjects = false;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -416,6 +416,25 @@ Exec_Program::DisconnectInput(VdfInput *const input)
     }
 }
 
+VdfIsolatedSubnetworkRefPtr 
+Exec_Program::CreateIsolatedSubnetwork()
+{
+    TRACE_FUNCTION();
+
+    const VdfIsolatedSubnetworkRefPtr subnetwork =
+        VdfIsolatedSubnetwork::New(&_network);
+
+    // TODO: We can probably modify VdfIsolatedSubnetwork to make it safe to
+    // concurrently isolate branches.
+    for (VdfNode *const node : _potentiallyIsolatedNodes) {
+        subnetwork->AddIsolatedBranch(node, /* filter */ nullptr);
+    }
+
+    _potentiallyIsolatedNodes.clear();
+
+    return subnetwork;
+}
+
 void
 Exec_Program::GraphNetwork(
     const char *const filename,

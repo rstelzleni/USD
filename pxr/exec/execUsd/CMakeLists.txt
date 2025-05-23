@@ -97,12 +97,18 @@ pxr_register_test(testExecUsdRecompilation
         TestRecompileMultipleRequests-1.dot                                    \
         TestRecompileMultipleRequests-2.dot                                    \
         TestRecompileMultipleRequests-3.dot                                    \
+        TestRecompileDeletedPrim-1.dot                                         \
+        TestRecompileDeletedPrim-2.dot                                         \
+        TestRecompileDeletedPrim-3.dot                                         \
         "
     DIFF_COMPARE TestRecompileDisconnectedAttributeInput-1.out
     DIFF_COMPARE TestRecompileDisconnectedAttributeInput-2.out
     DIFF_COMPARE TestRecompileMultipleRequests-1.out
     DIFF_COMPARE TestRecompileMultipleRequests-2.out
     DIFF_COMPARE TestRecompileMultipleRequests-3.out
+    DIFF_COMPARE TestRecompileDeletedPrim-1.out
+    DIFF_COMPARE TestRecompileDeletedPrim-2.out
+    DIFF_COMPARE TestRecompileDeletedPrim-3.out
 )
 
 pxr_build_test(testExecUsdRequest

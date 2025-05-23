@@ -30,6 +30,7 @@ PXR_NAMESPACE_USING_DIRECTIVE;
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
     
+    (computeOnNamespaceAncestor)
     (computeUsingCustomAttr)
     (customAttr)
 );
@@ -57,6 +58,12 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRecompilationCustomSchema)
         .Callback(CommonComputationCallback)
         .Inputs(
             AttributeValue<int>(_tokens->customAttr));
+
+    // A computation that depends on the namespace ancestor.
+    self.PrimComputation(_tokens->computeOnNamespaceAncestor)
+        .Callback(CommonComputationCallback)
+        .Inputs(
+            NamespaceAncestor<int>(_tokens->computeOnNamespaceAncestor));
 }
 
 class Fixture
@@ -80,6 +87,10 @@ public:
         std::vector<ExecUsdValueKey> &&valueKeys) {
         return _system->BuildRequest(
             std::move(valueKeys));
+    }
+
+    UsdStagePtr GetStage() const {
+        return _stage;
     }
 
     UsdPrim GetPrimAtPath(const char *const pathStr) const {
@@ -176,13 +187,64 @@ TestRecompileMultipleRequests(Fixture &fixture)
     fixture.GraphNetwork("TestRecompileMultipleRequests-3.dot");
 }
 
+static void
+TestRecompileDeletedPrim(Fixture &fixture)
+{
+    // Tests that when we recompile a network, we delete nodes and connections
+    // that become isolated during uncompilation and remain isolated after
+    // recompilation.
+
+    ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Prim1" {
+            def CustomSchema "Prim2" {
+            }
+        }
+        def CustomSchema "Prim3" {
+        }
+    )usd");
+
+    UsdPrim prim2 = fixture.GetPrimAtPath("/Prim1/Prim2");
+    UsdPrim prim3 = fixture.GetPrimAtPath("/Prim3");
+
+    // Make 2 requests.
+    ExecUsdRequest request1 = fixture.BuildRequest({
+        {prim2, _tokens->computeOnNamespaceAncestor}
+    });
+    ExecUsdRequest request2 = fixture.BuildRequest({
+        {prim3, _tokens->computeOnNamespaceAncestor}
+    });
+    
+    // Compile the requests.
+    system.PrepareRequest(request1);
+    system.PrepareRequest(request2);
+    fixture.GraphNetwork("TestRecompileDeletedPrim-1.dot");
+
+    // Remove Prim2
+    const SdfLayerHandle layer = fixture.GetStage()->GetRootLayer();
+    TF_AXIOM(layer);
+    layer->ImportFromString(R"usd(#usda 1.0
+        def CustomSchema "Prim1" {
+        }
+        def CustomSchema "Prim3" {
+        }
+    )usd");
+
+    fixture.GraphNetwork("TestRecompileDeletedPrim-2.dot");
+
+    // Prepare only the request that still has a value key with a valid
+    // provider.
+    system.PrepareRequest(request2);
+    fixture.GraphNetwork("TestRecompileDeletedPrim-3.dot");
+}
+
 int main()
 {
     ConfigureTestPlugin();
 
     std::vector tests {
         TestRecompileDisconnectedAttributeInput,
-        TestRecompileMultipleRequests
+        TestRecompileMultipleRequests,
+        TestRecompileDeletedPrim
     };
     for (const auto &test : tests) {
         Fixture fixture;
