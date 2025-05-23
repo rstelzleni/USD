@@ -75,6 +75,8 @@ public:
     ///
     template <typename ValueType>
     static void RegisterType(const ValueType &fallback) {
+        static_assert(!VtIsArray<ValueType>::value,
+                      "VtArray is not a supported execution value type");
         _GetInstanceForRegistration()._RegisterType(fallback);
     }
 

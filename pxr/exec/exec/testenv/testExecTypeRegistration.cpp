@@ -62,9 +62,6 @@ TestBasicRegistration()
 
     reg.RegisterType(TestExecTypeRegistrationValue{});
     reg.CheckForRegistration<TestExecTypeRegistrationValue>();
-
-    reg.RegisterType(VtArray<TestExecTypeRegistrationValue>{});
-    reg.CheckForRegistration<VtArray<TestExecTypeRegistrationValue>>();
 }
 
 static void
@@ -188,23 +185,6 @@ TestCreateVector()
         // TfStringify or ostream operator<< overload and this type should
         // define only what is necessary for VtValue & VdfVector.
         TF_AXIOM(accessor[0] == TestExecTypeRegistrationValue{});
-    }
-
-    // VtArray<TestExecTypeRegistrationValue> is not known to Vt and is not an
-    // Sdf value type.
-    {
-        static_assert(!VtIsKnownValueType<
-                      VtArray<TestExecTypeRegistrationValue>>());
-        static_assert(!SdfValueTypeTraits<
-                      VtArray<TestExecTypeRegistrationValue>>::IsValueType);
-        const VtArray<TestExecTypeRegistrationValue> arr = { {}, {} };
-        const VdfVector vec = reg.CreateVector(VtValue(arr));
-        TF_AXIOM(vec.Holds<TestExecTypeRegistrationValue>());
-        const auto accessor = vec.GetReadAccessor<
-            TestExecTypeRegistrationValue>();
-        ASSERT_EQ(accessor.GetNumValues(), 2);
-        TF_AXIOM(accessor[0] == arr[0]);
-        TF_AXIOM(accessor[1] == arr[1]);
     }
 }
 

@@ -26,6 +26,7 @@
 
 #include "pxr/base/tf/token.h"
 #include "pxr/base/tf/type.h"
+#include "pxr/base/vt/traits.h"
 #include "pxr/exec/vdf/context.h"
 #include "pxr/usd/sdf/path.h"
 
@@ -844,6 +845,9 @@ Exec_PrimComputationBuilder&
 Exec_PrimComputationBuilder::Callback(
     ExecCallbackFn &&callback)
 {
+    static_assert(!VtIsArray<ResultType>::value,
+                  "VtArray is not a supported result type");
+
     _AddCallback(
         std::move(callback),
         ExecTypeRegistry::GetInstance().CheckForRegistration<ResultType>());
@@ -860,6 +864,9 @@ Exec_PrimComputationBuilder::Callback(
 {
     static_assert(!std::is_reference_v<ResultType>,
                   "Callback functions must return by value");
+    static_assert(!VtIsArray<ResultType>::value,
+                  "VtArray is not a supported result type");
+
     _AddCallback(
         [callback](const VdfContext& ctx) { ctx.SetOutput(callback(ctx)); },
         ExecTypeRegistry::GetInstance().CheckForRegistration<ResultType>());
