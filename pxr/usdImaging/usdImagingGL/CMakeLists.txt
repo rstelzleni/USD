@@ -4978,7 +4978,7 @@ pxr_register_test(testUsdImagingGLMaterialPrimvars
         USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true)
 
 pxr_register_test(testUsdImagingGLMaterialsAndInstancers_materialAsPiDescendant
-    COMMAND "${CMAKE_INSTALL_PREFIX}/test/testUsdImagingGLBasicDrawing -offscreen -lighting -sceneLights -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage materialAsPiDescendant.usda -write materialAsPiDescendant.png"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -sceneLights -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage materialAsPiDescendant.usda -write materialAsPiDescendant.png"
     IMAGE_DIFF_COMPARE
         materialAsPiDescendant.png
         FAIL 0.008
@@ -4991,7 +4991,7 @@ pxr_register_test(testUsdImagingGLMaterialsAndInstancers_materialAsPiDescendant
 # # Disabled pending Hydra 2 support
 #
 # pxr_register_test(testUsdImagingGLMaterialsAndInstancers_materialInNiPrototype
-#     COMMAND "${CMAKE_INSTALL_PREFIX}/test/testUsdImagingGLBasicDrawing -offscreen -lighting -sceneLights -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage materialInNiPrototype.usda -write materialInNiPrototype.png"
+#     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -sceneLights -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage materialInNiPrototype.usda -write materialInNiPrototype.png"
 #     IMAGE_DIFF_COMPARE
 #         materialInNiPrototype.png
 #         FAIL 0.008
@@ -5001,7 +5001,7 @@ pxr_register_test(testUsdImagingGLMaterialsAndInstancers_materialAsPiDescendant
 #         USDIMAGINGGL_ENGINE_ENABLE_SCENE_INDEX=true)
 
 pxr_register_test(testUsdImagingGLMaterialsAndInstancers_materialAsNiInstance
-    COMMAND "${CMAKE_INSTALL_PREFIX}/test/testUsdImagingGLBasicDrawing -offscreen -lighting -sceneLights -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage materialAsNiInstance.usda -write materialAsNiInstance.png"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -lighting -sceneLights -shading smooth -frameAll -renderSetting domeLightCameraVisibility bool false -stage materialAsNiInstance.usda -write materialAsNiInstance.png"
     IMAGE_DIFF_COMPARE
         materialAsNiInstance.png
         FAIL 0.008
