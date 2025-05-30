@@ -94,6 +94,7 @@ pxr_register_test(testExecUsdRecompilation
     POST_COMMAND "${PYTHON_EXECUTABLE} normalizeDotFiles.py                    \
         TestRecompileDisconnectedAttributeInput-1.dot                          \
         TestRecompileDisconnectedAttributeInput-2.dot                          \
+        TestRecompileDisconnectedAttributeInput-3.dot                          \
         TestRecompileMultipleRequests-1.dot                                    \
         TestRecompileMultipleRequests-2.dot                                    \
         TestRecompileMultipleRequests-3.dot                                    \
@@ -103,6 +104,7 @@ pxr_register_test(testExecUsdRecompilation
         "
     DIFF_COMPARE TestRecompileDisconnectedAttributeInput-1.out
     DIFF_COMPARE TestRecompileDisconnectedAttributeInput-2.out
+    DIFF_COMPARE TestRecompileDisconnectedAttributeInput-3.out
     DIFF_COMPARE TestRecompileMultipleRequests-1.out
     DIFF_COMPARE TestRecompileMultipleRequests-2.out
     DIFF_COMPARE TestRecompileMultipleRequests-3.out

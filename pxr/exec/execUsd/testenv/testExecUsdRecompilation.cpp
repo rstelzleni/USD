@@ -6,6 +6,7 @@
 //
 #include "pxr/pxr.h"
 
+#include "pxr/exec/execUsd/cacheView.h"
 #include "pxr/exec/execUsd/request.h"
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
@@ -53,9 +54,13 @@ CommonComputationCallback(const VdfContext &ctx)
 
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRecompilationCustomSchema)
 {
-    // Computation depends on customAttr only.
+    // A computation that depends on customAttr only.
     self.PrimComputation(_tokens->computeUsingCustomAttr)
-        .Callback(CommonComputationCallback)
+        .Callback(+[](const VdfContext &context) {
+            const int *const valuePtr =
+                context.GetInputValuePtr<int>(_tokens->customAttr);
+            return valuePtr ? *valuePtr : -1;
+        })
         .Inputs(
             AttributeValue<int>(_tokens->customAttr));
 
@@ -130,13 +135,43 @@ TestRecompileDisconnectedAttributeInput(Fixture &fixture)
     });
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileDisconnectedAttributeInput-1.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == -1);
+    }
 
     // Create the attribute. The next round of compilation should compile and
     // connect the `customAttr` input of the callback node.
-    fixture.GetPrimAtPath("/Prim").CreateAttribute(
+    UsdAttribute attr = fixture.GetPrimAtPath("/Prim").CreateAttribute(
         _tokens->customAttr, SdfValueTypeNames->Int);
+    attr.Set(2);
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileDisconnectedAttributeInput-2.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == 2);
+    }
+
+    // Delete the attribute. The next round of compilation should uncompile the
+    // attribute input node--but it should *not* uncompile the time input node.
+    const SdfLayerHandle layer = fixture.GetStage()->GetRootLayer();
+    TF_AXIOM(layer);
+    layer->ImportFromString(R"usd(#usda 1.0
+        def CustomSchema "Prim" {
+        }
+    )usd");
+    system.PrepareRequest(request);
+    fixture.GraphNetwork("TestRecompileDisconnectedAttributeInput-3.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == -1);
+    }
 }
 
 static void
