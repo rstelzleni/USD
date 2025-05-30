@@ -50,6 +50,7 @@ pxr_library(exec
         builtinStageComputations
         callbackNode
         compilationTask
+        compiledLeafNodeCache
         compiledOutputCache
         compiler
         compilerTaskSync

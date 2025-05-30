@@ -75,6 +75,14 @@ Exec_LeafCompilationTask::_Compile(
         // Return the compiled source output as the requested leaf output
         *_leafOutput = sourceOutput;
 
+        // If a leaf node is already compiled for this value key, then
+        // compilation is done. This happens when requests are recompiled, in
+        // which case the only purpose of LeafCompilationTask is to resolve the
+        // new leaf output.
+        if (compilationState.GetProgram()->GetCompiledLeafNode(_valueKey)) {
+            return;
+        }
+
         // Leaf nodes should be uncompiled when a resync occurs on the value
         // key's provider.
         EsfJournal nodeJournal;
@@ -95,6 +103,8 @@ Exec_LeafCompilationTask::_Compile(
             leafNode, 
             _valueKey.GetProvider(), 
             _MakeInputKeyVector(_valueKey));
+
+        compilationState.GetProgram()->SetCompiledLeafNode(_valueKey, leafNode);
 
         compilationState.GetProgram()->Connect(
             _journal,

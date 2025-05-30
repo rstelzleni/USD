@@ -52,9 +52,6 @@ Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
         // Compiler state shared between all compilation tasks.
         Exec_CompilationState state(dispatcher, stage, program);
 
-        // TODO: We currently compile duplicate leaf nodes if multiple requests
-        // contain the same value key, or if the same request is compiled more
-        // than once. We need a mechanism to prevent this from happening.
         WorkParallelForN(valueKeys.size(),
             [&state, valueKeys, &leafOutputs](size_t b, size_t e) {
             for (size_t i = b; i != e; ++i) {

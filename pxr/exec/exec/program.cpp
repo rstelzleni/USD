@@ -69,6 +69,12 @@ public:
         // thread-safe.
         _program->_compiledOutputCache.EraseByNodeId(node->GetId());
 
+        // Only update the CompiledLeafNodeCache if the deleted node looks
+        // like a leaf node.
+        if (node->GetNumOutputs() == 0) {
+            _program->_compiledLeafNodeCache.WillDeleteNode(node);
+        }
+
         // Unregister this node if it is an attribute input node.
         // 
         // The edit monitor captures both node deletion through

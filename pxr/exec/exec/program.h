@@ -11,11 +11,11 @@
 
 #include "pxr/exec/exec/attributeInputNode.h"
 #include "pxr/exec/exec/compiledOutputCache.h"
+#include "pxr/exec/exec/compiledLeafNodeCache.h"
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/nodeRecompilationInfoTable.h"
 #include "pxr/exec/exec/uncompilationTable.h"
 
-#include "pxr/base/tf/bits.h"
 #include "pxr/base/ts/spline.h"
 #include "pxr/exec/ef/leafNodeCache.h"
 #include "pxr/exec/ef/time.h"
@@ -145,6 +145,22 @@ public:
         const Exec_OutputKey::Identity &outputKeyIdentity,
         const VdfMaskedOutput &maskedOutput) {
         return _compiledOutputCache.Insert(outputKeyIdentity, maskedOutput);
+    }
+
+    /// Gets the leaf node compiled for the given \p valueKey.
+    const EfLeafNode *GetCompiledLeafNode(const ExecValueKey &valueKey) const {
+        return _compiledLeafNodeCache.Find(valueKey);
+    }
+
+    /// Establishes that \p leafNode has been compiled for \p valueKey.
+    ///
+    /// If another leaf node has already been compiled for \p valueKey, then
+    /// this function has no effect. This is not an error.
+    ///
+    void SetCompiledLeafNode(
+        const ExecValueKey &valueKey,
+        const EfLeafNode *const leafNode) {
+        _compiledLeafNodeCache.Insert(valueKey, leafNode);
     }
 
     /// Returns the current generational counter of the execution network.
@@ -314,11 +330,15 @@ private:
     // A cache of compiled outputs keys and corresponding data flow outputs.
     Exec_CompiledOutputCache _compiledOutputCache;
 
+    // A cache of leaf nodes compiled for value keys.
+    Exec_CompiledLeafNodeCache _compiledLeafNodeCache;
+
     // Maps scene paths to data flow network that must be uncompiled in response
     // to edits to those scene paths.
     Exec_UncompilationTable _uncompilationTable;
 
-    // Collection of compiled leaf nodes.
+    // Caches traversals to quickly determine which leaf nodes are downstream of
+    // an aribrary node or output in the network.
     EfLeafNodeCache _leafNodeCache;
 
     // Collection of compiled input nodes.
