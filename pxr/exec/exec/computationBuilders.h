@@ -393,6 +393,9 @@ struct Exec_ComputationBuilderAccessor
     This
     Computation(const TfToken &computationName)
     {
+        static_assert(!VtIsArray<ResultType>::value,
+                      "VtArray is not a supported result type");
+
         return This(
             computationName,
             ExecTypeRegistry::GetInstance().
