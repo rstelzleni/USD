@@ -131,6 +131,7 @@ pxr_library(hdSt
         textureUtils
         tokens
         udimTextureObject
+        unboundMaterialOverridingSceneIndexPlugin
         unitTestGLDrawing
         vboMemoryManager
         vboSimpleMemoryManager
