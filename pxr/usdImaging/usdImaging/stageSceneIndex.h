@@ -156,6 +156,9 @@ private:
                               UsdStageWeakPtr const& sender);
     TfNotice::Key _objectsChangedNoticeKey;
 
+    // Keep track of populated paths for use in _ApplyPendingResyncs().
+    SdfPathSet _populatedPaths;
+
     // Note: resync paths mean we remove the whole subtree and repopulate.
     SdfPathVector _usdPrimsToResync;
     // Property changes get converted into PrimsDirtied messages.

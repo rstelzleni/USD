@@ -373,6 +373,7 @@ void UsdImagingStageSceneIndex::SetStage(UsdStageRefPtr stage)
 
     if (_stage) {
         TF_DEBUG(USDIMAGING_POPULATION).Msg("[Population] Removing </>\n");
+        _populatedPaths.clear();
         _SendPrimsRemoved({SdfPath::AbsoluteRootPath()});
         _stageGlobals.Clear();
         TfNotice::Revoke(_objectsChangedNoticeKey);
@@ -402,6 +403,11 @@ void UsdImagingStageSceneIndex::_Populate()
     _PopulateSubtree(_stage->GetPseudoRoot(), &addedPrims);
     for (const UsdPrim &prim : _stage->GetPrototypes()) {
         _PopulateSubtree(prim, &addedPrims);
+    }
+    for (const auto& entry: addedPrims) {
+        // We expect paths to be populated in namespace order, so
+        // we provide an insertion hint iterator.
+        _populatedPaths.insert(_populatedPaths.end(), entry.primPath);
     }
 
     if (TfDebug::IsEnabled(USDIMAGING_POPULATION)) {
@@ -619,6 +625,9 @@ UsdImagingStageSceneIndex::_ApplyPendingResyncs()
         return;
     }
 
+    HdSceneIndexObserver::RemovedPrimEntries removedPrims;
+    HdSceneIndexObserver::AddedPrimEntries addedPrims;
+
     std::sort(_usdPrimsToResync.begin(), _usdPrimsToResync.end());
     size_t lastResynced = 0;
     for (size_t i = 0; i < _usdPrimsToResync.size(); ++i) {
@@ -635,7 +644,6 @@ UsdImagingStageSceneIndex::_ApplyPendingResyncs()
         lastResynced = i;
 
         UsdPrim prim = _stage->GetPrimAtPath(primPath);
-
 
         // For prims represented by an ancestor, we don't want to repopulate
         // (as they wouldn't have been populated in the first place) but instead
@@ -660,19 +668,66 @@ UsdImagingStageSceneIndex::_ApplyPendingResyncs()
 
         TF_DEBUG(USDIMAGING_CHANGES).Msg("[Population] Repopulating <%s>\n",
                                          primPath.GetText());
-        _SendPrimsRemoved({primPath});
 
-        HdSceneIndexObserver::AddedPrimEntries addedPrims;
+        removedPrims.emplace_back(primPath);
         _PopulateSubtree(prim, &addedPrims);
 
         // Prune property updates of resynced prims, which are redundant.
         _DeletePrefix(primPath, &_usdPropertiesToResync);
         _DeletePrefix(primPath, &_usdPropertiesToUpdate);
-
-        _SendPrimsAdded(addedPrims);
     }
 
     _usdPrimsToResync.clear();
+
+    // Optimization: Rather than sending notifications to remove and then
+    // re-add the same prim, we first filter the list of removedPrims
+    // to remove any that exist in addedPrims.  A single PrimsAdded
+    // notification is sufficient to "re-sync" an existing prim.
+    {
+        // Build a hash-set of added prims.
+        using PathSet = std::unordered_set<SdfPath, TfHash>; 
+        PathSet addedPaths;
+        for (const auto& entry: addedPrims) {
+            addedPaths.insert(entry.primPath);
+        }
+        // Filter out addedPrims from removedPrims.
+        HdSceneIndexObserver::RemovedPrimEntries filteredRemovedPrims;
+        for (const auto& entry: removedPrims) {
+            // A removedPrims entry indicates that every prim prefixed
+            // by that entry's primPath will implicitly be removed.
+            // Therefore, to elide a removedPrim entry, we require
+            // that every populated child prim is in addedPaths.
+            SdfPath const& removedPath = entry.primPath;
+            // Loop over all populated paths prefixed by removedPath.
+            for (SdfPathSet::const_iterator
+                 i = _populatedPaths.lower_bound(removedPath),
+                 iEnd = _populatedPaths.upper_bound(removedPath);
+                 i != iEnd; ++i) {
+                if (addedPaths.find(*i) == addedPaths.end()) {
+                    // This path will be removed, and not re-added, so
+                    // make an entry for it specifically.
+                    //
+                    // XXX As a future refinement, we could detect the case
+                    // when all child paths are removed and use the original
+                    // entry.  Keep things simple for now and just explicitly
+                    // remove every path.
+                    filteredRemovedPrims.push_back({*i});
+                }
+            }
+        }
+        std::swap(removedPrims, filteredRemovedPrims);
+    }
+
+    // Update population list.
+    for (const auto& entry: removedPrims) {
+        _populatedPaths.erase(entry.primPath);
+    }
+    for (const auto& entry: addedPrims) {
+        _populatedPaths.insert(entry.primPath);
+    }
+
+    _SendPrimsRemoved(removedPrims);
+    _SendPrimsAdded(addedPrims);
 }
 
 void
