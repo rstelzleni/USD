@@ -37,6 +37,12 @@ class Exec_CompilationState;
 class Exec_InputResolvingCompilationTask : public Exec_CompilationTask
 {
 public:
+    /// Creates a new input resolving task.
+    ///
+    /// The task obtains non-owning references to each object passed to the
+    /// constructor. The creator of this task must keep these objects alive for
+    /// the duration of the task.
+    ///
     Exec_InputResolvingCompilationTask(
         Exec_CompilationState &compilationState,
         const Exec_InputKey &inputKey,
@@ -56,7 +62,7 @@ private:
         TaskPhases &taskPhases) override;
 
     // The input key to resolve to output keys providing said input value.
-    const Exec_InputKey _inputKey;
+    const Exec_InputKey &_inputKey;
 
     // The scene object at which the scene traversal is started for the
     // specified provider resolution mode.
