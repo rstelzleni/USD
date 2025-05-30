@@ -39,7 +39,7 @@ public:
 private:
     void _Compile(
         Exec_CompilationState &compilationState,
-        TaskStages &taskStages) override;
+        TaskPhases &taskPhases) override;
 
 private:
     // The input to be recompiled.

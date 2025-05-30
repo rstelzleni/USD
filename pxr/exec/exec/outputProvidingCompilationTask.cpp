@@ -22,14 +22,14 @@ PXR_NAMESPACE_OPEN_SCOPE
 void
 Exec_OutputProvidingCompilationTask::_Compile(
     Exec_CompilationState &compilationState,
-    TaskStages &taskStages)
+    TaskPhases &taskPhases)
 {
     TRACE_FUNCTION();
 
     const Exec_ComputationDefinition *const computationDefinition =
         _outputKey.GetComputationDefinition();
 
-    taskStages.Invoke(
+    taskPhases.Invoke(
     // Make sure input dependencies are fulfilled
     [this, &compilationState, computationDefinition](TaskDependencies &deps) {
         TRACE_FUNCTION_SCOPE("input tasks");

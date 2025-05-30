@@ -20,9 +20,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 void
 Exec_InputRecompilationTask::_Compile(
     Exec_CompilationState &compilationState,
-    TaskStages &taskStages)
+    TaskPhases &taskPhases)
 {
-    taskStages.Invoke(
+    taskPhases.Invoke(
     [this, &compilationState](TaskDependencies &taskDeps) {
         TRACE_FUNCTION_SCOPE("recompile input");
 

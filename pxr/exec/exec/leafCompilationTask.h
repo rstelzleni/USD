@@ -16,13 +16,13 @@
 
 #include "pxr/base/tf/smallVector.h"
 #include "pxr/exec/esf/journal.h"
+#include "pxr/exec/vdf/maskedOutput.h"
 
 #include <optional>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 class Exec_CompilationState;
-class VdfMaskedOutput;
 
 /// Leaf compilation task for compiling requested outputs.
 ///
@@ -45,7 +45,7 @@ public:
 private:
     void _Compile(
         Exec_CompilationState &compilationState,
-        TaskStages &taskStages) override;
+        TaskPhases &taskPhases) override;
 
     // The value key for the requested output.
     const ExecValueKey _valueKey;

@@ -11,11 +11,14 @@
 
 #include "pxr/exec/exec/compilerTaskSync.h"
 
+#include <utility>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 class EsfStage;
 class Exec_CompilationTask;
 class Exec_Program;
+class WorkDispatcher;
 
 /// Data shared between all compilation tasks.
 /// 
@@ -27,8 +30,12 @@ class Exec_Program;
 class Exec_CompilationState
 {
 public:
-    Exec_CompilationState(const EsfStage &stage, Exec_Program *program)
+    Exec_CompilationState(
+        WorkDispatcher &dispatcher,
+        const EsfStage &stage,
+        Exec_Program *program)
         : _stage(stage)
+        , _outputTasks(dispatcher)
         , _program(program) {
         TF_VERIFY(_program);
     }
@@ -43,6 +50,7 @@ public:
         return _program;
     }
 
+    /// Extends access to the Exec_CompilerTaskSync member.
     class OutputTasksAccess {
         friend class Exec_CompilationTask;
 
@@ -51,11 +59,25 @@ public:
         }
     };
 
+    /// Constructs and runs a new top-level compilation task.
+    template<class TaskType, class ... Args>
+    static void NewTask(Exec_CompilationState &state, Args&&... args);
+
 private:
     const EsfStage &_stage;
     Exec_CompilerTaskSync _outputTasks;
     Exec_Program *_program;
 };
+
+template<class TaskType, class ... Args>
+void
+Exec_CompilationState::NewTask(Exec_CompilationState &state, Args&&... args)
+{
+    // TODO: We need a small-object task allocator.
+    // Tasks manage their own lifetime, and delete themselves after completion.
+    TaskType *const task = new TaskType(state, std::forward<Args>(args)...);
+    state._outputTasks.Run(task);
+}
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

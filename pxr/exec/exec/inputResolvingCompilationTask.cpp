@@ -23,11 +23,11 @@ PXR_NAMESPACE_OPEN_SCOPE
 void
 Exec_InputResolvingCompilationTask::_Compile(
     Exec_CompilationState &compilationState,
-    TaskStages &taskStages)
+    TaskPhases &taskPhases)
 {
     TRACE_FUNCTION();
 
-    taskStages.Invoke(
+    taskPhases.Invoke(
     // Generate the output key (or multiple output keys) to compile from the
     // input key, and create new subtasks for any outputs that still need to be
     // compiled.

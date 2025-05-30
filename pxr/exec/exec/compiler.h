@@ -11,8 +11,6 @@
 
 #include "pxr/exec/exec/api.h"
 
-#include <tbb/task.h>
-
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -35,8 +33,6 @@ public:
         const EsfStage &stage,
         Exec_Program *program,
         Exec_Runtime *runtime);
-    
-    ~Exec_Compiler();
 
     /// Returns a vector of leaf masked outputs whose entries correspond to
     /// the value key at the same index in \p valueKeys.
@@ -47,9 +43,6 @@ private:
     const EsfStage &_stage;
     Exec_Program *_program;
     Exec_Runtime *_runtime;
-
-    tbb::empty_task *_rootTask;
-    tbb::task_group_context _taskGroupContext;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

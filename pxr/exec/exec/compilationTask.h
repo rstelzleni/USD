@@ -11,32 +11,58 @@
 
 #include "pxr/exec/exec/api.h"
 
+#include "pxr/exec/exec/compilationState.h"
 #include "pxr/exec/exec/compilerTaskSync.h"
 
-#include <tbb/task.h>
-
+#include <atomic>
 #include <cstdint>
 #include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-class Exec_CompilationState;
 class Exec_OutputKey;
 
 /// Base class for parallel compilation tasks.
-class Exec_CompilationTask : public tbb::task
+class Exec_CompilationTask
 {
 public:
-    explicit Exec_CompilationTask(Exec_CompilationState &compilationState)
-        : _compilationState(compilationState)
-        , _taskStage(0)
-    {}
+    virtual ~Exec_CompilationTask();
 
-    tbb::task *execute() final;
+    /// Registers an additional dependency.
+    /// 
+    /// As long as there are unfulfilled dependencies, this task will not be
+    /// re-run to continue its next phase(s).
+    /// 
+    void AddDependency() {
+        _numDependents.fetch_add(1, std::memory_order_acquire);
+    }
+
+    /// Removes a dependency after it has been fulfilled.
+    ///
+    /// Returns the new number of unfulfilled dependencies. If the return value
+    /// is `0`, this task can be re-run to continue its next phase(s). The
+    /// caller is responsible for re-running the task.
+    ///
+    int RemoveDependency() {
+        return _numDependents.fetch_sub(1, std::memory_order_release) - 1;
+    }
+
+    /// Executes the task. 
+    void operator()() const;
 
 protected:
-    class TaskStages;
+    class TaskPhases;
     class TaskDependencies;
+
+    /// All compilation tasks are heap allocated and must be constructed through
+    /// NewTask() and NewSubtask().
+    /// 
+    explicit Exec_CompilationTask(Exec_CompilationState &compilationState)
+        : _parent(nullptr)
+        , _numDependents(0)
+        , _taskPhase(0)
+        , _compilationState(compilationState)
+    {}
 
     /// Main entry point of a compilation task to be implemented in the
     /// derived class.
@@ -50,7 +76,7 @@ protected:
     /// at the call site, which is often more important, but irrelevant in this
     /// particular case.
     /// 
-    virtual void _Compile(Exec_CompilationState &, TaskStages &) = 0;
+    virtual void _Compile(Exec_CompilationState &, TaskPhases &) = 0;
 
     /// Called from the _Compile method in the derived class to indicate that
     /// the task identified by \c key has been completed. This must be called
@@ -59,14 +85,20 @@ protected:
     void _MarkDone(const Exec_OutputKey::Identity &key);
 
 private:
+    // The parent task, if this is a sub-task. nullptr for top-level tasks.
+    Exec_CompilationTask *_parent;
+
+    // Reference count denoting the number of unfulfilled dependencies
+    std::atomic<int> _numDependents;
+
+    // Current task phase
+    uint32_t _taskPhase;
+
     // State persistent to one round of compilation
     Exec_CompilationState &_compilationState;
-
-    // Task stage
-    uint32_t _taskStage;
 };
 
-/// Manages the task dependencies established during task stages.
+/// Manages the task dependencies established during task phases.
 class Exec_CompilationTask::TaskDependencies
 {
 public:
@@ -75,7 +107,7 @@ public:
     /// automatically be re-executed once all dependencies have been fulfilled.
     /// 
     template<class TaskType, class ... Args>
-    void NewSubtask(Args&&... args);
+    void NewSubtask(Exec_CompilationState &state, Args&&... args);
 
     /// Claims a subtask identified by the provided \p key as a dependency. If
     /// the claimed subtask has already been claimed by another task, the
@@ -87,14 +119,14 @@ public:
         const Exec_OutputKey::Identity &key);
 
 private:
-    friend class Exec_CompilationTask::TaskStages;
+    friend class Exec_CompilationTask::TaskPhases;
 
     TaskDependencies(
-        tbb::task *successor,
-        Exec_CompilationState &compilationState) :
-        _successor(successor),
-        _compilationState(compilationState),
-        _hasDependencies(false)
+        Exec_CompilationTask *task,
+        Exec_CompilationState &compilationState)
+        : _task(task)
+        , _compilationState(compilationState)
+        , _hasDependencies(false)
     {}
 
     bool _HasDependencies() const {
@@ -102,100 +134,110 @@ private:
     }
 
 private:
-    tbb::task *const _successor;
+    Exec_CompilationTask *const _task;
     Exec_CompilationState &_compilationState;
     bool _hasDependencies;
 };
 
 template<class TaskType, class ... Args>
 void
-Exec_CompilationTask::TaskDependencies::NewSubtask(Args&&... args)
+Exec_CompilationTask::TaskDependencies::NewSubtask(
+    Exec_CompilationState &state, Args&&... args)
 {
     _hasDependencies = true;
-    tbb::task *task =
-        new (tbb::task::allocate_additional_child_of(*_successor))
-            TaskType(std::forward<Args>(args)...);
-    tbb::task::spawn(*task);
+    // TODO: We need a small-object task allocator.
+    // Tasks manage their own lifetime, and delete themselves after completion.
+    TaskType *const subTask = new TaskType(state, std::forward<Args>(args)...);
+    subTask->_parent = _task;
+    subTask->_parent->AddDependency();
+    Exec_CompilationState::OutputTasksAccess::_Get(&state).Run(subTask);
 }
 
-/// Manages the callables associated with task stages.
+/// Manages the callables associated with task phases.
 /// 
-/// Sequentially advances through stages, putting the task to sleep between
-/// stages while there are unfulfilled dependencies, and then automatically
-/// re-executing the _Compile method with the next stage once all dependencies
+/// Sequentially advances through phases, putting the task to "sleep" between
+/// phases while there are unfulfilled dependencies, and then automatically
+/// re-executing the _Compile method with the next phase once all dependencies
 /// have been fulfilled.
 /// 
-class Exec_CompilationTask::TaskStages
+class Exec_CompilationTask::TaskPhases
 {
 public:
-    /// Invokes the callables in order, each denoting a task stage.
+    /// Invokes the callables in order, each denoting a task phase.
     template<typename... Callables>
     void Invoke(Callables&&... callables) {
-        _InvokeOne(0, std::forward<Callables>(callables)...);
+        _isComplete = _InvokeOne(0, std::forward<Callables>(callables)...);
     }
 
 private:
     friend class Exec_CompilationTask;
 
-    TaskStages(
-        tbb::task *successor,
+    TaskPhases(
+        Exec_CompilationTask *task,
         Exec_CompilationState &compilationState,
-        uint32_t *taskStage) :
-        _successor(successor),
-        _compilationState(compilationState),
-        _taskStage(taskStage)
+        uint32_t &taskPhase)
+        : _task(task)
+        , _compilationState(compilationState)
+        , _taskPhase(taskPhase)
+        , _isComplete(true)
     {}
 
-    void _InvokeOne(uint32_t) {}
+    bool _InvokeOne(uint32_t);
 
     template<typename Callable, typename... Tail>
-    void _InvokeOne(
+    bool _InvokeOne(
         uint32_t i,
         Callable&& callable,
         Tail&&... tail);
 
+    bool _IsComplete() const {
+        return _isComplete;
+    }
+
 private:
-    tbb::task *const _successor;
+    Exec_CompilationTask *const _task;
     Exec_CompilationState &_compilationState;
-    uint32_t *const _taskStage;
+    uint32_t &_taskPhase;
+    bool _isComplete;
 };
 
+inline
+bool
+Exec_CompilationTask::TaskPhases::_InvokeOne(uint32_t)
+{
+    // Returning true here indicates the task is complete.
+    return true;
+}
+
 template<typename Callable, typename... Tail>
-void
-Exec_CompilationTask::TaskStages::_InvokeOne(
+bool
+Exec_CompilationTask::TaskPhases::_InvokeOne(
     uint32_t i,
     Callable&& callable,
     Tail&&... tail)
 {
     // If this is the active stage, invoke the callable.
-    if (i >= *_taskStage) {
-        // Increment the task reference count to make sure it does not
-        // prematurely reach 0 as dependencies are fulfilled concurrently.
-        _successor->increment_ref_count();
-
+    if (i >= _taskPhase) {
         // Construct the TaskDependencies instance and invoke the callable
-        TaskDependencies taskDependencies(_successor, _compilationState);
+        TaskDependencies taskDependencies(_task, _compilationState);
         std::forward<Callable>(callable)(taskDependencies);
 
         // Advance to the next stage.
-        ++(*_taskStage);
+        ++_taskPhase;
 
-        // If dependencies were established, recycle the calling task. This will
-        // ensure that the last dependency task will respawn this task when the
-        // ref count reaches 0.
-        // This implicitly decrements the ref count after returning.
+        // If dependencies were established, return here and put the task to
+        // "sleep" until the last fulfilled dependency re-runs it, starting at
+        // the next phase.
+        // 
+        // Returning false here indicates the task is incomplete and must be
+        // re-run.
         if (taskDependencies._HasDependencies()) {
-            _successor->recycle_as_safe_continuation();
-            return;
+            return false;
         }
-
-        // If no dependencies were established, we need to decrement the ref
-        // count to undo the increment at the top of this method.
-        _successor->decrement_ref_count();
     }
 
     // Invoke the next stage if we haven't returned yet.
-    _InvokeOne(i + 1, std::forward<Tail>(tail)...);
+    return _InvokeOne(i + 1, std::forward<Tail>(tail)...);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

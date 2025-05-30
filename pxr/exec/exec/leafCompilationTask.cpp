@@ -17,7 +17,6 @@
 #include "pxr/exec/esf/editReason.h"
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
-#include "pxr/exec/vdf/maskedOutput.h"
 
 #include <initializer_list>
 
@@ -30,11 +29,11 @@ static Exec_InputKeyVectorConstRefPtr _MakeInputKeyVector(
 void
 Exec_LeafCompilationTask::_Compile(
     Exec_CompilationState &compilationState,
-    TaskStages &taskStages)
+    TaskPhases &taskPhases)
 {
     TRACE_FUNCTION();
 
-    taskStages.Invoke(
+    taskPhases.Invoke(
     // Turn the value key into an input key and create an input resolving
     // subtask to compile the source output to later connect to the leaf node.
     [this, &compilationState]

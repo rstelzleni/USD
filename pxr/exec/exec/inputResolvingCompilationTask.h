@@ -53,7 +53,7 @@ public:
 private:
     void _Compile(
         Exec_CompilationState &compilationState,
-        TaskStages &taskStages) override;
+        TaskPhases &taskPhases) override;
 
     // The input key to resolve to output keys providing said input value.
     const Exec_InputKey _inputKey;

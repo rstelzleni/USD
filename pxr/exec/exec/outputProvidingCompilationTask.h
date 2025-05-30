@@ -47,7 +47,7 @@ public:
 private:
     void _Compile(
         Exec_CompilationState &compilationState,
-        TaskStages &taskStages) override;
+        TaskPhases &taskStages) override;
 
     // The output key indicating which output and node must be compiled.
     const Exec_OutputKey _outputKey;
