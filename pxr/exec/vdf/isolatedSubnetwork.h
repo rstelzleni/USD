@@ -11,11 +11,11 @@
 
 #include "pxr/pxr.h"
 
+#include "pxr/base/tf/pxrTslRobinMap/robin_map.h"
+#include "pxr/base/tf/pxrTslRobinMap/robin_set.h"
 #include "pxr/exec/vdf/api.h"
 #include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/types.h"
-
-#include "pxr/base/tf/hashset.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -50,8 +50,11 @@ public:
     VDF_API
     ~VdfIsolatedSubnetwork();
 
-    /// A set of nodes used during deletion of sub-networks.
-    using NodeSet = TfHashSet<VdfNode*, TfHash>;
+    /// A set of isolated nodes.
+    using NodeSet = pxr_tsl::robin_set<VdfNode *, TfHash>;
+
+    /// A set of isolated connections.
+    using ConnectionSet = pxr_tsl::robin_set<VdfConnection *, TfHash>;
 
     /// Isolates all nodes and connections reachable via input connections from
     /// \p connection that are not connected via additional output connections
@@ -148,22 +151,21 @@ public:
     }
 
     /// Returns the set of isolated nodes.
-    const VdfConnectionSet &GetIsolatedConnections() const {
+    const ConnectionSet &GetIsolatedConnections() const {
         return _connections;
     }
 
 private:
     VdfIsolatedSubnetwork(VdfNetwork *network);
 
-    // Helper that checks if we can traverse a connection.  
-    static bool _CanTraverse(
-        VdfConnection          *connection,
-        VdfNetwork::EditFilter *filter,
-        const VdfConnectionSet &visitedConnections);
+    // Helper that checks if we can traverse past \p sourceNode.
+    bool _CanTraverse(
+        const VdfNode &sourceNode,
+        VdfNetwork::EditFilter *filter);
 
     // Helper that traverses a branch.
     void _TraverseBranch(
-        VdfConnection          *connection,
+        VdfConnection *connection,
         VdfNetwork::EditFilter *filter);
 
 private:
@@ -175,7 +177,13 @@ private:
     NodeSet _nodes;
     
     // The set of isolated connections.
-    VdfConnectionSet _connections;
+    ConnectionSet _connections;
+
+    // Used to keep track of the number of remaining output connections for a
+    // given node that have not yet been determined to be part of the isolated
+    // subnetwork.
+    pxr_tsl::robin_map<const VdfNode *, int>
+    _unisolatedOutputConnections;
 
     // Flag that indicates whether or not RemoveIsolatedObjectsFromNetwork has
     // been called.

@@ -176,39 +176,44 @@ VdfIsolatedSubnetwork::~VdfIsolatedSubnetwork()
 
 bool
 VdfIsolatedSubnetwork::_CanTraverse(
-    VdfConnection *connection,
-    VdfNetwork::EditFilter *filter,
-    const VdfConnectionSet &visitedConnections)
+    const VdfNode &sourceNode,
+    VdfNetwork::EditFilter *const filter)
 {
-    VdfNode &sourceNode = connection->GetSourceNode();
-
-    // Can we delete the source node of that connection? If so,
-    // recurse, else ignore this connection.
     if (filter && !filter->CanDelete(&sourceNode)) {
         return false;
     }
 
-    // If there is more than one output connection (ie. an additional one
-    // besides the one we use to discover this node), stop traversing since
-    // other nodes are using part of the network above this point.
-    //
-    // Since we don't delete connection right away (in order to get correct 
-    // paths), we need to see what we've seen before in order to determine if
-    // there is an additional output.
-    for (VdfConnection *const connection : sourceNode.GetOutputConnections()) {
-        if (visitedConnections.count(connection) == 0) {
-            return false;
+    // Find or emplace an entry in the map where we store the number of
+    // remaining unisolated output connections for each visited node.
+    const auto it = [&] {
+        if (const auto findIt = _unisolatedOutputConnections.find(&sourceNode);
+            findIt != _unisolatedOutputConnections.end()) {
+            return findIt;
         }
-    }
 
-    return true;
+        const auto [emplacedIt, emplaced] =
+            _unisolatedOutputConnections.emplace(
+                &sourceNode,
+                static_cast<int>(sourceNode.GetOutputConnections().size()));
+        return emplacedIt;
+    }();
+
+    // Decrement to account for the output connection we just traversed to get
+    // to this node. If the new count is zero, the node is isolated and we can
+    // continue traversing.
+    int &count = it.value();
+    --count;
+    TF_VERIFY(count >= 0);
+    return count == 0;
 }
 
 void
 VdfIsolatedSubnetwork::_TraverseBranch(
-    VdfConnection           *connection,
-    VdfNetwork::EditFilter  *filter)
+    VdfConnection *const connection,
+    VdfNetwork::EditFilter  *const filter)
 {
+    TRACE_FUNCTION();
+
     std::stack<VdfConnection*> stack;
     stack.push(connection);
 
@@ -217,31 +222,33 @@ VdfIsolatedSubnetwork::_TraverseBranch(
         stack.pop();
 
         // Mark this connection as visited.
-        _connections.insert(currentConnection);
-    
-        // We can't traverse this connection, therefore we stop.
-        if (!_CanTraverse(currentConnection, filter, _connections)) {
+        const bool connectionInserted =
+            _connections.insert(currentConnection).second;
+        if (!connectionInserted) {
             continue;
         }
     
         VdfNode &sourceNode = currentConnection->GetSourceNode();
-    
-        const bool inserted = _nodes.insert(&sourceNode).second;
-    
-        // We only traverse if the object wasn't visited before. This can 
-        // happen if different inputs of the same node are connected to source 
-        // outputs of the same node.
-        if (inserted) {
-            // Push the connections onto the stack in reverse order, so that
-            // on the next iteration, the first connection lives on top of the
-            // stack and gets picked up first.
-            const VdfConnectionVector inputConnections =
-                sourceNode.GetInputConnections();
-            auto rit = inputConnections.crbegin();
-            const auto rend = inputConnections.crend();
-            for (; rit != rend; ++rit) {
-                stack.push(*rit);
-            }
+        if (!_CanTraverse(sourceNode, filter)) {
+            continue;
+        }
+
+        // Once _CanTraverse returns true to indicate that a node is isolated,
+        // we will never re-visit that node again.
+        const bool nodeInserted = _nodes.insert(&sourceNode).second;
+        if (!TF_VERIFY(nodeInserted)) {
+            return;
+        }
+
+        // Push the connections onto the stack in reverse order, so that
+        // on the next iteration, the first connection is the top of the
+        // stack and gets picked up first.
+        const VdfConnectionVector inputConnections =
+            sourceNode.GetInputConnections();
+        auto rit = inputConnections.crbegin();
+        const auto rend = inputConnections.crend();
+        for (; rit != rend; ++rit) {
+            stack.push(*rit);
         }
     }
 }
