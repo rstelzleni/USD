@@ -56,20 +56,6 @@ pxr_register_test(testExecUsdBasicCompilation
     TESTENV testExecUsdBasicCompilation
 )
 
-pxr_build_test(testExecUsdExternalRegistration
-    LIBRARIES
-        exec
-        tf
-        vdf
-    CPPFILES
-        testenv/testExecUsdExternalRegistration.cpp
-)
-
-pxr_register_test(testExecUsdExternalRegistration
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testExecUsdExternalRegistration"
-    EXPECTED_RETURN_CODE 0
-)
-
 pxr_build_test(testExecUsdRecompilation
     LIBRARIES
         exec
