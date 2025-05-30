@@ -3551,8 +3551,10 @@ class TestUsdNamespaceEditorDependentEditsBasicClassArcs(
         # dependencies in stage3 on all the specs in layer2 as stage2 was not 
         # added as a dependent stage of the namespace editor. If stage3 didn't 
         # have prims that depend on these layer2 specs, the layer2 specs would
-        # not have updated to reflect the rename.
-        #
+        # not have updated to reflect the rename. Also, stage2 can only report
+        # "Delete" or "Other" resyncs, since the analysis for finer-grained
+        # classifications only occurs on dependent stages.
+        # 
         # self._VerifyStageContents(stage2, {
         #     'ClassD' : {
         #         '.' : ['implied2ClassDAttr'],
@@ -3610,8 +3612,8 @@ class TestUsdNamespaceEditorDependentEditsBasicClassArcs(
         #     "/ClassA/RenamedChild" : self.PrimResyncType.Other,
         #     "/Instance1/Child" : self.PrimResyncType.Delete,
         #     "/Instance1/RenamedChild" : self.PrimResyncType.Other,
-        #     "/Instance2": self.PrimResyncType.UnchangedPrimStack,
-        #     "/Instance3": self.PrimResyncType.UnchangedPrimStack
+        #     "/Instance2": self.PrimResyncType.Other,
+        #     "/Instance3": self.PrimResyncType.Other
         # })
 
         # Verify the changed contents of stage3 where "Child" is renamed to
