@@ -301,7 +301,7 @@ public:
 
     // Checks whether render param was successfully initialized.
     // ie. riley was created
-    bool IsValid() const;
+    bool IsValid() const override;
 
     // Creates displays in riley based on aovBindings vector together
     // with HdPrmanFramebuffer to transfer the result between the
