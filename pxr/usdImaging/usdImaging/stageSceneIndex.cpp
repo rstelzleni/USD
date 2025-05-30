@@ -699,10 +699,11 @@ UsdImagingStageSceneIndex::_ApplyPendingResyncs()
             // that every populated child prim is in addedPaths.
             SdfPath const& removedPath = entry.primPath;
             // Loop over all populated paths prefixed by removedPath.
-            for (SdfPathSet::const_iterator
-                 i = _populatedPaths.lower_bound(removedPath),
-                 iEnd = _populatedPaths.upper_bound(removedPath);
-                 i != iEnd; ++i) {
+            for (SdfPathSet::const_iterator i =
+                 _populatedPaths.lower_bound(removedPath);
+                 i != _populatedPaths.end() && i->HasPrefix(removedPath);
+                 ++i)
+            {
                 if (addedPaths.find(*i) == addedPaths.end()) {
                     // This path will be removed, and not re-added, so
                     // make an entry for it specifically.
