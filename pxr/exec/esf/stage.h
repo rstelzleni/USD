@@ -20,6 +20,7 @@ class EsfJournal;
 class EsfObject;
 class EsfPrim;
 class EsfProperty;
+class EsfRelationship;
 class SdfPath;
 
 /// Stage abstraction for scene adapter implementations.
@@ -57,13 +58,23 @@ public:
         const SdfPath &path,
         EsfJournal *journal) const;
 
+    /// \see UsdStage::GetRelationshipAtPath
+    ESF_API EsfRelationship GetRelationshipAtPath(
+        const SdfPath &path,
+        EsfJournal *journal) const;
+
 private:
     // These methods must be implemented by the scene adapter implementation.
     virtual EsfAttribute _GetAttributeAtPath(
         const SdfPath &path) const = 0;
-    virtual EsfObject _GetObjectAtPath(const SdfPath &path) const = 0;
-    virtual EsfPrim _GetPrimAtPath(const SdfPath &path) const = 0;
-    virtual EsfProperty _GetPropertyAtPath(const SdfPath &path) const = 0;
+    virtual EsfObject _GetObjectAtPath(
+        const SdfPath &path) const = 0;
+    virtual EsfPrim _GetPrimAtPath(
+        const SdfPath &path) const = 0;
+    virtual EsfProperty _GetPropertyAtPath(
+        const SdfPath &path) const = 0;
+    virtual EsfRelationship _GetRelationshipAtPath(
+        const SdfPath &path) const = 0;
 };
 
 /// Holds an implementation of EsfStageInterface in a fixed-size buffer.

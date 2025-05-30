@@ -363,7 +363,8 @@ struct Exec_ComputationBuilderAccessor
     {
     }
 
-    using This = Exec_ComputationBuilderComputationValueSpecifier<allowed>;
+    using ValueSpecifier =
+        Exec_ComputationBuilderComputationValueSpecifier<allowed>;
 
     /// \addtogroup group_Exec_ValueSpecifiers
     /// @{
@@ -390,16 +391,15 @@ struct Exec_ComputationBuilderAccessor
     /// ```
     ///
     template <typename ResultType>
-    This
+    ValueSpecifier
     Computation(const TfToken &computationName)
     {
         static_assert(!VtIsArray<ResultType>::value,
                       "VtArray is not a supported result type");
 
-        return This(
+        return ValueSpecifier(
             computationName,
-            ExecTypeRegistry::GetInstance().
-                CheckForRegistration<ResultType>(),
+            ExecTypeRegistry::GetInstance().CheckForRegistration<ResultType>(),
             {_GetLocalTraversal(),
              ExecProviderResolution::DynamicTraversal::Local});
     }
@@ -435,6 +435,64 @@ struct Exec_ComputationBuilderAttributeAccessor
     // Accessors for AnimSpline, Connections, IncomingConnections
 };
 
+/// Relationship accessor
+template <Exec_ComputationBuilderProviderTypes allowed>
+struct Exec_ComputationBuilderRelationshipAccessor
+    : public Exec_ComputationBuilderPropertyAccessor<allowed>
+{
+    Exec_ComputationBuilderRelationshipAccessor(const SdfPath &localTraversal)
+    : Exec_ComputationBuilderPropertyAccessor<allowed>(localTraversal)
+    {
+    }
+
+    using ValueSpecifier =
+        Exec_ComputationBuilderComputationValueSpecifier<allowed>;
+
+    /// \addtogroup group_Exec_ValueSpecifiers
+    /// @{
+
+    /// After a [Relationship()](#exec_registration::Relationship::Relationship)
+    /// accessor, requests input values from the computation \p computationName
+    /// of type \p ResultType on the objects targeted by the relationship.
+    ///
+    /// Relationship forwarding is applied, so if the relationship targets
+    /// another relationship, the targets are transitively expanded, resulting
+    /// in the ultimately targeted, non-relationship objects.
+    ///
+    /// # Example
+    ///
+    /// ```{.cpp}
+    /// EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(MySchemaType)
+    /// {
+    ///     // Register a prim computation that looks for the computation
+    ///     // 'sourceComputation' on all targeted objects of the relationship
+    ///     // 'myRel' and returns the number of matching targets.
+    ///     self.PrimComputation(_tokens->myComputation)
+    ///         .Callback<int>(+[](const VdfContext &ctx) {
+    ///             VdfReadIterator<int> it(_tokens->sourceComputation);
+    ///             return static_cast<int>(it.ComputeSize());
+    ///         })
+    ///         .Inputs(
+    ///             Relationship(_tokens->myRel)
+    ///             .TargetedObjects<int>(_tokens->sourceComputation));
+    /// }
+    /// ```
+    ///
+    template <typename ResultType>
+    ValueSpecifier
+    TargetedObjects(const TfToken &computationName)
+    {
+        return ValueSpecifier(
+            computationName,
+            ExecTypeRegistry::GetInstance().CheckForRegistration<ResultType>(),
+            {Exec_ComputationBuilderAccessorBase::_GetLocalTraversal(),
+             ExecProviderResolution::DynamicTraversal::
+                 RelationshipTargetedObjects});
+    }
+
+    /// @}
+};
+
 
 // The following registrations are in the exec_registration namespace so that
 // the registration macro can make them available (without the namespace) as
@@ -442,7 +500,7 @@ struct Exec_ComputationBuilderAttributeAccessor
 namespace exec_registration {
 
 
-/// Attribute accessor, valid on a prim computation.
+/// Attribute accessor, valid on a prim.
 struct Attribute
     : public Exec_ComputationBuilderAttributeAccessor<
         Exec_ComputationBuilderProviderTypes::Prim>
@@ -476,6 +534,32 @@ struct Attribute
         : Exec_ComputationBuilderAttributeAccessor<
             Exec_ComputationBuilderProviderTypes::Prim>(
                 SdfPath::ReflexiveRelativePath().AppendProperty(attributeName))
+    {
+    }
+
+    /// @} // Accessors
+};
+
+
+/// Relationship accessor, valid on a prim.
+struct Relationship
+    : public Exec_ComputationBuilderRelationshipAccessor<
+        Exec_ComputationBuilderProviderTypes::Prim>
+{
+    /// \addtogroup group_Exec_Accessors
+    /// @{
+
+    /// On a prim computation, provides access to the relationship named
+    /// \p relationshipName.
+    ///
+    /// See
+    /// [TargetedObjects()](#Exec_ComputationBuilderRelationshipAccessor::TargetedObjects)
+    ///
+    Relationship(const TfToken &relationshipName)
+        : Exec_ComputationBuilderRelationshipAccessor<
+            Exec_ComputationBuilderProviderTypes::Prim>(
+                SdfPath::ReflexiveRelativePath().AppendProperty(
+                    relationshipName))
     {
     }
 

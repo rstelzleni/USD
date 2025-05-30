@@ -67,6 +67,10 @@ ExecSystem::_ChangeProcessor::DidChangeInfoOnly(
                 _state->attributesWithInvalidAuthoredValues.push_back(path);
                 didRecordAuthoredValueChange = true;
             }
+            else if (field == SdfFieldKeys->TargetPaths) {
+                _state->uncompiler.UncompileForSceneChange(
+                    path, EsfEditReason::ChangedTargetPaths);
+            }
         }
     }
 }

@@ -187,11 +187,10 @@ private:
     std::unique_ptr<EsfStage> _stage;
 };
 
+// Test that Exec_ResolveInput finds a computation on the origin object.
 static void
 TestResolveToComputationOrigin(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput finds a computation on the origin object.
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "Origin" {
         }
@@ -215,12 +214,12 @@ TestResolveToComputationOrigin(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput fails to find a computation on the origin object
+// if that object does not define a computation by that name.
+//
 static void
 TestResolveToComputationOrigin_NoSuchComputation(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput fails to find a computation on the origin
-    // object if that object does not define a computation by that name.
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "Origin" {
         }
@@ -240,13 +239,13 @@ TestResolveToComputationOrigin_NoSuchComputation(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput fails to find a computation on the origin object
+// if a computation of the requested name was found, but it does not match the
+// requested result type.
+//
 static void
 TestResolveToComputationOrigin_WrongResultType(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput fails to find a computation on the origin
-    // object if a computation of the requested name was found, but it does not
-    // match the requested result type.
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "Origin" {
         }
@@ -266,12 +265,12 @@ TestResolveToComputationOrigin_WrongResultType(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput finds a computation on the nearest namespace
+// ancestor that defines the requested computation.
+//
 static void
 TestResolveToNamespaceAncestor(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput finds a computation on the nearest namespace
-    // ancestor that defines the requested computation.
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "Root" {
             def CustomSchema "Ancestor" {
@@ -311,12 +310,12 @@ TestResolveToNamespaceAncestor(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput fails to find a computation on the nearest
+// namespace ancestor if no ancestor defines a computation by that name.
+//
 static void
 TestResolveToNamespaceAncestor_NoSuchAncestor(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput fails to find a computation on the nearest
-    // namespace ancestor if no ancestor defines a computation by that name.
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def Scope "Root" {
             def Scope "Parent" {
@@ -346,13 +345,13 @@ TestResolveToNamespaceAncestor_NoSuchAncestor(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput fails to find a computation on the nearest
+// namespace ancestor if all ancestors define computations of the requested
+// name, but of different result types.
+//
 static void
 TestResolveToNamespaceAncestor_WrongResultType(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput fails to find a computation on the nearest
-    // namespace ancestor if all ancestors define computations of the requested
-    // name, but of different result types.
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "Root" {
             def CustomSchema "Parent" {
@@ -382,12 +381,12 @@ TestResolveToNamespaceAncestor_WrongResultType(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput finds a computation on the owning prim when the
+// origin is an attribute, and the local traversal is "..".
+//
 static void
 TestResolveToOwningPrim(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput finds a computation on the owning prim when
-    // the origin is an attribute, and the local traversal is "..".
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "OwningPrim" {
             double origin = 1.0
@@ -414,12 +413,91 @@ TestResolveToOwningPrim(Fixture &fixture)
     ASSERT_EQ(fixture.journal, expectedJournal);
 }
 
+// Test that Exec_ResolveInput finds a computation on the owning prim when the
+// origin is a prim, the local traversal is the relative path to a relationship
+// and the dynamic traversal is TargetedObjects.
+//
+static void
+TestResolveToTargetedObjects(Fixture &fixture)
+{
+    fixture.NewStageFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Origin" {
+            add rel myRel = [</Origin/A>, </Origin.forwardingRel>]
+            add rel forwardingRel = </Origin/B>
+            def CustomSchema "A" {}
+            def CustomSchema "B" {}
+        }
+    )usd");
+
+    const Exec_OutputKeyVector outputKeys = fixture.ResolveInput(
+        fixture.GetObjectAtPath("/Origin"),
+        _tokens->customComputation,
+        TfType::Find<int>(),
+        SdfPath(".myRel"),
+        ExecProviderResolution::DynamicTraversal::RelationshipTargetedObjects);
+
+    ASSERT_EQ(outputKeys.size(), 2);
+    ASSERT_OUTPUT_KEY(
+        outputKeys[0], 
+        fixture.GetObjectAtPath("/Origin/A"), 
+        fixture.customComputationDefinition);
+    ASSERT_OUTPUT_KEY(
+        outputKeys[1], 
+        fixture.GetObjectAtPath("/Origin/B"), 
+        fixture.customComputationDefinition);
+
+    EsfJournal expectedJournal;
+    expectedJournal
+        .Add(SdfPath("/Origin"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin.myRel"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin.myRel"), EsfEditReason::ChangedTargetPaths)
+        .Add(SdfPath("/Origin.forwardingRel"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin.forwardingRel"), EsfEditReason::ChangedTargetPaths)
+        .Add(SdfPath("/Origin/A"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin/B"), EsfEditReason::ResyncedObject);
+    ASSERT_EQ(fixture.journal, expectedJournal);
+}
+
+// Test that Exec_ResolveInput silently ignores missing targets.
+static void
+TestResolveToTargetedObjects_MissingTarget(Fixture &fixture)
+{
+    fixture.NewStageFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Origin" {
+            add rel myRel = [</Origin/A>, </Origin/B>]
+            def CustomSchema "A" {}
+        }
+    )usd");
+
+    const Exec_OutputKeyVector outputKeys = fixture.ResolveInput(
+        fixture.GetObjectAtPath("/Origin"),
+        _tokens->customComputation,
+        TfType::Find<int>(),
+        SdfPath(".myRel"),
+        ExecProviderResolution::DynamicTraversal::RelationshipTargetedObjects);
+
+    ASSERT_EQ(outputKeys.size(), 1);
+    ASSERT_OUTPUT_KEY(
+        outputKeys[0], 
+        fixture.GetObjectAtPath("/Origin/A"), 
+        fixture.customComputationDefinition);
+
+    EsfJournal expectedJournal;
+    expectedJournal
+        .Add(SdfPath("/Origin"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin.myRel"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin.myRel"), EsfEditReason::ChangedTargetPaths)
+        .Add(SdfPath("/Origin/A"), EsfEditReason::ResyncedObject)
+        .Add(SdfPath("/Origin/B"), EsfEditReason::ResyncedObject);
+    ASSERT_EQ(fixture.journal, expectedJournal);
+}
+
+// Test that Exec_ResolveInput finds a computation on the stage (i.e., on the
+// pseudoroot prim), and the local traversal is "/".
+//
 static void
 TestResolveToStage(Fixture &fixture)
 {
-    // Test that Exec_ResolveInput finds a computation on the stage (i.e., on
-    // the pseudoroot prim), and the local traversal is "/".
-
     fixture.NewStageFromLayer(R"usd(#usda 1.0
         def CustomSchema "Root" {
         }
@@ -466,6 +544,8 @@ int main()
         TestResolveToNamespaceAncestor_NoSuchAncestor,
         TestResolveToNamespaceAncestor_WrongResultType,
         TestResolveToOwningPrim,
+        TestResolveToTargetedObjects,
+        TestResolveToTargetedObjects_MissingTarget,
         TestResolveToStage,
     };
     for (const auto &test : tests) {

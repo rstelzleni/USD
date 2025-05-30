@@ -39,10 +39,15 @@ struct ExecProviderResolution {
     /// predicates, and can branch out, potentially finding multiple providers.
     /// 
     enum class DynamicTraversal {
-        Local,             ///< The localTraversal path directly indicates the
-                           ///  computation provider.
-        NamespaceAncestor, ///< Find the provider by traversing upward in
-                           ///  namespace
+        /// The localTraversal path directly indicates the computation provider.
+        Local,             
+
+        /// Find the providers by traversing relationship targets, applying any
+        /// relationship forwarding, to the targeted objects.
+        RelationshipTargetedObjects,
+
+        /// Find the provider by traversing upward in namespace
+        NamespaceAncestor,
     };
 
     /// An enum value that indicates the type of dynamic traversal used during

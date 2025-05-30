@@ -21,6 +21,7 @@ pxr_library(esf
         object
         prim
         property
+        relationship
         stage
 
     RESOURCE_FILES

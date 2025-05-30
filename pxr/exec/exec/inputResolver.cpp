@@ -17,6 +17,7 @@
 #include "pxr/exec/esf/journal.h"
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/prim.h"
+#include "pxr/exec/esf/relationship.h"
 #include "pxr/exec/esf/stage.h"
 #include "pxr/usd/sdf/path.h"
 
@@ -93,6 +94,7 @@ private:
             std::move(prim)).Get();
         _currentObject = _currentPrim;
         _currentAttribute = nullptr;
+        _currentRelationship = nullptr;
     }
 
     // Updates the current object to the specified \p attribute.
@@ -101,6 +103,17 @@ private:
         _currentAttribute = _currentObjectVariant.emplace<EsfAttribute>(
             std::move(attribute)).Get();
         _currentObject = _currentAttribute;
+        _currentPrim = nullptr;
+        _currentRelationship = nullptr;
+    }
+
+    // Updates the current object to the specified \p relationship.
+    void _SetRelationship(EsfRelationship &&relationship)
+    {
+        _currentRelationship = _currentObjectVariant.emplace<EsfRelationship>(
+            std::move(relationship)).Get();
+        _currentObject = _currentRelationship;
+        _currentAttribute = nullptr;
         _currentPrim = nullptr;
     }
 
@@ -116,8 +129,7 @@ private:
             _SetPrim(_currentPrim->GetParent(_journal));
             return true;
         }
-
-        if (_currentAttribute) {
+        else if (_currentAttribute) {
             _SetPrim(_currentAttribute->GetPrim(_journal));
             return true;
         }
@@ -142,11 +154,35 @@ private:
         }
 
         _SetAttribute(_currentPrim->GetAttribute(attributeName, _journal));
+
         return true;
     }
 
-    // Updates the current object by traversing along each component of a
-    // relative path.
+    // Updates the current object to a relationship on the current object.
+    //
+    // This does *not* check if the current object or the resulting relationship
+    // are valid scene objects. Such checks are left up to the caller. The
+    // current object must be a prim, or else a TF_VERIFY is raised, and this
+    // returns false.
+    // 
+    bool _TraverseToRelationship(const TfToken &relationshipName)
+    {
+        if (!TF_VERIFY(_currentPrim)) {
+            return false;
+        }
+
+        _SetRelationship(
+            _currentPrim->GetRelationship(relationshipName, _journal));
+
+        return true;
+    }
+
+    // Updates the current object by traversing along each component of the
+    // relative path that is the `localTraversal` in \p providerResolution.
+    //
+    // The 'dynamicTraversal` in \p providerResolution is used to guide the
+    // traversal, in some cases, as to what kind of provider we expect to find
+    // at the relative path.
     //
     // The current object must be valid prior to calling this method.
     //
@@ -157,8 +193,10 @@ private:
     // invalid object encountered while performing the traversal - which may be
     // the final object, or some intermediate object.
     // 
-    bool _TraverseToRelativePath(const SdfPath &relativePath)
+    bool _TraverseToRelativePath(
+        const ExecProviderResolution &providerResolution)
     {
+        const SdfPath &relativePath = providerResolution.localTraversal;
         if (!TF_VERIFY(!relativePath.IsAbsolutePath())) {
             return false;
         }
@@ -178,10 +216,17 @@ private:
             }
             
             else if (prefix.IsPropertyPath()) {
-                // XXX: A relative property path could intend traversal to an
-                // attribute or a relationship, depending on the resolution
-                // mode. For now, we only source inputs from attributes.
-                if (!_TraverseToAttribute(prefix.GetNameToken())) {
+                const TfToken &propertyName = prefix.GetNameToken();
+
+                // The dynamic traversal tells us whether we expect the property
+                // path takes us to a relationship or an attribute.
+                if (providerResolution.dynamicTraversal ==
+                    ExecProviderResolution::DynamicTraversal::
+                        RelationshipTargetedObjects) {
+                    if (!_TraverseToRelationship(propertyName)) {
+                        return false;
+                    }
+                } else if (!_TraverseToAttribute(propertyName)) {
                     return false;
                 }
             }
@@ -204,7 +249,84 @@ private:
         return true;
     }
 
-    // Updates the current object to the nearest namespace ancestor that defines
+    // Updates the current object by traversing to the object at the given
+    // absolute path.
+    //
+    // If this method returns true, then the current object is valid and is set
+    // to the object indicated by the absolute path.
+    // 
+    bool _TraverseToAbsolutePath(const SdfPath &path)
+    {
+        if (!TF_VERIFY(path.IsAbsolutePath()) ||
+            !TF_VERIFY(!path.IsEmpty())) {
+            return false;
+        }
+
+        const EsfObject targetObject = _stage->GetObjectAtPath(path, _journal);
+        if (!targetObject->IsValid(_journal)) {
+            return false;
+        }
+
+        if (targetObject->IsPrim()) {
+            _SetPrim(targetObject->AsPrim());
+        }
+        else if (targetObject->IsAttribute()) {
+            _SetAttribute(targetObject->AsAttribute());
+        }
+        else if (targetObject->IsRelationship()) {
+            _SetRelationship(targetObject->AsRelationship());
+        } else {
+            TF_VERIFY(
+                false,
+                "Unable to traverse to path <%s>. Unhandled object type.",
+                path.GetText());
+            return false;
+        }
+
+        return true;
+    }
+
+    // Returns the ouput keys for the objects targeted by the forwarded targets
+    // of the currrent relationship, for the computation of the given name and
+    // result type.
+    //
+    // The current object must be a valid relationship prior to calling this
+    // method.
+    //
+    Exec_OutputKeyVector _TraverseToRelationshipTargetedObjects(
+        const TfToken &computationName,
+        const TfType resultType)
+    {
+        if (!TF_VERIFY(_currentRelationship->IsValid(_journal))) {
+            return {};
+        }
+
+        Exec_OutputKeyVector outputKeys;
+
+        for (const SdfPath &path :
+             _currentRelationship->GetForwardedTargets(_journal)) {
+            if (!_TraverseToAbsolutePath(path)) {
+                continue;
+            }
+
+            if (const Exec_ComputationDefinition *const computationDefinition =
+                _FindComputationDefinition(computationName, resultType)) {
+                outputKeys.emplace_back(
+                    _currentObject->AsObject(),
+                    computationDefinition);
+            }
+        }
+
+        // Clear the current object to make it clear that the traversal has
+        // terminated.
+        _currentObjectVariant = std::monostate{};
+        _currentObject = nullptr;
+        _currentRelationship = nullptr;
+
+        return outputKeys;
+    }
+
+    // Updates the current object to the nearest namespace ancestor that 
     // a computation named \p computationName with the given \p resultType.
     //
     // The current object must already refer to a valid prim, or else this
@@ -337,7 +459,7 @@ private:
                 return {};
             }
 
-            if (!_TraverseToRelativePath(localTraversal)) {
+            if (!_TraverseToRelativePath(inputKey.providerResolution)) {
                 return {};
             }
         }
@@ -351,6 +473,12 @@ private:
                 inputKey.computationName,
                 inputKey.resultType);
             break;
+            
+        case ExecProviderResolution::DynamicTraversal::
+            RelationshipTargetedObjects:
+            return _TraverseToRelationshipTargetedObjects(
+                inputKey.computationName,
+                inputKey.resultType);
             
         case ExecProviderResolution::DynamicTraversal::NamespaceAncestor:
             if (!_TraverseToNamespaceAncestor(
@@ -372,17 +500,18 @@ private:
     }
 
     // The state of the resolution process is represented by the current scene
-    // object. The object may be a prim or an attribute, and it lives inside a
-    // std::variant. Pointers to the derived type are maintained so the object
-    // can be accessed without having to repeatedly inspect the type held by the
-    // variant. The variant can also hold a std::monostate in case the resolver
-    // was constructed with neither a prim nor an attribute.
+    // object. The object may be a prim, an attribute, or a relationship, and it
+    // lives inside a std::variant. Pointers to the derived type are maintained
+    // so the object can be accessed without having to repeatedly inspect the
+    // type held by the variant. The variant can also hold a std::monostate in
+    // case the resolver was constructed with neither a prim nor an attribute.
     using _CurrentObjectVariant =
-        std::variant<std::monostate, EsfPrim, EsfAttribute>;
+        std::variant<std::monostate, EsfPrim, EsfAttribute, EsfRelationship>;
     _CurrentObjectVariant _currentObjectVariant;
     const EsfObjectInterface *_currentObject;
     const EsfPrimInterface *_currentPrim;
     const EsfAttributeInterface *_currentAttribute;
+    const EsfRelationshipInterface *_currentRelationship;
 
     // Scene traversals log entries to this journal.
     EsfJournal *const _journal;

@@ -10,6 +10,7 @@
 #include "pxr/exec/esfUsd/object.h"
 #include "pxr/exec/esfUsd/prim.h"
 #include "pxr/exec/esfUsd/property.h"
+#include "pxr/exec/esfUsd/relationship.h"
 
 #include "pxr/base/tf/diagnosticLite.h"
 
@@ -61,6 +62,15 @@ EsfUsd_Stage::_GetPropertyAtPath(const SdfPath &path) const
     return {
         std::in_place_type<EsfUsd_Property>,
         _stage->GetPropertyAtPath(path)
+    };
+}
+
+EsfRelationship
+EsfUsd_Stage::_GetRelationshipAtPath(const SdfPath &path) const
+{
+    return {
+        std::in_place_type<EsfUsd_Relationship>,
+        _stage->GetRelationshipAtPath(path)
     };
 }
 

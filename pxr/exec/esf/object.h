@@ -22,6 +22,8 @@ class EsfAttribute;
 class EsfJournal;
 class EsfObject;
 class EsfPrim;
+class EsfRelationship;
+class EsfStage;
 class TfToken;
 
 /// Scene object abstraction for scene adapter implementations.
@@ -59,11 +61,17 @@ public:
     /// \see UsdObject::Is
     virtual bool IsAttribute() const = 0;
 
+    /// \see UsdObject::Is
+    virtual bool IsRelationship() const = 0;
+
     /// \see UsdObject::As
     virtual EsfObject AsObject() const = 0;
 
     /// \see UsdObject::As
     virtual EsfAttribute AsAttribute() const = 0;
+
+    /// \see UsdObject::As
+    virtual EsfRelationship AsRelationship() const = 0;
 
     /// \see UsdObject::As
     virtual EsfPrim AsPrim() const = 0;
@@ -74,6 +82,8 @@ protected:
 
     /// Gets the path to this object used for journaling.
     const SdfPath &_GetPath() const { return _path; }
+
+    virtual EsfStage _GetStage() const = 0;
 
 private:
     // Object path that will be added to EsfJournals.

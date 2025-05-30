@@ -11,6 +11,7 @@
 
 #include "pxr/exec/esf/attribute.h"
 #include "pxr/exec/esf/object.h"
+#include "pxr/exec/esf/relationship.h"
 #include "pxr/usd/usd/object.h"
 
 #include <type_traits>
@@ -82,9 +83,9 @@ public:
         , _object(std::move(object)) {}
 
 protected:
-    /// Accessors to the wrapped object are made available to all derived
-    /// classes.
-    /// 
+    // Accessors to the wrapped object are made available to all derived
+    // classes.
+    // 
     UsdObjectType &_GetWrapped() { return _object; }
     const UsdObjectType &_GetWrapped() const { return _object; }
 
@@ -96,11 +97,14 @@ private:
     bool _IsValid() const final;
     TfToken _GetName() const final;
     EsfPrim _GetPrim() const final;
+    EsfStage _GetStage() const final;
     bool IsPrim() const final;
     bool IsAttribute() const final;
+    bool IsRelationship() const final;
     EsfObject AsObject() const final;
     EsfPrim AsPrim() const final;
     EsfAttribute AsAttribute() const final;
+    EsfRelationship AsRelationship() const final;
 };
 
 /// Implementation of EsfObjectInterface that wraps a UsdObject.

@@ -48,6 +48,10 @@ public:
     ///
     static const EsfEditReason ChangedPropertyList;
 
+    /// The list of target paths on a relationship has changed.
+    ///
+    static const EsfEditReason ChangedTargetPaths;
+
     /// @}
 
     /// \name Bitwise operations
@@ -119,6 +123,7 @@ private:
     enum class _BitIndex : uint8_t {
         ResyncedObject,
         ChangedPropertyList,
+        ChangedTargetPaths,
         Max
     };
 
@@ -140,6 +145,9 @@ inline constexpr EsfEditReason EsfEditReason::ResyncedObject(
 
 inline constexpr EsfEditReason EsfEditReason::ChangedPropertyList(
     EsfEditReason::_BitIndex::ChangedPropertyList);
+
+inline constexpr EsfEditReason EsfEditReason::ChangedTargetPaths(
+    EsfEditReason::_BitIndex::ChangedTargetPaths);
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

@@ -7,7 +7,9 @@
 #include "pxr/exec/esfUsd/property.h"
 
 #include "pxr/exec/esf/attribute.h"
+#include "pxr/exec/esf/relationship.h"
 #include "pxr/usd/usd/attribute.h"
+#include "pxr/usd/usd/relationship.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -35,5 +37,6 @@ EsfUsd_PropertyImpl<InterfaceType, UsdPropertyType>::_GetNamespace() const
 // Explicit template instantiations
 template class EsfUsd_PropertyImpl<EsfAttributeInterface, UsdAttribute>;
 template class EsfUsd_PropertyImpl<EsfPropertyInterface, UsdProperty>;
+template class EsfUsd_PropertyImpl<EsfRelationshipInterface, UsdRelationship>;
 
 PXR_NAMESPACE_CLOSE_SCOPE

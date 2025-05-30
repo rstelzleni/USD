@@ -7,6 +7,7 @@
 #include "pxr/exec/esfUsd/prim.h"
 
 #include "pxr/exec/esfUsd/attribute.h"
+#include "pxr/exec/esfUsd/relationship.h"
 
 #include <utility>
 
@@ -24,11 +25,11 @@ EsfUsd_Prim::_GetAppliedSchemas() const
 }
 
 EsfAttribute
-EsfUsd_Prim::_GetAttribute(const TfToken &attrName) const
+EsfUsd_Prim::_GetAttribute(const TfToken &attributeName) const
 {
     return {
         std::in_place_type<EsfUsd_Attribute>,
-        _GetWrapped().GetAttribute(attrName)
+        _GetWrapped().GetAttribute(attributeName)
     };
 }
 
@@ -36,6 +37,15 @@ EsfPrim
 EsfUsd_Prim::_GetParent() const
 {
     return {std::in_place_type<EsfUsd_Prim>, _GetWrapped().GetParent()};
+}
+
+EsfRelationship
+EsfUsd_Prim::_GetRelationship(const TfToken &relationshipName) const
+{
+    return {
+        std::in_place_type<EsfUsd_Relationship>,
+        _GetWrapped().GetRelationship(relationshipName)
+    };
 }
 
 TfType

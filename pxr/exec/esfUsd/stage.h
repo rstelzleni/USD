@@ -40,6 +40,7 @@ private:
     EsfObject _GetObjectAtPath(const SdfPath &path) const final;
     EsfPrim _GetPrimAtPath(const SdfPath &path) const final;
     EsfProperty _GetPropertyAtPath(const SdfPath &path) const final;
+    EsfRelationship _GetRelationshipAtPath(const SdfPath &path) const final;
 
     UsdStageConstRefPtr _stage;
 };

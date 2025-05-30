@@ -48,7 +48,9 @@ public:
     /// chained together.
     ///
     EsfJournal &Add(const SdfPath &path, EsfEditReason editReason) {
-        _hashMap[path] |= editReason;
+        if (TF_VERIFY(path.IsAbsolutePath()) && TF_VERIFY(!path.IsEmpty())) {
+            _hashMap[path] |= editReason;
+        }
         return *this;
     }
 

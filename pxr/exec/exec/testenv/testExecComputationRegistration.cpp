@@ -51,6 +51,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (namespaceAncestorInput)
     (noInputsComputation)
     (primComputation)
+    (relationshipName)
     (stageAccessComputation)
     (unknownSchemaTypeComputation)
 );
@@ -83,6 +84,8 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
                 .Computation<int>(_tokens->attributeComputation),
             AttributeValue<int>(_tokens->attributeName)
                 .Required(),
+            Relationship(_tokens->relationshipName)
+                .TargetedObjects<int>(_tokens->primComputation),
             NamespaceAncestor<bool>(_tokens->primComputation)
                 .InputName(_tokens->namespaceAncestorInput)
         );
@@ -246,6 +249,8 @@ _PrintInputKeys(
                   << "\n";
         std::cout << "  optional: " << key.optional << "\n";
     }
+
+    std::cout << std::flush;
 }
 
 static void
@@ -385,7 +390,7 @@ TestComputationRegistration()
 
         const auto inputKeys =
             primCompDef->GetInputKeys(*prim, nullJournal);
-        ASSERT_EQ(inputKeys->Get().size(), 4);
+        ASSERT_EQ(inputKeys->Get().size(), 5);
 
         _PrintInputKeys(inputKeys->Get());
 
@@ -424,6 +429,19 @@ TestComputationRegistration()
             ASSERT_EQ(key.providerResolution.dynamicTraversal,
                       ExecProviderResolution::DynamicTraversal::Local);
             ASSERT_EQ(key.optional, false);
+        }
+
+        {
+            const Exec_InputKey &key = inputKeys->Get()[index++];
+            ASSERT_EQ(key.inputName, _tokens->primComputation);
+            ASSERT_EQ(key.computationName, _tokens->primComputation);
+            ASSERT_EQ(key.resultType, TfType::Find<int>());
+            ASSERT_EQ(key.providerResolution.localTraversal,
+                      SdfPath(".relationshipName"));
+            ASSERT_EQ(key.providerResolution.dynamicTraversal,
+                      ExecProviderResolution::DynamicTraversal::
+                          RelationshipTargetedObjects);
+            ASSERT_EQ(key.optional, true);
         }
 
         {

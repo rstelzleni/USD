@@ -101,6 +101,11 @@ pxr_register_test(testExecUsdRecompilation
         TestRecompileDeletedPrim-1.dot                                         \
         TestRecompileDeletedPrim-2.dot                                         \
         TestRecompileDeletedPrim-3.dot                                         \
+        TestRecompileChangedRelationshipTargets-1.dot                          \
+        TestRecompileChangedRelationshipTargets-2.dot                          \
+        TestRecompileChangedRelationshipTargets-3.dot                          \
+        TestRecompileChangedRelationshipTargets-4.dot                          \
+        TestRecompileChangedRelationshipTargets-5.dot                          \
         "
     DIFF_COMPARE TestRecompileDisconnectedAttributeInput-1.out
     DIFF_COMPARE TestRecompileDisconnectedAttributeInput-2.out
@@ -111,6 +116,11 @@ pxr_register_test(testExecUsdRecompilation
     DIFF_COMPARE TestRecompileDeletedPrim-1.out
     DIFF_COMPARE TestRecompileDeletedPrim-2.out
     DIFF_COMPARE TestRecompileDeletedPrim-3.out
+    DIFF_COMPARE TestRecompileChangedRelationshipTargets-1.out
+    DIFF_COMPARE TestRecompileChangedRelationshipTargets-2.out
+    DIFF_COMPARE TestRecompileChangedRelationshipTargets-3.out
+    DIFF_COMPARE TestRecompileChangedRelationshipTargets-4.out
+    DIFF_COMPARE TestRecompileChangedRelationshipTargets-5.out
 )
 
 pxr_build_test(testExecUsdRequest

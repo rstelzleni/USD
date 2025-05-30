@@ -11,6 +11,7 @@
 #include "pxr/exec/esf/object.h"
 #include "pxr/exec/esf/prim.h"
 #include "pxr/exec/esf/property.h"
+#include "pxr/exec/esf/relationship.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -58,6 +59,17 @@ EsfStageInterface::GetPropertyAtPath(
         journal->Add(path, EsfEditReason::ResyncedObject);
     }
     return _GetPropertyAtPath(path);
+}
+
+EsfRelationship
+EsfStageInterface::GetRelationshipAtPath(
+    const SdfPath &path,
+    EsfJournal *journal) const
+{
+    if (journal) {
+        journal->Add(path, EsfEditReason::ResyncedObject);
+    }
+    return _GetRelationshipAtPath(path);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
