@@ -119,7 +119,16 @@ HgiTextureHandle
 HgiVulkan::CreateTexture(HgiTextureDesc const & desc)
 {
     return HgiTextureHandle(
-        new HgiVulkanTexture(this, GetPrimaryDevice(), desc),
+        new HgiVulkanTexture(this, GetPrimaryDevice(), desc, /*interop=*/false),
+        GetUniqueId());
+}
+
+/* Multi threaded */
+HgiTextureHandle
+HgiVulkan::CreateTextureForInterop(HgiTextureDesc const & desc)
+{
+    return HgiTextureHandle(
+        new HgiVulkanTexture(this, GetPrimaryDevice(), desc, /*interop=*/true),
         GetUniqueId());
 }
 

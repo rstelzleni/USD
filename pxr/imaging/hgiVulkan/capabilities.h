@@ -38,6 +38,8 @@ public:
 
     bool supportsTimeStamps;
 
+    bool supportsNativeInterop;
+
     VkPhysicalDeviceProperties2 vkDeviceProperties2 {};
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT
         vkVertexAttributeDivisorProperties {};

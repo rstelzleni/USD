@@ -66,6 +66,10 @@ public:
     HGIVULKAN_API
     VkImageLayout GetImageLayout() const;
 
+    // Returns the allocation info of the texture
+    HGIVULKAN_API
+    VmaAllocationInfo2 GetAllocationInfo() const;
+
     /// Returns the device used to create this object.
     HGIVULKAN_API
     HgiVulkanDevice* GetDevice() const;
@@ -122,7 +126,8 @@ protected:
     HgiVulkanTexture(
         HgiVulkan* hgi,
         HgiVulkanDevice* device,
-        HgiTextureDesc const & desc);
+        HgiTextureDesc const & desc,
+        bool interop);
 
     // Texture view constructor to alias another texture's data.
     HGIVULKAN_API

@@ -80,7 +80,8 @@ static void _DumpDeviceDeviceMemoryProperties(
 }
 
 HgiVulkanCapabilities::HgiVulkanCapabilities(HgiVulkanDevice* device)
-    : supportsTimeStamps(false)
+    : supportsTimeStamps(false),
+    supportsNativeInterop(false)
 {
     VkPhysicalDevice physicalDevice = device->GetVulkanPhysicalDevice();
 
