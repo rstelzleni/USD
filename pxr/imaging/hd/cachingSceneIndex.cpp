@@ -6,10 +6,23 @@
 //
 #include "pxr/imaging/hd/cachingSceneIndex.h"
 
+#include "pxr/base/tf/envSetting.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/base/work/utils.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+// XXX Ideally, this is disabled by default. See comment in _PrimsDirtied.
+TF_DEFINE_ENV_SETTING(HD_CACHING_SCENE_INDEX_USE_CONVERVATIVE_EVICTION, true,
+    "Evict cache entry for a prim when *any* locator on the prim is dirty.");
+
+static bool
+_IsEnabledConvervativeEviction()
+{
+    static bool enabled =
+        TfGetEnvSetting(HD_CACHING_SCENE_INDEX_USE_CONVERVATIVE_EVICTION);
+    return enabled;
+}
 
 HdCachingSceneIndex::HdCachingSceneIndex(
         HdSceneIndexBaseRefPtr const &inputScene)
@@ -199,12 +212,35 @@ HdCachingSceneIndex::_PrimsDirtied(
     // table.
     _ConsolidateRecent();
 
-    for (const HdSceneIndexObserver::DirtiedPrimEntry &entry : entries) {
-        if (entry.dirtyLocators.Contains(HdDataSourceLocator::EmptyLocator())) {
+    if (_IsEnabledConvervativeEviction()) {
+        // Below, we evict the cache entry for the primPath for *any*
+        // locator. Ideally, we should evict the entry only if the
+        // default prim-level locator is dirty. However, we have a handful
+        // of scene indices that either optionally wrap the prim container,
+        // or override the prim container in a non-lazy manner.
+        // In those cases, we need to evict the prim entry for any locator
+        // to provide the correct result when it is requeried.
+        //
+        for (const HdSceneIndexObserver::DirtiedPrimEntry &entry : entries) {
             const _PrimTable::iterator i = _prims.find(entry.primPath);
             if (i != _prims.end() && i->second) {
                 WorkSwapDestroyAsync(i->second->dataSource);
                 i->second = std::nullopt;
+            }
+        }
+    } else {
+        // Evict the cache entry only if the default prim-level locator is
+        // dirty.
+        //
+        for (const HdSceneIndexObserver::DirtiedPrimEntry &entry : entries) {
+            if (entry.dirtyLocators.Contains(
+                    HdDataSourceLocator::EmptyLocator())) {
+
+                const _PrimTable::iterator i = _prims.find(entry.primPath);
+                if (i != _prims.end() && i->second) {
+                    WorkSwapDestroyAsync(i->second->dataSource);
+                    i->second = std::nullopt;
+                }
             }
         }
     }
