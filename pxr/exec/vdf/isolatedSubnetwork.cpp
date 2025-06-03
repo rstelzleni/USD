@@ -144,7 +144,7 @@ VdfIsolatedSubnetwork::AddIsolatedBranch(
         _TraverseBranch(c, filter);
     }
     
-    _nodes.insert(node);
+    _nodes.push_back(node);
 
     return true;
 }
@@ -185,23 +185,19 @@ VdfIsolatedSubnetwork::_CanTraverse(
 
     // Find or emplace an entry in the map where we store the number of
     // remaining unisolated output connections for each visited node.
-    const auto it = [&] {
-        if (const auto findIt = _unisolatedOutputConnections.find(&sourceNode);
-            findIt != _unisolatedOutputConnections.end()) {
-            return findIt;
+    const auto [it, emplaced] =
+        _unisolatedOutputConnections.try_emplace(
+            VdfNode::GetIndexFromId(sourceNode.GetId()));
+    int& count = it.value();
+    if (emplaced) {
+        for (const auto &[_, output] : sourceNode.GetOutputsIterator()) {
+            count += output->GetNumConnections();
         }
-
-        const auto [emplacedIt, emplaced] =
-            _unisolatedOutputConnections.emplace(
-                &sourceNode,
-                static_cast<int>(sourceNode.GetOutputConnections().size()));
-        return emplacedIt;
-    }();
+    }
 
     // Decrement to account for the output connection we just traversed to get
     // to this node. If the new count is zero, the node is isolated and we can
     // continue traversing.
-    int &count = it.value();
     --count;
     TF_VERIFY(count >= 0);
     return count == 0;
@@ -235,10 +231,7 @@ VdfIsolatedSubnetwork::_TraverseBranch(
 
         // Once _CanTraverse returns true to indicate that a node is isolated,
         // we will never re-visit that node again.
-        const bool nodeInserted = _nodes.insert(&sourceNode).second;
-        if (!TF_VERIFY(nodeInserted)) {
-            return;
-        }
+        _nodes.push_back(&sourceNode);
 
         // Push the connections onto the stack in reverse order, so that
         // on the next iteration, the first connection is the top of the

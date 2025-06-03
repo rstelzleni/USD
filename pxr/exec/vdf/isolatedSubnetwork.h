@@ -17,6 +17,8 @@
 #include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/types.h"
 
+#include <vector>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 class VdfNode;
@@ -49,9 +51,6 @@ public:
 
     VDF_API
     ~VdfIsolatedSubnetwork();
-
-    /// A set of isolated nodes.
-    using NodeSet = pxr_tsl::robin_set<VdfNode *, TfHash>;
 
     /// A set of isolated connections.
     using ConnectionSet = pxr_tsl::robin_set<VdfConnection *, TfHash>;
@@ -146,7 +145,7 @@ public:
     void RemoveIsolatedObjectsFromNetwork();
 
     /// Returns the set of isolated nodes.
-    const NodeSet &GetIsolatedNodes() const {
+    const std::vector<VdfNode *> &GetIsolatedNodes() const {
         return _nodes;
     }
 
@@ -174,7 +173,7 @@ private:
     VdfNetwork *_network;
 
     // The set of isolated nodes.
-    NodeSet _nodes;
+    std::vector<VdfNode *> _nodes;
     
     // The set of isolated connections.
     ConnectionSet _connections;
@@ -182,7 +181,7 @@ private:
     // Used to keep track of the number of remaining output connections for a
     // given node that have not yet been determined to be part of the isolated
     // subnetwork.
-    pxr_tsl::robin_map<const VdfNode *, int>
+    pxr_tsl::robin_map<VdfIndex, int>
     _unisolatedOutputConnections;
 
     // Flag that indicates whether or not RemoveIsolatedObjectsFromNetwork has
