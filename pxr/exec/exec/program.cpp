@@ -69,10 +69,9 @@ public:
         // thread-safe.
         _program->_compiledOutputCache.EraseByNodeId(node->GetId());
 
-        // Only update the CompiledLeafNodeCache if the deleted node looks
-        // like a leaf node.
-        if (node->GetNumOutputs() == 0) {
-            _program->_compiledLeafNodeCache.WillDeleteNode(node);
+        // Update the CompiledLeafNodeCache if the deleted node is a leaf node.
+        if (const EfLeafNode *const leafNode = EfLeafNode::AsALeafNode(node)) {
+            _program->_compiledLeafNodeCache.WillDeleteNode(leafNode);
         }
 
         // Unregister this node if it is an attribute input node.

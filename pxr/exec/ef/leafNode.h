@@ -44,6 +44,26 @@ public:
         return node.GetNumOutputs() == 0 && node.IsA<EfLeafNode>();
     }
 
+    /// If \p node is an EfLeafNode, returns a pointer to it as an EfLeafNode*.
+    /// Otherwise, return nullptr.
+    ///
+    static EfLeafNode* AsALeafNode(VdfNode *const node) {
+        if (node && node->GetNumInputs() == 0) {
+            return dynamic_cast<EfLeafNode *>(node);
+        }
+        return nullptr;
+    }
+
+    /// If \p node is an EfLeafNode, returns a pointer to it as a const
+    /// EfLeafNode*. Otherwise, return nullptr.
+    ///
+    static const EfLeafNode* AsALeafNode(const VdfNode *const node) {
+        if (node && node->GetNumInputs() == 0) {
+            return dynamic_cast<const EfLeafNode *>(node);
+        }
+        return nullptr;
+    }
+
     /// Returns the single output the leaf node sources its value from. Returns
     /// \c nullptr if the leaf node is not connected.
     ///

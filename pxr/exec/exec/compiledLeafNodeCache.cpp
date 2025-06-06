@@ -47,7 +47,7 @@ Exec_CompiledLeafNodeCache::Insert(
 }
 
 void
-Exec_CompiledLeafNodeCache::WillDeleteNode(const VdfNode *const node)
+Exec_CompiledLeafNodeCache::WillDeleteNode(const EfLeafNode *const node)
 {
     const _ReverseTable::iterator reverseTableIter = _reverseTable.find(node);
     if (reverseTableIter == _reverseTable.end()) {

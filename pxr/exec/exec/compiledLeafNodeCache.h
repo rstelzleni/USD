@@ -48,14 +48,14 @@ public:
     ///
     void Insert(const ExecValueKey &valueKey, const EfLeafNode *leafNode);
 
-    /// Notifies the cache that \p node is being deleted.
+    /// Notifies the cache that \p leafNode is being deleted.
     ///
-    /// Entries mapping to \p node will be removed from the cache.
+    /// Entries mapping to \p leafNode will be removed from the cache.
     ///
     /// \note
     /// This method is not thread safe.
     ///
-    void WillDeleteNode(const VdfNode *node);
+    void WillDeleteNode(const EfLeafNode *leafNode);
 
 private:
     // ExecValueKey cannot be used as a key in tbb::concurrent_unordered_map
@@ -100,7 +100,7 @@ private:
     // Maps leaf nodes back to their _CacheKeys. This is needed to clean up
     // entries when leaf nodes are deleted.
     using _ReverseTable =
-        tbb::concurrent_unordered_map<const VdfNode *, _CacheKey, TfHash>;
+        tbb::concurrent_unordered_map<const EfLeafNode *, _CacheKey, TfHash>;
     _ReverseTable _reverseTable;
 };
 
