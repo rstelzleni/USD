@@ -67,8 +67,8 @@ public:
     /// 
     /// This method will increment the dependency count of the \p task, if the
     /// output key has already been claimed and \p task needs to wait for the
-    /// results. Once the task is done, the \p task will be notified by
-    /// decrementing its dependency count, and if it reaches zero the \p task
+    /// results. Once the dependency is fulfilled, the \p task will be notified
+    /// by decrementing its dependency count, and if it reaches zero the \p task
     /// will automatically be spawned.
     ///
     ClaimResult Claim(
