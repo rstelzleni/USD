@@ -1069,7 +1069,15 @@ _Sampler::_UnrollInnerLoops()
         --preBegin;
     }
 
-    postEnd = std::upper_bound(preBegin, timesEnd, _timeInterval.GetMax());
+    // Find the knot at or after the end of _timeInterval. This is the knot on
+    // the far end of the last segment we are sampling (or is timesEnd if we're
+    // sampling past the last knot).
+    postEnd = std::lower_bound(preBegin, timesEnd, _timeInterval.GetMax());
+    if (postEnd != timesEnd) {
+        // Increment the iterator so copying [preBegin .. postEnd) will copy the
+        // last knot.
+        ++postEnd;
+    }
 
     if (loopedInterval.IsEmpty()) {
         // Even if there are inner loops, we're not interested in

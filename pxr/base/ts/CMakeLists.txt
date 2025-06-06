@@ -203,6 +203,7 @@ pxr_build_test(
 
 pxr_test_scripts(
     testenv/testTsDerivatives.py
+    testenv/testTsBugs.py
     testenv/testTsRegressionPreventer.py
     testenv/testTsSplineAPIPy.py
     testenv/testTsSplineValueBlock.py
@@ -229,6 +230,12 @@ pxr_register_test(
     testTsDerivatives
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testTsDerivatives"
+)
+
+pxr_register_test(
+    testTsBugs
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testTsBugs"
 )
 
 pxr_register_test(
