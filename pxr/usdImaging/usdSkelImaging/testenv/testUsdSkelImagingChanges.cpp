@@ -133,12 +133,47 @@ SkelAnimUpdateTest()
     errorMark.Clear();
 }
 
+static void
+SkinnedMeshInvalidationTest()
+{
+    std::cout << "-------------------------------------------------------\n";
+    std::cout << "SkinnedMeshInvalidationTest\n";
+    std::cout << "-------------------------------------------------------\n";
+
+    const std::string usdPath = "skinning.usda";
+    UsdStageRefPtr stage = UsdStage::Open(usdPath);
+    TF_AXIOM(stage);
+    
+    // Bring up Hydra
+    Hd_UnitTestNullRenderDelegate renderDelegate;
+    std::unique_ptr<HdRenderIndex>
+        renderIndex(HdRenderIndex::New(&renderDelegate, HdDriverVector()));
+    auto delegate = std::make_unique<UsdImagingDelegate>(renderIndex.get(),
+                               SdfPath::AbsoluteRootPath());
+    delegate->Populate(stage->GetPseudoRoot());
+    delegate->ApplyPendingUpdates();
+    delegate->SyncAll(true);
+
+    // Deactivate and reactivate prim
+    UsdPrim skinningPrim = stage->GetPrimAtPath(SdfPath("/Root/Skinning"));
+    TF_AXIOM(skinningPrim);
+
+    skinningPrim.SetActive(false);
+    delegate->ApplyPendingUpdates();
+    delegate->SyncAll(true);
+
+    skinningPrim.SetActive(true);
+    delegate->ApplyPendingUpdates();
+    delegate->SyncAll(true);
+}
+
 int main()
 {
     TfErrorMark mark;
 
     SwitchBoundMaterialTest();
     SkelAnimUpdateTest();
+    SkinnedMeshInvalidationTest();
 
     if (TF_AXIOM(mark.IsClean())) {
         std::cout << "OK" << std::endl;
