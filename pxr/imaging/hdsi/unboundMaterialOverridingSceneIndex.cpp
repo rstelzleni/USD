@@ -12,7 +12,10 @@
 #include "pxr/imaging/hd/sceneIndexPrimView.h"
 #include "pxr/imaging/hd/tokens.h"
 
+#include "pxr/base/work/loops.h"
 #include "pxr/base/trace/trace.h"
+
+#include "tbb/concurrent_vector.h"
 
 #include <algorithm>
 
@@ -44,7 +47,7 @@ _GetMaterialBindingPurposes(
 
 bool
 _Contains(
-    const SdfPathSet &paths,
+    const std::unordered_set<SdfPath, SdfPath::Hash> &paths,
     const SdfPath &primPath)
 {
     return paths.find(primPath) != paths.end();
@@ -110,11 +113,10 @@ HdsiUnboundMaterialOverridingSceneIndex::GetPrim(
     HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(primPath);
 
     if (prim.primType == HdPrimTypeTokens->material &&
-        _IsUnboundMaterial(primPath)) {
-        
+        !_IsBoundMaterial(primPath)) {
         // Clear just the prim container. Note that we don't clear the prim type
-        // because this simplifies the tracking state necessary and reduces the
-        // processing necessary in the notice handlers.
+        // because this simplifies the processing necessary in the notice 
+        // handlers.
         prim.dataSource = nullptr;
     }
 
@@ -137,31 +139,75 @@ HdsiUnboundMaterialOverridingSceneIndex::_PrimsAdded(
 {    
     TRACE_FUNCTION();
 
-    // This can be parallelized if necessary.
-    for (const HdSceneIndexObserver::AddedPrimEntry &entry : entries) {
-        if (entry.primType.IsEmpty()) {
-            // Ignore bindings on intermediate prims (like scopes and xforms) 
-            // for whom material bindings are not relevant but present from
-            // flattening.
-            continue;
-        }
-        if (entry.primType == HdPrimTypeTokens->material) {
-            // Since we don't clear the prim type for unbound materials,
-            // we don't need special processing for material notices.
-            continue;
-        }
-        
-        const HdSceneIndexPrim prim =
-            _GetInputSceneIndex()->GetPrim(entry.primPath);
-
-        const SdfPathVector materialPaths =
-            _GetBoundMaterialPaths(prim.dataSource, _bindingPurposes);
-
-        _boundMaterialPaths.insert(
-            materialPaths.begin(), materialPaths.end());
+    using _ConcurrentPathVector = tbb::concurrent_vector<SdfPath>;
+    _ConcurrentPathVector addedMaterialPaths;
+    _ConcurrentPathVector boundMaterialPaths;
+    // Querying each prim to get the material bindings can be expensive, so we
+    // parallelize the processing of the entries.
+    {
+        TRACE_FUNCTION_SCOPE("Parallel notice processing");
+        WorkParallelForN(
+            entries.size(),
+            [&](size_t begin, size_t end) {
+                for (size_t i = begin; i < end; ++i) {
+                    const auto &entry = entries[i];
+                    
+                    if (entry.primType.IsEmpty()) {
+                        // Ignore bindings on intermediate prims (like scopes 
+                        // and xforms) for whom material bindings are not 
+                        // relevant but present from flattening.
+                        continue;
+                    }
+                    if (entry.primType == HdPrimTypeTokens->material) {
+                        addedMaterialPaths.push_back(entry.primPath);
+                        continue;
+                    }
+    
+                    const HdSceneIndexPrim prim =
+                        _GetInputSceneIndex()->GetPrim(entry.primPath);
+    
+                    const SdfPathVector materialPaths =
+                        _GetBoundMaterialPaths(
+                            prim.dataSource, _bindingPurposes);
+    
+                    // concurrent_vector is not thread-safe for range insertion.
+                    for (const SdfPath &materialPath : materialPaths) {
+                        boundMaterialPaths.push_back(materialPath);
+                    }
+                }
+            });
+    }
+    
+    if (boundMaterialPaths.empty() && addedMaterialPaths.empty()) {
+        // No materials or prims with bindings were added.
+        _SendPrimsAdded(entries);
+        return;
     }
 
+    HdSceneIndexObserver::DirtiedPrimEntries newlyBoundEntries;
+    
+    std::unordered_set<SdfPath, SdfPath::Hash> boundMaterialPathsSet(
+        boundMaterialPaths.begin(), boundMaterialPaths.end());
+
+    // Invalidate material prims that were added but never bound (until now).
+    for (const SdfPath &materialPath : boundMaterialPathsSet) {
+        if (!_IsBoundMaterial(materialPath) &&
+            _IsTrackedMaterial(materialPath)) {
+            newlyBoundEntries.push_back(
+                {materialPath, HdDataSourceLocatorSet::UniversalSet()});
+        }
+    }
+
+    // Update our tracking set of bound materials.
+    _boundMaterialPaths.insert(
+        boundMaterialPathsSet.begin(), boundMaterialPathsSet.end());
+
+    // Update our tracking set of all material paths.
+    _allMaterialPaths.insert(
+        addedMaterialPaths.begin(), addedMaterialPaths.end());
+
     _SendPrimsAdded(entries);
+    _SendPrimsDirtied(newlyBoundEntries);
 }
 
 void
@@ -169,8 +215,11 @@ HdsiUnboundMaterialOverridingSceneIndex::_PrimsRemoved(
     const HdSceneIndexBase &sender,
     const HdSceneIndexObserver::RemovedPrimEntries &entries)
 {
-    // We could update our tracking to erase bound material paths that have been
-    // removed. For now, keep it simple and do nothing.
+    for (const HdSceneIndexObserver::RemovedPrimEntry &entry : entries) {
+        _allMaterialPaths.erase(entry.primPath);
+        _boundMaterialPaths.erase(entry.primPath);
+   }
+
     _SendPrimsRemoved(entries);
 }
 
@@ -182,8 +231,8 @@ HdsiUnboundMaterialOverridingSceneIndex::_PrimsDirtied(
     TRACE_FUNCTION();
     
     // Below, we check if the material binding locators have changed and update
-    // our tracking set of bound materials.
-    // We don't suppress the notices for unbound materials.
+    // our tracking set of bound materials and invalidate newly bound materials
+    // we've seen before similar to the logic in _PrimsAdded.
     //
     size_t i = 0;
 
@@ -219,14 +268,13 @@ HdsiUnboundMaterialOverridingSceneIndex::_PrimsDirtied(
                 _GetBoundMaterialPaths(prim.dataSource, _bindingPurposes);
 
             for (const SdfPath &materialPath : materialPaths) {
-                if (_IsUnboundMaterial(materialPath)) {
-                    // This material was not bound before and so its prim
-                    // query would have returned an empty prim container.
-                    // Invalidate the prim to trigger a re-query...
-                    newlyBoundEntries.push_back(
-                        {materialPath, HdDataSourceLocatorSet::UniversalSet()});
+                if (!_IsBoundMaterial(materialPath)) {
+                    if (_IsTrackedMaterial(materialPath)) {
+                        newlyBoundEntries.push_back(
+                            {materialPath,
+                            HdDataSourceLocatorSet::UniversalSet()});
+                    }
                     
-                    // ... and update our tracking set of bound materials.
                     _boundMaterialPaths.insert(materialPath);
                 }
             }
@@ -322,10 +370,17 @@ HdsiUnboundMaterialOverridingSceneIndex::_PopulateFromInputSceneIndex()
 }
 
 bool
-HdsiUnboundMaterialOverridingSceneIndex::_IsUnboundMaterial(
+HdsiUnboundMaterialOverridingSceneIndex::_IsBoundMaterial(
     const SdfPath &primPath) const
 {
-    return !_Contains(_boundMaterialPaths, primPath);
+    return _Contains(_boundMaterialPaths, primPath);
+}
+
+bool
+HdsiUnboundMaterialOverridingSceneIndex::_IsTrackedMaterial(
+    const SdfPath &primPath) const
+{
+    return _Contains(_allMaterialPaths, primPath);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

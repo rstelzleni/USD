@@ -16,6 +16,8 @@
 #include "pxr/usd/sdf/path.h"
 #include "pxr/base/vt/array.h"
 
+#include <unordered_set>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 #define HDSI_UNBOUND_MATERIAL_OVERRIDING_SCENE_INDEX_TOKENS \
@@ -82,11 +84,14 @@ private:
     // discover and invalidate unbound materials.
     void _PopulateFromInputSceneIndex();
 
-    bool _IsUnboundMaterial(const SdfPath &primPath) const;
-    
+    bool _IsBoundMaterial(const SdfPath &primPath) const;
+    bool _IsTrackedMaterial(const SdfPath &primPath) const;
+
     const VtArray<TfToken> _bindingPurposes;
     const HdDataSourceLocatorSet _bindingLocators;
-    SdfPathSet _boundMaterialPaths;
+
+    std::unordered_set<SdfPath, SdfPath::Hash> _allMaterialPaths;
+    std::unordered_set<SdfPath, SdfPath::Hash> _boundMaterialPaths;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
