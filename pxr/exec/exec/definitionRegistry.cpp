@@ -282,6 +282,15 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
         return;
     }
 
+    if (_IsComputationRegistrationComplete(schemaType)) {
+        TF_CODING_ERROR(
+            "Attempt to register computation '%s' for schema %s, for which "
+            "computation registration has already been completed.",
+            computationName.GetText(),
+            schemaType.GetTypeName().c_str());
+        return;
+    }
+
     if (TfStringStartsWith(
             computationName.GetString(),
             Exec_BuiltinComputations::builtinComputationNamePrefix)) {
@@ -453,7 +462,16 @@ struct _ExecPluginData {
         for (const auto& [schemaName, value] : schemas) {
             const TfType schemaType = TfType::FindByName(schemaName);
             if (TF_VERIFY(!schemaType.IsUnknown())) {
-                execSchemaPlugins.emplace(schemaType, plugin);
+                const auto [it, emplaced] =
+                    execSchemaPlugins.emplace(schemaType, plugin);
+                if (!emplaced) {
+                    TF_CODING_ERROR(
+                        "Plugin '%s' defines computations for schema %s, "
+                        "which already has computations defined in plugin '%s'",
+                        plugin->GetName().c_str(),
+                        schemaType.GetTypeName().c_str(),
+                        it->second->GetName().c_str());
+                }
             }
         }
     }
@@ -518,17 +536,19 @@ Exec_DefinitionRegistry::_EnsurePluginComputationsLoaded(
     return false;
 }
 
+bool
+Exec_DefinitionRegistry::_IsComputationRegistrationComplete(
+    const TfType schemaType)
+{
+    return _computationsRegisteredForSchema.find(schemaType)
+        != _computationsRegisteredForSchema.end();
+}
+
 void
 Exec_DefinitionRegistry::_SetComputationRegistrationComplete(
     const TfType schemaType)
 {
-    const bool emplaced =
-        _computationsRegisteredForSchema.emplace(schemaType, true).second;
-    if (!emplaced) {
-        TF_CODING_ERROR(
-            "Duplicate registrations of plugin computations for schema %s.",
-            schemaType.GetTypeName().c_str());
-    }
+    _computationsRegisteredForSchema.emplace(schemaType, true).second;
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

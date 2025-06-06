@@ -28,13 +28,19 @@ class DerivedCustomSchema "DerivedCustomSchema" (
 {
 }
 
-class CustomSchema "PluginComputationSchema" (
+class PluginComputationSchema "PluginComputationSchema" (
     inherits = </Typed>
 )
 {
 }
 
-class CustomSchema "ExtraPluginComputationSchema" (
+class ExtraPluginComputationSchema "ExtraPluginComputationSchema" (
+    inherits = </Typed>
+)
+{
+}
+
+class ConflictingPluginRegistrationSchema "ConflictingPluginRegistrationSchema" {
     inherits = </Typed>
 )
 {

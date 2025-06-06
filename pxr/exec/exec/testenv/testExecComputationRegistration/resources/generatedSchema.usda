@@ -15,7 +15,10 @@ class DerivedCustomSchema "PluginComputationSchema"
 {
 }
 
-class DerivedCustomSchema "ExtraPluginComputationSchema"
+class ExtraPluginComputationSchema "ExtraPluginComputationSchema"
 {
 }
 
+class ConflictingPluginRegistrationSchema "ConflictingPluginRegistrationSchema"
+{
+}

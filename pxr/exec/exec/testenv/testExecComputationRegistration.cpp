@@ -166,18 +166,30 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestNamespacedSchemaType)
         }                                                               \
      }()
 
-// RAII class that verifies the expected number of errors is emitted during the
-// lifetime of the object and that the commentary matches the expected error
-// strings.
+// RAII class that verifies the expected errors is emitted during the lifetime
+// of the object and that the commentary matches the expected error strings.
+//
 class ExpectedErrors {
 public:
-    ExpectedErrors(const std::set<std::string> &expectedErrors)
+
+    explicit ExpectedErrors(const size_t numErrors)
+        : _numErrors(numErrors)
+    {
+    }
+
+    explicit ExpectedErrors(const std::set<std::string> &expectedErrors)
         : _expectedErrors(expectedErrors)
+        , _numErrors(_expectedErrors.size())
     {
     }
 
     ~ExpectedErrors() {
         const size_t numErrors = std::distance(_mark.begin(), _mark.end());
+
+        if (_expectedErrors.empty() && numErrors == _numErrors) {
+            return;
+        }
+
         ASSERT_EQ(numErrors, _expectedErrors.size());
 
         std::set<std::string> errors;
@@ -216,6 +228,7 @@ public:
 
 private:
     const std::set<std::string> _expectedErrors;
+    const size_t _numErrors;
     TfErrorMark _mark;
 };
 
@@ -311,6 +324,33 @@ TestStageBuiltinComputationOnPrim()
         reg.GetComputationDefinition(
             *prim, ExecBuiltinComputations->computeTime, nullJournal);
     TF_AXIOM(!primCompDef);
+}
+
+// This must be the first test case to be run that attempts to look for plugin
+// computations on a known schema type, in order of this case to be the one
+// that causes the expected error to be emitted.
+//
+static void
+TestConflictingPluginSchemaComputationRegistration()
+{
+    ExpectedErrors expected(1);
+
+    EsfJournal *const nullJournal = nullptr;
+    const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+    const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def ConflictingPluginRegistrationSchema "Prim"
+        {
+        }
+    )usd");
+    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+    TF_AXIOM(prim->IsValid(nullJournal));
+
+    const Exec_ComputationDefinition *const primCompDef =
+        reg.GetComputationDefinition(
+            *prim,
+            TfToken("conflictingRegistrationComputation"),
+            nullJournal);
+    TF_AXIOM(primCompDef);
 }
 
 static void
@@ -557,6 +597,10 @@ TestPluginSchemaComputationRegistration()
         {
         }
 
+        def CustomSchema "NonPluginPrim"
+        {
+        }
+
         def ExtraPluginComputationSchema "ExtraPrim"
         {
         }
@@ -566,11 +610,13 @@ TestPluginSchemaComputationRegistration()
 
     {
         ExpectedErrors expected({
-            "Duplicate registrations of plugin computations for schema "
-            "TestExecComputationRegistrationCustomSchema."
+            "Attempt to register computation 'unregisteredComputation' for "
+            "schema TestExecComputationRegistrationCustomSchema, for which "
+            "computation registration has already been completed."
         });
 
-        // Look up a computation registered in a plugin.
+        // Look up a computation registered in a plugin, causing the plugin to
+        // be loaded.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
                 *prim, TfToken("myComputation"), nullJournal);
@@ -579,6 +625,20 @@ TestPluginSchemaComputationRegistration()
         const auto inputKeys =
             primCompDef->GetInputKeys(*prim, nullJournal);
         ASSERT_EQ(inputKeys->Get().size(), 2);
+
+        {
+            // Make sure we *don't* find the computation that the plugin
+            // attempted to register on CustomSchema, for which computations were
+            // already registered.
+            const EsfPrim prim =
+                stage->GetPrimAtPath(SdfPath("/NonPluginPrim"), nullJournal);
+            TF_AXIOM(prim->IsValid(nullJournal));
+
+            const Exec_ComputationDefinition *const primDef =
+                reg.GetComputationDefinition(
+                    *prim, TfToken("unregisteredComputation"), nullJournal);
+            TF_AXIOM(!primDef);
+        }
     }
 
     {
@@ -619,13 +679,12 @@ _SetupTestPlugins()
     const std::string pluginPath =
         TfStringCatPaths(
             TfGetPathName(ArchGetExecutablePath()),
-            "ExecPlugins/lib/TestExecPluginComputation*/Resources/") + "/";
+            "ExecPlugins/lib/TestExec*/Resources/") + "/";
 
     const PlugPluginPtrVector plugins =
         PlugRegistry::GetInstance().RegisterPlugins(pluginPath);
     
-    ASSERT_EQ(plugins.size(), 1);
-    ASSERT_EQ(plugins[0]->GetName(), "TestExecPluginComputation");
+    ASSERT_EQ(plugins.size(), 3);
 }
 
 int main()
@@ -645,6 +704,7 @@ int main()
     TestRegistrationErrors();
     TestUnknownSchemaType();
     TestStageBuiltinComputationOnPrim();
+    TestConflictingPluginSchemaComputationRegistration();
     TestComputationRegistration();
     TestDerivedSchemaComputationRegistration();
     TestPluginSchemaComputationRegistration();

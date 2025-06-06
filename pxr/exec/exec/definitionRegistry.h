@@ -21,7 +21,7 @@
 #include "pxr/base/tf/type.h"
 #include "pxr/base/tf/weakBase.h"
 
-#include "tbb/concurrent_unordered_map.h"
+#include <tbb/concurrent_unordered_map.h>
 
 #include <memory>
 #include <set>
@@ -164,6 +164,11 @@ private:
         std::unique_ptr<Exec_ComputationDefinition> &&definition);
 
     void _RegisterBuiltinComputations();
+
+    // Returns true if plugin computation registration for \p schemaType is
+    // complete.
+    //
+    bool _IsComputationRegistrationComplete(const TfType schemaType);
 
     // Should be called when plugin computation registration for \p schemaType
     // is complete.

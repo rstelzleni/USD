@@ -85,12 +85,31 @@ pxr_library(exec
 pxr_build_test_shared_lib(TestExecPluginComputation
     INSTALL_PREFIX ExecPlugins
     LIBRARIES
-        gf
         tf
         exec
         
     CPPFILES
         testenv/TestExecPluginComputation.cpp
+)
+
+pxr_build_test_shared_lib(TestExecConflictingPluginRegistration1
+    INSTALL_PREFIX ExecPlugins
+    LIBRARIES
+        tf
+        exec
+        
+    CPPFILES
+        testenv/TestExecConflictingPluginRegistration1.cpp
+)
+
+pxr_build_test_shared_lib(TestExecConflictingPluginRegistration2
+    INSTALL_PREFIX ExecPlugins
+    LIBRARIES
+        tf
+        exec
+        
+    CPPFILES
+        testenv/TestExecConflictingPluginRegistration2.cpp
 )
 
 # Build tests
