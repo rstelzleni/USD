@@ -38,7 +38,7 @@ Node 1:
     Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Child>
     Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
-    Origin node:              9
+    Origin node:              7
     Sibling # at origin:      0
     Map to parent:
         / -> /
@@ -107,39 +107,13 @@ Node 3:
     Is restricted:            FALSE
     Is inert:                 TRUE
     Contribute specs:         FALSE
-        Restricted at depth:  2
+        Restricted at depth:  1
     Has specs:                TRUE
     Has symmetry:             FALSE
+
+
+
 Node 4:
-    Parent node:              3
-    Type:                     inherit
-    DependencyType:           partly-direct, virtual
-    Source path:              </PISI/Sibling>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
-    Target path:              </PIS/Sibling>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
-    Map to parent:
-        / -> /
-        /PISI -> /PIS
-    Map to root:
-        / -> /
-        /PISI -> /Parent
-        /PISI/Sibling -> /Parent/Child
-    Namespace depth:          1
-    Depth below introduction: 1
-    Is due to ancestor:       TRUE
-    Permission:               Public
-    Is restricted:            FALSE
-    Is inert:                 TRUE
-    Contribute specs:         FALSE
-        Restricted at depth:  2
-    Has specs:                TRUE
-    Has symmetry:             FALSE
-
-
-
-
-Node 5:
     Parent node:              0
     Type:                     inherit
     DependencyType:           ancestral, non-virtual
@@ -165,8 +139,8 @@ Node 5:
     Has symmetry:             FALSE
     Prim stack:
       </PI/Child> root.usda - @SpecializesAndAncestralArcs4/root.usda@
-Node 6:
-    Parent node:              5
+Node 5:
+    Parent node:              4
     Type:                     specialize
     DependencyType:           none
     Source path:              </PIS/Child>
@@ -189,34 +163,9 @@ Node 6:
         Restricted at depth:  1
     Has specs:                TRUE
     Has symmetry:             FALSE
-Node 7:
-    Parent node:              6
-    Type:                     inherit
-    DependencyType:           ancestral, virtual
-    Source path:              </PISI/Child>
-    Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
-    Target path:              </PIS/Child>
-    Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
-    Map to parent:
-        / -> /
-        /PISI -> /PIS
-    Map to root:
-        / -> /
-        /PISI -> /Parent
-    Namespace depth:          1
-    Depth below introduction: 1
-    Is due to ancestor:       TRUE
-    Permission:               Public
-    Is restricted:            FALSE
-    Is inert:                 TRUE
-    Contribute specs:         FALSE
-        Restricted at depth:  1
-    Has specs:                TRUE
-    Has symmetry:             FALSE
 
 
-
-Node 8:
+Node 6:
     Parent node:              0
     Type:                     reference
     DependencyType:           ancestral, non-virtual
@@ -240,8 +189,8 @@ Node 8:
     Has symmetry:             FALSE
     Prim stack:
       </PR/Child> ref.usda - @SpecializesAndAncestralArcs4/ref.usda@
-Node 9:
-    Parent node:              8
+Node 7:
+    Parent node:              6
     Type:                     inherit
     DependencyType:           non-virtual, partly-direct
     Source path:              </PR/Sibling>
@@ -268,7 +217,7 @@ Node 9:
       </PR/Sibling> ref.usda - @SpecializesAndAncestralArcs4/ref.usda@
 
 
-Node 10:
+Node 8:
     Parent node:              0
     Type:                     specialize
     DependencyType:           non-virtual, partly-direct
@@ -298,8 +247,8 @@ Node 10:
     Has symmetry:             FALSE
     Prim stack:
       </PIS/Sibling> root.usda - @SpecializesAndAncestralArcs4/root.usda@
-Node 11:
-    Parent node:              10
+Node 9:
+    Parent node:              8
     Type:                     inherit
     DependencyType:           non-virtual, partly-direct
     Source path:              </PISI/Sibling>
@@ -327,7 +276,7 @@ Node 11:
       </PISI/Sibling> root.usda - @SpecializesAndAncestralArcs4/root.usda@
 
 
-Node 12:
+Node 10:
     Parent node:              0
     Type:                     specialize
     DependencyType:           ancestral, non-virtual
@@ -335,7 +284,7 @@ Node 12:
     Source layer stack:       @SpecializesAndAncestralArcs4/root.usda@
     Target path:              </Parent/Child>
     Target layer stack:       @SpecializesAndAncestralArcs4/root.usda@
-    Origin node:              6
+    Origin node:              5
     Sibling # at origin:      0
     Map to parent:
         / -> /
@@ -355,8 +304,8 @@ Node 12:
     Has symmetry:             FALSE
     Prim stack:
       </PIS/Child> root.usda - @SpecializesAndAncestralArcs4/root.usda@
-Node 13:
-    Parent node:              12
+Node 11:
+    Parent node:              10
     Type:                     inherit
     DependencyType:           ancestral, non-virtual
     Source path:              </PISI/Child>

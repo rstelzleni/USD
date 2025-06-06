@@ -493,30 +493,48 @@ _HasSpecializesChildInSubtree(const PcpNodeRef & parent)
     return false;
 }
 
-// The implied specializes algorithm wants to start at the
-// most ancestral parent of the given node that is a specializes
-// arc, if such a node exists.
 static PcpNodeRef
-_FindStartingNodeForImpliedSpecializes(const PcpNodeRef& node)
+_GetPropagatedSpecializesNode(
+    const PcpNodeRef& node)
 {
-    PcpNodeRef specializesNode;
-    for (PcpNodeRef n = node, e = n.GetRootNode(); n != e; 
-         n = n.GetParentNode()) {
-        if (PcpIsSpecializeArc(n.GetArcType())) {
-            specializesNode = n;
+    if (!PcpIsSpecializeArc(node.GetArcType())) {
+        return PcpNodeRef();
+    }
+
+    // Optimization: specializes are the weakest composition arc, so
+    // specializes nodes should be at the end of the child range. Once
+    // we see a node with a different arc type we can stop looking.
+    TF_REVERSE_FOR_ALL(rootChildIt, Pcp_GetChildrenRange(node.GetRootNode())) {
+        const PcpNodeRef rootChild = *rootChildIt;
+        if (rootChild.GetArcType() < PcpArcTypeSpecialize) {
+            break;
+        }
+
+        if (rootChild.GetOriginNode() == node &&
+            Pcp_IsPropagatedSpecializesNode(rootChild)) {
+            return rootChild;
         }
     }
-    return specializesNode;
+    
+    return PcpNodeRef();
 }
 
 static bool
-_HasClassBasedChild(const PcpNodeRef & parent)
+_HasClassBasedChild(const PcpNodeRef & p)
 {
-    TF_FOR_ALL(child, Pcp_GetChildrenRange(parent)) {
-        if (PcpIsClassBasedArc((*child).GetArcType()))
-            return true;
+    auto check = [](const PcpNodeRef& parent) {
+        TF_FOR_ALL(child, Pcp_GetChildrenRange(parent)) {
+            if (PcpIsClassBasedArc((*child).GetArcType()))
+                return true;
+        }
+        return false;
+    };
+
+    if (const PcpNodeRef propagatedSpecializes =
+        _GetPropagatedSpecializesNode(p)) {
+        return check(propagatedSpecializes);
     }
-    return false;
+    return check(p);
 }
 
 // Given class-based node n, returns the 'starting' node where implied class
@@ -669,29 +687,25 @@ struct Task {
         EvalNodeReferences     = 1 << 2,
         EvalNodePayloads       = 1 << 3,
         EvalNodeInherits       = 1 << 4,
-        EvalImpliedClasses     = 1 << 5,
-        EvalNodeSpecializes    = 1 << 6,
+        EvalNodeSpecializes    = 1 << 5,
 
         // XXX: 
-        // These ancestral variant set tasks should come after the implied
-        // specializes task below so that specializes nodes are in the
-        // correct strength-ordered location in the index. However, this
-        // conflicts with the way we current duplicate node subtrees for
-        // specializes and is difficult to fix, so for now we leave this
-        // as-is. We can revisit this if/when we remove the node 
-        // duplication as part of making specializes handling more efficient.
-        // 
-        // The main effect is that ancestral variant selections authored
-        // in specializes nodes may have a stronger strength ordering than
-        // they should.
-        EvalNodeAncestralVariantSets      = 1 << 7,
-        EvalNodeAncestralVariantAuthored  = 1 << 8,
-        EvalNodeAncestralVariantFallback  = 1 << 9,
-        EvalNodeAncestralVariantNoneFound = 1 << 10,
+        // Should rename "implied specializes" to avoid confusion with
+        // "implied classes".
+        
+        // Implied specializes are handled before implied classes to maintain
+        // behavior when duplicate nodes are present in cases involving
+        // ancestral opinions. This is covered in testPcpPrimIndex in the
+        // test_PrimIndexCulling_SpecializesHierarchy test case.
+        EvalImpliedSpecializes = 1 << 6,
+        EvalImpliedClasses     = 1 << 7,
 
-        EvalNodeAncestralDynamicPayloads  = 1 << 11,
+        EvalNodeAncestralVariantSets      = 1 << 8,
+        EvalNodeAncestralVariantAuthored  = 1 << 9,
+        EvalNodeAncestralVariantFallback  = 1 << 10,
+        EvalNodeAncestralVariantNoneFound = 1 << 11,
 
-        EvalImpliedSpecializes            = 1 << 12,
+        EvalNodeAncestralDynamicPayloads  = 1 << 12,
 
         EvalNodeVariantSets               = 1 << 13,
         EvalNodeVariantAuthored           = 1 << 14,
@@ -1369,18 +1383,10 @@ struct Pcp_PrimIndexer
 
         if (tasks & Task::EvalImpliedSpecializes) {
             if (evaluateImpliedSpecializes) {
-                if (PcpNodeRef base = 
-                    _FindStartingNodeForImpliedSpecializes(n)) {
-                    // We're adding a new specializes node or a node beneath
-                    // a specializes node.  Add a task to propagate the subgraph
-                    // beneath this node to the appropriate location.
-                    AddTask(Task(Task::EvalImpliedSpecializes, base));
-                }
-                else if (_HasSpecializesChildInSubtree(n)) {
-                    // The new node is not a specializes node or beneath a
-                    // specializes node, but has specializes children. We also
-                    // need to propagate those children to the appropriate
-                    // location.
+                if (_HasSpecializesChildInSubtree(n)) {
+                    // The new node is a specializes node or has specializes
+                    // children. We need to propagate those children to the
+                    // root of the prim index.
                     AddTask(Task(Task::EvalImpliedSpecializes, n));
                 }
             }
@@ -1524,13 +1530,6 @@ _IsImpliedClassBasedArc(
     const PcpNodeRef &origin)
 {
     return PcpIsClassBasedArc(arcType) && parent != origin;
-}
-
-static bool
-_IsImpliedClassBasedArc(const PcpNodeRef& node)
-{
-    return _IsImpliedClassBasedArc(
-        node.GetArcType(), node.GetParentNode(), node.GetOriginNode());
 }
 
 // Check that no cycles are being introduced by adding this arc.
@@ -1938,6 +1937,12 @@ _AddArc(
 
     if (!evaluateAncestralVariantsAndDynamicPayloads) {
         tasks &= ~Task::AncestralVariantsAndDynamicPayloadTasks;
+    }
+
+    // If we did not evaluate ancestral opinions, there is no subtree
+    // to search for implied specializes so we can skip this task.
+    if (!opts.includeAncestralOpinions) {
+        tasks &= ~Task::EvalImpliedSpecializes;
     }
 
     // Enqueue tasks to evaluate the new nodes.
@@ -3110,6 +3115,16 @@ _DetermineInheritPath(
     }
 }
 
+// Forward declarations for helper functions for handling specializes arcs.
+static bool
+_IsRelocatesPlaceholderImpliedArc(
+    const PcpNodeRef& node);
+
+static PcpNodeRef
+_PropagateNodeToRoot(
+    PcpNodeRef srcNode,
+    Pcp_PrimIndexer* indexer);
+
 // A helper that adds a single class-based arc below the given parent,
 // returning the new node.  If the arc already exists, this
 // returns the existing node.
@@ -3197,6 +3212,49 @@ _AddClassBasedArc(
     }
 
     _ArcOptions opts;
+
+    // Specializes arcs need special handling to maintain the inert
+    // placeholder / propagated node structure described in the
+    // "Specializes" section below. Doing this here covers both
+    // direct and implied specializes arcs.
+    if (PcpIsSpecializeArc(arcType)) {
+        // Since the propagation step will copy any specializes nodes
+        // to be under the root node of the final prim index, we only
+        // want to add inert placeholders if the parent node is _not_
+        // that root node. 
+        //
+        // If we're in a recursive prim indexing call, the index we're
+        // currently computing will always be connected to another
+        // prim index via an arc. So, the parent not will never be
+        // the root node of the final prim index.
+        const bool addInertPlaceholder = 
+            !parent.IsRootNode() || indexer->previousFrame;
+
+        if (addInertPlaceholder) {
+            opts.directNodeShouldContributeSpecs = false;
+            opts.includeAncestralOpinions = false;
+            opts.tasks = Task::None;
+
+            PcpNodeRef placeholder = _AddArc(
+                indexer, arcType, parent, origin,
+                inheritSite, inheritMap, inheritArcNum, opts);
+
+            // If we're in a recursive prim indexing call, specializes
+            // nodes will be propagated to the root after the prim index
+            // we're computing is added to the final prim index via the
+            // EvalImpliedSpecializes task.
+            // 
+            // If we're _not_ in a recursive prim indexing call we can
+            // immediately do the propagation to avoid going the task
+            // overhead. See also _FindSpecializesToPropagateToRoot.
+            if (!indexer->previousFrame && placeholder &&
+                !_IsRelocatesPlaceholderImpliedArc(placeholder)) {
+                return _PropagateNodeToRoot(placeholder, indexer);
+            }
+
+            return placeholder;
+        }
+    }
 
     // The class-based arc may map this path un-changed. For example,
     // consider an implied inherit being propagated from under a
@@ -3400,7 +3458,15 @@ _EvalImpliedClassTree(
     //       a reference. The recursive call may cause more nodes to
     //       be added to the graph's node pool, which would invalidate
     //       the reference.
-    for (const PcpNodeRef& srcChild : Pcp_GetChildren(srcNode)) {
+    const PcpNodeRefVector srcChildren = [&srcNode]() {
+        if (const PcpNodeRef propagatedSpecializes =
+            _GetPropagatedSpecializesNode(srcNode)) {
+            return Pcp_GetChildren(propagatedSpecializes);
+        }
+        return Pcp_GetChildren(srcNode);
+    }();
+
+    for (const PcpNodeRef& srcChild : srcChildren) {
         // Skip everything that isn't a class-based arc.
         if (!PcpIsClassBasedArc(srcChild.GetArcType()))
             continue;
@@ -3464,16 +3530,28 @@ _EvalImpliedClassTree(
         // the implied class for srcChild, so we don't don't need to redo 
         // the work to process it.
         TF_FOR_ALL(destChildIt, Pcp_GetChildrenRange(destNode)) {
-            if (destChildIt->GetOriginNode() == srcChild && 
+            if (destChildIt->GetOriginNode() != srcChild ||
                 destChildIt->GetMapToParent().Evaluate() 
-                    == destClassFunc.Evaluate()) {
-                destChild = *destChildIt;
-
-                PCP_INDEXING_MSG(
-                    indexer, srcChild, destChild,
-                    "Found previously added implied inherit node");
-                break;
+                    != destClassFunc.Evaluate()) {
+                continue;
             }
+
+            // destChildIt may point to the propagated specializes node
+            // for srcChild. In that case, it is not a previously-implied
+            // node and treating it as such could cause valid implied
+            // opinions to be ignored. For one example of this, see the
+            // VariantSpecializesAndReferenceSurprisingBehavior museum
+            // case.
+            if (Pcp_IsPropagatedSpecializesNode(*destChildIt)) {
+                continue;
+            }
+
+            destChild = *destChildIt;
+
+            PCP_INDEXING_MSG(
+                indexer, srcChild, destChild,
+                "Found previously added implied inherit node");
+            break;
         }
 
         // Try to add this implied class.
@@ -3535,6 +3613,15 @@ _EvalImpliedClassTree(
                 destClassFunc.Inverse()
                 .Compose(transferFunc.Compose(srcChild.GetMapToParent()));
 
+            // If destChild is a specializes node, ensure we only add
+            // implied children to its corresponding propagated node to
+            // maintain the invariant that only propagated nodes have
+            // children.
+            if (PcpNodeRef propagatedDestChild =
+                _GetPropagatedSpecializesNode(destChild)) {
+                destChild = propagatedDestChild;
+            }
+
             _EvalImpliedClassTree(destChild, srcChild,
                                   childTransferFunc, 
                                   /* srcNodeIsStartOfTree = */ false,
@@ -3556,15 +3643,6 @@ _EvalImpliedClasses(
     // If this is the root node, there is no need to propagate classes.
     if (!node.GetParentNode())
         return;
-
-    // Do not allow inherits to propagate from beneath propagated
-    // specializes arcs.  These inherits need to be propagated from
-    // the origin of these specializes arcs -- this ensures the origin
-    // nodes of the propagated inherits have a consistent strength 
-    // ordering.  This is handled with the implied specializes task.
-    if (Pcp_IsPropagatedSpecializesNode(node)) {
-        return;
-    }
 
     // Optimization: early-out if there are no class arcs to propagate.
     if (!_HasClassBasedChild(node)) {
@@ -3635,164 +3713,60 @@ _EvalNodeSpecializes(
     _AddClassBasedArcs(node, specArcs, PcpArcTypeSpecialize, indexer);
 }
 
-static bool
-_IsNodeInSubtree(
-    const PcpNodeRef& node,
-    const PcpNodeRef& subtreeRoot)
-{
-    for (PcpNodeRef n = node; n; n = n.GetParentNode()) {
-        if (n == subtreeRoot) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static std::pair<PcpNodeRef, bool>
-_PropagateNodeToParent(
-    PcpNodeRef parentNode,
+static PcpNodeRef
+_PropagateNodeToRoot(
     PcpNodeRef srcNode,
-    bool skipImpliedSpecializes,
-    bool skipTasksForExpressedArcs,
-    const PcpMapExpression& mapToParent,
-    const PcpNodeRef& srcTreeRoot,
     Pcp_PrimIndexer* indexer)
 {
-    bool createdNewNode = false;
+    PcpNodeRef parentNode = srcNode.GetRootNode();
+    const PcpMapExpression& mapToParent = srcNode.GetMapToRoot();
 
-    PcpNodeRef newNode;
-    if (srcNode.GetParentNode() == parentNode) {
-        newNode = srcNode;
-    }
-    else {
-        newNode = _FindMatchingChild(
-            parentNode, parentNode.GetArcType(),
-            srcNode.GetSite(), srcNode.GetArcType(),
-            mapToParent, srcNode.GetDepthBelowIntroduction());
+    PcpNodeRef newNode = _FindMatchingChild(
+        parentNode, srcNode.GetArcType(),
+        srcNode.GetSite(), srcNode.GetArcType(),
+        mapToParent, srcNode.GetDepthBelowIntroduction());
 
-        if (!newNode) {
-            // Only propagate a node if it's a non-implied arc or if it's an
-            // implied arc whose origin is outside the subgraph we're 
-            // propagating. If this is an implied arc whose origin is
-            // within the subgraph, it will be handled when we evaluate
-            // implied class arcs on the subgraph being propagated.
-            if (!_IsImpliedClassBasedArc(srcNode) ||
-                !_IsNodeInSubtree(srcNode.GetOriginNode(), srcTreeRoot)) {
+    if (!newNode) {
+        _ArcOptions opts;
+        opts.skipDuplicateNodes = true;
+        opts.includeAncestralOpinions = !srcNode.GetPath().IsRootPrimPath();
 
-                const int namespaceDepth = 
-                    (srcNode == srcTreeRoot ?
-                        PcpNode_GetNonVariantPathElementCount(
-                            parentNode.GetPath()) :
-                        srcNode.GetNamespaceDepth());
-
-                const PcpNodeRef originNode = 
-                    (srcNode == srcTreeRoot || _IsImpliedClassBasedArc(srcNode) ?
-                        srcNode : parentNode);
-
-                _ArcOptions opts;
-                opts.directNodeShouldContributeSpecs = !srcNode.IsInert();
-                if (skipImpliedSpecializes) {
-                    // In this case, we only need to add tasks that come after
-                    // implied specializes.
-                    opts.tasks = Task::VariantsAndDynamicPayloadTasks;
-                }
-                else if (skipTasksForExpressedArcs) {
-                    opts.tasks = ~Task::ExpressedArcTasks;
-                }
-
-                newNode = _AddArc(
-                    indexer,
-                    srcNode.GetArcType(),
-                    /* parent = */ parentNode,
-                    /* origin = */ originNode,
-                    srcNode.GetSite(),
-                    mapToParent,
-                    srcNode.GetSiblingNumAtOrigin(),
-                    namespaceDepth,
-                    opts);
-
-                createdNewNode = static_cast<bool>(newNode);
-            }
-        }
+        newNode = _AddArc(
+            indexer,
+            srcNode.GetArcType(),
+            /* parent = */ parentNode,
+            /* origin = */ srcNode,
+            srcNode.GetSite(),
+            mapToParent,
+            srcNode.GetSiblingNumAtOrigin(),
+            opts);
 
         if (newNode) {
-            const size_t newNodeRestrictedDepth =
-                newNode.GetSpecContributionRestrictedDepth();
-
-            newNode.SetInert(srcNode.IsInert());
-            newNode.SetHasSymmetry(srcNode.HasSymmetry());
-            newNode.SetPermission(srcNode.GetPermission());
-            newNode.SetRestricted(srcNode.IsRestricted());
             newNode.SetIsDueToAncestor(srcNode.IsDueToAncestor());
-
-            // If we're propagating nodes to the origin, newNode may be a
-            // previously-existing node that was created during an ancestral
-            // round of implied specializes propagation. If that's the case,
-            // its restriction depth will be non-zero because it was marked
-            // inert at that time. However, the above calls may have now
-            // made that node not inert, resetting its restriction depth
-            // back to 0. When we propagate this node back to the root, we
-            // want to restore its restriction depth back to its original 
-            // value.
-            //
-            // To do this, we just record the original depth in srcNode.
-            // When we propagate this node to the origin, this saves the
-            // value away so it can be restored when we propagate the
-            // node back to the root.
-            //
-            // This is tested in the /Root/Child/Child test case of
-            // test_ContributionRestrictedDepth_Specializes in
-            // testPcpPrimIndex.py.
-            //
-            // XXX: 
-            // This is way too complicated but I think the only way to
-            // avoid this is to rethink the whole node propagation scheme
-            // for specializes.
-            srcNode.SetInert(true);
-            if (newNodeRestrictedDepth != 0) {
-                srcNode.SetSpecContributionRestrictedDepth(
-                    newNodeRestrictedDepth);
-            }
-        }
-        else {
-            _InertSubtree(srcNode);
         }
     }
 
-    return {newNode, createdNewNode};
+    return newNode;
 }
 
-static void
-_PropagateSpecializesTreeToRoot(
-    PcpNodeRef parentNode,
-    PcpNodeRef srcNode,
-    PcpNodeRef originNode,
-    const PcpMapExpression& mapToParent,
-    const PcpNodeRef& srcTreeRoot,
-    Pcp_PrimIndexer* indexer)
+// XXX:RelocatesSourceNodes: This node may be a placeholder 
+// implied arc under a relocation node that is only present 
+// to allow class-based arcs to be implied up the prim index. 
+// These placeholders are not valid sources of opinions, so
+// we can cut off our search for specializes to propagate.
+//
+// XXX:This function may not be needed since _EvalImpliedClassTree
+// skips propagating implied classes to relocates node.
+static bool
+_IsRelocatesPlaceholderImpliedArc(
+    const PcpNodeRef& node)
 {
-    // Make sure to skip implied specializes tasks for the propagated
-    // node. Otherwise, we'll wind up propagating this node back to
-    // its originating subtree, which will leave it inert. But we still want
-    // to queue the expressed arc tasks for the nodes we propagate to the root.
-    const bool skipImpliedSpecializes = true;
-    const bool skipTasksForExpressedArcs = false;
-
-    std::pair<PcpNodeRef, bool> newNode = _PropagateNodeToParent(
-        parentNode, srcNode,
-        skipImpliedSpecializes, skipTasksForExpressedArcs,
-        mapToParent, srcTreeRoot, indexer);
-    if (!newNode.first) {
-        return;
-    }
-
-    for (PcpNodeRef childNode : Pcp_GetChildren(srcNode)) {
-        if (!PcpIsSpecializeArc(childNode.GetArcType())) {
-            _PropagateSpecializesTreeToRoot(
-                newNode.first, childNode, newNode.first, 
-                childNode.GetMapToParent(), srcTreeRoot, indexer);
-        }
-    }
+    const PcpNodeRef parentNode = node.GetParentNode();
+    const bool nodeIsRelocatesPlaceholder =
+        parentNode != node.GetOriginNode() && 
+        parentNode.GetArcType() == PcpArcTypeRelocate &&
+        parentNode.GetSite() == node.GetSite();
+    return nodeIsRelocatesPlaceholder;
 }
 
 static void
@@ -3800,17 +3774,7 @@ _FindSpecializesToPropagateToRoot(
     PcpNodeRef node,
     Pcp_PrimIndexer* indexer)
 {
-    // XXX:RelocatesSourceNodes: This node may be a placeholder 
-    // implied arc under a relocation node that is only present 
-    // to allow class-based arcs to be implied up the prim index. 
-    // These placeholders are not valid sources of opinions, so
-    // we can cut off our search for specializes to propagate.
-    const PcpNodeRef parentNode = node.GetParentNode();
-    const bool nodeIsRelocatesPlaceholder =
-        parentNode != node.GetOriginNode() && 
-        parentNode.GetArcType() == PcpArcTypeRelocate &&
-        parentNode.GetSite() == node.GetSite();
-    if (nodeIsRelocatesPlaceholder) {
+    if (_IsRelocatesPlaceholderImpliedArc(node)) {
         return;
     }
 
@@ -3820,38 +3784,7 @@ _FindSpecializesToPropagateToRoot(
             "Propagating specializes arc %s to root", 
             Pcp_FormatSite(node.GetSite()).c_str());
 
-        // HACK: When we propagate specializes arcs from the root 
-        // to their origin in _PropagateArcsToOrigin, we will mark 
-        // them as inert=false. However, we will *not* do the same 
-        // for any of the implied specializes that originate from 
-        // that arc -- they will be left with inert=true.
-        // 
-        // If we wind up having to propagate these implied specializes
-        // back to the root, we will wind up copying the inert=true
-        // flag, which isn't what we want. Instead of trying to fix
-        // up the implied specializes in _PropagateArcsToOrigin,
-        // it's much simpler if we just deal with that here by forcing
-        // the specializes node to inert=false.
-        //
-        // The subsequent call to _PropagateSpecializesTreeToRoot will
-        // set this node back to inert=true, which will update its
-        // restriction depth. However, if this node was originally
-        // inert, we want to keep its original restriction depth.
-        // This is tested in the /Root/Child test case of
-        // test_ContributionRestrictedDepth_Specializes in testPcpPrimIndex.py.
-        const bool wasInert = node.IsInert();
-        const size_t oldDepth = node.GetSpecContributionRestrictedDepth();
-        if (wasInert) {
-            node.SetInert(false);
-        }
-
-        _PropagateSpecializesTreeToRoot(
-            node.GetRootNode(), node, node,
-            node.GetMapToRoot(), node, indexer);
-
-        if (wasInert) {
-            node.SetSpecContributionRestrictedDepth(oldDepth);
-        }
+        _PropagateNodeToRoot(node, indexer);
     }
 
     for (PcpNodeRef childNode : Pcp_GetChildren(node)) {
@@ -3859,64 +3792,8 @@ _FindSpecializesToPropagateToRoot(
     }
 }
 
-static void
-_PropagateArcsToOrigin(
-    PcpNodeRef parentNode,
-    PcpNodeRef srcNode,
-    const PcpMapExpression& mapToParent,
-    const PcpNodeRef& srcTreeRoot,
-    Pcp_PrimIndexer* indexer)
-{
-    // Don't skip implied specializes tasks as we propagate arcs back
-    // to the origin.  If one of the arcs we propagate back is another
-    // specializes arc, we need to ensure that arc is propagated back
-    // to the root later on.
-    //
-    // But we DO want to skip any expressed arc tasks as we propagate back to 
-    // the origin so that we can copy the whole subtree (including all direct 
-    // and ancestral arcs) without enqueing new tasks for the propagated nodes
-    // which could lead to duplicate tasks being queued up for the propagated
-    // subtree nodes and failed verifies later on.
-    // See SpecializesAndAncestralArcs museum cases.
-    const bool skipImpliedSpecializes = false;
-    const bool skipTasksForExpressedArcs = true;
-
-    std::pair<PcpNodeRef, bool> newNode = _PropagateNodeToParent(
-        parentNode, srcNode, skipImpliedSpecializes, skipTasksForExpressedArcs,
-        mapToParent, srcTreeRoot, indexer);
-    if (!newNode.first) {
-        return;
-    }
-
-    for (PcpNodeRef childNode : Pcp_GetChildren(srcNode)) {
-        _PropagateArcsToOrigin(
-            newNode.first, childNode, childNode.GetMapToParent(), 
-            srcTreeRoot, indexer);
-    }
-}
-
-static void
-_FindArcsToPropagateToOrigin(
-    const PcpNodeRef& node,
-    Pcp_PrimIndexer* indexer)
-{
-    TF_VERIFY(PcpIsSpecializeArc(node.GetArcType()));
-
-    for (PcpNodeRef childNode : Pcp_GetChildren(node)) {
-        PCP_INDEXING_MSG(
-            indexer, childNode, node.GetOriginNode(),
-            "Propagating arcs under %s to specializes origin %s", 
-            Pcp_FormatSite(childNode.GetSite()).c_str(),
-            Pcp_FormatSite(node.GetOriginNode().GetSite()).c_str());
-
-        _PropagateArcsToOrigin(
-            node.GetOriginNode(), childNode, childNode.GetMapToParent(),
-            node, indexer);
-    }
-}
-
 // Opinions from specializes arcs, including those that are implied across
-// other arcs, are always weaker than the target of those arcs.  Conceptually, 
+// other arcs, are always weaker than the target of those arcs. Conceptually,
 // this means that opinions from all specializes arcs (and any encapsulated
 // arcs) come after all other opinions.   
 // 
@@ -3932,22 +3809,15 @@ _FindArcsToPropagateToOrigin(
 // The intended strength ordering is for /Model/Instance is:
 //   [/Model/Instance, /Ref/Instance, /Model/Class, /Ref/Class].
 //
-// To achieve this, we propagate specializes subgraphs in the prim index
-// to the root of the graph.  Strength ordering will then place the
-// specializes arcs at the end of the graph, after all other arcs.
-//
-// We need to reverse this process when we discover additional arcs
-// beneath the specializes subgraphs that have been propagated to the
-// root.  This can happen if there are namespace children beneath the
-// source of a specializes arc with their own arcs.  This can also
-// happen if we discover variants after processing implied specializes.
-//
-// When we encounter this situation, the specializes subgraph is
-// propagated back to its origin.  The primary purpose of this is to
-// allow any implied arcs to be propagated to the necessary locations
-// using the already-existing mechanisms.  Once that's done,
-// the subgraph will be propagated back to the root.  
-// 
+// To achieve this, we propagate specializes nodes in the prim index
+// to the root of the graph. These nodes were previously added to the
+// prim index as inert placeholders to indicate where the arcs were
+// originally authored. The propagation step copies these nodes beneath
+// the root of the prim index. Strength ordering will then place these
+// propagated specializes nodes at the end of the graph, after all other
+// arcs. Any additional composition tasks will be done on the propagated
+// nodes. It is an invariant that only propagated specializes nodes may
+// have any children nodes.
 static void
 _EvalImpliedSpecializes(
     const PcpNodeRef& node,
@@ -3962,12 +3832,7 @@ _EvalImpliedSpecializes(
     if (!node.GetParentNode())
         return;
 
-    if (Pcp_IsPropagatedSpecializesNode(node)) {
-        _FindArcsToPropagateToOrigin(node, indexer);
-    }
-    else {
-        _FindSpecializesToPropagateToRoot(node, indexer);
-    }
+    _FindSpecializesToPropagateToRoot(node, indexer);
 }
 
 ////////////////////////////////////////////////////////////////////////

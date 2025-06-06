@@ -820,15 +820,11 @@ class TestPcpPrimIndex(unittest.TestCase):
                         (Pcp.ArcTypeReference, rootLayer, "/Ref/Instance"), [
                             # Specializes from /Ref/Instance -> /Ref/SpecA
                             (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA"), [
-                                # Specializes from /Ref/SpecA -> /Ref/SpecB
-                                (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecB"), []
                             ]
                         ],
 
                         # Implied specializes due to /Ref/Instance -> /Ref/SpecA
                         (Pcp.ArcTypeSpecialize, rootLayer, "/RefA/SpecA"), [
-                            (Pcp.ArcTypeSpecialize, rootLayer, "/RefA/SpecB"), [
-                            ]
                         ]
                     ],
 
@@ -838,10 +834,15 @@ class TestPcpPrimIndex(unittest.TestCase):
                     ],
 
                     # Propagated specializes due to implied /RefA/SpecA
-                    (Pcp.ArcTypeSpecialize, rootLayer, "/RefA/SpecA"), [],
+                    (Pcp.ArcTypeSpecialize, rootLayer, "/RefA/SpecA"), [
+                        (Pcp.ArcTypeSpecialize, rootLayer, "/RefA/SpecB"), []
+                    ],
 
                     # Propagated specializes due to /Ref/Instance -> /Ref/SpecA
-                    (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA"), [],
+                    (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA"), [
+                        # Specializes from /Ref/SpecA -> /Ref/SpecB
+                        (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecB"), [],
+                    ],
 
                     # Propagated specializes due to implied /Root/SpecB
                     (Pcp.ArcTypeSpecialize, rootLayer, "/Root/SpecB"), [],
@@ -865,18 +866,21 @@ class TestPcpPrimIndex(unittest.TestCase):
                     (Pcp.ArcTypeReference, rootLayer, "/RefA/Instance/Child"), [
                         # Reference from /RefA -> /Ref
                         (Pcp.ArcTypeReference, rootLayer, "/Ref/Instance/Child"), [
-                            # The propagated specializes subtree for
-                            # /Ref/SpecA/Child is culled, but the propagated subtree
-                            # for /Ref/SpecB/Child is not. That prevents the origin
-                            # subtree for /Ref/SpecA/Child from being culled.
-                            (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA/Child"), [
-                                (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecB/Child"), []
-                            ]
+                            # This placeholder node is not culled because it's
+                            # the origin for the propagated specializes node
+                            # for /Ref/SpecA/Child below.
+                            (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA/Child"), []
                         ],
                     ],
 
                     # Propagated specializes due to /Ref/SpecA -> /Ref/SpecB.
-                    (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA/Child"), [],
+                    (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecA/Child"), [
+                        # The propagated subtree /Ref/SpecB/Child is not culled.
+                        # That prevents this node from being culled, which
+                        # prevents the entire subtree for /Ref/SpecA/Child from
+                        # being culled.
+                        (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecB/Child"), []
+                    ],
 
                     # Propagated specializes due to /Ref/SpecA -> /Ref/SpecB.
                     (Pcp.ArcTypeSpecialize, rootLayer, "/Ref/SpecB/Child"), []

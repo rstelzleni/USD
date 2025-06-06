@@ -11,6 +11,7 @@ Prim Stack:
     root.usda            /element
     root.usda            /_element_class
     root.usda            /middleman
+    root.usda            /referencedMiddleman
     root.usda            /implementation
     root.usda            /implementation{testVariantSet=testVariant}
 
@@ -18,9 +19,11 @@ Variant Selections:
     {testVariantSet = testVariant}
 
 Property names:
-     ['variantAttr']
+     ['variantAttr', 'referencedAttr']
 
 Property stacks:
+/element.referencedAttr:
+    root.usda            /referencedMiddleman.referencedAttr
 /element.variantAttr:
     root.usda            /implementation{testVariantSet=testVariant}.variantAttr
 
@@ -53,13 +56,19 @@ Prim Stack:
     root.usda            /middleman
     root.usda            /referencedMiddleman
     root.usda            /implementation
+    root.usda            /implementation{testVariantSet=testVariant}
+
+Variant Selections:
+    {testVariantSet = testVariant}
 
 Property names:
-     ['referencedAttr']
+     ['variantAttr', 'referencedAttr']
 
 Property stacks:
 /middleman.referencedAttr:
     root.usda            /referencedMiddleman.referencedAttr
+/middleman.variantAttr:
+    root.usda            /implementation{testVariantSet=testVariant}.variantAttr
 
 ------------------------------------------------------------------------
 Results for composing </referencedMiddleman>

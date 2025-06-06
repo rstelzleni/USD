@@ -13,6 +13,7 @@
 #include "pxr/usd/pcp/layerStack.h"
 #include "pxr/usd/pcp/mapExpression.h"
 #include "pxr/usd/pcp/node_Iterator.h"
+#include "pxr/usd/pcp/utils.h"
 #include "pxr/base/trace/trace.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -1181,27 +1182,6 @@ _GetImpliedClassTreeSourceParent(const PcpNodeRef originNode) {
             break;
         }
 
-        // XXX: In the case where an inherit arc nested directly under a 
-        // specializes arc, we have a known issue where we can't reliably 
-        // determine the class structure due to bidirectional propagation of
-        // specializes nodes that can leave inherits nodes without origin nodes
-        // to help us jump between propagated and unpropagated sections of the
-        // tree. Since it would complex to fully determine implied class 
-        // relationships in this situation and we plan to change how we process
-        // speciliazes in prim indexes in the near future, we're just going to
-        // give up on this case with a warning for now.
-        if (originNode.GetArcType() == PcpArcTypeInherit &&
-            sourceParent.GetArcType() == PcpArcTypeSpecialize &&
-                _GetUnpropagatedSpecializesNode(sourceParent) != sourceParent) {
-            TF_WARN("Unable to fix specs for implied inherits for an inherit "
-                "node %s nested under the specializes node %s. This is a known "
-                "bug that we cannot correct find the implied inherit node to "
-                "fix in this scenario.",
-                TfStringify(originNode.GetSite()).c_str(),
-                TfStringify(sourceParent.GetSite()).c_str());
-            return PcpNodeRef();
-        }
-
         // A class based parent arc may still be the source parent if it is a
         // more ancestral arc than this class origin node. Class nodes that
         // are all introduced at the same namespace depth are implied as whole
@@ -1210,6 +1190,12 @@ _GetImpliedClassTreeSourceParent(const PcpNodeRef originNode) {
         if (originNode.GetDepthBelowIntroduction() < 
                sourceParent.GetDepthBelowIntroduction()) {
             break;
+        }
+
+        // If this is a propagated specializes node, we need to jump to
+        // the origin node to continue traversal to the next parent node.
+        if (Pcp_IsPropagatedSpecializesNode(sourceParent)) {
+            sourceParent = sourceParent.GetOriginNode();
         }
     }
 

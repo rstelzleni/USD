@@ -53,19 +53,20 @@ _GetOriginRootNode(const PcpNodeRef& node)
 static bool
 _OriginsAreNestedArcs(const PcpNodeRef& a, const PcpNodeRef& b)
 {
-    for (PcpNodeRef n = a; n; n = n.GetParentNode()) {
-        if (n == b) {
-            return true;
-        }
-    }
+    auto isNestedUnder = [](const PcpNodeRef& x, const PcpNodeRef& y)
+     {
+         for (PcpNodeRef n = x; n;) {
+             if (n == y) {
+                 return true;
+             }
 
-    for (PcpNodeRef n = b; n; n = n.GetParentNode()) {
-        if (n == a) {
-            return true;
-        }
-    }
+             n = Pcp_IsPropagatedSpecializesNode(n) ?
+                 n.GetOriginNode() : n.GetParentNode();
+         }
+         return false;
+    };
 
-    return false;
+    return isNestedUnder(a, b) || isNestedUnder(b, a);
 }
 
 // Returns the namespace depth of the node that inherits or specializes

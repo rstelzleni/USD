@@ -71,6 +71,7 @@ Prim Stack:
     root.usda            /element
     root.usda            /middleman
     root.usda            /implementation
+    root.usda            /implementation{testVariantSet=testVariant}
     root.usda            /_class_defaultVariantSelections
     root.usda            /_class_defaultVariantSelections{testVariantSet=testVariant}
 
@@ -78,9 +79,11 @@ Variant Selections:
     {testVariantSet = testVariant}
 
 Property names:
-     ['classVariantAttr']
+     ['classVariantAttr', 'variantAttr']
 
 Property stacks:
 /element.classVariantAttr:
     root.usda            /_class_defaultVariantSelections{testVariantSet=testVariant}.classVariantAttr
+/element.variantAttr:
+    root.usda            /implementation{testVariantSet=testVariant}.variantAttr
 
