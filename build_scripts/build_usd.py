@@ -997,11 +997,7 @@ if Windows():
     TBB_URL = "https://github.com/oneapi-src/oneTBB/releases/download/v2020.3/tbb-2020.3-win.zip"
     TBB_ROOT_DIR_NAME = "tbb"
 elif MacOS():
-    # On MacOS Intel systems we experience various crashes in tests during
-    # teardown starting with 2018 Update 2. Until we figure that out, we use
-    # 2018 Update 1 on this platform.
     TBB_URL = "https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2020.3.zip"
-    TBB_INTEL_URL = "https://github.com/oneapi-src/oneTBB/archive/refs/tags/2018_U1.zip"
 else:
     # Use point release with fix https://github.com/oneapi-src/oneTBB/pull/833
     TBB_URL = "https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2020.3.1.zip"
@@ -1030,8 +1026,7 @@ def InstallTBB_Windows(context, force, buildArgs):
         CopyDirectory(context, "include\\tbb", "include\\tbb")
 
 def InstallTBB_MacOS(context, force, buildArgs):
-    tbb_url = TBB_URL if apple_utils.IsTargetArm(context) else TBB_INTEL_URL
-    with CurrentWorkingDirectory(DownloadURL(tbb_url, context, force)):
+    with CurrentWorkingDirectory(DownloadURL(TBB_URL, context, force)):
         # Ensure that the tbb build system picks the proper architecture.
         PatchFile("build/macos.clang.inc",
                 [("-m64",
@@ -1093,7 +1088,7 @@ def InstallTBB_MacOS(context, force, buildArgs):
         # See comments in InstallTBB_Linux about why we patch the Makefile
         # and rerun builds. This is only required for TBB 2020; 2019 and
         # earlier build both release and debug, and 2021 has moved to CMake.
-        if "2020" in tbb_url:
+        if "2020" in TBB_URL:
             PatchFile("Makefile", [("release", "debug")])
             _RunBuild(primaryArch)
             _RunBuild(secondaryArch)
