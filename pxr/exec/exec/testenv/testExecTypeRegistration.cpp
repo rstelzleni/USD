@@ -64,24 +64,24 @@ TestBasicRegistration()
     reg.CheckForRegistration<TestExecTypeRegistrationValue>();
 }
 
+// This tests conversion of VtValue to VdfVector with a variety of types.
+// The are two special categories of types:
+//
+//   1. Vt known value types, for which VtValue has optimizations
+//      related to type checking.
+//   2. Sdf value types, which comprise the types of attribute and
+//      metadata in Usd.
+//
+// The following test cases include types that cover all combinations of
+// these categories, including a type that does not belong to either.
+// Additionally, for VtArray<T> types, test that CreateVector yields a
+// vectorized VdfVector of T rather than a VdfVector holding a single
+// VtArray<T>.
+//
 static void
 TestCreateVector()
 {
     auto &reg = ExecTypeRegistry::GetInstance();
-
-    // This tests conversion of VtValue to VdfVector with a variety of types.
-    // The are two special categories of types:
-    //
-    //   1. Vt known value types, for which VtValue has optimizations
-    //      related to type checking.
-    //   2. Sdf value types, which comprise the types of attribute and
-    //      metadata in Usd.
-    //
-    // The following test cases include types that cover all combinations of
-    // these categories, including a type that does not belong to either.
-    // Additionally, for VtArray<T> types, test that CreateVector yields a
-    // vectorized VdfVector of T rather than a VdfVector holding a single
-    // VtArray<T>.
 
     // GfVec3d is both a Vt known value type and an Sdf value type.
     {

@@ -88,10 +88,10 @@ std::ostream &operator<<(std::ostream &out, const Exec_UncompilationRuleSet& r)
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-static void TestUncompilationRuleSetErase()
+// Test that Exec_UncompilationRuleSet::erase is correct.
+static void
+TestUncompilationRuleSetErase()
 {
-    // Test that Exec_UncompilationRuleSet::erase is correct.
-
     using Rule = Exec_UncompilationRule;
 
     // Initialize a rule set.
@@ -125,11 +125,13 @@ static void TestUncompilationRuleSetErase()
     ASSERT_EQ(ruleSet, expected);
 }
 
-static void TestUncompilationTableInsertAndFind()
+// Test that we add uncompilation rules for each journal entry. If separate
+// journals add rules for the same path, those rules get inserted into the
+// same rule set.
+//
+static void
+TestUncompilationTableInsertAndFind()
 {
-    // Test that we add uncompilation rules for each journal entry. If separate
-    // journals add rules for the same path, those rules get inserted into the
-    // same rule set.
 
     Exec_UncompilationTable table;
     {
@@ -195,10 +197,12 @@ static void TestUncompilationTableInsertAndFind()
     }
 }
 
-static void TestUncompilationTableUpdateForRecursiveResync()
+// Test that UpdateForRecursiveResync removes the correct rule sets from
+// the uncompilation table, and that unrelated rule sets are not removed.
+//
+static void
+TestUncompilationTableUpdateForRecursiveResync()
 {
-    // Test that UpdateForRecursiveResync removes the correct rule sets from
-    // the uncompilation table, and that unrelated rule sets are not removed.
 
     const SdfPath parent("/Parent");
     const SdfPath child1("/Parent/Child1");
@@ -271,10 +275,12 @@ static void TestUncompilationTableUpdateForRecursiveResync()
     ASSERT_EQ(*entry.ruleSet, expectedRuleSetOtherChild);
 }
 
-static void TestConcurrency()
+// Tests that we can add rules to the uncompilation table concurrently
+// from many threads.
+//
+static void
+TestConcurrency()
 {
-    // Tests that we can add rules to the uncompilation table concurrently
-    // from many threads.
 
     TRACE_FUNCTION();
 

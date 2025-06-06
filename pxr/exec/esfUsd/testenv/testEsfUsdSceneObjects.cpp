@@ -61,10 +61,12 @@ struct Fixture
     }
 };
 
-void TestStage(Fixture &fixture)
-{
-    // Tests that EsfUsd_Stage behaves as UsdStage.
+} // anonymous namespace
 
+// Tests that EsfUsd_Stage behaves as UsdStage.
+static void
+TestStage(Fixture &fixture)
+{
     const EsfStage stage = EsfUsdSceneAdapter::AdaptStage(fixture.stage);
 
     const EsfPrim prim = stage->GetPrimAtPath(
@@ -80,10 +82,10 @@ void TestStage(Fixture &fixture)
     TF_AXIOM(prop->IsValid(fixture.journal));
 }
 
-void TestObject(Fixture &fixture)
+// Tests that ExecUsd_Objects behave as UsdObjects.
+static void
+TestObject(Fixture &fixture)
 {
-    // Tests that ExecUsd_Objects behave as UsdObjects.
-
     const EsfObject primObject = EsfUsdSceneAdapter::AdaptObject(
         fixture.stage->GetObjectAtPath(SdfPath("/Prim1")));
     TF_AXIOM(primObject->IsValid(fixture.journal));
@@ -97,10 +99,10 @@ void TestObject(Fixture &fixture)
     TF_AXIOM(!invalidObject->IsValid(fixture.journal));
 }
 
-void TestPrim(Fixture &fixture)
+// Tests that ExecUsd_Prims behave as UsdPrims.
+static void
+TestPrim(Fixture &fixture)
 {
-    // Tests that ExecUsd_Prims behave as UsdPrims.
-
     const EsfPrim prim = EsfUsdSceneAdapter::AdaptPrim(
         fixture.stage->GetPrimAtPath(SdfPath("/Prim1")));
     TF_AXIOM(prim->IsValid(fixture.journal));
@@ -121,10 +123,10 @@ void TestPrim(Fixture &fixture)
     TF_AXIOM(attr->GetPath(fixture.journal) == SdfPath("/Prim1.attr1"));
 }
 
-void TestProperty(Fixture &fixture)
+// Tests that ExecUsd_Properties behave as UsdProperties.
+static void
+TestProperty(Fixture &fixture)
 {
-    // Tests that ExecUsd_Properties behave as UsdProperties.
-
     const EsfProperty prop = EsfUsdSceneAdapter::AdaptProperty(
         fixture.stage->GetPropertyAtPath(SdfPath("/Prim1.ns1:ns2:attr2")));
     TF_AXIOM(prop->IsValid(fixture.journal));
@@ -133,10 +135,10 @@ void TestProperty(Fixture &fixture)
     TF_AXIOM(prop->GetNamespace(fixture.journal) == TfToken("ns1:ns2"));
 }
 
-void TestAttribute(Fixture &fixture)
+// Tests that ExecUsd_Attributes behave as UsdAttributes.
+static void
+TestAttribute(Fixture &fixture)
 {
-    // Tests that ExecUsd_Attributes behave as UsdAttributes.
-
     const EsfAttribute attr = EsfUsdSceneAdapter::AdaptAttribute(
         fixture.stage->GetAttributeAtPath(SdfPath("/Prim1.attr1")));
     TF_AXIOM(attr->IsValid(fixture.journal));
@@ -145,10 +147,10 @@ void TestAttribute(Fixture &fixture)
 }
 
 
-void TestAttributeQuery(Fixture &fixture)
+// Tests that ExecUsd_AttributeQuery behaves as UsdAttributeQuery.
+static void
+TestAttributeQuery(Fixture &fixture)
 {
-    // Tests that ExecUsd_AttributeQuery behaves as UsdAttributeQuery.
-
     const UsdAttribute usdAttr =
         fixture.stage->GetAttributeAtPath(SdfPath("/Prim1.attr1"));
     const UsdAttributeQuery usdQuery(usdAttr);
@@ -172,10 +174,10 @@ void TestAttributeQuery(Fixture &fixture)
         UsdTimeCode::Default(), UsdTimeCode(0.0)));
 }
 
-void TestSplineAttributeQuery(Fixture &fixture)
+// Tests ExecUsd_AttributeQuery with a time-varying spline attribute.
+static void
+TestSplineAttributeQuery(Fixture &fixture)
 {
-    // Tests ExecUsd_AttributeQuery with a time-varying spline attribute.
-
     const UsdAttribute usdAttr =
         fixture.stage->GetAttributeAtPath(SdfPath("/Prim1.attr3"));
     const UsdAttributeQuery usdQuery(usdAttr);
@@ -197,8 +199,6 @@ void TestSplineAttributeQuery(Fixture &fixture)
         usdQuery.ValueMightBeTimeVarying());
     TF_AXIOM(esfQuery->IsTimeVarying(UsdTimeCode(1.0), UsdTimeCode(2.0)));
     TF_AXIOM(!esfQuery->IsTimeVarying(UsdTimeCode(2.0), UsdTimeCode(3.0)));
-}
-
 }
 
 int main()

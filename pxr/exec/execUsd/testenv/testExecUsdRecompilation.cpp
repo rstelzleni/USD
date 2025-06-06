@@ -140,12 +140,12 @@ private:
     std::optional<ExecUsdSystem> _system;
 };
 
+// Tests that we recompile a disconnected attribute input, when that attribute
+// comes into existence.
+//
 static void
 TestRecompileDisconnectedAttributeInput(Fixture &fixture)
 {
-    // Tests that we recompile a disconnected attribute input, when that
-    // attribute comes into existence.
-
     ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
         def CustomSchema "Prim" {
         }
@@ -197,13 +197,13 @@ TestRecompileDisconnectedAttributeInput(Fixture &fixture)
         TF_AXIOM(v.Get<int>() == -1);
     }
 }
-// 
+
+// Tests that inputs which depend on relationship targets are recompiled when
+// the set of targets changes.
+//
 static void
 TestRecompileChangedRelationshipTargets(Fixture &fixture)
 {
-    // Tests that we recompile a disconnected attribute input, when that
-    // attribute comes into existence.
-
     ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
         def CustomSchema "Prim" {
             add rel customRel = [</Prim.forwardingRel>, </C.customAttr>]
@@ -283,19 +283,19 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
     }
 }
 
+// Tests that changes to objects that were previously targeted by a
+// relationship (but are no longer targeted) do not cause uncompilation of
+// inputs that depend on the new targets of that relationship.
+//
+// TODO: Currently, there is an over-invalidation bug where changes to old
+// targets still trigger input uncompilation, even though that object is no
+// longer a target. This test case is written to capture the current
+// behavior, but it will be updated when the over-invalidation issue is
+// resolved.
+//
 static void
 TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
 {
-    // Tests that changes to objects that were previously targeted by a
-    // relationship (but are no longer targeted) do not cause uncompilation of
-    // inputs that depend on the new targets of that relationship.
-    //
-    // TODO: Currently, there is an over-invalidation bug where changes to old
-    // targets still trigger input uncompilation, even though that object is no
-    // longer a target. This test case is written to capture the current
-    // behavior, but it will be updated when the over-invalidation issue is
-    // resolved.
-
     ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
         def CustomSchema "Prim" {
             add rel customRel = [</X.attr>, </Y.attr>, </Z.attr>]
@@ -361,13 +361,13 @@ TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
     }
 }
 
+// Tests that when we recompile a network, we recompile all inputs that
+// require recompilation, even those that do not contribute to the request
+// being compiled.
+//
 static void
 TestRecompileMultipleRequests(Fixture &fixture)
 {
-    // Tests that when we recompile a network, we recompile all inputs that
-    // require recompilation, even those that do not contribute to the request
-    // being compiled.
-
     ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
         def CustomSchema "Prim1" {
             int customAttr = 10
@@ -409,13 +409,13 @@ TestRecompileMultipleRequests(Fixture &fixture)
     fixture.GraphNetwork("TestRecompileMultipleRequests-3.dot");
 }
 
+// Tests that when we recompile a network, we delete nodes and connections
+// that become isolated during uncompilation and remain isolated after
+// recompilation.
+//
 static void
 TestRecompileDeletedPrim(Fixture &fixture)
 {
-    // Tests that when we recompile a network, we delete nodes and connections
-    // that become isolated during uncompilation and remain isolated after
-    // recompilation.
-
     ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
         def CustomSchema "Prim1" {
             def CustomSchema "Prim2" {
@@ -459,12 +459,12 @@ TestRecompileDeletedPrim(Fixture &fixture)
     fixture.GraphNetwork("TestRecompileDeletedPrim-3.dot");
 }
 
+// Tests that when a prim is resynced (but not deleted), we can recompile
+// value keys for that prim.
+//
 static void
 TestRecompileResyncedPrim(Fixture &fixture)
 {
-    // Tests that when a prim is resynced (but not deleted), we can recompile
-    // value keys for that prim.
-
     ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
         def CustomSchema "Prim" {
             int customAttr = 1
