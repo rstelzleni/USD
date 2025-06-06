@@ -284,6 +284,84 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
 }
 
 static void
+TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
+{
+    // Tests that changes to objects that were previously targeted by a
+    // relationship (but are no longer targeted) do not cause uncompilation of
+    // inputs that depend on the new targets of that relationship.
+    //
+    // TODO: Currently, there is an over-invalidation bug where changes to old
+    // targets still trigger input uncompilation, even though that object is no
+    // longer a target. This test case is written to capture the current
+    // behavior, but it will be updated when the over-invalidation issue is
+    // resolved.
+
+    ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Prim" {
+            add rel customRel = [</X.attr>, </Y.attr>, </Z.attr>]
+        }
+        def Scope "X" {
+            int attr = 1
+        }
+        def Scope "Y" {
+            int attr = 2
+        }
+        def Scope "Z" {
+            int attr = 3
+        }
+    )usd");
+
+    ExecUsdRequest request = fixture.BuildRequest({
+        {fixture.GetPrimAtPath("/Prim"), _tokens->computeUsingCustomRel}
+    });
+
+    // Compile the network.
+    system.PrepareRequest(request);
+    fixture.GraphNetwork(
+        "TestRecompileAfterChangingOldRelationshipTarget-1.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == 6);
+    }
+
+    // Remove <X.attr> as a relationship target. This will disconnect all
+    // VdfConnections to the callback node input.
+    fixture.GetRelationshipAtPath("/Prim.customRel").RemoveTarget(
+        SdfPath("/X.attr"));
+    fixture.GraphNetwork(
+        "TestRecompileAfterChangingOldRelationshipTarget-2.dot");
+
+    // Re-compile the network.
+    system.PrepareRequest(request);
+    fixture.GraphNetwork(
+        "TestRecompileAfterChangingOldRelationshipTarget-3.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == 5);
+    }
+
+    // Deactivate </X>. This should not affect the compiled network because
+    // <X.attr>'s computeValue is no longer connected to the callback node.
+    //
+    // TODO: There is currently a bug where the input is still uncompiled
+    // because the old rule listening for Resync </X.attr> is still active in
+    // the uncompilation table. This will be fixed in a future change.
+    fixture.GetPrimAtPath("/X").SetActive(false);
+    fixture.GraphNetwork(
+        "TestRecompileAfterChangingOldRelationshipTarget-4.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == 5);
+    }
+}
+
+static void
 TestRecompileMultipleRequests(Fixture &fixture)
 {
     // Tests that when we recompile a network, we recompile all inputs that
@@ -389,6 +467,7 @@ int main()
         TestRecompileDisconnectedAttributeInput,
         TestRecompileMultipleRequests,
         TestRecompileChangedRelationshipTargets,
+        TestRecompileAfterChangingOldRelationshipTarget,
         TestRecompileDeletedPrim
     };
     for (const auto &test : tests) {
