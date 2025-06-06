@@ -20,7 +20,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 // XXX Temporary env setting to disable the scene index to address performance
 //     regressions.
 TF_DEFINE_ENV_SETTING(HDST_ENABLE_UNBOUND_MATERIAL_OVERRIDING_SCENE_INDEX,
-    false, "Enable scene index that nullifies unbound materials.");
+    true, "Enable scene index that nullifies unbound materials.");
 
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
