@@ -3,9 +3,10 @@
         {
             "Info": {
                 "Exec" : {
-                    "RegistersComputationsForSchemas": [
-                        "UsdGeomXformable"
-                    ]
+                    "RegistersComputationsForSchemas": {
+                        "UsdGeomXformable": {
+                        }
+                    }
                 }
             },
             "LibraryPath": "@PLUG_INFO_LIBRARY_PATH@",

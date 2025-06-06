@@ -88,13 +88,16 @@ struct Exec_InputKey;
 /// computations are requested on a prim that uses `MySchemaType`:
 ///
 /// ```
-///     "Info": {
-///         "Exec" : {
-///             "RegistersComputationsForSchemas": [
-///                 "MySchemaType"
-///             ]
-///         }
-///     }
+//     "Info": {
+//         "Exec" : {
+//             "RegistersComputationsForSchemas": {
+//                 "MySchemaType1": {
+//                 },
+//                 "MySchemaType2": {
+//                 }
+//             }
+//         }
+//     }
 /// ```
 
 /// \defgroup group_Exec_ComputationRegistrations Computation Registrations

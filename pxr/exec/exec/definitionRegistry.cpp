@@ -411,9 +411,12 @@ namespace {
 //
 //     "Info": {
 //         "Exec" : {
-//             "RegistersComputationsForSchemas": [
-//                 "MySchemaType"
-//             ]
+//             "RegistersComputationsForSchemas": {
+//                 "MySchemaType1": {
+//                 },
+//                 "MySchemaType2": {
+//                 }
+//             }
 //         }
 //     }
 //
@@ -443,10 +446,12 @@ struct _ExecPluginData {
             return;
         }
 
-        const JsArray &array = schemasValue->GetJsArray();
-        for (const JsValue &schemaName : array) {
-            const TfType schemaType =
-                TfType::FindByName(schemaName.Get<std::string>());
+        // Note that we don't yet look for any keys in the objects that
+        // represent schemas, but this paves the way for per-schema metadata
+        // that might be required in the future.
+        const JsObject &schemas = schemasValue->GetJsObject();
+        for (const auto& [schemaName, value] : schemas) {
+            const TfType schemaType = TfType::FindByName(schemaName);
             if (TF_VERIFY(!schemaType.IsUnknown())) {
                 execSchemaPlugins.emplace(schemaType, plugin);
             }
