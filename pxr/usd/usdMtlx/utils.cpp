@@ -190,8 +190,10 @@ _ComputeStdlibSearchPaths()
     static PlugPluginPtr plugin = PLUG_THIS_PLUGIN;
     const std::string resourceMtlxLibrary = PlugFindPluginResource(plugin,
             "libraries");
-    stdlibSearchPaths =
-        _MergeSearchPaths(stdlibSearchPaths, { resourceMtlxLibrary });
+    if (! resourceMtlxLibrary.empty()) {
+        stdlibSearchPaths =
+            _MergeSearchPaths(stdlibSearchPaths, { resourceMtlxLibrary });
+    }
     return stdlibSearchPaths;
 }
 
