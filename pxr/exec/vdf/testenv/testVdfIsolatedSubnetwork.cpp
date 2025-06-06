@@ -336,25 +336,16 @@ private :
     VdfGrapherOptions _options;
 };
 
-struct Filter : public VdfNetwork::EditFilter {
-    Filter(Runner &runner)
-        : _runner(runner)
-        , _nodesAsked(0)
-    {}
-
-    bool CanDelete(const VdfNode *node) override {
+struct Filter {
+    bool operator()(const VdfNode *node) const {
         printf("> asking: %s\n", node->GetDebugName().c_str());
-        _nodesAsked++;
         return true;
     }
-
-    Runner &_runner;
-    size_t  _nodesAsked;
 };
 
 // Filter that never allows anything to be deleted.
-struct FilterNever : public VdfNetwork::EditFilter {
-    bool CanDelete(const VdfNode *node) override {
+struct FilterNever {
+    bool operator()(const VdfNode *node) const {
         return false;
     }
 };
@@ -398,7 +389,7 @@ TestIsolateBranch()
 
     FilterNever never;
     std::unique_ptr<VdfIsolatedSubnetwork> branch =
-        VdfIsolatedSubnetwork::IsolateBranch(connection, &never);
+        VdfIsolatedSubnetwork::IsolateBranch(connection, never);
 
     TF_AXIOM(branch);
 
@@ -407,8 +398,8 @@ TestIsolateBranch()
 
     printf("\nTesting that isolating a node works.\n");
 
-    Filter filter(runner);
-    branch = VdfIsolatedSubnetwork::IsolateBranch(sourceNode, &filter);
+    Filter always;
+    branch = VdfIsolatedSubnetwork::IsolateBranch(sourceNode, always);
 
     printf("\nTesting that we isolated the right number of nodes and "
            "connections.\n");
@@ -477,7 +468,7 @@ TestAddIsolatedBranch(bool explicitlyRemoveIsolatedObjects)
 
     runner.Snapshot("isolate_multi_original", /* run */ false);
 
-    Filter always(runner);
+    Filter always;
 
     // Applying edit operation...
     std::cout << "*** Editing network..." << std::endl;
@@ -488,7 +479,7 @@ TestAddIsolatedBranch(bool explicitlyRemoveIsolatedObjects)
         const std::unique_ptr<VdfIsolatedSubnetwork> subnet =
             VdfIsolatedSubnetwork::New(&net);
         for (auto it = out.begin() + 2; it != out.end(); ++it) {
-            subnet->AddIsolatedBranch(*it, &always);
+            subnet->AddIsolatedBranch(*it, always);
         }
         TF_AXIOM(subnet);
         TF_AXIOM(subnet->GetIsolatedNodes().size() == 3);
@@ -508,7 +499,7 @@ TestAddIsolatedBranch(bool explicitlyRemoveIsolatedObjects)
         const std::unique_ptr<VdfIsolatedSubnetwork> subnet =
             VdfIsolatedSubnetwork::New(&net);
         for (auto it = out.begin(); it != out.begin() + 2; ++it) {
-            subnet->AddIsolatedBranch(*it, &always);
+            subnet->AddIsolatedBranch(*it, always);
         }
         TF_AXIOM(subnet);
         TF_AXIOM(subnet->GetIsolatedNodes().size() == 4);
@@ -531,15 +522,15 @@ static int
 TestErrorCases()
 {
     TfErrorMark mark;
-    VdfNetwork::EditFilter *const nullFilter = nullptr;
+    static const auto neverFilter = [](const VdfNode *) { return true; };
 
     // Test null arguments
 
-    VdfIsolatedSubnetwork::IsolateBranch((VdfConnection*)nullptr, nullFilter);
+    VdfIsolatedSubnetwork::IsolateBranch((VdfConnection*)nullptr, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
-    VdfIsolatedSubnetwork::IsolateBranch((VdfNode*)nullptr, nullFilter);
+    VdfIsolatedSubnetwork::IsolateBranch((VdfNode*)nullptr, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
@@ -553,11 +544,11 @@ TestErrorCases()
     TF_AXIOM(mark.IsClean());
     TF_AXIOM(subnetwork);
 
-    subnetwork->AddIsolatedBranch((VdfConnection*)nullptr, nullFilter);
+    subnetwork->AddIsolatedBranch((VdfConnection*)nullptr, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
-    subnetwork->AddIsolatedBranch((VdfNode*)nullptr, nullFilter);
+    subnetwork->AddIsolatedBranch((VdfNode*)nullptr, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
@@ -567,7 +558,7 @@ TestErrorCases()
     VdfNode *const out = BuildTestNetwork1(graph);
     TF_AXIOM(out);
 
-    subnetwork->AddIsolatedBranch(out, nullFilter);
+    subnetwork->AddIsolatedBranch(out, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
@@ -578,7 +569,7 @@ TestErrorCases()
         "Translate2_0:out -> AddPoints1:input2");
     TF_AXIOM(connection);
 
-    subnetwork->AddIsolatedBranch(connection, nullFilter);
+    subnetwork->AddIsolatedBranch(connection, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
@@ -590,7 +581,7 @@ TestErrorCases()
 
     subnetwork->RemoveIsolatedObjectsFromNetwork();
     TF_AXIOM(mark.IsClean());
-    subnetwork->AddIsolatedBranch(node, nullFilter);
+    subnetwork->AddIsolatedBranch(node, neverFilter);
     TF_AXIOM(!mark.IsClean());
     mark.Clear();
 
@@ -603,7 +594,7 @@ TestErrorCases()
         VdfIsolatedSubnetwork::New(&network2);
     TF_AXIOM(subnetwork2);
 
-    const bool result = subnetwork2->AddIsolatedBranch(node, nullFilter);
+    const bool result = subnetwork2->AddIsolatedBranch(node, neverFilter);
     TF_AXIOM(!result);
     TF_AXIOM(mark.IsClean());
     TF_AXIOM(subnetwork2->GetIsolatedNodes().empty());

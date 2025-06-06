@@ -166,22 +166,6 @@ public:
         virtual void WillDelete(const VdfConnection *connection) = 0; 
     };
 
-    /// \class EditFilter
-    ///
-    /// An abstract class to selectively filter edit operations.
-    ///
-    class VDF_API_TYPE EditFilter
-    {
-    public:
-        VDF_API
-        virtual ~EditFilter();
-
-        /// Will be called before a node is deleted in order to figure out 
-        /// if it should be deleted.
-        ///
-        virtual bool CanDelete(const VdfNode *node) = 0;
-    };
-
     /// Clears all nodes from the network.
     ///
     VDF_API

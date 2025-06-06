@@ -11,6 +11,7 @@
 
 #include "pxr/pxr.h"
 
+#include "pxr/base/tf/functionRef.h"
 #include "pxr/base/tf/pxrTslRobinMap/robin_map.h"
 #include "pxr/base/tf/pxrTslRobinMap/robin_set.h"
 #include "pxr/exec/vdf/api.h"
@@ -55,13 +56,17 @@ public:
     /// A set of isolated connections.
     using ConnectionSet = pxr_tsl::robin_set<VdfConnection *, TfHash>;
 
+    /// A function that returns `true` if the given node is allowed to be
+    /// isolated and deleted.
+    using EditFilter = TfFunctionRef<bool(const VdfNode *)>;
+
     /// Isolates all nodes and connections reachable via input connections from
     /// \p connection that are not connected via additional output connections
     /// to other parts of the network.
     ///
     /// Note that \p connection is added to the set of isolated objects.
     ///
-    /// Optional \p filter object can be used to prune the traversal.
+    /// The \p canDelete object is used to prune the traversal.
     ///
     /// Removes the isolated objects from the network and returns a unique
     /// pointer to the isolated network object that holds onto the isolated
@@ -71,13 +76,13 @@ public:
     VDF_API static
     std::unique_ptr<VdfIsolatedSubnetwork> IsolateBranch(
         VdfConnection *connection,
-        VdfNetwork::EditFilter *filter);
+        EditFilter canDelete);
 
     /// Isolates all nodes and connections reachable via input connections from
     /// \p node that are not connected via additional output connections to
     /// other parts of the network.
     ///
-    /// Optional \p filter object can be used to prune the traversal.
+    /// The \p canDelete object is used to prune the traversal.
     ///
     /// Removes the isolated objects from the network and returns a strong
     /// reference to the isolated network object that holds onto the isolated
@@ -90,7 +95,7 @@ public:
     VDF_API static
     std::unique_ptr<VdfIsolatedSubnetwork> IsolateBranch(
         VdfNode *node,
-        VdfNetwork::EditFilter *filter);
+        EditFilter canDelete);
 
     /// Creates an empty isolated subnetwork.
     ///
@@ -106,7 +111,7 @@ public:
     ///
     /// Note that \p connection is added to the set of isolated objects.
     ///
-    /// Optional \p filter object can be used to prune the traversal.
+    /// The \p canDelete object is used to prune the traversal.
     /// 
     /// \note
     /// Isolated objects are not immediately removed from the network. See
@@ -115,16 +120,16 @@ public:
     VDF_API
     bool AddIsolatedBranch(
         VdfConnection *connection,
-        VdfNetwork::EditFilter *filter);
+        EditFilter canDelete);
 
     /// Isolates all nodes and connections reachable via input connections from
     /// \p node that are not connected via additional output connections to
     /// other parts of the network.
     ///
-    /// Optional \p filter object can be used to prune the traversal.
+    /// The \p canDelete object is used to prune the traversal.
     ///
     /// \note
-    /// If \p node has output connections or \p filter returns `false` for \p
+    /// If \p node has output connections or \p canDelete returns `false` for \p
     /// node, no objects are added to the isolated subnetwork and `false` is
     /// returned.
     /// 
@@ -135,7 +140,7 @@ public:
     VDF_API
     bool AddIsolatedBranch(
         VdfNode *node,
-        VdfNetwork::EditFilter *filter);
+        EditFilter canDelete);
 
     /// Removes all isolated objects from the network.
     ///
@@ -160,12 +165,12 @@ private:
     // Helper that checks if we can traverse past \p sourceNode.
     bool _CanTraverse(
         const VdfNode &sourceNode,
-        VdfNetwork::EditFilter *filter);
+        EditFilter canDelete);
 
     // Helper that traverses a branch.
     void _TraverseBranch(
         VdfConnection *connection,
-        VdfNetwork::EditFilter *filter);
+        EditFilter canDelete);
 
 private:
 

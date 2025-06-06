@@ -39,11 +39,6 @@ VdfNetwork::EditMonitor::~EditMonitor()
 {
 }
 
-/* virtual */
-VdfNetwork::EditFilter::~EditFilter()
-{
-}
-
 VdfNetwork::VdfNetwork() :
     _initialNodeVersion(0),
     _outputCapacity(0),

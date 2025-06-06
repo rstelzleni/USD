@@ -17,7 +17,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 std::unique_ptr<VdfIsolatedSubnetwork>
 VdfIsolatedSubnetwork::IsolateBranch(
     VdfConnection *const connection,
-    VdfNetwork::EditFilter *const filter)
+    EditFilter canDelete)
 {
     if (!connection) {
         TF_CODING_ERROR("Null connection");
@@ -27,7 +27,7 @@ VdfIsolatedSubnetwork::IsolateBranch(
     VdfIsolatedSubnetwork *const isolated = new VdfIsolatedSubnetwork(
         &connection->GetTargetNode().GetNetwork());
 
-    if (!isolated->AddIsolatedBranch(connection, filter)) {
+    if (!isolated->AddIsolatedBranch(connection, canDelete)) {
         delete isolated;
         return nullptr;
     }
@@ -40,7 +40,7 @@ VdfIsolatedSubnetwork::IsolateBranch(
 std::unique_ptr<VdfIsolatedSubnetwork>
 VdfIsolatedSubnetwork::IsolateBranch(
     VdfNode *const node,
-    VdfNetwork::EditFilter *const filter)
+    EditFilter canDelete)
 {
     if (!node) {
         TF_CODING_ERROR("Null node");
@@ -52,14 +52,14 @@ VdfIsolatedSubnetwork::IsolateBranch(
     }
 
     // If we can't delete the initial node, we bail early.
-    if (filter && !filter->CanDelete(node)) {
+    if (!canDelete(node)) {
         return nullptr;
     }
 
     VdfIsolatedSubnetwork *const isolated =
         new VdfIsolatedSubnetwork(&node->GetNetwork());
 
-    if (!isolated->AddIsolatedBranch(node, filter)) {
+    if (!isolated->AddIsolatedBranch(node, canDelete)) {
         delete isolated;
         return nullptr;
     }
@@ -84,7 +84,7 @@ VdfIsolatedSubnetwork::New(VdfNetwork *const network)
 bool
 VdfIsolatedSubnetwork::AddIsolatedBranch(
     VdfConnection *const connection,
-    VdfNetwork::EditFilter *const filter)
+    EditFilter canDelete)
 {
     if (!connection) {
         TF_CODING_ERROR("Null connection");
@@ -105,7 +105,7 @@ VdfIsolatedSubnetwork::AddIsolatedBranch(
 
     // Collect all nodes/connections that are reachable from the input side
     // of the connection.
-    _TraverseBranch(connection, filter);
+    _TraverseBranch(connection, canDelete);
 
     return true;
 }
@@ -113,7 +113,7 @@ VdfIsolatedSubnetwork::AddIsolatedBranch(
 bool
 VdfIsolatedSubnetwork::AddIsolatedBranch(
     VdfNode *const node,
-    VdfNetwork::EditFilter *const filter)
+    EditFilter canDelete)
 {
     if (!node) {
         TF_CODING_ERROR("Null node");
@@ -133,15 +133,14 @@ VdfIsolatedSubnetwork::AddIsolatedBranch(
     }
 
     // If we can't delete the initial node, we bail early.
-    if (node->HasOutputConnections() ||
-        (filter && !filter->CanDelete(node))) {
+    if (node->HasOutputConnections() || !canDelete(node)) {
         return false;
     }
 
     // Collect all nodes/connections reachable from node.
     // Traverse up all input connections.
     for (VdfConnection *const c :  node->GetInputConnections()) {
-        _TraverseBranch(c, filter);
+        _TraverseBranch(c, canDelete);
     }
     
     _nodes.push_back(node);
@@ -177,9 +176,9 @@ VdfIsolatedSubnetwork::~VdfIsolatedSubnetwork()
 bool
 VdfIsolatedSubnetwork::_CanTraverse(
     const VdfNode &sourceNode,
-    VdfNetwork::EditFilter *const filter)
+    EditFilter canDelete)
 {
-    if (filter && !filter->CanDelete(&sourceNode)) {
+    if (!canDelete(&sourceNode)) {
         return false;
     }
 
@@ -206,7 +205,7 @@ VdfIsolatedSubnetwork::_CanTraverse(
 void
 VdfIsolatedSubnetwork::_TraverseBranch(
     VdfConnection *const connection,
-    VdfNetwork::EditFilter  *const filter)
+    EditFilter canDelete)
 {
     TRACE_FUNCTION();
 
@@ -225,7 +224,7 @@ VdfIsolatedSubnetwork::_TraverseBranch(
         }
     
         VdfNode &sourceNode = currentConnection->GetSourceNode();
-        if (!_CanTraverse(sourceNode, filter)) {
+        if (!_CanTraverse(sourceNode, canDelete)) {
             continue;
         }
 

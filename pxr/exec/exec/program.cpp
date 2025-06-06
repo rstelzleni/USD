@@ -44,30 +44,6 @@ static TfBits
 _FilterTimeDependentInputNodeOutputs(
     const VdfMaskedOutputVector &, const EfTime &, const EfTime &);
 
-namespace {
-
-// An edit filter that won't allow the time input node to be deleted, even if it
-// becomes isolated.
-//
-class _EditFilter final : public VdfNetwork::EditFilter
-{
-public:
-    _EditFilter(EfTimeInputNode *const timeInputNode)
-        : _timeInputNode(timeInputNode)
-    {}
-
-    ~_EditFilter() override = default;
-
-    bool CanDelete(const VdfNode *node) override {
-        return node != _timeInputNode;
-    }
-
-private:
-    EfTimeInputNode *const _timeInputNode;
-};
-
-} // anonymous namespace
-
 class Exec_Program::_EditMonitor final : public VdfNetwork::EditMonitor {
 public:
     explicit _EditMonitor(Exec_Program *const program)
@@ -451,13 +427,16 @@ Exec_Program::CreateIsolatedSubnetwork()
 {
     TRACE_FUNCTION();
 
-    _EditFilter filter(_timeInputNode);
+    const auto editFilter =
+        [timeInputNode=_timeInputNode](const VdfNode *const node) {
+            return node != timeInputNode;
+        };
 
     std::unique_ptr<VdfIsolatedSubnetwork> subnetwork =
         VdfIsolatedSubnetwork::New(&_network);
 
     for (VdfNode *const node : _potentiallyIsolatedNodes) {
-        subnetwork->AddIsolatedBranch(node, &filter);
+        subnetwork->AddIsolatedBranch(node, editFilter);
     }
 
     _potentiallyIsolatedNodes.clear();
