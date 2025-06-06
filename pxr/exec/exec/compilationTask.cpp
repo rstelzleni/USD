@@ -41,24 +41,40 @@ Exec_CompilationTask::operator()() const
     thisTask->AddDependency();
 
     // Call the _Compile() method, which is the main entry point into
-    // compilation tasks.
-    TaskPhases taskPhases(
-        thisTask, thisTask->_compilationState, thisTask->_taskPhase);
-    thisTask->_Compile(_compilationState, taskPhases);
+    // compilation tasks, and record the task we are told to run next.
+    Exec_CompilationTask *const nextTask = [thisTask]{
+        TaskPhases taskPhases(
+            thisTask, thisTask->_compilationState, thisTask->_taskPhase);
+        thisTask->_Compile(thisTask->_compilationState, taskPhases);
+        return taskPhases._GetNextTask();
+    }();
 
-    // If the task *did not* complete, there are additional phases to run, and
-    // one or more sub-tasks constituting unfulfilled dependencies haven't run
-    // to completion.
-    if (!taskPhases._IsComplete()) {
+    // If a pointer to a next task was returned, thisTask *did not* complete.
+    // In this case there are additional phases to run, and one or more
+    // sub-tasks constituting unfulfilled dependencies aren't done yet.
+    if (nextTask) {
+        // If the next task isn't a pointer to thisTask, we are instructed to
+        // invoke a specific sub-task (c.f., TBB scheduler bypass).
+        // 
+        // Note, invoking the next task recursively is fast, but grows the
+        // stack. If this becomes a problem we can Run() the task on the
+        // dispatcher at the cost of performance.
+        if (nextTask != thisTask) {
+            nextTask->operator()();
+        }
+
         // Let's remove the dependency we added above to prevent re-entry.
         // 
         // After this line, the last completed dependency will immediately re-
         // run this task - so we *must* return right after. However, if we
         // happen to remove the last remaining dependency here, we are on the
         // hook to re-run this task.
+        // 
+        // Note, re-invoking this task recursively is fast, but grows the stack.
+        // If this becomes a problem we can Run() the task on the dispatcher at
+        // the cost of performance.
         if (thisTask->RemoveDependency() == 0) {
-            Exec_CompilationState::OutputTasksAccess::_Get(&_compilationState)
-                .Run(thisTask);
+            thisTask->operator()();
         }
         return;
     }
@@ -69,9 +85,12 @@ Exec_CompilationTask::operator()() const
         // If we remove the last unfulfilled dependency from the parent task,
         // the parent is ready to re-run. We're responsible for making that
         // happen here.
+        // 
+        // Note, invoking the parent task recursively is fast, but grows the
+        // stack. If this becomes a problem we can Run() the task on the
+        // dispatcher at the cost of performance.
         if (parent->RemoveDependency() == 0) {
-            Exec_CompilationState::OutputTasksAccess::_Get(&_compilationState)
-                .Run(parent);
+            parent->operator()();
         }
     }
 

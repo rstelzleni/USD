@@ -126,6 +126,7 @@ private:
         Exec_CompilationState &compilationState)
         : _task(task)
         , _compilationState(compilationState)
+        , _nextSubtask(nullptr)
         , _hasDependencies(false)
     {}
 
@@ -133,9 +134,14 @@ private:
         return _hasDependencies;
     }
 
+    Exec_CompilationTask *_GetNextSubtask() const {
+        return _nextSubtask;
+    }
+
 private:
     Exec_CompilationTask *const _task;
     Exec_CompilationState &_compilationState;
+    Exec_CompilationTask *_nextSubtask;
     bool _hasDependencies;
 };
 
@@ -145,12 +151,21 @@ Exec_CompilationTask::TaskDependencies::NewSubtask(
     Exec_CompilationState &state, Args&&... args)
 {
     _hasDependencies = true;
+
     // TODO: We need a small-object task allocator.
     // Tasks manage their own lifetime, and delete themselves after completion.
     TaskType *const subTask = new TaskType(state, std::forward<Args>(args)...);
     subTask->_parent = _task;
     subTask->_parent->AddDependency();
-    Exec_CompilationState::OutputTasksAccess::_Get(&state).Run(subTask);
+
+    // If there is already a next sub-task recorded, run it now! Then record
+    // this new subtask as the one to run next. This will ensure that the last
+    // sub-task is the one eventually returned by _GetNextSubtask().
+    if (_nextSubtask) {
+        Exec_CompilationState::OutputTasksAccess::_Get(&state).Run(
+            _nextSubtask);
+    }
+    _nextSubtask = subTask;
 }
 
 /// Manages the callables associated with task phases.
@@ -166,7 +181,7 @@ public:
     /// Invokes the callables in order, each denoting a task phase.
     template<typename... Callables>
     void Invoke(Callables&&... callables) {
-        _isComplete = _InvokeOne(0, std::forward<Callables>(callables)...);
+        _nextTask = _InvokeOnePhase(0, std::forward<Callables>(callables)...);
     }
 
 private:
@@ -178,40 +193,41 @@ private:
         uint32_t &taskPhase)
         : _task(task)
         , _compilationState(compilationState)
+        , _nextTask(nullptr)
         , _taskPhase(taskPhase)
-        , _isComplete(true)
     {}
 
-    bool _InvokeOne(uint32_t);
+    Exec_CompilationTask *_InvokeOnePhase(uint32_t);
 
     template<typename Callable, typename... Tail>
-    bool _InvokeOne(
+    Exec_CompilationTask *_InvokeOnePhase(
         uint32_t i,
         Callable&& callable,
         Tail&&... tail);
 
-    bool _IsComplete() const {
-        return _isComplete;
+    Exec_CompilationTask *_GetNextTask() const {
+        return _nextTask;
     }
 
 private:
     Exec_CompilationTask *const _task;
     Exec_CompilationState &_compilationState;
+    Exec_CompilationTask *_nextTask;
     uint32_t &_taskPhase;
-    bool _isComplete;
 };
 
 inline
-bool
-Exec_CompilationTask::TaskPhases::_InvokeOne(uint32_t)
+Exec_CompilationTask *
+Exec_CompilationTask::TaskPhases::_InvokeOnePhase(uint32_t)
 {
-    // Returning true here indicates the task is complete.
-    return true;
+    // Returning nullptr here indicates the task is complete, and there is no
+    // next task to run.
+    return nullptr;
 }
 
 template<typename Callable, typename... Tail>
-bool
-Exec_CompilationTask::TaskPhases::_InvokeOne(
+Exec_CompilationTask *
+Exec_CompilationTask::TaskPhases::_InvokeOnePhase(
     uint32_t i,
     Callable&& callable,
     Tail&&... tail)
@@ -229,15 +245,18 @@ Exec_CompilationTask::TaskPhases::_InvokeOne(
         // "sleep" until the last fulfilled dependency re-runs it, starting at
         // the next phase.
         // 
-        // Returning false here indicates the task is incomplete and must be
-        // re-run.
+        // Return a pointer to the next sub-task to invoke immediately. If there
+        // are no recorded sub-tasks, but this task is incomplete and must
+        // continue, we return a pointer to this task instead.
         if (taskDependencies._HasDependencies()) {
-            return false;
+            Exec_CompilationTask *const nextSubtask =
+                taskDependencies._GetNextSubtask();
+            return nextSubtask ? nextSubtask : _task;
         }
     }
 
     // Invoke the next stage if we haven't returned yet.
-    return _InvokeOne(i + 1, std::forward<Tail>(tail)...);
+    return _InvokeOnePhase(i + 1, std::forward<Tail>(tail)...);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
