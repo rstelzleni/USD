@@ -30,6 +30,13 @@ PXR_NAMESPACE_OPEN_SCOPE
 ///
 WORK_API unsigned WorkGetConcurrencyLimit();
 
+/// Return the concurrency limit setting, computed from the physical
+/// concurrency limit and the PXR_WORK_THREAD_LIMIT env setting. This is the
+/// concurrency limit that work will try to implement at startup.
+/// The concurrency limit will either be "0", meaning work doesn't try to apply
+/// any concurrency limit, or a (normalized) positive number of threads.
+WORK_API unsigned WorkGetConcurrencyLimitSetting();
+
 /// Return true if WorkGetPhysicalConcurrencyLimit() returns a number greater
 /// than 1 and PXR_WORK_THREAD_LIMIT was not set in an attempt to limit the
 /// process to a single thread, false otherwise.

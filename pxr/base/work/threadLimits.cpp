@@ -71,22 +71,22 @@ WorkGetPhysicalConcurrencyLimit()
 #endif
 }
 
-// This function always returns an actual thread count >= 1.
+// This function always returns either 0 (meaning "no change") or >= 1
 static unsigned
 Work_NormalizeThreadCount(const int n)
 {
     // Zero means "no change", and n >= 1 means exactly n threads, so simply
     // pass those values through unchanged.
     // For negative integers, subtract the absolute value from the total number
-    // of available cores (denoting all but n cores). If n == number of cores,
+    // of available cores (denoting all but n cores). If |n| >= number of cores,
     // clamp to 1 to set single-threaded mode.
     return n >= 0 ? n : std::max<int>(1, n + WorkGetPhysicalConcurrencyLimit());
 }
 
 // Returns the normalized thread limit value from the environment setting. Note
 // that 0 means "no change", i.e. the environment setting does not apply.
-static unsigned
-Work_GetConcurrencyLimitSetting()
+unsigned
+WorkGetConcurrencyLimitSetting()
 {
     return Work_NormalizeThreadCount(TfGetEnvSetting(PXR_WORK_THREAD_LIMIT));
 }
@@ -106,7 +106,7 @@ Work_InitializeThreading()
 {
     // Get the thread limit from the environment setting. Note that this value
     // can be 0, i.e. the environment setting does not apply.
-    const unsigned settingVal = Work_GetConcurrencyLimitSetting();
+    const unsigned settingVal = WorkGetConcurrencyLimitSetting();
 
     // Threading is initialized with maximum physical concurrency.
     const unsigned physicalLimit = WorkGetPhysicalConcurrencyLimit();
@@ -147,7 +147,7 @@ WorkSetConcurrencyLimit(unsigned n)
     if (n) {
         // Get the thread limit from the environment setting. Note this value
         // may be 0 (default).
-        const unsigned settingVal = Work_GetConcurrencyLimitSetting();
+        const unsigned settingVal = WorkGetConcurrencyLimitSetting();
 
         // Override n with the environment setting. This will make sure that the
         // setting always wins over the specified value n, but only if the
