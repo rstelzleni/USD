@@ -586,7 +586,7 @@ struct _MmapStream {
             
             if (ARCH_UNLIKELY(!inRange)) {
                 ptrdiff_t offset = _cur - mapStart;
-                TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
+                PXR_TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
                     "Read out-of-bounds: %zd bytes at offset %td in "
                     "a mapping of length %zd",
                     nBytes, offset, mapLen));
@@ -683,7 +683,7 @@ struct _PreadStream {
         int64_t nRead = ArchPRead(_file, dest, nBytes, _start + _cur);
         if constexpr (SafetyOverSpeed) {
             if (ARCH_UNLIKELY(nRead != static_cast<int64_t>(nBytes))) {
-                TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
+                PXR_TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
                              "Failed reading %zu bytes at offset %" PRId64,
                              nBytes, _start + _cur));
             }
@@ -713,7 +713,7 @@ struct _AssetStream {
         size_t nRead = _asset->Read(dest, nBytes, _cur);
         if constexpr (SafetyOverSpeed) {
             if (nRead != nBytes) {
-                TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
+                PXR_TF_THROW(SdfReadOutOfBoundsError, TfStringPrintf(
                              "Failed reading %zu bytes at offset %zu",
                              nBytes, _cur));
             }
