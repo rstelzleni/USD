@@ -338,7 +338,7 @@ HdPrman_Gprim<BASE>::Sync(HdSceneDelegate* sceneDelegate,
                         riley->CreateGeometryPrototype(
                             riley::UserId(
                                 stats::AddDataLocation(subsetPath.GetText()).GetValue()),
-                            primType, dispId, primvars);
+                            primType, subsetDispId, primvars);
                 } else if (prmanProtoAttrBitsWereSet) {
                     TRACE_SCOPE("riley::ModifyGeometryPrototype");
                     riley->ModifyGeometryPrototype(primType, prototypeId,
