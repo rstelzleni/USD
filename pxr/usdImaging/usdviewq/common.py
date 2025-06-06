@@ -61,7 +61,7 @@ class UIPropertyValueSourceColors(ConstantsGroup):
     DEFAULT = UIBaseColors.LIGHT_SKY_BLUE
     NONE = QtGui.QBrush(QtGui.QColor(140, 140, 140))
     VALUE_CLIPS = QtGui.QBrush(QtGui.QColor(230, 150, 230))
-    SPLINE = QtGui.QBrush(QtGui.QColor(160, 50, 40))
+    SPLINE = QtGui.QBrush(QtGui.QColor(80, 200, 180))
 
 class UIFonts(ConstantsGroup):
     # Font constants.  We use font in the prim browser to distinguish
@@ -316,6 +316,11 @@ def GetPropertyTextFont(prop, frame):
     # GetBracketingTimeSamples(), but all will be fed into this function.
     if bracketing and (len(bracketing) == 2) and (bracketing[0] != frameVal):
         return UIFonts.ITALIC
+
+    if prop.GetResolveInfo(frame).GetSource() == Usd.ResolveInfoSourceSpline:
+        spline = prop.GetSpline()
+        if frameVal not in spline.GetKnots().keys():
+            return UIFonts.ITALIC
 
     return None
 
