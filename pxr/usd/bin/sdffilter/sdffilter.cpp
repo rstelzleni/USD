@@ -735,10 +735,16 @@ main(int argc, char const *argv[])
         "'outline' is a flat text report of paths and fields,\n"
         "'pseudoLayer' is similar to the usda file format but with truncated\n"
         "array values and timeSamples for human readability, and 'layer' is\n"
-        "true layer output, with the format controlled by the 'outputFile'\n"
+        "true layer output, with the format controlled by the 'out'\n"
         "and 'outputFormat' arguments. Default: outline")
         ->transform(CLI::CheckedTransformer(outputTypeMap, CLI::ignore_case))
         ->option_text("validity|summary|outline|pseudoLayer|layer");
+
+    app.add_option(
+        "--outputFormat", outputFormat,
+        "Supply this as the 'format' entry of SdfFileFormatArguments for\n"
+        "'layer' output to a file.  Requires both 'layer' output and a\n"
+        "specified output file.");
 
     const std::map<std::string, SortKey> sortKeyMap{
         {"path", SortByPath}, {"field", SortByField}
