@@ -242,3 +242,29 @@ class NamedTemporaryFile(object):
     def name(self):
         """The path for the temporary file created.""" 
         return self._name
+
+# Extend Tf.ScopeDescription using ContextDecorator so that it can also be
+# used to decorate functions/methods.
+import contextlib
+
+class ScopeDescription(_ScopeDescription, contextlib.ContextDecorator):
+    """This class lets us expose TfScopeDescription to python for use as a
+    "context manager" object, for use with the 'with'-statement. For example:
+
+        with Tf.ScopeDescription("Solving the halting problem"):
+            # Code that solves the halting problem.
+
+    It can also be used as a decorator for an entire function or method, for
+    convenience:
+
+        @Tf.ScopeDescription("Solving the halting problem");
+        def SolveHaltingProblem():
+            # Code that solves the halting problem.
+
+    Note that the description passed to the decorator is an expression that is
+    evaluated only once at declaration time. If a dynamic description is
+    needed, use the with-statement pattern instead.
+    """
+    pass
+
+del contextlib
