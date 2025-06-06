@@ -22,4 +22,6 @@ TF_WRAP(UsdContrivedMultipleApplyAPI_1);
 TF_WRAP(UsdContrivedNoAlias);
 TF_WRAP(UsdContrivedTestReflectedAPIBase);
 TF_WRAP(UsdContrivedTestReflectedInternalAPI);
+TF_WRAP(UsdContrivedTestPropertyOrderTyped);
+TF_WRAP(UsdContrivedTestPropertyOrderSingleApplyAPI);
 TF_WRAP(UsdContrivedTokens);

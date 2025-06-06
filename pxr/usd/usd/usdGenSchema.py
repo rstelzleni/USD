@@ -1789,10 +1789,16 @@ def GenerateRegistry(codeGenPath, filePath, classes, validate, env):
             # Any other metadata is an error.
             allowedAPIMetadata = [
                 'specifier', 'customData', 'documentation']
-            # Single apply API schemas are also allowed to specify 'apiSchemas'
-            # metadata to include other API schemas.
+
+            # API schemas are also allowed to specify 'apiSchemas' metadata to
+            # include other API schemas.
             if apiSchemaType == SINGLE_APPLY or apiSchemaType == MULTIPLE_APPLY:
                 allowedAPIMetadata.append('apiSchemas')
+
+            # Allow 'propertyOrder' for single-apply schemas only.
+            if apiSchemaType == SINGLE_APPLY:
+                allowedAPIMetadata.append('propertyOrder')
+
             invalidMetadata = [key for key in p.GetAllAuthoredMetadata().keys()
                                if key not in allowedAPIMetadata]
             if invalidMetadata:

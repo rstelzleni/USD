@@ -497,6 +497,14 @@ struct UsdContrivedTokensType {
     /// 
     /// UsdContrivedTestReflectedInternalAPI
     const TfToken testAttrInternal;
+    /// \brief "testAttrOne"
+    /// 
+    /// UsdContrivedTestPropertyOrderTyped, UsdContrivedTestPropertyOrderSingleApplyAPI
+    const TfToken testAttrOne;
+    /// \brief "testAttrTwo"
+    /// 
+    /// UsdContrivedTestPropertyOrderTyped, UsdContrivedTestPropertyOrderSingleApplyAPI
+    const TfToken testAttrTwo;
     /// \brief "testingAsset"
     /// 
     /// UsdContrivedDerived
@@ -677,6 +685,14 @@ struct UsdContrivedTokensType {
     /// 
     /// Schema identifer for UsdContrivedTestNoVersion0_2
     const TfToken TestNoVersion0_2;
+    /// \brief "TestPropertyOrderSingleApplyAPI"
+    /// 
+    /// Schema identifer and family for UsdContrivedTestPropertyOrderSingleApplyAPI
+    const TfToken TestPropertyOrderSingleApplyAPI;
+    /// \brief "TestPropertyOrderTyped"
+    /// 
+    /// Schema identifer and family for UsdContrivedTestPropertyOrderTyped
+    const TfToken TestPropertyOrderTyped;
     /// \brief "TestPxHairman"
     /// 
     /// Schema identifer and family for UsdContrivedTestHairman, Schema family for UsdContrivedTestHairman_1

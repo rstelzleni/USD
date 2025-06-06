@@ -130,6 +130,8 @@ void wrapUsdContrivedTokens()
     _ADD_TOKEN(cls, testAttrDuplicate);
     _ADD_TOKEN(cls, testAttrExternal);
     _ADD_TOKEN(cls, testAttrInternal);
+    _ADD_TOKEN(cls, testAttrOne);
+    _ADD_TOKEN(cls, testAttrTwo);
     _ADD_TOKEN(cls, testingAsset);
     _ADD_TOKEN(cls, testNewVersion);
     _ADD_TOKEN(cls, testNewVersion_MultipleApplyTemplate_TestAttrOne);
@@ -175,6 +177,8 @@ void wrapUsdContrivedTokens()
     _ADD_TOKEN(cls, SingleApplyAPI_1);
     _ADD_TOKEN(cls, TestNoVersion0);
     _ADD_TOKEN(cls, TestNoVersion0_2);
+    _ADD_TOKEN(cls, TestPropertyOrderSingleApplyAPI);
+    _ADD_TOKEN(cls, TestPropertyOrderTyped);
     _ADD_TOKEN(cls, TestPxHairman);
     _ADD_TOKEN(cls, TestPxHairman_1);
     _ADD_TOKEN(cls, TestReflectedAPIBase);

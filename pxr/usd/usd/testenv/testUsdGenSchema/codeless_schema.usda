@@ -589,3 +589,24 @@ class "TestReflectedInternalAPI" (
     int testAttrDuplicate 
     rel testRelDuplicate
 }
+
+class "TestPropertyOrderTyped" (
+    inherits = </Typed>
+)
+{
+    reorder properties = ["testAttrTwo", "testAttrOne"]
+    int testAttrOne
+    int testAttrTwo
+}
+
+class "TestPropertyOrderSingleApplyAPI" (
+    inherits = </APISchemaBase>
+    customData = {
+        token apiSchemaType = "singleApply"
+    }
+)
+{
+    reorder properties = ["testAttrTwo", "testAttrOne"]
+    int testAttrOne
+    int testAttrTwo
+}

@@ -435,3 +435,17 @@ class "TestReflectedInternalAPI" (
     rel testRelInternal
 }
 
+class "TestPropertyOrderTyped"
+{
+    reorder properties = ["testAttrTwo", "testAttrOne"]
+    int testAttrOne
+    int testAttrTwo
+}
+
+class "TestPropertyOrderSingleApplyAPI"
+{
+    reorder properties = ["testAttrTwo", "testAttrOne"]
+    int testAttrOne
+    int testAttrTwo
+}
+
