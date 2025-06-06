@@ -413,6 +413,9 @@ Usd_ClipSet::Usd_ClipSet(
         valueClips.push_back(clip);
     }
 
+    // Have the clipTimes saved on the ClipSet as well.
+    _times = times;
+
     if (clipDef.interpolateMissingClipValues) {
         interpolateMissingClipValues = *clipDef.interpolateMissingClipValues;
     }
@@ -604,6 +607,27 @@ Usd_ClipSet::GetPreviousTimeSampleForPath(
 
     *tPrevious = *--it;
     return true;
+}
+
+bool
+Usd_ClipSet::_HasJumpDiscontinuityAtTime(double time) const
+{
+    if (_times->empty()) {
+        return false;
+    }
+    
+    const auto it = std::lower_bound(
+        _times->begin(), _times->end(), time, 
+        Usd_Clip::Usd_SortByExternalTime());
+
+    // - time is within the range of the clip times, and
+    // - time is same as the external time of the found clip time, and
+    // - Since jump discontinuities are represented on the previous mapping
+    // entry, we need to check if the previous entry is a jump
+    // discontinuity (making sure we are not at the beginning of the time
+    // mappings).
+    return (it != _times->end() && (it->externalTime == time) && 
+            it != _times->begin() && (it-1)->isJumpDiscontinuity);
 }
 
 std::set<double>
