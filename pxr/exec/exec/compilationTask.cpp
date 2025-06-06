@@ -8,7 +8,28 @@
 
 #include "pxr/exec/exec/compilationState.h"
 
+#include "pxr/base/arch/hints.h"
+
 PXR_NAMESPACE_OPEN_SCOPE
+
+static inline void
+_RunOrInvoke(
+    const Exec_CompilerTaskSync &taskSync,
+    Exec_CompilationTask *const task, 
+    const int depth)
+{
+    // We empirically determined a stack depth limit of 50 to preserve the
+    // performance optimization gained from recursively invoking tasks, while
+    // limiting growth of the stack space.
+    // We also performance tested limits of 100 and 200, and were not able to
+    // observe a significant performance difference.
+    
+    if (ARCH_LIKELY(depth < 50)) {
+        task->operator()(depth + 1);
+    } else {
+        taskSync.Run(task);
+    }
+}
 
 Exec_CompilationTask::~Exec_CompilationTask() = default;
 
@@ -26,7 +47,7 @@ Exec_CompilationTask::TaskDependencies::ClaimSubtask(
 }
 
 void
-Exec_CompilationTask::operator()() const
+Exec_CompilationTask::operator()(const int depth) const
 {
     // WorkDispatcher semantics require call operators to be const, but we need
     // to mutate our internal task state.
@@ -49,6 +70,11 @@ Exec_CompilationTask::operator()() const
         return taskPhases._GetNextTask();
     }();
 
+    // Get the task sync object for running subsequent tasks.
+    const Exec_CompilerTaskSync &taskSync =
+        Exec_CompilationState::OutputTasksAccess::_Get(
+            &thisTask->_compilationState);
+
     // If a pointer to a next task was returned, thisTask *did not* complete.
     // In this case there are additional phases to run, and one or more
     // sub-tasks constituting unfulfilled dependencies aren't done yet.
@@ -57,10 +83,10 @@ Exec_CompilationTask::operator()() const
         // invoke a specific sub-task (c.f., TBB scheduler bypass).
         // 
         // Note, invoking the next task recursively is fast, but grows the
-        // stack. If this becomes a problem we can Run() the task on the
-        // dispatcher at the cost of performance.
+        // stack. Once we reach a certain stack depth, we will Run() the task to
+        // prevent running out of stack space.
         if (nextTask != thisTask) {
-            nextTask->operator()();
+            _RunOrInvoke(taskSync, nextTask, depth);
         }
 
         // Let's remove the dependency we added above to prevent re-entry.
@@ -71,10 +97,10 @@ Exec_CompilationTask::operator()() const
         // hook to re-run this task.
         // 
         // Note, re-invoking this task recursively is fast, but grows the stack.
-        // If this becomes a problem we can Run() the task on the dispatcher at
-        // the cost of performance.
+        // Once we reach a certain stack depth, we will Run() the task to
+        // prevent running out of stack space.
         if (thisTask->RemoveDependency() == 0) {
-            thisTask->operator()();
+            _RunOrInvoke(taskSync, thisTask, depth);
         }
         return;
     }
@@ -87,10 +113,10 @@ Exec_CompilationTask::operator()() const
         // happen here.
         // 
         // Note, invoking the parent task recursively is fast, but grows the
-        // stack. If this becomes a problem we can Run() the task on the
-        // dispatcher at the cost of performance.
+        // stack. Once we reach a certain stack depth, we will Run() the task to
+        // prevent running out of stack space.
         if (parent->RemoveDependency() == 0) {
-            parent->operator()();
+            _RunOrInvoke(taskSync, parent, depth);
         }
     }
 

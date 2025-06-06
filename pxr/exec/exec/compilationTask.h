@@ -47,8 +47,12 @@ public:
         return _numDependents.fetch_sub(1, std::memory_order_release) - 1;
     }
 
-    /// Executes the task. 
-    void operator()() const;
+    /// Executes the task.
+    ///
+    /// The caller adds 1 to the \p depth to track the depth of recursive
+    /// invocations of operator().
+    /// 
+    void operator()(int depth = 0) const;
 
 protected:
     class TaskPhases;
