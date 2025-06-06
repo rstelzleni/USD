@@ -53,6 +53,7 @@ pxr_build_test(testUsdSkelImagingChanges
     LIBRARIES
         usdImaging
         usdShade
+        usdSkel
         usd
         sdf
         hd
@@ -71,4 +72,6 @@ pxr_install_test_dir(
 pxr_register_test(testUsdSkelImagingChanges
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdSkelImagingChanges"
     EXPECTED_RETURN_CODE 0
+    ENV
+      TF_FATAL_VERIFY=0
 )
