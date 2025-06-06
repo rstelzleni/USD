@@ -48,7 +48,7 @@ public:
     /// Otherwise, return nullptr.
     ///
     static EfLeafNode* AsALeafNode(VdfNode *const node) {
-        if (node && node->GetNumInputs() == 0) {
+        if (node && node->GetNumOutputs() == 0) {
             return dynamic_cast<EfLeafNode *>(node);
         }
         return nullptr;
@@ -58,7 +58,7 @@ public:
     /// EfLeafNode*. Otherwise, return nullptr.
     ///
     static const EfLeafNode* AsALeafNode(const VdfNode *const node) {
-        if (node && node->GetNumInputs() == 0) {
+        if (node && node->GetNumOutputs() == 0) {
             return dynamic_cast<const EfLeafNode *>(node);
         }
         return nullptr;

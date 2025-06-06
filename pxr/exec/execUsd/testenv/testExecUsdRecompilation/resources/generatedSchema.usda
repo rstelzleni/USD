@@ -7,3 +7,6 @@ class CustomSchema "CustomSchema"
 {
 }
 
+class "CustomAppliedSchema"
+{
+}

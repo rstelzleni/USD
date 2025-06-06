@@ -21,3 +21,9 @@ class CustomSchema "CustomSchema" (
 )
 {
 }
+
+class "CustomAppliedSchema" (
+    inherits = </APISchemaBase>
+)
+{
+}

@@ -87,6 +87,9 @@ pxr_register_test(testExecUsdRecompilation
         TestRecompileDeletedPrim-1.dot                                         \
         TestRecompileDeletedPrim-2.dot                                         \
         TestRecompileDeletedPrim-3.dot                                         \
+        TestRecompileResyncedPrim-1.dot                                        \
+        TestRecompileResyncedPrim-2.dot                                        \
+        TestRecompileResyncedPrim-3.dot                                        \
         TestRecompileChangedRelationshipTargets-1.dot                          \
         TestRecompileChangedRelationshipTargets-2.dot                          \
         TestRecompileChangedRelationshipTargets-3.dot                          \
@@ -102,6 +105,9 @@ pxr_register_test(testExecUsdRecompilation
     DIFF_COMPARE TestRecompileDeletedPrim-1.out
     DIFF_COMPARE TestRecompileDeletedPrim-2.out
     DIFF_COMPARE TestRecompileDeletedPrim-3.out
+    DIFF_COMPARE TestRecompileResyncedPrim-1.out
+    DIFF_COMPARE TestRecompileResyncedPrim-2.out
+    DIFF_COMPARE TestRecompileResyncedPrim-3.out
     DIFF_COMPARE TestRecompileChangedRelationshipTargets-1.out
     DIFF_COMPARE TestRecompileChangedRelationshipTargets-2.out
     DIFF_COMPARE TestRecompileChangedRelationshipTargets-3.out

@@ -459,6 +459,56 @@ TestRecompileDeletedPrim(Fixture &fixture)
     fixture.GraphNetwork("TestRecompileDeletedPrim-3.dot");
 }
 
+static void
+TestRecompileResyncedPrim(Fixture &fixture)
+{
+    // Tests that when a prim is resynced (but not deleted), we can recompile
+    // value keys for that prim.
+
+    ExecUsdSystem &system = fixture.NewSystemFromLayer(R"usd(#usda 1.0
+        def CustomSchema "Prim" {
+            int customAttr = 1
+        }
+    )usd");
+
+    UsdPrim prim = fixture.GetPrimAtPath("/Prim");
+
+    // Request a computation on Prim.
+    ExecUsdRequest request = fixture.BuildRequest({
+        {prim, _tokens->computeUsingCustomAttr}
+    });
+
+    // Compile and evaluate the request.
+    system.PrepareRequest(request);
+    fixture.GraphNetwork("TestRecompileResyncedPrim-1.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == 1);
+    }
+
+    // Apply a schema to the prim. This produduces a resync event for the prim,
+    // but the prim still exists.
+    //
+    // TODO: When we implement ExecRequest expiration, this change will likely
+    // expire the request, in which case, this test case needs to rebuild the
+    // request before proceeding.
+    prim.AddAppliedSchema(TfToken("CustomAppliedSchema"));
+    fixture.GraphNetwork("TestRecompileResyncedPrim-2.dot");
+    
+    // Compile a new request for the same value key. This should recompile the
+    // leaf node because the prim still exists.
+    system.PrepareRequest(request);
+    fixture.GraphNetwork("TestRecompileResyncedPrim-3.dot");
+    {
+        ExecUsdCacheView view = system.CacheValues(request);
+        VtValue v;
+        TF_AXIOM(view.Extract(0, &v));
+        TF_AXIOM(v.Get<int>() == 1);
+    }
+}
+
 int main()
 {
     ConfigureTestPlugin();
@@ -468,7 +518,8 @@ int main()
         TestRecompileMultipleRequests,
         TestRecompileChangedRelationshipTargets,
         TestRecompileAfterChangingOldRelationshipTarget,
-        TestRecompileDeletedPrim
+        TestRecompileDeletedPrim,
+        TestRecompileResyncedPrim,
     };
     for (const auto &test : tests) {
         Fixture fixture;
