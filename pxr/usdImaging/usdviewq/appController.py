@@ -1330,6 +1330,9 @@ class AppController(QtCore.QObject):
             self.realStartTimeCode = stageStartTimeCode
             self.realEndTimeCode = stageEndTimeCode
 
+        self._dataModel.frameRangeBegin = self.realStartTimeCode
+        self._dataModel.frameRangeEnd = self.realEndTimeCode
+
         self._ui.stageBegin.setText(str(stageStartTimeCode))
         self._ui.stageEnd.setText(str(stageEndTimeCode))
 
@@ -2143,6 +2146,7 @@ class AppController(QtCore.QObject):
         value = float(self._ui.rangeBegin.text())
         if value != self.realStartTimeCode:
             self.realStartTimeCode = value
+            self._dataModel.frameRangeBegin = value
             self._UpdateTimeSamples(resetStageDataOnly=False)
 
     def _stepSizeChanged(self):
@@ -2156,6 +2160,7 @@ class AppController(QtCore.QObject):
         value = float(self._ui.rangeEnd.text())
         if value != self.realEndTimeCode:
             self.realEndTimeCode = value
+            self._dataModel.frameRangeEnd = value
             self._UpdateTimeSamples(resetStageDataOnly=False)
 
     def _frameStringChanged(self):
