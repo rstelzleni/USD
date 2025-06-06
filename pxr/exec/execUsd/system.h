@@ -36,6 +36,11 @@ class UsdTimeCode;
 /// structures and logic necessary to compile, schedule and evaluate requested
 /// computation values.
 /// 
+/// The ExecUsdSystem extends the lifetime of the UsdStage it is constructed
+/// with, although it is atypical for an ExecUsdSystem to outlive its stage in
+/// practice. As a rule of thumb, the ExecUsdSystem lives right alongside the
+/// UsdStage in most use-cases. 
+/// 
 class ExecUsdSystem : public ExecSystem
 {
 public:
