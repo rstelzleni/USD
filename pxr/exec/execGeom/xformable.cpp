@@ -23,7 +23,7 @@ _ComputeLocalToWorldTransform(const VdfContext &ctx)
 
     const GfMatrix4d *const parentToWorld =
         ctx.GetInputValuePtr<GfMatrix4d>(
-            ExecGeomXformableTokens->computeTransform);
+            ExecGeomXformableTokens->computeLocalToWorldTransform);
 
     // The computed local-to-world matrix is the local matrix multiplied with
     // the parent local-to-world, if we have both. If we are missing either
@@ -42,13 +42,13 @@ _ComputeLocalToWorldTransform(const VdfContext &ctx)
 
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(UsdGeomXformable)
 {
-    self.PrimComputation(ExecGeomXformableTokens->computeTransform)
+    self.PrimComputation(ExecGeomXformableTokens->computeLocalToWorldTransform)
         .Callback<GfMatrix4d>(&_ComputeLocalToWorldTransform)
         .Inputs(
             AttributeValue<GfMatrix4d>(
                 ExecGeomXformableTokens->transform),
             NamespaceAncestor<GfMatrix4d>(
-                ExecGeomXformableTokens->computeTransform)
+                ExecGeomXformableTokens->computeLocalToWorldTransform)
         );
 }
 

@@ -18,7 +18,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 #define EXEC_GEOM_XFORMABLE_TOKENS      \
-    (computeTransform)                  \
+    (computeLocalToWorldTransform)      \
     ((transform, "xformOps:transform"))
 
 TF_DECLARE_PUBLIC_TOKENS(

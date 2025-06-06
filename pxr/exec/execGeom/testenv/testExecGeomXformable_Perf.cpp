@@ -337,7 +337,8 @@ TestExecGeomXformable_Perf(
         for (const SdfPath &path : leafPrims) {
             UsdPrim prim = usdStage->GetPrimAtPath(path);
             TF_AXIOM(prim.IsValid());
-            valueKeys.emplace_back(prim, TfToken("computeTransform"));
+            valueKeys.emplace_back(
+                prim, TfToken("computeLocalToWorldTransform"));
         }
 
         return execSystem.BuildRequest(std::move(valueKeys));
@@ -433,7 +434,8 @@ TestExecGeomXformable_Perf(
             for (size_t i=0; i<leafPrims.size()/2; ++i) {
                 UsdPrim prim = usdStage->GetPrimAtPath(leafPrims[i]);
                 TF_AXIOM(prim.IsValid());
-                valueKeys.emplace_back(prim, TfToken("computeTransform"));
+                valueKeys.emplace_back(
+                    prim, TfToken("computeLocalToWorldTransform"));
             }
 
             return execSystem.BuildRequest(std::move(valueKeys));

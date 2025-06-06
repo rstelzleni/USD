@@ -74,7 +74,7 @@ TestExecGeomXformable()
     // this test relies on plugin loading.
     std::vector<ExecUsdValueKey> valueKeys {
         {usdStage->GetPrimAtPath(SdfPath("/Root/A1/B")),
-         TfToken("computeTransform")}
+         TfToken("computeLocalToWorldTransform")}
     };
 
     const ExecUsdRequest request = execSystem.BuildRequest(std::move(valueKeys));
