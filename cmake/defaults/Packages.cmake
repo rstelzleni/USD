@@ -106,16 +106,13 @@ if(WIN32)
 endif()
 
 # --TBB
-find_package(TBB CONFIG)
-if(TBB_DIR)
-    # Found in CONFIG mode.
-    set(TBB_tbb_LIBRARY TBB::tbb)
+find_package(TBB CONFIG COMPONENTS tbb)
+if(TBB_FOUND) 
     set(PXR_FIND_TBB_IN_CONFIG ON)
 else()
     find_package(TBB REQUIRED COMPONENTS tbb)
     set(PXR_FIND_TBB_IN_CONFIG OFF)
 endif()
-add_definitions(${TBB_DEFINITIONS})
 
 # --math
 if(WIN32)
