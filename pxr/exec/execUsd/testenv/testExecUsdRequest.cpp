@@ -50,7 +50,7 @@ TF_REGISTRY_FUNCTION(ExecTypeRegistry)
     ExecTypeRegistry::RegisterType(UsdTimeCode::Default());
 }
 
-std::atomic<int> NumComputed{0};
+static std::atomic<int> NumComputed{0};
 
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRequestComputedTransform)
 {
