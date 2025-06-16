@@ -14,6 +14,8 @@
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/types.h"
 
+#include "pxr/exec/esf/prim.h"
+
 #include "pxr/base/plug/notice.h"
 #include "pxr/base/tf/hash.h"
 #include "pxr/base/tf/singleton.h"
@@ -34,7 +36,7 @@ class Exec_RegistrationBarrier;
 class EsfAttributeInterface;
 class EsfJournal;
 class EsfObjectInterface;
-class EsfPrimInterface;
+class EsfStage;
 
 /// Singleton that stores computation definitions registered for schemas that
 /// define computations.
@@ -139,10 +141,13 @@ private:
         // TODO: Add plugin attribute computation definitions.
     };
 
-    // Creates and returns the composed prim definition for a prim with type
-    // \p schemaType.
+    // Creates and returns the composed prim definition for a prim on \p stage
+    // with typed schema \p schemaType and API schemas \p appliedSchemas.
     //
-    _ComposedPrimDefinition _ComposePrimDefinition(TfType schemaType) const;
+    _ComposedPrimDefinition _ComposePrimDefinition(
+        const EsfStage &stage,
+        TfType schemaType,
+        const TfTokenVector &appliedSchemas) const;
 
     void _RegisterPrimComputation(
         TfType schemaType,
@@ -217,12 +222,12 @@ private:
         TfHash>
     _pluginPrimComputationDefinitions;
 
-    // Map from schemaType to composed prim exec definition.
+    // Map from an opaque ID to composed prim exec definition.
     //
     // This is a concurrent map to allow computation lookup to happen in
     // parallel with lazy caching of composed prim definitions.
     mutable tbb::concurrent_unordered_map<
-        TfType,
+        EsfPrimInterface::PrimSchemaID,
         _ComposedPrimDefinition,
         TfHash>
     _composedPrimDefinitions;

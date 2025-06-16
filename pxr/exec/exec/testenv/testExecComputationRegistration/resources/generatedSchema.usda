@@ -21,4 +21,13 @@ class ExtraPluginComputationSchema "ExtraPluginComputationSchema"
 
 class ConflictingPluginRegistrationSchema "ConflictingPluginRegistrationSchema"
 {
+}	
+
+class "CustomAppliedSchema"
+{
 }
+
+class "CustomMultiApplySchema"
+{
+}
+

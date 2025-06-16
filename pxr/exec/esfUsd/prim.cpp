@@ -9,6 +9,8 @@
 #include "pxr/exec/esfUsd/attribute.h"
 #include "pxr/exec/esfUsd/relationship.h"
 
+#include "pxr/usd/usd/primDefinition.h"
+
 #include <utility>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -18,7 +20,7 @@ static_assert(sizeof(EsfUsd_Prim) == sizeof(EsfPrim));
 
 EsfUsd_Prim::~EsfUsd_Prim() = default;
 
-TfTokenVector
+const TfTokenVector &
 EsfUsd_Prim::_GetAppliedSchemas() const
 {
     return _GetWrapped().GetAppliedSchemas();
@@ -52,6 +54,17 @@ TfType
 EsfUsd_Prim::_GetType() const
 {
     return _GetWrapped().GetPrimTypeInfo().GetSchemaType();
+}
+
+EsfPrimInterface::PrimSchemaID
+EsfUsd_Prim::_GetPrimSchemaID() const
+{
+    // We use the address of the UsdPrimTypeInfo as the prim schema ID, since it
+    // is unique to the set of types and applied schemas for the prim and it is
+    // stable, since it is guaranteed to stay alive at least as long as the
+    // UsdStage.
+    return EsfPrimInterface::CreatePrimSchemaID(
+        &_GetWrapped().GetPrimTypeInfo());
 }
 
 bool

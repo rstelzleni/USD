@@ -15,7 +15,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 EsfPrimInterface::~EsfPrimInterface() = default;
 
-TfTokenVector
+const TfTokenVector &
 EsfPrimInterface::GetAppliedSchemas(EsfJournal *journal) const
 {
     if (journal) {
@@ -66,6 +66,15 @@ EsfPrimInterface::GetType(EsfJournal *journal) const
         journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
     }
     return _GetType();
+}
+
+EsfPrimInterface::PrimSchemaID
+EsfPrimInterface::GetPrimSchemaID(EsfJournal *journal) const
+{
+    if (journal) {
+        journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
+    }
+    return _GetPrimSchemaID();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -40,6 +40,7 @@ PXR_NAMESPACE_USING_DIRECTIVE;
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
 
+    (appliedSchemaComputation)
     (attr)
     (attributeComputation)
     (attributeComputedValueComputation)
@@ -48,6 +49,7 @@ TF_DEFINE_PRIVATE_TOKENS(
     (derivedSchemaComputation)
     (emptyComputation)
     (missingComputation)
+    (multiApplySchemaComputation)
     (namespaceAncestorInput)
     (noInputsComputation)
     (primComputation)
@@ -63,6 +65,7 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestUnknownSchemaType)
         .Callback<double>(+[](const VdfContext &) { return 1.0; });
 }
 
+// Register computations for a typed schema.
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
     TestExecComputationRegistrationCustomSchema)
 {
@@ -120,6 +123,7 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
         .Callback(+[](const VdfContext &) { return 1.0; });
 }
 
+// Register computations for a derived typed schema.
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
     TestExecComputationRegistrationDerivedCustomSchema)
 {
@@ -135,10 +139,30 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
         );
 }
 
-// XXX:TODO
-#if 0
+// Register computations for an applied schema.
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
+    TestExecComputationRegistrationCustomAppliedSchema)
+{
+    // A computation that is registered only for the applied schema.
+    self.PrimComputation(_tokens->appliedSchemaComputation)
+        .Callback(+[](const VdfContext &ctx) { return 42; });
 
-// Test that clients can register schemas inside their own namespaces.
+    // A computation that is registered for the applied schema and also for a
+    // typed schema.
+    self.PrimComputation(_tokens->primComputation)
+        .Callback<double>([](const VdfContext &ctx) { ctx.SetOutput(42.0); });
+}
+
+// Register computations for a multi-apply schema.
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(
+    TestExecComputationRegistrationCustomMultiApplySchema)
+{
+    self.PrimComputation(_tokens->multiApplySchemaComputation)
+        .Callback(+[](const VdfContext &ctx) { return 42; });
+}
+
+// TODO: Support client code that registers schema inside their own namespaces.
+#if 0
 
 namespace client_namespace {
 
@@ -281,27 +305,29 @@ TestRegistrationErrors()
     Exec_DefinitionRegistry::GetInstance();
 }
 
+// Test that an unknown applied schema is ignored and we still find computations
+// registered for an applied schema.
+//
 static void
 TestUnknownSchemaType()
 {
     EsfJournal *const nullJournal = nullptr;
     const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
     const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
-        def TestUnknownSchemaType "Prim" {
+        def TestUnknownSchemaType "Prim" (
+            apiSchemas = ["CustomAppliedSchema"]
+        ) {
         }
     )usd");
     const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
     TF_AXIOM(prim->IsValid(nullJournal));
 
     {
-        ExpectedErrors expected({
-            "Unknown schema type when looking up definition for computation "
-            "'noInputsComputation'"
-        });
+        // Look up a computation registered for the applied schema type.
         const Exec_ComputationDefinition *const primCompDef =
             reg.GetComputationDefinition(
-                *prim, _tokens->noInputsComputation, nullJournal);
-        TF_AXIOM(!primCompDef);
+                *prim, _tokens->appliedSchemaComputation, nullJournal);
+        TF_AXIOM(primCompDef);
     }
 }
 
@@ -354,7 +380,7 @@ TestConflictingPluginSchemaComputationRegistration()
 }
 
 static void
-TestComputationRegistration()
+TestTypedSchemaComputationRegistration()
 {
     EsfJournal *const nullJournal = nullptr;
     const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
@@ -588,6 +614,93 @@ TestDerivedSchemaComputationRegistration()
 }
 
 static void
+TestAppliedSchemaComputationRegistration()
+{
+    EsfJournal *const nullJournal = nullptr;
+    const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+
+    {
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+            def Scope "Prim" (apiSchemas = ["CustomAppliedSchema"]) {
+            }
+        )usd");
+        const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+
+        {
+            // Look up a computation registered for the applied schema type.
+            const Exec_ComputationDefinition *const primCompDef =
+                reg.GetComputationDefinition(
+                    *prim, _tokens->appliedSchemaComputation, nullJournal);
+            TF_AXIOM(primCompDef);
+        }
+
+        {
+            // Look up another computation, which is registered for the
+            // applied schema, with no inputs.
+            const Exec_ComputationDefinition *const primCompDef =
+                reg.GetComputationDefinition(
+                    *prim, _tokens->primComputation, nullJournal);
+            TF_AXIOM(primCompDef);
+            const auto inputKeys =
+                primCompDef->GetInputKeys(*prim, nullJournal);
+            ASSERT_EQ(inputKeys->Get().size(), 0);
+        }
+    }
+
+    {
+        // Test computation registrations for an API schema that's applied to
+        // a prim that also has a typed schema with computation registrations.
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+            def CustomSchema "Prim" (apiSchemas = ["CustomAppliedSchema"]) {
+            }
+        )usd");
+        const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+
+        {
+            // Look up a computation that is only registered for the applied
+            // schema type.
+            const Exec_ComputationDefinition *const primCompDef =
+                reg.GetComputationDefinition(
+                    *prim, _tokens->appliedSchemaComputation, nullJournal);
+            TF_AXIOM(primCompDef);
+        }
+
+        {
+            // Look up a computation that is also registered for the typed
+            // schema and verify that the typed schema wins.
+            const Exec_ComputationDefinition *const primCompDef =
+                reg.GetComputationDefinition(
+                    *prim, _tokens->primComputation, nullJournal);
+            TF_AXIOM(primCompDef);
+            const auto inputKeys =
+                primCompDef->GetInputKeys(*prim, nullJournal);
+            ASSERT_EQ(inputKeys->Get().size(), 5);
+        }
+    }
+
+    {
+        // Test that, for now, we ignore multi-apply schemas during computation
+        // lookup.
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+            def Scope "Prim" (apiSchemas = ["CustomMultiApplySchema:test"]) {
+            }
+        )usd");
+        const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+
+        {
+            // Look up a computation registered for the applied schema type.
+            const Exec_ComputationDefinition *const primCompDef =
+                reg.GetComputationDefinition(
+                    *prim, _tokens->multiApplySchemaComputation, nullJournal);
+            TF_AXIOM(!primCompDef);
+        }
+    }
+}
+
+static void
 TestPluginSchemaComputationRegistration()
 {
     EsfJournal *const nullJournal = nullptr;
@@ -705,8 +818,9 @@ int main()
     TestUnknownSchemaType();
     TestStageBuiltinComputationOnPrim();
     TestConflictingPluginSchemaComputationRegistration();
-    TestComputationRegistration();
+    TestTypedSchemaComputationRegistration();
     TestDerivedSchemaComputationRegistration();
+    TestAppliedSchemaComputationRegistration();
     TestPluginSchemaComputationRegistration();
 
     return 0;

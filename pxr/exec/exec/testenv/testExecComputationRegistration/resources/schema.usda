@@ -45,3 +45,15 @@ class ConflictingPluginRegistrationSchema "ConflictingPluginRegistrationSchema" 
 )
 {
 }
+
+class "CustomAppliedSchema" (
+    inherits = </APISchemaBase>
+)
+{
+}
+
+class "CustomMultiApplySchema" (
+    inherits = </APISchemaBase>
+)
+{
+}

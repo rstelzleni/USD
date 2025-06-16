@@ -32,13 +32,14 @@ public:
 
 private:
     // EsfPrimInterface implementation.
-    TfTokenVector _GetAppliedSchemas() const final;
+    const TfTokenVector &_GetAppliedSchemas() const final;
     EsfAttribute _GetAttribute(
         const TfToken &attributeName) const final;
     EsfPrim _GetParent() const final;
     EsfRelationship _GetRelationship(
         const TfToken &relationshipName) const final;
     TfType _GetType() const final;
+    EsfPrimInterface::PrimSchemaID _GetPrimSchemaID() const final;
     bool IsPseudoRoot() const final;
 };
 

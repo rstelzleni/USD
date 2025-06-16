@@ -13,6 +13,7 @@
 
 #include "pxr/exec/esf/api.h"
 #include "pxr/exec/esf/fixedSizePolymorphicHolder.h"
+#include "pxr/exec/esf/stage.h"
 
 #include "pxr/usd/sdf/path.h"
 
@@ -23,7 +24,6 @@ class EsfJournal;
 class EsfObject;
 class EsfPrim;
 class EsfRelationship;
-class EsfStage;
 class TfToken;
 
 /// Scene object abstraction for scene adapter implementations.
@@ -54,6 +54,11 @@ public:
 
     /// \see UsdObject::GetPrim
     ESF_API EsfPrim GetPrim(EsfJournal *journal) const;
+
+    /// \see UsdObject::GetStage
+    EsfStage GetStage() const {
+        return _GetStage();
+    }
 
     /// \see UsdObject::Is
     virtual bool IsPrim() const = 0;

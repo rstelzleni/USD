@@ -39,7 +39,7 @@ public:
     ESF_API ~EsfPrimInterface() override;
 
     /// \see UsdPrim::GetAppliedSchemas
-    ESF_API TfTokenVector GetAppliedSchemas(EsfJournal *journal) const;
+    ESF_API const TfTokenVector &GetAppliedSchemas(EsfJournal *journal) const;
 
     /// \see UsdPrim::GetAttribute
     ESF_API EsfAttribute GetAttribute(
@@ -57,6 +57,41 @@ public:
     /// \see UsdPrim::GetPrimTypeInfo and \see UsdPrimTypeInfo::GetSchemaType
     ESF_API TfType GetType(EsfJournal *journal) const;
 
+    /// An opaque type that can be used to identify the configuration of typed
+    /// and applied schemas for a prim.
+    ///
+    class PrimSchemaID {
+    public:
+        bool operator==(PrimSchemaID id) const {
+            return _id == id._id;
+        }
+
+        template <class HashState>
+        friend void TfHashAppend(HashState &h, const PrimSchemaID id) {
+            h.Append(id._id);
+        }
+
+    private:
+        // Derived classes can construct a PrimSchemaID by calling
+        // EsfPrimInterface::CreatePrimSchemaID.
+        //
+        friend EsfPrimInterface;
+        explicit PrimSchemaID(const void *const id)
+            : _id(id)
+        {
+        }
+
+    private:
+        const void *_id;
+    };
+
+    /// Returns an opaque value that is guaranteed to be unique and stable.
+    /// 
+    /// Any prims that have the same typed schema and the same list of applied
+    /// schemas will have the same schema ID.
+    ///
+    ESF_API PrimSchemaID GetPrimSchemaID(EsfJournal *journal) const;
+
     /// \see UsdPrim::IsPseudoRoot
     virtual bool IsPseudoRoot() const = 0;
 
@@ -64,15 +99,20 @@ protected:
     /// This constructor may only be called by the scene adapter implementation.
     EsfPrimInterface(const SdfPath &path) : EsfObjectInterface(path) {}
 
+    static PrimSchemaID CreatePrimSchemaID(const void *const id) {
+        return PrimSchemaID(id);
+    }
+
 private:
     // These methods must be implemented by the scene adapter implementation.
-    virtual TfTokenVector _GetAppliedSchemas() const = 0;
+    virtual const TfTokenVector &_GetAppliedSchemas() const = 0;
     virtual EsfAttribute _GetAttribute(
         const TfToken &attributeName) const = 0;
     virtual EsfPrim _GetParent() const = 0;
     virtual EsfRelationship _GetRelationship(
         const TfToken &relationshipName) const = 0;
     virtual TfType _GetType() const = 0;
+    virtual PrimSchemaID _GetPrimSchemaID() const = 0;
 };
 
 /// Holds an implementation of EsfPrimInterface in a fixed-size buffer.
