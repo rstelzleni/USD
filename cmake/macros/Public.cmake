@@ -1178,6 +1178,19 @@ function(pxr_toplevel_epilogue)
                     -Wl,-force_load $<BUILD_INTERFACE:$<TARGET_FILE:usd_m>>
             )
         endif()
+        if(APPLE AND PXR_PY_UNDEFINED_DYNAMIC_LOOKUP)
+            # When not explicitly linking to the python lib we need to allow
+            # the linker to complete without resolving all symbols. This lets
+            # python resolve at runtime, and use this to support python
+            # versions built with different compilers and point versions.
+            # This only needed on macOS; this is not an issue on Windows,
+            # and on Linux the equivalent --allow-shlib-undefined option for ld
+            # is enabled by default when creating shared libraries.
+            target_link_options(usd_ms
+                PUBLIC
+                "LINKER:SHELL:-undefined dynamic_lookup"
+            )
+        endif()
 
         # Since we didn't add a dependency to usd_ms on usd_m above, we
         # manually add it here along with compile definitions, include
