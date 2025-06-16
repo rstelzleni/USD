@@ -42,7 +42,7 @@ pxr_library(hdsi
         sceneGlobalsSceneIndex
         switchingSceneIndex
         tetMeshConversionSceneIndex
-        unboundMaterialOverridingSceneIndex
+        unboundMaterialPruningSceneIndex
         utils
         velocityMotionResolvingSceneIndex
 

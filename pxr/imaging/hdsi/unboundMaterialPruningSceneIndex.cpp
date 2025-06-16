@@ -4,7 +4,7 @@
 // Licensed under the terms set forth in the LICENSE.txt file available at
 // https://openusd.org/license.
 
-#include "pxr/imaging/hdsi/unboundMaterialOverridingSceneIndex.h"
+#include "pxr/imaging/hdsi/unboundMaterialPruningSceneIndex.h"
 
 #include "pxr/imaging/hd/materialBindingSchema.h"
 #include "pxr/imaging/hd/materialBindingsSchema.h"
@@ -12,8 +12,8 @@
 #include "pxr/imaging/hd/sceneIndexPrimView.h"
 #include "pxr/imaging/hd/tokens.h"
 
-#include "pxr/base/work/loops.h"
 #include "pxr/base/trace/trace.h"
+#include "pxr/base/work/loops.h"
 
 #include "tbb/concurrent_vector.h"
 
@@ -22,7 +22,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 TF_DEFINE_PUBLIC_TOKENS(
-    HdsiUnboundMaterialOverridingSceneIndexTokens,
+    HdsiUnboundMaterialPruningSceneIndexTokens,
     HDSI_UNBOUND_MATERIAL_PRUNING_SCENE_INDEX_TOKENS);
 
 namespace
@@ -33,7 +33,7 @@ _GetMaterialBindingPurposes(
 {
     const HdDataSourceBaseHandle ds =
         inputArgs->Get(
-            HdsiUnboundMaterialOverridingSceneIndexTokens->
+            HdsiUnboundMaterialPruningSceneIndexTokens->
                 materialBindingPurposes);
 
     if (HdTokenArrayDataSourceHandle tokensDs =
@@ -97,26 +97,26 @@ HdDataSourceLocatorSet _ComputeBindingLocators(
 } // anon
 
 // static
-HdsiUnboundMaterialOverridingSceneIndexRefPtr
-HdsiUnboundMaterialOverridingSceneIndex::New(
+HdsiUnboundMaterialPruningSceneIndexRefPtr
+HdsiUnboundMaterialPruningSceneIndex::New(
     HdSceneIndexBaseRefPtr const &inputSceneIndex,
     HdContainerDataSourceHandle const &inputArgs)
 {
-    return TfCreateRefPtr(new HdsiUnboundMaterialOverridingSceneIndex(
+    return TfCreateRefPtr(new HdsiUnboundMaterialPruningSceneIndex(
         inputSceneIndex, inputArgs));
 }
 
 HdSceneIndexPrim
-HdsiUnboundMaterialOverridingSceneIndex::GetPrim(
+HdsiUnboundMaterialPruningSceneIndex::GetPrim(
     const SdfPath &primPath) const
 {
     HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(primPath);
 
     if (prim.primType == HdPrimTypeTokens->material &&
-        !_IsBoundMaterial(primPath)) {
-        // Clear just the prim container. Note that we don't clear the prim type
-        // because this simplifies the processing necessary in the notice 
-        // handlers.
+        !_IsBoundMaterial(primPath)) {        
+        // Clear both prim type and container. We don't need to be lazy here
+        // because we re-add the material when it is bound.
+        prim.primType = TfToken();
         prim.dataSource = nullptr;
     }
 
@@ -124,34 +124,38 @@ HdsiUnboundMaterialOverridingSceneIndex::GetPrim(
 }
 
 SdfPathVector
-HdsiUnboundMaterialOverridingSceneIndex::GetChildPrimPaths(
+HdsiUnboundMaterialPruningSceneIndex::GetChildPrimPaths(
     const SdfPath &primPath) const
 {
     // This scene index does not remove unbound material prims from the scene
-    // topology. It only overrides their prim container.
+    // topology. It only overrides their prim type and container.
     return _GetInputSceneIndex()->GetChildPrimPaths(primPath);
 }
 
 void
-HdsiUnboundMaterialOverridingSceneIndex::_PrimsAdded(
+HdsiUnboundMaterialPruningSceneIndex::_PrimsAdded(
     const HdSceneIndexBase &sender,
     const HdSceneIndexObserver::AddedPrimEntries &entries)
 {    
     TRACE_FUNCTION();
-
+    using _ConcurrentIndexVector = tbb::concurrent_vector<size_t>;
     using _ConcurrentPathVector = tbb::concurrent_vector<SdfPath>;
-    _ConcurrentPathVector addedMaterialPaths;
+
+    _ConcurrentIndexVector addedMaterialIndices;
     _ConcurrentPathVector boundMaterialPaths;
+
     // Querying each prim to get the material bindings can be expensive, so we
-    // parallelize the processing of the entries.
+    // amortize this cost.
     {
         TRACE_FUNCTION_SCOPE("Parallel notice processing");
+        
         WorkParallelForN(
             entries.size(),
             [&](size_t begin, size_t end) {
                 for (size_t i = begin; i < end; ++i) {
-                    const auto &entry = entries[i];
-                    
+                    const HdSceneIndexObserver::AddedPrimEntry &entry =
+                        entries[i];
+        
                     if (entry.primType.IsEmpty()) {
                         // Ignore bindings on intermediate prims (like scopes 
                         // and xforms) for whom material bindings are not 
@@ -159,103 +163,102 @@ HdsiUnboundMaterialOverridingSceneIndex::_PrimsAdded(
                         continue;
                     }
                     if (entry.primType == HdPrimTypeTokens->material) {
-                        addedMaterialPaths.push_back(entry.primPath);
+                        // Track the index for processing below.
+                        addedMaterialIndices.push_back(i);
                         continue;
                     }
-    
+        
                     const HdSceneIndexPrim prim =
                         _GetInputSceneIndex()->GetPrim(entry.primPath);
-    
+        
                     const SdfPathVector materialPaths =
                         _GetBoundMaterialPaths(
                             prim.dataSource, _bindingPurposes);
-    
-                    // concurrent_vector is not thread-safe for range insertion.
+        
                     for (const SdfPath &materialPath : materialPaths) {
                         boundMaterialPaths.push_back(materialPath);
                     }
                 }
             });
     }
-    
-    if (boundMaterialPaths.empty() && addedMaterialPaths.empty()) {
-        // No materials or prims with bindings were added.
+
+    if (addedMaterialIndices.empty() && boundMaterialPaths.empty()) {
+        // No materials nor prims with bound materials were added.
         _SendPrimsAdded(entries);
         return;
     }
 
-    HdSceneIndexObserver::DirtiedPrimEntries newlyBoundEntries;
-    
-    std::unordered_set<SdfPath, SdfPath::Hash> boundMaterialPathsSet(
-        boundMaterialPaths.begin(), boundMaterialPaths.end());
-
-    // Invalidate material prims that were added but never bound (until now).
-    for (const SdfPath &materialPath : boundMaterialPathsSet) {
-        if (!_IsBoundMaterial(materialPath) &&
-            _IsTrackedMaterial(materialPath)) {
-            newlyBoundEntries.push_back(
-                {materialPath, HdDataSourceLocatorSet::UniversalSet()});
+    // Track bound materials that were previously added, but never bound ...
+    SdfPathVector newlyBoundMaterials;
+    for (const SdfPath &boundMatPath : boundMaterialPaths) {
+        if (_WasAdded(boundMatPath) && !_IsBoundMaterial(boundMatPath)) {
+            newlyBoundMaterials.push_back(boundMatPath);
         }
     }
 
-    // Update our tracking set of bound materials.
+    // ... and update our tracking set of bound materials.
     _boundMaterialPaths.insert(
-        boundMaterialPathsSet.begin(), boundMaterialPathsSet.end());
+        boundMaterialPaths.begin(), boundMaterialPaths.end());
 
-    // Update our tracking set of all material paths.
-    _allMaterialPaths.insert(
-        addedMaterialPaths.begin(), addedMaterialPaths.end());
+    // Track added materials that aren't bound ...
+    std::vector<size_t> addedUnboundMaterialIndices;
+    for (size_t i : addedMaterialIndices) {
+        const auto &matPath = entries[i].primPath;
+        if (!_IsBoundMaterial(matPath)) {
+            addedUnboundMaterialIndices.push_back(i);
+        }
+        // ... and update our tracking set of added materials.
+        _addedMaterialPaths.insert(matPath);
+    }
+    
+    // Avoid copying the notice entries.
+    if (newlyBoundMaterials.empty() && addedUnboundMaterialIndices.empty()) {
+        _SendPrimsAdded(entries);
+        return;
+    }
 
-    _SendPrimsAdded(entries);
-    _SendPrimsDirtied(newlyBoundEntries);
+    // Clear the prim type on added-but-still-unbound material notices ...
+    HdSceneIndexObserver::AddedPrimEntries editedEntries(entries);
+    for (size_t i : addedUnboundMaterialIndices) {
+        editedEntries[i].primType = TfToken();
+    }
+    // ... and re-add previously-added-but-now-bound materials.
+    for (const SdfPath &materialPath : newlyBoundMaterials) {
+        editedEntries.push_back(
+            {materialPath, HdPrimTypeTokens->material});
+    }
+
+    _SendPrimsAdded(editedEntries);
 }
 
 void
-HdsiUnboundMaterialOverridingSceneIndex::_PrimsRemoved(
+HdsiUnboundMaterialPruningSceneIndex::_PrimsRemoved(
     const HdSceneIndexBase &sender,
     const HdSceneIndexObserver::RemovedPrimEntries &entries)
 {
     for (const HdSceneIndexObserver::RemovedPrimEntry &entry : entries) {
-        _allMaterialPaths.erase(entry.primPath);
+        _addedMaterialPaths.erase(entry.primPath);
         _boundMaterialPaths.erase(entry.primPath);
    }
-
     _SendPrimsRemoved(entries);
 }
 
 void
-HdsiUnboundMaterialOverridingSceneIndex::_PrimsDirtied(
+HdsiUnboundMaterialPruningSceneIndex::_PrimsDirtied(
     const HdSceneIndexBase &sender,
     const HdSceneIndexObserver::DirtiedPrimEntries &entries)
 {
     TRACE_FUNCTION();
     
     // Below, we check if the material binding locators have changed and update
-    // our tracking set of bound materials and invalidate newly bound materials
+    // our tracking set of bound materials and re-add newly bound materials
     // we've seen before similar to the logic in _PrimsAdded.
     //
-    size_t i = 0;
-
-    while (i < entries.size()) {
-        const HdSceneIndexObserver::DirtiedPrimEntry &entry = entries[i];
-
+    HdSceneIndexObserver::AddedPrimEntries newlyBoundEntries;
+       
+    for (const HdSceneIndexObserver::DirtiedPrimEntry &entry : entries) {
         if (entry.dirtyLocators.Intersects(_bindingLocators)) {
-            break;
-        }
-        i++;
-    }
 
-    // Bindings have not changed.
-    if (i == entries.size()) {
-        _SendPrimsDirtied(entries);
-        return;
-    }
-
-    HdSceneIndexObserver::DirtiedPrimEntries newlyBoundEntries;
-    for (; i < entries.size(); i++) {
-        const HdSceneIndexObserver::DirtiedPrimEntry &entry = entries[i];
-
-        if (entry.dirtyLocators.Intersects(_bindingLocators)) {
             const HdSceneIndexPrim prim =
                 _GetInputSceneIndex()->GetPrim(entry.primPath);
 
@@ -264,37 +267,26 @@ HdsiUnboundMaterialOverridingSceneIndex::_PrimsDirtied(
                 continue;
             }
 
-            const SdfPathVector materialPaths =
+            const SdfPathVector boundMaterialPaths =
                 _GetBoundMaterialPaths(prim.dataSource, _bindingPurposes);
 
-            for (const SdfPath &materialPath : materialPaths) {
+            for (const SdfPath &materialPath : boundMaterialPaths) {
                 if (!_IsBoundMaterial(materialPath)) {
-                    if (_IsTrackedMaterial(materialPath)) {
+                    if (_WasAdded(materialPath)) {
                         newlyBoundEntries.push_back(
-                            {materialPath,
-                            HdDataSourceLocatorSet::UniversalSet()});
+                            {materialPath, HdPrimTypeTokens->material});
                     }
-                    
                     _boundMaterialPaths.insert(materialPath);
                 }
             }
         }
     }
 
-    if (newlyBoundEntries.empty()) {
-        _SendPrimsDirtied(entries);
-        return;
-    }
-
-    HdSceneIndexObserver::DirtiedPrimEntries newEntries(entries);
-    newEntries.insert(
-        newEntries.end(),
-        newlyBoundEntries.begin(), newlyBoundEntries.end());
-
-    _SendPrimsDirtied(newEntries);
+    _SendPrimsAdded(newlyBoundEntries);
+    _SendPrimsDirtied(entries);
 }
 
-HdsiUnboundMaterialOverridingSceneIndex::HdsiUnboundMaterialOverridingSceneIndex(
+HdsiUnboundMaterialPruningSceneIndex::HdsiUnboundMaterialPruningSceneIndex(
     HdSceneIndexBaseRefPtr const &inputSceneIndex,
     HdContainerDataSourceHandle const &inputArgs)
 : HdSingleInputFilteringSceneIndexBase(inputSceneIndex)
@@ -304,11 +296,11 @@ HdsiUnboundMaterialOverridingSceneIndex::HdsiUnboundMaterialOverridingSceneIndex
     _PopulateFromInputSceneIndex();
 }
 
-HdsiUnboundMaterialOverridingSceneIndex::
-~HdsiUnboundMaterialOverridingSceneIndex() = default;
+HdsiUnboundMaterialPruningSceneIndex::
+~HdsiUnboundMaterialPruningSceneIndex() = default;
 
 void
-HdsiUnboundMaterialOverridingSceneIndex::_PopulateFromInputSceneIndex()
+HdsiUnboundMaterialPruningSceneIndex::_PopulateFromInputSceneIndex()
 {
     TRACE_FUNCTION();
     
@@ -322,13 +314,14 @@ HdsiUnboundMaterialOverridingSceneIndex::_PopulateFromInputSceneIndex()
         const HdSceneIndexPrim prim = _GetInputSceneIndex()->GetPrim(primPath);
 
         if (prim.primType.IsEmpty()) {
-            // Ignore bindings on intermdiate prims, similar to _PrimsAdded
-            // and _PrimsDirtied.
+            // Ignore bindings on non-geometry prims. This captures most of
+            // the intermediate prims (like scopes and xforms) for whom material
+            // bindings are not relevant but present from flattening.
             continue;
         }
 
         if (prim.primType == HdPrimTypeTokens->material) {
-            allMaterialPaths.insert(primPath);
+            _addedMaterialPaths.insert(primPath);
             continue;
         }
 
@@ -343,44 +336,38 @@ HdsiUnboundMaterialOverridingSceneIndex::_PopulateFromInputSceneIndex()
         // Add the bound material paths to our tracking set.
         _boundMaterialPaths.insert(
             boundMaterialPaths.begin(), boundMaterialPaths.end());
+
     }
 
-    if (!_IsObserved()) {
-        // If we are not observed, we don't need to send any dirty notices.
-        return;
-    }
-
-    // Invalidate unbound materials by sending a dirty notice with the default
-    // prim-level locator.
-    //
+    // Prune unbound materials by sending an added notice with an empty prim
+    // type. Note that we *don't* remove the unbound materials.
     SdfPathVector unboundMaterialPaths;
     std::set_difference(
         allMaterialPaths.begin(), allMaterialPaths.end(),
-       _boundMaterialPaths.begin(),_boundMaterialPaths.end(),
+        _boundMaterialPaths.begin(), _boundMaterialPaths.end(),
         std::back_inserter(unboundMaterialPaths));
     
     if (!unboundMaterialPaths.empty()) {
-        HdSceneIndexObserver::DirtiedPrimEntries dirtiedEntries;
+        HdSceneIndexObserver::AddedPrimEntries addedEntries;
         for (const SdfPath &primPath : unboundMaterialPaths) {
-            dirtiedEntries.emplace_back(
-                primPath, HdDataSourceLocatorSet::UniversalSet());
+            addedEntries.push_back({primPath, TfToken()});
         }
-        _SendPrimsDirtied(dirtiedEntries);
+        _SendPrimsAdded(addedEntries);
     }
 }
 
 bool
-HdsiUnboundMaterialOverridingSceneIndex::_IsBoundMaterial(
+HdsiUnboundMaterialPruningSceneIndex::_IsBoundMaterial(
     const SdfPath &primPath) const
 {
     return _Contains(_boundMaterialPaths, primPath);
 }
 
 bool
-HdsiUnboundMaterialOverridingSceneIndex::_IsTrackedMaterial(
+HdsiUnboundMaterialPruningSceneIndex::_WasAdded(
     const SdfPath &primPath) const
 {
-    return _Contains(_allMaterialPaths, primPath);
+    return _Contains(_addedMaterialPaths, primPath);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
