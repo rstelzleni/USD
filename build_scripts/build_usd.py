@@ -2413,7 +2413,7 @@ if context.buildOneTBB:
 requiredDependencies = [TBB]
 
 if context.buildAlembic:
-    requiredDependencies += [OPENEXR, ALEMBIC]
+    requiredDependencies += [ZLIB, OPENEXR, ALEMBIC]
 
 if context.buildDraco:
     requiredDependencies += [DRACO]
