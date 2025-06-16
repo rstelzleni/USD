@@ -60,19 +60,20 @@ private:
 /// an Exec_OutputKey, while being lightweight, comparable, and hashable. They
 /// can be used, for example, as key types in hash maps.
 /// 
-/// \note Identities are not automatically maintained across scene edits.
+/// \note
+/// Identities are not automatically maintained across scene edits.
 ///
 class Exec_OutputKey::Identity
 {
 public:
     explicit Identity(const Exec_OutputKey &key)
         : _providerPath(key._providerObject->GetPath(nullptr))
-        , _computationName(key._computationDefinition->GetComputationName())
+        , _computationDefinition(key._computationDefinition)
     {}
 
     bool operator==(const Exec_OutputKey::Identity &rhs) const {
         return _providerPath == rhs._providerPath &&
-            _computationName == rhs._computationName;
+            _computationDefinition == rhs._computationDefinition;
     }
 
     bool operator!=(const Exec_OutputKey::Identity &rhs) const {
@@ -83,7 +84,7 @@ public:
     friend void TfHashAppend(
         HashState& h, const Exec_OutputKey::Identity& identity) {
         h.Append(identity._providerPath);
-        h.Append(identity._computationName);
+        h.Append(identity._computationDefinition);
     }
 
     /// Return a human-readable description of this value key for diagnostic
@@ -93,7 +94,7 @@ public:
 
 private:
     SdfPath _providerPath;
-    TfToken _computationName;
+    const Exec_ComputationDefinition *_computationDefinition;
 };
 
 Exec_OutputKey::Identity 

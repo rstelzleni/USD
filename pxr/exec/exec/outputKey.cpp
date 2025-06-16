@@ -16,7 +16,7 @@ Exec_OutputKey::Identity::GetDebugName() const
 {
     std::string debugName = _providerPath.GetAsString();
     debugName += " [";
-    debugName += _computationName.GetString();
+    debugName += _computationDefinition->GetComputationName().GetString();
     debugName += ']';
     return debugName;
 }
