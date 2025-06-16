@@ -10,6 +10,8 @@
 #include "pxr/exec/exec/cacheView.h"
 #include "pxr/exec/exec/definitionRegistry.h"
 #include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
+#include "pxr/exec/exec/program.h"
+#include "pxr/exec/exec/requestTracker.h"
 #include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/system.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
@@ -34,14 +36,25 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 Exec_RequestImpl::Exec_RequestImpl(
+    ExecSystem * const system,
     ExecRequestComputedValueInvalidationCallback &&valueCallback,
     ExecRequestTimeChangeInvalidationCallback &&timeCallback)
-    : _lastInvalidatedInterval(EfTimeInterval::GetFullInterval())
+    : _system(system)
+    , _lastInvalidatedInterval(EfTimeInterval::GetFullInterval())
     , _valueCallback(std::move(valueCallback))
     , _timeCallback(std::move(timeCallback))
-{}
+{
+    if (TF_VERIFY(_system)) {
+        _system->_requestTracker->Insert(this);
+    }
+}
 
-Exec_RequestImpl::~Exec_RequestImpl() = default;
+Exec_RequestImpl::~Exec_RequestImpl()
+{
+    if (_system) {
+        _system->_requestTracker->Remove(this);
+    }
+}
 
 void 
 Exec_RequestImpl::DidInvalidateComputedValues(
@@ -194,10 +207,9 @@ _GetValueExtractor(
 
 void
 Exec_RequestImpl::_Compile(
-    ExecSystem *const system,
     TfSpan<const ExecValueKey> valueKeys)
 {
-    if (!TF_VERIFY(system)) {
+    if (!TF_VERIFY(_system)) {
         return;
     }
 
@@ -211,9 +223,9 @@ Exec_RequestImpl::_Compile(
     TRACE_FUNCTION();
 
     // Compile the value keys.
-    WorkWithScopedDispatcher([this, system, valueKeys] (WorkDispatcher &d) {
+    WorkWithScopedDispatcher([this, valueKeys] (WorkDispatcher &d) {
 
-        d.Run([system, valueKeys, &leafOutputs = _leafOutputs] {
+        d.Run([valueKeys, system = _system, &leafOutputs = _leafOutputs] {
             leafOutputs = system->_Compile(valueKeys);
         });
 
@@ -296,11 +308,11 @@ Exec_RequestImpl::_Schedule()
 }
 
 Exec_CacheView
-Exec_RequestImpl::_Compute(ExecSystem *const system)
+Exec_RequestImpl::_Compute()
 {
     TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
 
-    if (!TF_VERIFY(system)) {
+    if (!TF_VERIFY(_system)) {
         return Exec_CacheView();
     }
 
@@ -311,19 +323,19 @@ Exec_RequestImpl::_Compute(ExecSystem *const system)
     _lastInvalidatedInterval.Clear();
 
     // Compute the values.
-    system->_Compute(*_schedule, *_computeRequest);
+    _system->_Compute(*_schedule, *_computeRequest);
 
     // Return an exec cache view for the computed values.
     return Exec_CacheView(
-        system->_runtime->GetDataManager(), _leafOutputs, _extractors);
+        _system->_runtime->GetDataManager(), _leafOutputs, _extractors);
 }
 
 bool
-Exec_RequestImpl::_RequiresCompilation(const ExecSystem *const system) const
+Exec_RequestImpl::_RequiresCompilation() const
 {
     return !_schedule
         || !_schedule->IsValid()
-        || system->_HasPendingRecompilation();
+        || (TF_VERIFY(_system) && _system->_HasPendingRecompilation());
 }
 
 void

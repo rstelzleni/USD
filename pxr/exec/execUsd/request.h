@@ -32,13 +32,19 @@ class ExecUsdRequest
 {
 public:
     EXECUSD_API
+    ExecUsdRequest(ExecUsdRequest &&);
+
+    EXECUSD_API
+    ExecUsdRequest& operator=(ExecUsdRequest &&);
+
+    EXECUSD_API
     ~ExecUsdRequest();
 
-    /// Return true if this request may be used to cache values.
+    /// Return true if this request may be used to compute values.
     ///
     /// Note that a return value of true does not mean that values are cached
     /// or even that the network has been compiled.  It only means that
-    /// calling ExecUsdSystem::PrepareRequest or ExecUsdSystem::CacheValues is
+    /// calling ExecUsdSystem::PrepareRequest or ExecUsdSystem::Compute is
     /// allowed.
     /// 
     EXECUSD_API
@@ -46,16 +52,14 @@ public:
 
 private:
     friend class ExecUsdSystem;
-    explicit ExecUsdRequest(std::weak_ptr<ExecUsd_RequestImpl> &&impl)
-        : _impl(std::move(impl))
-    {}
+    explicit ExecUsdRequest(std::unique_ptr<ExecUsd_RequestImpl> &&impl);
 
-    std::shared_ptr<ExecUsd_RequestImpl> _GetImpl() const {
-        return _impl.lock();
+    ExecUsd_RequestImpl& _GetImpl() const {
+        return *_impl;
     }
 
 private:
-    std::weak_ptr<ExecUsd_RequestImpl> _impl;
+    std::unique_ptr<ExecUsd_RequestImpl> _impl;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

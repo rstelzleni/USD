@@ -46,10 +46,12 @@ struct _ValueKeyVisitor
 }
 
 ExecUsd_RequestImpl::ExecUsd_RequestImpl(
+    ExecUsdSystem *const system,
     std::vector<ExecUsdValueKey> &&valueKeys,
     ExecRequestComputedValueInvalidationCallback &&valueCallback,
     ExecRequestTimeChangeInvalidationCallback &&timeCallback)
-    : Exec_RequestImpl(std::move(valueCallback), std::move(timeCallback))
+    : Exec_RequestImpl(
+        system, std::move(valueCallback), std::move(timeCallback))
     , _valueKeys(std::move(valueKeys))
 {
 }
@@ -57,14 +59,9 @@ ExecUsd_RequestImpl::ExecUsd_RequestImpl(
 ExecUsd_RequestImpl::~ExecUsd_RequestImpl() = default;
 
 void
-ExecUsd_RequestImpl::Compile(ExecUsdSystem *const system)
+ExecUsd_RequestImpl::Compile()
 {
-    if (!system) {
-        TF_CODING_ERROR("Got null system");
-        return;
-    }
-
-    if (!_RequiresCompilation(system)) {
+    if (!_RequiresCompilation()) {
         return;
     }
 
@@ -78,7 +75,7 @@ ExecUsd_RequestImpl::Compile(ExecUsdSystem *const system)
         valueKeys.push_back(ExecUsd_VisitValueKey(_ValueKeyVisitor{}, uvk));
     }
 
-    _Compile(system, valueKeys);
+    _Compile(valueKeys);
 }
 
 void
@@ -88,9 +85,9 @@ ExecUsd_RequestImpl::Schedule()
 }
 
 ExecUsdCacheView
-ExecUsd_RequestImpl::Compute(ExecUsdSystem *const system)
+ExecUsd_RequestImpl::Compute()
 {
-    return ExecUsdCacheView(_Compute(system));
+    return ExecUsdCacheView(_Compute());
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -11,6 +11,7 @@
 #include "pxr/exec/exec/disconnectedInputsInvalidationResult.h"
 #include "pxr/exec/exec/program.h"
 #include "pxr/exec/exec/requestImpl.h"
+#include "pxr/exec/exec/requestTracker.h"
 #include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/timeChangeInvalidationResult.h"
 
@@ -29,6 +30,7 @@ ExecSystem::ExecSystem(EsfStage &&stage)
     , _runtime(std::make_unique<Exec_Runtime>(
         _program->GetTimeInputNode(),
         _program->GetLeafNodeCache()))
+    , _requestTracker(std::make_unique<Exec_RequestTracker>())
 {
     _ChangeTime(EfTime());
 }
@@ -52,7 +54,8 @@ ExecSystem::_ChangeTime(const EfTime &newTime)
 
     // Invalidate the executor and send request invalidation notification.
     WorkWithScopedDispatcher(
-        [&runtime = _runtime, &invalidationResult, &requests = _requests]
+        [&runtime = _runtime, &invalidationResult,
+         &requestTracker = _requestTracker]
         (WorkDispatcher &dispatcher){
         // Invalidate values on the executor.
         dispatcher.Run([&](){
@@ -62,24 +65,12 @@ ExecSystem::_ChangeTime(const EfTime &newTime)
         // Notify all the requests of the time change. Not all the requests will
         // contain all the leaf nodes affected by the time change, and the
         // request impls are responsible for filtering the provided information.
-        // 
-        // TODO: Once we expect the system to contain more than a handful of
-        // requests, we should do this in parallel. We might still want to
-        // invoke the invalidation callbacks serially, though.
         if (!invalidationResult.invalidLeafNodes.empty()) {
-            dispatcher.Run([&](){
-                for (const auto &requestImpl : requests) {
-                    requestImpl->DidChangeTime(invalidationResult);
-                }
+            dispatcher.Run([&] {
+                requestTracker->DidChangeTime(invalidationResult);
             });
         }
     });
-}
-
-void
-ExecSystem::_InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl)
-{
-    _requests.push_back(std::move(impl));
 }
 
 void
@@ -121,7 +112,7 @@ ExecSystem::_InvalidateAll()
     TRACE_FUNCTION();
 
     // Reset data structures in reverse order of construction.
-    _requests.clear();
+    _requestTracker.reset();
     _runtime.reset();
     _program.reset();
 
@@ -130,6 +121,7 @@ ExecSystem::_InvalidateAll()
     _runtime = std::make_unique<Exec_Runtime>(
         _program->GetTimeInputNode(),
         _program->GetLeafNodeCache());
+    _requestTracker = std::make_unique<Exec_RequestTracker>();
 
     // Initialize time with the default time.
     _ChangeTime(EfTime());
@@ -145,7 +137,8 @@ ExecSystem::_InvalidateDisconnectedInputs()
 
     // Invalidate the executor and send request invalidation.
     WorkWithScopedDispatcher(
-        [&runtime = _runtime, &invalidationResult, &requests = _requests]
+        [&runtime = _runtime, &invalidationResult,
+         &requestTracker = _requestTracker]
         (WorkDispatcher &dispatcher){
         // Invalidate the executor data manager.
         dispatcher.Run([&](){
@@ -162,14 +155,8 @@ ExecSystem::_InvalidateDisconnectedInputs()
         // Notify all the requests of computed value invalidation. Not all the
         // requests will contain all the invalid leaf nodes, and the request
         // impls are responsible for filtering the provided information.
-        // 
-        // TODO: Once we expect the system to contain more than a handful of
-        // requests, we should do this in parallel. We might still want to
-        // invoke the invalidation callbacks serially, though.
-        dispatcher.Run([&](){
-            for (const auto &requestImpl : requests) {
-                requestImpl->DidInvalidateComputedValues(invalidationResult);
-            }
+        dispatcher.Run([&] {
+            requestTracker->DidInvalidateComputedValues(invalidationResult);
         });
 
     });
@@ -185,7 +172,8 @@ ExecSystem::_InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
 
     // Invalidate the executor and send request invalidation.
     WorkWithScopedDispatcher(
-        [&runtime = _runtime, &invalidationResult, &requests = _requests]
+        [&runtime = _runtime, &invalidationResult,
+         &requestTracker = _requestTracker]
         (WorkDispatcher &dispatcher){
         // If any of the inputs to exec changed to be time dependent when
         // previously they were not (or vice versa), we need to invalidate the
@@ -208,15 +196,7 @@ ExecSystem::_InvalidateAuthoredValues(TfSpan<const SdfPath> invalidProperties)
         // requests will contain all the invalid leaf nodes or invalid
         // properties, and the request impls are responsible for filtering the
         // provided information.
-        // 
-        // TODO: Once we expect the system to contain more than a handful of
-        // requests, we should do this in parallel. We might still want to
-        // invoke the invalidation callbacks serially, though.
-        dispatcher.Run([&](){
-            for (const auto &requestImpl : requests) {
-                requestImpl->DidInvalidateComputedValues(invalidationResult);
-            }
-        });
+        requestTracker->DidInvalidateComputedValues(invalidationResult);
     });
 }
 

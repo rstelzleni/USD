@@ -48,25 +48,23 @@ public:
     /// Notify the request of invalid computed values as a consequence of
     /// authored value invalidation.
     /// 
-    EXEC_API
     void DidInvalidateComputedValues(
         const Exec_AuthoredValueInvalidationResult &invalidationResult);
 
     /// Notify the request of invalid computed values as a consequence of
     /// uncompilation.
     /// 
-    EXEC_API
     void DidInvalidateComputedValues(
         const Exec_DisconnectedInputsInvalidationResult &invalidationResult);
 
     /// Notify the request of time having changed.
-    EXEC_API
     void DidChangeTime(
         const Exec_TimeChangeInvalidationResult &invalidationResult);
 
 protected:
     EXEC_API
-    explicit Exec_RequestImpl(
+    Exec_RequestImpl(
+        ExecSystem *system,
         ExecRequestComputedValueInvalidationCallback &&valueCallback,
         ExecRequestTimeChangeInvalidationCallback &&timeCallback);
 
@@ -78,7 +76,7 @@ protected:
 
     /// Compiles outputs for the value keys in the request.
     EXEC_API
-    void _Compile(ExecSystem *system, TfSpan<const ExecValueKey> valueKeys);
+    void _Compile(TfSpan<const ExecValueKey> valueKeys);
 
     /// Builds the schedule for the request.
     EXEC_API
@@ -86,7 +84,7 @@ protected:
 
     /// Computes the value keys in the request.
     EXEC_API
-    Exec_CacheView _Compute(ExecSystem *system);
+    Exec_CacheView _Compute();
 
     /// Returns true if the request needs to be compiled.
     ///
@@ -94,7 +92,7 @@ protected:
     /// is no pending recompilation in the network.
     ///
     EXEC_API
-    bool _RequiresCompilation(const ExecSystem *system) const;
+    bool _RequiresCompilation() const;
 
 private:
     // Ensures the _leafNodeToIndex map is up-to-date.
@@ -111,6 +109,9 @@ private:
         ExecRequestIndexSet *invalidIndices);
 
 private:
+    // The system that issued this request.
+    ExecSystem *_system;
+
     // The compiled leaf output.
     std::vector<VdfMaskedOutput> _leafOutputs;
 

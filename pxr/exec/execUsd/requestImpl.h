@@ -28,6 +28,7 @@ class ExecUsd_RequestImpl final : public Exec_RequestImpl
 {
 public:
     ExecUsd_RequestImpl(
+        ExecUsdSystem *system,
         std::vector<ExecUsdValueKey> &&valueKeys,
         ExecRequestComputedValueInvalidationCallback &&valueCallback,
         ExecRequestTimeChangeInvalidationCallback &&timeCallback);
@@ -38,13 +39,13 @@ public:
     ~ExecUsd_RequestImpl();
 
     /// Compile the request.
-    void Compile(ExecUsdSystem *system);
+    void Compile();
 
     /// Schedule the request.
     void Schedule();
 
     /// Computes the value keys in the request.
-    ExecUsdCacheView Compute(ExecUsdSystem *system);
+    ExecUsdCacheView Compute();
 
 private:
     std::vector<ExecUsdValueKey> _valueKeys;

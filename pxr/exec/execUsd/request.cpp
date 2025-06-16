@@ -6,14 +6,24 @@
 //
 #include "pxr/exec/execUsd/request.h"
 
+#include "pxr/exec/execUsd/requestImpl.h"
+
 PXR_NAMESPACE_OPEN_SCOPE
+
+ExecUsdRequest::ExecUsdRequest(std::unique_ptr<ExecUsd_RequestImpl> &&impl)
+    : _impl(std::move(impl))
+{}
+
+ExecUsdRequest::ExecUsdRequest(ExecUsdRequest &&) = default;
+
+ExecUsdRequest& ExecUsdRequest::operator=(ExecUsdRequest &&) = default;
 
 ExecUsdRequest::~ExecUsdRequest() = default;
 
 bool
 ExecUsdRequest::IsValid() const
 {
-    return !_impl.expired();
+    return static_cast<bool>(_impl);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

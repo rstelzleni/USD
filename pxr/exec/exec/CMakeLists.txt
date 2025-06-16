@@ -66,6 +66,7 @@ pxr_library(exec
         outputProvidingCompilationTask
         program
         registrationBarrier
+        requestTracker
         runtime
         uncompilationRuleSet
         uncompilationTable

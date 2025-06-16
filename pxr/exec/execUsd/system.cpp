@@ -64,12 +64,12 @@ ExecUsdSystem::BuildRequest(
 {
     TRACE_FUNCTION();
 
-    auto impl = std::make_shared<ExecUsd_RequestImpl>(
-        std::move(valueKeys),
-        std::move(valueCallback),
-        std::move(timeCallback));
-    _InsertRequest(impl);
-    return ExecUsdRequest(std::move(impl));
+    return ExecUsdRequest(
+        std::make_unique<ExecUsd_RequestImpl>(
+            this,
+            std::move(valueKeys),
+            std::move(valueCallback),
+            std::move(timeCallback)));
 }
 
 void
@@ -77,14 +77,14 @@ ExecUsdSystem::PrepareRequest(const ExecUsdRequest &request)
 {
     TRACE_FUNCTION();
 
-    std::shared_ptr<ExecUsd_RequestImpl> requestImpl = request._GetImpl();
-    if (!requestImpl) {
+    if (!request.IsValid()) {
         TF_CODING_ERROR("Cannot prepare an expired request");
         return;
     }
 
-    requestImpl->Compile(this);
-    requestImpl->Schedule();
+    ExecUsd_RequestImpl &requestImpl = request._GetImpl();
+    requestImpl.Compile();
+    requestImpl.Schedule();
 }
 
 ExecUsdCacheView
@@ -92,17 +92,18 @@ ExecUsdSystem::Compute(const ExecUsdRequest &request)
 {
     TRACE_FUNCTION();
 
-    std::shared_ptr<ExecUsd_RequestImpl> requestImpl = request._GetImpl();
-    if (!requestImpl) {
+    if (!request.IsValid()) {
         TF_CODING_ERROR("Cannot cache an expired request");
         return ExecUsdCacheView();
     }
 
-    // Before caching values, make sure that the request has been prepared.
-    requestImpl->Compile(this);
-    requestImpl->Schedule();
+    ExecUsd_RequestImpl &requestImpl = request._GetImpl();
 
-    return requestImpl->Compute(this);
+    // Before caching values, make sure that the request has been prepared.
+    requestImpl.Compile();
+    requestImpl.Schedule();
+
+    return requestImpl.Compute();
 }
 
 ExecUsdSystem::_NoticeListener::_NoticeListener(
