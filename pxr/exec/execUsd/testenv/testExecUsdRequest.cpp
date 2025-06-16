@@ -151,37 +151,41 @@ TestValueExtraction()
     system.PrepareRequest(request);
     TF_AXIOM(request.IsValid());
 
-    ExecUsdCacheView view = system.CacheValues(request);
+    ExecUsdCacheView view = system.Compute(request);
 
     // Extract values concurrently and repeatedly from the same index.
     WorkParallelForN(
         12345,
         [view](int i, int n) {
             for (; i!=n; ++i) {
-                VtValue v;
-                TF_AXIOM(view.Extract(i%4, &v));
+                VtValue v = view.Get(i%4);
+                TF_AXIOM(!v.IsEmpty());
             }
         });
 
     // Assert that the request values are as expected.
-    VtValue v;
-    TF_AXIOM(view.Extract(0, &v));
+    VtValue v = view.Get(0);
+    TF_AXIOM(!v.IsEmpty());
     TF_AXIOM(v.IsHolding<GfMatrix4d>());
     ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.));
 
-    TF_AXIOM(view.Extract(1, &v));
+    v = view.Get(1);
+    TF_AXIOM(!v.IsEmpty());
     TF_AXIOM(v.IsHolding<GfMatrix4d>());
     ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(2.));
 
-    TF_AXIOM(view.Extract(2, &v));
+    v = view.Get(2);
+    TF_AXIOM(!v.IsEmpty());
     TF_AXIOM(v.IsHolding<GfMatrix4d>());
     ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(6.));
 
-    TF_AXIOM(view.Extract(3, &v));
+    v = view.Get(3);
+    TF_AXIOM(!v.IsEmpty());
     TF_AXIOM(v.IsHolding<GfMatrix4d>());
     ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(5.));
 
-    TF_AXIOM(view.Extract(4, &v));
+    v = view.Get(4);
+    TF_AXIOM(!v.IsEmpty());
     TF_AXIOM(v.IsHolding<GfMatrix4d>());
     ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(21.));
 }
@@ -202,20 +206,19 @@ TestTimeVaryingCache()
         {stage->GetPrimAtPath(SdfPath("/Root")), _tokens->computeTimeVarying}});
     TF_AXIOM(request.IsValid());
 
-    VtValue v;
     TF_AXIOM(NumComputed == 0);
 
     // Compute for the first time, and verify that the callback is invoked and
     // returns the expected computed value.
     UsdTimeCode currentTime = UsdTimeCode::Default();
-    system.CacheValues(request).Extract(0, &v);
+    VtValue v = system.Compute(request).Get(0);
     TF_AXIOM(v.IsHolding<UsdTimeCode>());
     ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
     TF_AXIOM(NumComputed == 1);
 
     // Compute again. The result should still be cached, and the callback
     // should not be invoked.
-    system.CacheValues(request).Extract(0, &v);
+    v = system.Compute(request).Get(0);
     TF_AXIOM(v.IsHolding<UsdTimeCode>());
     ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
     TF_AXIOM(NumComputed == 1);
@@ -224,7 +227,7 @@ TestTimeVaryingCache()
     // and returns the expected computed value.
     currentTime = UsdTimeCode(1.0);
     system.ChangeTime(currentTime);
-    system.CacheValues(request).Extract(0, &v);
+    v = system.Compute(request).Get(0);
     TF_AXIOM(v.IsHolding<UsdTimeCode>());
     ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
     TF_AXIOM(NumComputed == 2);
@@ -234,7 +237,7 @@ TestTimeVaryingCache()
     // cached.
     currentTime = UsdTimeCode::Default();
     system.ChangeTime(currentTime);
-    system.CacheValues(request).Extract(0, &v);
+    v = system.Compute(request).Get(0);
     TF_AXIOM(v.IsHolding<UsdTimeCode>());
     ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
     TF_AXIOM(NumComputed == 2);

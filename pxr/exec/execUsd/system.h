@@ -68,7 +68,7 @@ public:
     /// When computing multiple requests over multiple times, it is much more
     /// efficient to compute all requests at the same time, before moving on to
     /// the next time. Doing so, allows time-dependent intermediate results to
-    /// remain cached and be re-used across the multiple calls to CacheValues().
+    /// remain cached and be re-used across the multiple calls to Compute().
     ///
     EXECUSD_API
     void ChangeTime(UsdTimeCode time);
@@ -82,11 +82,11 @@ public:
     /// single invocation of the callback.
     /// 
     /// \note
-    /// The \p valueCallback is only guaranteed to be invoked at
-    /// least once per invalid value key and invalid time interval combination,
-    /// and only after CacheValues() has been called. If clients want to be
-    /// notified of future invalidation, they must call CacheValues() again to
-    /// renew their interest in the computed value keys.
+    /// The \p valueCallback is only guaranteed to be invoked at least once per
+    /// invalid value key and invalid time interval combination, and only after
+    /// Compute() has been called. If clients want to be notified of future
+    /// invalidation, they must call Compute() again to renew their interest in
+    /// the computed value keys. 
     /// 
     /// The optionally provided \p timeCallback will be invoked when
     /// previously computed value keys become invalid as a result of time
@@ -96,9 +96,9 @@ public:
     /// and new time.
     /// 
     /// \note
-    /// The client must not call into execution (including, but not
-    /// limited to CacheValues() or value extraction) from within the
-    /// \p valueCallback, as well as the \p timeCallback.
+    /// The client must not call into execution (including, but not limited to
+    /// Compute() or value extraction) from within the \p valueCallback, as well
+    /// as the \p timeCallback.
     /// 
     EXECUSD_API
     ExecUsdRequest BuildRequest(
@@ -111,7 +111,7 @@ public:
     /// Prepares a given \p request for execution.
     /// 
     /// This ensures the exec network is compiled and scheduled for the value
-    /// keys in the request. CacheValues() will implicitly prepare the request
+    /// keys in the request. Compute() will implicitly prepare the request
     /// if needed, but calling PrepareRequest() separately enables clients to
     /// front-load compilation and scheduling cost.
     ///
@@ -126,7 +126,7 @@ public:
     /// compilation and scheduling cost.
     ///
     EXECUSD_API
-    ExecUsdCacheView CacheValues(const ExecUsdRequest &request);
+    ExecUsdCacheView Compute(const ExecUsdRequest &request);
 
 private:
     // This object to subscribes to scene changes on the UsdStage and delivers

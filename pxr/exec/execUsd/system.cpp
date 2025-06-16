@@ -88,7 +88,7 @@ ExecUsdSystem::PrepareRequest(const ExecUsdRequest &request)
 }
 
 ExecUsdCacheView
-ExecUsdSystem::CacheValues(const ExecUsdRequest &request)
+ExecUsdSystem::Compute(const ExecUsdRequest &request)
 {
     TRACE_FUNCTION();
 
@@ -102,7 +102,7 @@ ExecUsdSystem::CacheValues(const ExecUsdRequest &request)
     requestImpl->Compile(this);
     requestImpl->Schedule();
 
-    return requestImpl->CacheValues(this);
+    return requestImpl->Compute(this);
 }
 
 ExecUsdSystem::_NoticeListener::_NoticeListener(

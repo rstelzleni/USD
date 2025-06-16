@@ -204,7 +204,7 @@ _GetExecTimes(
     const double scheduleTime = _GetInclusiveTimeInSeconds(scheduleNode);
 
     const TraceAggregateNodePtr cacheValuesNode =
-        _FindTraceNode(tagNode, "ExecUsdSystem::CacheValues");
+        _FindTraceNode(tagNode, "ExecUsdSystem::Compute");
     TF_AXIOM(cacheValuesNode);
     const double cacheValuesTime = _GetInclusiveTimeInSeconds(cacheValuesNode);
 
@@ -439,7 +439,7 @@ TestExecGeomXformable_Perf(
         TF_AXIOM(request.IsValid());
         memMetrics.RecordMetric("mem_prepare_request_1");
 
-        ExecUsdCacheView cache = execSystem.CacheValues(request);
+        ExecUsdCacheView cache = execSystem.Compute(request);
         memMetrics.RecordMetric("mem_cache_values_1");
 
         {
@@ -450,8 +450,8 @@ TestExecGeomXformable_Perf(
             GfVec3d expectedTranslation(treeDepth-1, 0, 0);
 
             for (size_t idx=0; idx<leafPrims.size(); ++idx) {
-                VtValue value;
-                TF_AXIOM(cache.Extract(idx, &value));
+                VtValue value = cache.Get(idx);
+                TF_AXIOM(!value.IsEmpty());
                 const GfMatrix4d matrix = value.Get<GfMatrix4d>();
                 TF_AXIOM(matrix.ExtractTranslation() == expectedTranslation);
             }
@@ -483,15 +483,15 @@ TestExecGeomXformable_Perf(
             TF_AXIOM(request.IsValid());
             memMetrics.RecordMetric("mem_prepare_request_2");
 
-            ExecUsdCacheView cache = execSystem.CacheValues(request);
+            ExecUsdCacheView cache = execSystem.Compute(request);
             memMetrics.RecordMetric("mem_cache_values_2");
 
             {
                 TRACE_SCOPE("Extract values");
 
                 for (size_t idx=0; idx<leafPrims.size(); ++idx) {
-                    VtValue value;
-                    TF_AXIOM(cache.Extract(idx, &value));
+                    VtValue value = cache.Get(idx);
+                    TF_AXIOM(!value.IsEmpty());
                 }
             }
         }
@@ -543,15 +543,15 @@ TestExecGeomXformable_Perf(
             memMetrics.RecordMetric("mem_prepare_request_3");
 
             // TODO: Compute and extract values again.
-            ExecUsdCacheView cache = execSystem.CacheValues(request);
+            ExecUsdCacheView cache = execSystem.Compute(request);
             memMetrics.RecordMetric("mem_cache_values_3");
 
             {
                 TRACE_SCOPE("Extract values");
 
                 for (size_t idx=0; idx<leafPrims.size()/2; ++idx) {
-                    VtValue value;
-                    TF_AXIOM(cache.Extract(idx, &value));
+                    VtValue value = cache.Get(idx);
+                    TF_AXIOM(!value.IsEmpty());
                 }
             }
         }

@@ -84,13 +84,13 @@ ExecUsd_RequestImpl::Compile(ExecUsdSystem *const system)
 void
 ExecUsd_RequestImpl::Schedule()
 {
-    this->_Schedule();
+    _Schedule();
 }
 
 ExecUsdCacheView
-ExecUsd_RequestImpl::CacheValues(ExecUsdSystem *const system)
+ExecUsd_RequestImpl::Compute(ExecUsdSystem *const system)
 {
-    return ExecUsdCacheView(this->_CacheValues(system));
+    return ExecUsdCacheView(_Compute(system));
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

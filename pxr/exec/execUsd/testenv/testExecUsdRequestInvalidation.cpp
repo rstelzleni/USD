@@ -230,7 +230,7 @@ TestRequestCallbacks()
     system.PrepareRequest(request);
     TF_AXIOM(request.IsValid());
 
-    system.CacheValues(request);
+    system.Compute(request);
     ASSERT_EQ(invalidation.numInvoked, 0);
 
     // Change the value of an attribute directly connected to a leaf node and
@@ -259,7 +259,7 @@ TestRequestCallbacks()
 
     // Cache values again to renew interest in invalidation notification.
     invalidation.Reset();
-    system.CacheValues(request);
+    system.Compute(request);
     ASSERT_EQ(invalidation.numInvoked, 0);
 
     // Change the value of a previously changed attribute again.
@@ -278,7 +278,7 @@ TestRequestCallbacks()
 
     // Cache values again to renew interest in invalidation notification.
     invalidation.Reset();
-    system.CacheValues(request);
+    system.Compute(request);
     ASSERT_EQ(invalidation.numInvoked, 0);
 
     // Change the value of an irrelevant field

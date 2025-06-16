@@ -12,14 +12,14 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-bool
-ExecUsdCacheView::Extract(int idx, VtValue *result) const
+VtValue
+ExecUsdCacheView::Get(int index) const
 {
     // In the future, to support executor bypass for attribute values that do
-    // not require computation, idx may need to be remapped into the range of
+    // not require computation, index may need to be remapped into the range of
     // _view.  Currently, the index range mapping is always one-to-one.
 
-    return _view.Extract(idx, result);
+    return _view.Get(index);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

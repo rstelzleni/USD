@@ -44,7 +44,7 @@ public:
     void Schedule();
 
     /// Computes the value keys in the request.
-    ExecUsdCacheView CacheValues(ExecUsdSystem *system);
+    ExecUsdCacheView Compute(ExecUsdSystem *system);
 
 private:
     std::vector<ExecUsdValueKey> _valueKeys;

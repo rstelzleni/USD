@@ -76,7 +76,7 @@ protected:
     /// \p schedule.
     /// 
     EXEC_API
-    void _CacheValues(
+    void _Compute(
         const VdfSchedule &schedule,
         const VdfRequest &computeRequest);
 
@@ -84,7 +84,7 @@ protected:
     class _ChangeProcessor;
 
 private:
-    // Requires access to _CacheValues, _Compile, and _HasPendingRecompilation.
+    // Requires access to _Compute, _Compile, and _HasPendingRecompilation.
     friend class Exec_RequestImpl;
     std::vector<VdfMaskedOutput> _Compile(TfSpan<const ExecValueKey> valueKeys);
 

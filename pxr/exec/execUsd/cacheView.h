@@ -19,7 +19,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-/// Provides a view of values computed by ExecUsdSystem::CacheValues.
+/// Provides a view of values computed by ExecUsdSystem::Compute().
 ///
 /// Cache views must not outlive the ExecUsdSystem or ExecUsdRequest from
 /// which they were built.
@@ -30,13 +30,13 @@ public:
     /// Construct an invalid view.
     ExecUsdCacheView() = default;
 
-    /// Returns \c true if \p idx is evaluated and stores the computed value
-    /// in \p *result.
-    ///
-    /// Otherwise, returns \c false.
+    /// Returns the computed value for the provided extraction \p index.
+    /// 
+    /// Emits an error and returns an empty value if the \p index is not
+    /// evaluated.
     ///
     EXECUSD_API
-    bool Extract(int idx, VtValue *result) const;
+    VtValue Get(int index) const;
 
 private:
     friend class ExecUsd_RequestImpl;

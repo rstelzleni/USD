@@ -34,13 +34,13 @@ public:
     /// Constructs an invalid cache view.
     Exec_CacheView() = default;
 
-    /// Returns \c true if \p idx is evaluated and stores the computed value
-    /// in \p *result.
-    ///
-    /// Otherwise, returns \c false.
+    /// Returns the computed value for the provided extraction \p index.
+    /// 
+    /// Emits an error and returns an empty value if the \p index is not
+    /// evaluated.
     ///
     EXEC_API
-    bool Extract(int idx, VtValue *result) const;
+    VtValue Get(int index) const;
 
 private:
     friend class Exec_RequestImpl;

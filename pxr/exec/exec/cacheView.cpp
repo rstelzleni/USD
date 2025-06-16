@@ -30,40 +30,34 @@ Exec_CacheView::Exec_CacheView(
 {
 }
 
-bool
-Exec_CacheView::Extract(int idx, VtValue *result) const
+VtValue
+Exec_CacheView::Get(int index) const
 {
     if (!_dataManager) {
         TF_CODING_ERROR("Cannot extract from invalid view");
-        return false;
+        return VtValue();
     }
 
-    if (!result) {
-        TF_CODING_ERROR("Got NULL result");
-        return false;
+    if (!(0 <= index && index < static_cast<int>(_outputs.size()))) {
+        TF_CODING_ERROR("Index '%d' out of range", index);
+        return VtValue();
     }
 
-    if (!(0 <= idx && idx < static_cast<int>(_outputs.size()))) {
-        TF_CODING_ERROR("Index '%d' out of range", idx);
-        return false;
-    }
-
-    const VdfMaskedOutput &mo = _outputs[idx];
+    const VdfMaskedOutput &mo = _outputs[index];
     if (!TF_VERIFY(mo)) {
-        return false;
+        return VtValue();
     }
 
     const VdfVector *v = _dataManager->GetOutputValue(
         *mo.GetOutput(), mo.GetMask());
     if (!v) {
-        TF_CODING_ERROR("No value cached for output '%s' (idx=%d)",
-                        mo.GetDebugName().c_str(), idx);
-        return false;
+        TF_CODING_ERROR("No value cached for output '%s' (index=%d)",
+                        mo.GetDebugName().c_str(), index);
+        return VtValue();
     }
 
-    const Exec_ValueExtractor extractor = _extractors[idx];
-    *result = extractor(*v, mo.GetMask());
-    return true;
+    const Exec_ValueExtractor extractor = _extractors[index];
+    return extractor(*v, mo.GetMask());
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

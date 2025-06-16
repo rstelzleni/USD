@@ -83,7 +83,7 @@ ExecSystem::_InsertRequest(std::shared_ptr<Exec_RequestImpl> &&impl)
 }
 
 void
-ExecSystem::_CacheValues(
+ExecSystem::_Compute(
     const VdfSchedule &schedule,
     const VdfRequest &computeRequest)
 {

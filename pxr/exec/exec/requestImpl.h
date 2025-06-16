@@ -86,7 +86,7 @@ protected:
 
     /// Computes the value keys in the request.
     EXEC_API
-    Exec_CacheView _CacheValues(ExecSystem *system);
+    Exec_CacheView _Compute(ExecSystem *system);
 
     /// Returns true if the request needs to be compiled.
     ///

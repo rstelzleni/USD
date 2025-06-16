@@ -296,7 +296,7 @@ Exec_RequestImpl::_Schedule()
 }
 
 Exec_CacheView
-Exec_RequestImpl::_CacheValues(ExecSystem *const system)
+Exec_RequestImpl::_Compute(ExecSystem *const system)
 {
     TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
 
@@ -311,7 +311,7 @@ Exec_RequestImpl::_CacheValues(ExecSystem *const system)
     _lastInvalidatedInterval.Clear();
 
     // Compute the values.
-    system->_CacheValues(*_schedule, *_computeRequest);
+    system->_Compute(*_schedule, *_computeRequest);
 
     // Return an exec cache view for the computed values.
     return Exec_CacheView(

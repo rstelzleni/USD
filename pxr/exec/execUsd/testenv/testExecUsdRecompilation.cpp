@@ -160,9 +160,9 @@ TestRecompileDisconnectedAttributeInput(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileDisconnectedAttributeInput-1.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == -1);
     }
 
@@ -174,9 +174,9 @@ TestRecompileDisconnectedAttributeInput(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileDisconnectedAttributeInput-2.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 2);
     }
 
@@ -191,9 +191,9 @@ TestRecompileDisconnectedAttributeInput(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileDisconnectedAttributeInput-3.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == -1);
     }
 }
@@ -225,9 +225,9 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileChangedRelationshipTargets-1.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 0);
     }
 
@@ -237,9 +237,9 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileChangedRelationshipTargets-2.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 1);
     }
 
@@ -249,9 +249,9 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileChangedRelationshipTargets-3.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 3);
     }
 
@@ -264,9 +264,9 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileChangedRelationshipTargets-4.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 6);
     }
 
@@ -276,9 +276,9 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileChangedRelationshipTargets-5.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 0);
     }
 }
@@ -314,9 +314,9 @@ TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
     fixture.GraphNetwork(
         "TestRecompileAfterChangingOldRelationshipTarget-1.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 6);
     }
 
@@ -332,9 +332,9 @@ TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
     fixture.GraphNetwork(
         "TestRecompileAfterChangingOldRelationshipTarget-3.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 5);
     }
 
@@ -344,9 +344,9 @@ TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
     fixture.GraphNetwork(
         "TestRecompileAfterChangingOldRelationshipTarget-4.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 5);
     }
 }
@@ -472,9 +472,9 @@ TestRecompileResyncedPrim(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileResyncedPrim-1.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 1);
     }
 
@@ -492,9 +492,9 @@ TestRecompileResyncedPrim(Fixture &fixture)
     system.PrepareRequest(request);
     fixture.GraphNetwork("TestRecompileResyncedPrim-3.dot");
     {
-        ExecUsdCacheView view = system.CacheValues(request);
-        VtValue v;
-        TF_AXIOM(view.Extract(0, &v));
+        ExecUsdCacheView view = system.Compute(request);
+        VtValue v = view.Get(0);
+        TF_AXIOM(!v.IsEmpty());
         TF_AXIOM(v.Get<int>() == 1);
     }
 }
