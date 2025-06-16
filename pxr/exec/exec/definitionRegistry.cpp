@@ -31,6 +31,29 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+namespace {
+
+// A structure used to statically initialize a map from schema type names to
+// plugins that define computations for the named schema.
+//
+struct _ExecPluginData {
+    _ExecPluginData();
+
+    std::unordered_map<TfType, PlugPluginPtr, TfHash>
+    execSchemaPlugins;
+
+private:
+    void _GetPluginMetadata(const PlugPluginPtr &plugin);
+};
+
+} // anonymous namespace
+
+static TfStaticData<_ExecPluginData> execPluginData;
+
+//
+// Exec_DefinitionRegistry
+//
+
 TF_INSTANTIATE_SINGLETON(Exec_DefinitionRegistry);
 
 Exec_DefinitionRegistry::Exec_DefinitionRegistry()
@@ -427,79 +450,6 @@ Exec_DefinitionRegistry::_RegisterBuiltinComputations()
               ExecBuiltinComputations->GetComputationTokens().size());
 }
 
-namespace {
-
-// A structure used to statically initialize a map from schema type names to
-// plugins that define computations for the named schema.
-//
-// The plugInfo that we look for here is of the form:
-//
-//     "Info": {
-//         "Exec" : {
-//             "RegistersComputationsForSchemas": {
-//                 "MySchemaType1": {
-//                 },
-//                 "MySchemaType2": {
-//                 }
-//             }
-//         }
-//     }
-//
-struct _ExecPluginData {
-    _ExecPluginData() {
-
-        // For each plugin found by plugin discovery, look for the metadata that
-        // tells us which schemas that plugin defines computations for.
-        for (const PlugPluginPtr &plugin :
-                 PlugRegistry::GetInstance().GetAllPlugins()) {
-            _GetPluginMetadata(plugin);
-        }
-    }
-
-    void _GetPluginMetadata(const PlugPluginPtr &plugin) {
-        const JsOptionalValue metadataValue =
-            JsFindValue(plugin->GetMetadata(), "Exec");
-        if (!metadataValue) {
-            return;
-        }
-
-        const JsOptionalValue schemasValue =
-            JsFindValue(
-                metadataValue->GetJsObject(),
-                "RegistersComputationsForSchemas");
-        if (!schemasValue) {
-            return;
-        }
-
-        // Note that we don't yet look for any keys in the objects that
-        // represent schemas, but this paves the way for per-schema metadata
-        // that might be required in the future.
-        const JsObject &schemas = schemasValue->GetJsObject();
-        for (const auto& [schemaName, value] : schemas) {
-            const TfType schemaType = TfType::FindByName(schemaName);
-            if (TF_VERIFY(!schemaType.IsUnknown())) {
-                const auto [it, emplaced] =
-                    execSchemaPlugins.emplace(schemaType, plugin);
-                if (!emplaced) {
-                    TF_CODING_ERROR(
-                        "Plugin '%s' defines computations for schema %s, "
-                        "which already has computations defined in plugin '%s'",
-                        plugin->GetName().c_str(),
-                        schemaType.GetTypeName().c_str(),
-                        it->second->GetName().c_str());
-                }
-            }
-        }
-    }
-
-    std::unordered_map<TfType, PlugPluginPtr, TfHash>
-    execSchemaPlugins;
-};
-
-} // anonymous namespace
-
-static TfStaticData<_ExecPluginData> execPluginData;
-
 void
 Exec_DefinitionRegistry::_DidRegisterPlugins(
     const PlugNotice::DidRegisterPlugins &notice)
@@ -565,6 +515,70 @@ Exec_DefinitionRegistry::_SetComputationRegistrationComplete(
     const TfType schemaType)
 {
     _computationsRegisteredForSchema.emplace(schemaType, true).second;
+}
+
+//
+// _ExecPluginData
+//
+
+_ExecPluginData::_ExecPluginData() {
+
+    // For each plugin found by plugin discovery, look for the metadata that
+    // tells us which schemas that plugin defines computations for.
+    for (const PlugPluginPtr &plugin :
+             PlugRegistry::GetInstance().GetAllPlugins()) {
+        _GetPluginMetadata(plugin);
+    }
+}
+
+// The plugInfo that we look for here is of the form:
+//
+//     "Info": {
+//         "Exec" : {
+//             "RegistersComputationsForSchemas": {
+//                 "MySchemaType1": {
+//                 },
+//                 "MySchemaType2": {
+//                 }
+//             }
+//         }
+//     }
+//
+void
+_ExecPluginData::_GetPluginMetadata(const PlugPluginPtr &plugin) {
+    const JsOptionalValue metadataValue =
+        JsFindValue(plugin->GetMetadata(), "Exec");
+    if (!metadataValue) {
+        return;
+    }
+
+    const JsOptionalValue schemasValue =
+        JsFindValue(
+            metadataValue->GetJsObject(),
+            "RegistersComputationsForSchemas");
+    if (!schemasValue) {
+        return;
+    }
+
+    // Note that we don't yet look for any keys in the objects that
+    // represent schemas, but this paves the way for per-schema metadata
+    // that might be required in the future.
+    const JsObject &schemas = schemasValue->GetJsObject();
+    for (const auto& [schemaName, value] : schemas) {
+        const TfType schemaType = TfType::FindByName(schemaName);
+        if (TF_VERIFY(!schemaType.IsUnknown())) {
+            const auto [it, emplaced] =
+                execSchemaPlugins.emplace(schemaType, plugin);
+            if (!emplaced) {
+                TF_CODING_ERROR(
+                    "Plugin '%s' defines computations for schema %s, which "
+                    "already has computations defined in plugin '%s'",
+                    plugin->GetName().c_str(),
+                    schemaType.GetTypeName().c_str(),
+                    it->second->GetName().c_str());
+            }
+        }
+    }
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
