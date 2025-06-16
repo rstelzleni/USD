@@ -20,12 +20,24 @@
 #include "pxr/exec/vdf/context.h"
 #include "pxr/usd/sdf/changeBlock.h"
 #include "pxr/usd/sdf/layer.h"
+#include "pxr/usd/usd/timeCode.h"
 
 #include <iostream>
 #include <functional>
 #include <initializer_list>
 
 PXR_NAMESPACE_USING_DIRECTIVE
+
+#define ASSERT_EQ(expr, expected)                                       \
+    [&] {                                                               \
+        auto&& expr_ = expr;                                            \
+        if (expr_ != expected) {                                        \
+            TF_FATAL_ERROR(                                             \
+                "Expected " TF_PP_STRINGIZE(expr) " == '%s'; got '%s'", \
+                TfStringify(expected).c_str(),                          \
+                TfStringify(expr_).c_str());                            \
+        }                                                               \
+     }()
 
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
@@ -192,11 +204,9 @@ _ValidateSet(
     return true;
 }
 
-int
-main(int argc, char* argv[])
+static void
+TestRequestCallbacks()
 {
-    ConfigureTestPlugin();
-
     UsdStageRefPtr stage = CreateTestStage();
 
     ExecUsdSystem system(stage);
@@ -221,14 +231,14 @@ main(int argc, char* argv[])
     TF_AXIOM(request.IsValid());
 
     system.CacheValues(request);
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
 
     // Change the value of an attribute directly connected to a leaf node and
     // validate the resulting invalidation.
     UsdAttribute Bxf = stage->GetAttributeAtPath(SdfPath("/Root/A1/B.xf"));
     TF_AXIOM(Bxf);
     Bxf.Set(GfMatrix4d(1.0));
-    TF_AXIOM(invalidation.numInvoked == 1);
+    ASSERT_EQ(invalidation.numInvoked, 1);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,0,1,0}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
 
@@ -237,24 +247,24 @@ main(int argc, char* argv[])
     UsdAttribute A1xf = stage->GetAttributeAtPath(SdfPath("/Root/A1.xf"));
     TF_AXIOM(A1xf);
     A1xf.Set(GfMatrix4d(1.0));
-    TF_AXIOM(invalidation.numInvoked == 2);
+    ASSERT_EQ(invalidation.numInvoked, 2);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,0}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
 
     // Invalidate B.xf again, which should not send out additional notification.
     Bxf.Set(GfMatrix4d(3.0));
-    TF_AXIOM(invalidation.numInvoked == 2);
+    ASSERT_EQ(invalidation.numInvoked, 2);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,0}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
 
     // Cache values again to renew interest in invalidation notification.
     invalidation.Reset();
     system.CacheValues(request);
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
 
     // Change the value of a previously changed attribute again.
     Bxf.Set(GfMatrix4d(2.0));
-    TF_AXIOM(invalidation.numInvoked == 1);
+    ASSERT_EQ(invalidation.numInvoked, 1);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,0,1,0}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
 
@@ -262,18 +272,18 @@ main(int argc, char* argv[])
     UsdAttribute A2xf = stage->GetAttributeAtPath(SdfPath("/Root/A2.xf"));
     TF_AXIOM(A2xf);
     A2xf.Set(GfMatrix4d(4.0));
-    TF_AXIOM(invalidation.numInvoked == 2);
+    ASSERT_EQ(invalidation.numInvoked, 2);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,0,1,1}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
 
     // Cache values again to renew interest in invalidation notification.
     invalidation.Reset();
     system.CacheValues(request);
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
 
     // Change the value of an irrelevant field
     A1xf.SetMetadata(SdfFieldKeys->Documentation, "test doc");
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,0,0,0}));
     TF_AXIOM(invalidation.interval.IsEmpty());
 
@@ -286,7 +296,7 @@ main(int argc, char* argv[])
         rootLayer->GetAttributeAtPath(SdfPath("/Root/A2.xf"))->SetDefaultValue(
             VtValue(GfMatrix4d(5.0)));
     }
-    TF_AXIOM(invalidation.numInvoked == 1);
+    ASSERT_EQ(invalidation.numInvoked, 1);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,1}));
     TF_AXIOM(invalidation.interval.IsFullInterval());
 
@@ -294,26 +304,34 @@ main(int argc, char* argv[])
     // should be no time invalidation here.
     invalidation.Reset();
     system.ChangeTime(UsdTimeCode::Default());
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
 
     // /Root/A1.scale is not varying between the default time and frame 1, so 
     // there should not be invalidation.
     invalidation.Reset();
     system.ChangeTime(UsdTimeCode(1.0));
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
 
     // /Root/A1.scale 's spline value is different on frame 2, so we should be
     // able to observe invalidation.
     invalidation.Reset();
     system.ChangeTime(UsdTimeCode(2.0));
-    TF_AXIOM(invalidation.numInvoked == 1);
+    ASSERT_EQ(invalidation.numInvoked, 1);
     TF_AXIOM(_ValidateSet(invalidation.indices, {0,1,1,0}));
     TF_AXIOM(invalidation.interval.IsEmpty());
 
     // The knot value on frame 2 should be held over the following frames.
     invalidation.Reset();
     system.ChangeTime(UsdTimeCode(3.0));
-    TF_AXIOM(invalidation.numInvoked == 0);
+    ASSERT_EQ(invalidation.numInvoked, 0);
+}
+
+int
+main(int argc, char* argv[])
+{
+    ConfigureTestPlugin();
+
+    TestRequestCallbacks();
 
     return 0;
 }

@@ -163,6 +163,11 @@ public:
         _compiledLeafNodeCache.Insert(valueKey, leafNode);
     }
 
+    /// Returns the leaf node cache.
+    EfLeafNodeCache &GetLeafNodeCache() {
+        return _leafNodeCache;
+    }
+
     /// Returns the current generational counter of the execution network.
     size_t GetNetworkVersion() const {
         return _network.GetVersion();
@@ -199,8 +204,8 @@ public:
     /// Compilation may not create additional time input nodes and
     /// uncompilation may not remove the time input node.
     ///
-    EfTimeInputNode *GetTimeInputNode() const {
-        return _timeInputNode;
+    EfTimeInputNode &GetTimeInputNode() const {
+        return *_timeInputNode;
     }
 
     /// Returns the node with the given \p nodeId, or nullptr if no such node
@@ -314,11 +319,16 @@ private:
     // Unregisters an input node from authored value initialization.
     void _UnregisterInputNode(const Exec_AttributeInputNode *inputNode);
 
-    // Flags the array of _timeDependentInputNodeOutputs as invalid.
-    void _InvalidateTimeDependentInputNodeOutputs();
+    // Notifies the program of a new or deleted connection between the time
+    // input node and the given target node.
+    // 
+    void _ChangedTimeConnections(const VdfNode &targetNode);
 
-    // Rebuilds the array of _timeDependentInputNodeOutputs.
-    const VdfMaskedOutputVector &_CollectTimeDependentInputNodeOutputs();
+    // Flags the array of _timeDependentOutputs as invalid.
+    void _InvalidateTimeDependentOutputs();
+
+    // Rebuilds the array of _timeDependentOutputs.
+    const VdfMaskedOutputVector &_CollectTimeDependentOutputs();
 
 private:
     // The compiled data flow network.
@@ -350,12 +360,12 @@ private:
         tbb::concurrent_unordered_map<SdfPath, _InputNodeEntry, SdfPath::Hash>;
     _InputNodesMap _inputNodes;
 
-    // Array of outputs on input nodes, which are time dependent.
-    VdfMaskedOutputVector _timeDependentInputNodeOutputs;
+    // Array of outputs connected to the time input node.
+    VdfMaskedOutputVector _timeDependentOutputs;
 
-    // Flag indicating whether the _timeDependentInputNodeOutputs array is
-    // up-to-date or must be re-computed.
-    std::atomic<bool> _timeDependentInputNodeOutputsValid;
+    // Flag indicating whether the _timeDependentOutputs array is up-to-date or
+    // must be re-computed.
+    std::atomic<bool> _timeDependentOutputsValid;
 
     // Input nodes currently queued for initialization.
     std::vector<VdfId> _uninitializedInputNodes;

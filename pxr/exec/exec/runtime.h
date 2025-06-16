@@ -17,9 +17,13 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class EfLeafNodeCache;
+class EfPageCacheStorage;
 class EfTime;
+class EfTimeInterval;
 class EfTimeInputNode;
 class VdfExecutorErrorLogger;
+class VdfExecutorInterface;
 class VdfNode;
 class VdfRequest;
 class VdfSchedule;
@@ -30,7 +34,10 @@ class VdfSchedule;
 class Exec_Runtime
 {
 public:
-    Exec_Runtime();
+    Exec_Runtime(
+        EfTimeInputNode &timeNode,
+        EfLeafNodeCache &leafNodeCache);
+    ~Exec_Runtime();
 
     // Non-copyable and non-movable.
     Exec_Runtime(const Exec_Runtime &) = delete;
@@ -63,17 +70,25 @@ public:
     /// 
     void InvalidateTopologicalState();
 
-    /// Invalidates the output values in the \p invalidationRequest, along with
-    /// all values that depend on these outputs.
+    /// Invalidates the computed output values in the \p invalidationRequest,
+    /// along with all values that depend on these outputs.
     /// 
     /// This method implicitly invalidates executor state dependent on the
     /// topology of the data-flow network, if the data-flow network version has
     /// changed.
     /// 
-    void InvalidateValues(const VdfMaskedOutputVector &invalidationRequest);
+    void InvalidateExecutor(const VdfMaskedOutputVector &invalidationRequest);
+
+    /// Invalidates the time-varying computed values in the
+    /// \p invalidationRequest over the provided \p timeInterval, along with all
+    /// dependent values.
+    ///
+    void InvalidatePageCache(
+        const VdfMaskedOutputVector &invalidationRequest,
+        const EfTimeInterval &timeInterval);
 
     /// Deletes all of \p node 's computed and cached values.
-    void ClearData(const VdfNode &node);
+    void DeleteData(const VdfNode &node);
 
     /// Performs evaluation with the provided \p schedule and \p computeRequest
     /// and caches all computed values.
@@ -89,6 +104,8 @@ private:
 private:
     std::unique_ptr<VdfExecutorInterface> _executor;
     size_t _executorTopologicalStateVersion;
+
+    std::unique_ptr<EfPageCacheStorage> _cacheStorage;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -8,8 +8,10 @@
 
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/trace/trace.h"
-#include "pxr/exec/ef/executor.h"
+#include "pxr/exec/ef/pageCacheExecutor.h"
+#include "pxr/exec/ef/pageCacheStorage.h"
 #include "pxr/exec/ef/time.h"
+#include "pxr/exec/ef/timeInterval.h"
 #include "pxr/exec/ef/timeInputNode.h"
 #include "pxr/exec/vdf/dataManagerVector.h"
 #include "pxr/exec/vdf/executorErrorLogger.h"
@@ -27,22 +29,40 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-Exec_Runtime::Exec_Runtime()
+Exec_Runtime::Exec_Runtime(
+    EfTimeInputNode &timeNode,
+    EfLeafNodeCache &leafNodeCache)
     : _executorTopologicalStateVersion(0)
 {
+    // Create a cache for time-varying computed values, indexed by time.
+    _cacheStorage.reset(
+        EfPageCacheStorage::New<EfTime>(
+            VdfMaskedOutput(timeNode.GetOutput(), VdfMask::AllOnes(1)),
+            &leafNodeCache));
+
+    // Create a multi-threaded main executor, if parallel evaluation is
+    // enabled.
     if (VdfIsParallelEvaluationEnabled()) {
         _executor = std::make_unique<
-            EfExecutor<
+            EfPageCacheExecutor<
                 VdfParallelExecutorEngine,
-                VdfParallelDataManagerVector>>();
-    } else {
+                VdfParallelDataManagerVector>>(
+                    _cacheStorage.get());
+    } 
+
+    // Create a single-threaded main executor, if parallel evaluation is
+    // disabled.
+    else {
         _executor = std::make_unique<
-            EfExecutor<
+            EfPageCacheExecutor<
                 VdfPullBasedExecutorEngine,
                 VdfDataManagerVector<
-                    VdfDataManagerDeallocationMode::Background>>>();
+                    VdfDataManagerDeallocationMode::Background>>>(
+                        _cacheStorage.get());
     }
 }
+
+Exec_Runtime::~Exec_Runtime() = default;
 
 const VdfDataManagerFacade
 Exec_Runtime::GetDataManager()
@@ -89,7 +109,8 @@ Exec_Runtime::InvalidateTopologicalState()
 }
 
 void
-Exec_Runtime::InvalidateValues(const VdfMaskedOutputVector &invalidationRequest)
+Exec_Runtime::InvalidateExecutor(
+    const VdfMaskedOutputVector &invalidationRequest)
 {
     if (invalidationRequest.empty()) {
         return;
@@ -113,11 +134,26 @@ Exec_Runtime::InvalidateValues(const VdfMaskedOutputVector &invalidationRequest)
 }
 
 void
-Exec_Runtime::ClearData(const VdfNode &node)
+Exec_Runtime::InvalidatePageCache(
+    const VdfMaskedOutputVector &invalidationRequest,
+    const EfTimeInterval &timeInterval)
+{
+    _cacheStorage->Invalidate(
+        [&timeInterval](const VdfVector &cacheKey){
+            const EfTime &time = cacheKey.GetReadAccessor<EfTime>()[0];
+            return timeInterval.Contains(time);
+        },
+        invalidationRequest);
+}
+
+void
+Exec_Runtime::DeleteData(const VdfNode &node)
 {
     for (const auto &[name, output] : node.GetOutputsIterator()) {
         _executor->ClearDataForOutput(output->GetId(), node.GetId());
     }
+
+    _cacheStorage->WillDeleteNode(node);
 }
 
 void
@@ -125,6 +161,10 @@ Exec_Runtime::ComputeValues(
     const VdfSchedule &schedule,
     const VdfRequest &computeRequest)
 {
+    // Make sure that the cache storage is large enough to hold all possible
+    // computed values in the network.
+    _cacheStorage->Resize(*schedule.GetNetwork());
+
     // Run the executor to compute the values.
     VdfExecutorErrorLogger errorLogger;
     _executor->Run(schedule, computeRequest, &errorLogger);

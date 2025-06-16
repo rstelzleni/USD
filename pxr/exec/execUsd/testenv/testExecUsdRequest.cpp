@@ -9,7 +9,10 @@
 #include "pxr/exec/execUsd/system.h"
 #include "pxr/exec/execUsd/valueKey.h"
 
+#include "pxr/exec/ef/time.h"
+#include "pxr/exec/exec/builtinComputations.h"
 #include "pxr/exec/exec/registerSchema.h"
+#include "pxr/exec/exec/typeRegistry.h"
 #include "pxr/exec/vdf/context.h"
 
 #include "pxr/base/gf/matrix4d.h"
@@ -18,6 +21,9 @@
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/pathUtils.h"
 #include "pxr/base/work/loops.h"
+#include "pxr/usd/usd/timeCode.h"
+
+#include <atomic>
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
@@ -35,8 +41,16 @@ PXR_NAMESPACE_USING_DIRECTIVE
 TF_DEFINE_PRIVATE_TOKENS(
     _tokens,
     (computeXf)
+    (computeTimeVarying)
     (xf)
     );
+
+TF_REGISTRY_FUNCTION(ExecTypeRegistry)
+{
+    ExecTypeRegistry::RegisterType(UsdTimeCode::Default());
+}
+
+std::atomic<int> NumComputed{0};
 
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRequestComputedTransform)
 {
@@ -52,6 +66,17 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecUsdRequestComputedTransform)
         .Inputs(
             AttributeValue<GfMatrix4d>(_tokens->xf),
             NamespaceAncestor<GfMatrix4d>(_tokens->computeXf)
+        );
+
+    self.PrimComputation(_tokens->computeTimeVarying)
+        .Callback(+[](const VdfContext &ctx) {
+            ++NumComputed;
+            const UsdTimeCode tc = ctx.GetInputValue<EfTime>(
+                ExecBuiltinComputations->computeTime).GetTimeCode();
+            return tc;
+        })
+        .Inputs(
+            Stage().Computation<EfTime>(ExecBuiltinComputations->computeTime)
         );
 }
 
@@ -107,11 +132,9 @@ CreateTestStage()
     return stage;
 }
 
-int
-main(int argc, char* argv[])
+static void
+TestValueExtraction()
 {
-    ConfigureTestPlugin();
-
     UsdStageRefPtr stage = CreateTestStage();
 
     ExecUsdSystem system(stage);
@@ -161,6 +184,69 @@ main(int argc, char* argv[])
     TF_AXIOM(view.Extract(4, &v));
     TF_AXIOM(v.IsHolding<GfMatrix4d>());
     ASSERT_EQ(v.Get<GfMatrix4d>(), GfMatrix4d(1.).SetScale(21.));
+}
+
+static void
+TestTimeVaryingCache()
+{
+    // Initialize NumComputed. We don't expect it to be incremented until
+    // values are computed.
+    NumComputed.store(0);
+
+    UsdStageRefPtr stage = CreateTestStage();
+
+    ExecUsdSystem system(stage);
+
+    ExecUsdRequest request =
+    system.BuildRequest({
+        {stage->GetPrimAtPath(SdfPath("/Root")), _tokens->computeTimeVarying}});
+    TF_AXIOM(request.IsValid());
+
+    VtValue v;
+    TF_AXIOM(NumComputed == 0);
+
+    // Compute for the first time, and verify that the callback is invoked and
+    // returns the expected computed value.
+    UsdTimeCode currentTime = UsdTimeCode::Default();
+    system.CacheValues(request).Extract(0, &v);
+    TF_AXIOM(v.IsHolding<UsdTimeCode>());
+    ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
+    TF_AXIOM(NumComputed == 1);
+
+    // Compute again. The result should still be cached, and the callback
+    // should not be invoked.
+    system.CacheValues(request).Extract(0, &v);
+    TF_AXIOM(v.IsHolding<UsdTimeCode>());
+    ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
+    TF_AXIOM(NumComputed == 1);
+
+    // Change the time, and compute again. Verify that the callback is invoked
+    // and returns the expected computed value.
+    currentTime = UsdTimeCode(1.0);
+    system.ChangeTime(currentTime);
+    system.CacheValues(request).Extract(0, &v);
+    TF_AXIOM(v.IsHolding<UsdTimeCode>());
+    ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
+    TF_AXIOM(NumComputed == 2);
+
+    // Change time to a previously visited time code, and compute. Verify that
+    // the callback is not invoked, as the computed result should still be
+    // cached.
+    currentTime = UsdTimeCode::Default();
+    system.ChangeTime(currentTime);
+    system.CacheValues(request).Extract(0, &v);
+    TF_AXIOM(v.IsHolding<UsdTimeCode>());
+    ASSERT_EQ(v.Get<UsdTimeCode>(), currentTime);
+    TF_AXIOM(NumComputed == 2);
+}
+
+int
+main(int argc, char* argv[])
+{
+    ConfigureTestPlugin();
+
+    TestValueExtraction();
+    TestTimeVaryingCache();
 
     return 0;
 }

@@ -109,7 +109,7 @@ Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
                 {
                     TRACE_FUNCTION_SCOPE("clearing data");
                     for (VdfNode *const node : subnetwork->GetIsolatedNodes()) {
-                        runtime->ClearData(*node);
+                        runtime->DeleteData(*node);
                     }
                 }
             });

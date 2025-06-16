@@ -9,9 +9,10 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/exec/ef/timeInterval.h"
 #include "pxr/base/tf/bits.h"
 #include "pxr/base/tf/span.h"
+#include "pxr/exec/ef/timeInterval.h"
+#include "pxr/exec/vdf/maskedOutputVector.h"
 
 #include <vector>
 
@@ -30,6 +31,9 @@ public:
     /// Bit set with the same size as invalidProperties, denoting which of the
     /// invalid properties are compiled in the exec network.
     TfBits compiledProperties;
+
+    /// The invalidation request for executor invalidation.
+    VdfMaskedOutputVector invalidationRequest;
 
     /// The leaf nodes reachable from the compiled, invalid properties, which
     /// are invalid as a result of the authored value invalidation.
