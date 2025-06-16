@@ -68,7 +68,7 @@ EsfPrimInterface::GetType(EsfJournal *journal) const
     return _GetType();
 }
 
-EsfPrimInterface::PrimSchemaID
+EsfPrimSchemaID
 EsfPrimInterface::GetPrimSchemaID(EsfJournal *journal) const
 {
     if (journal) {

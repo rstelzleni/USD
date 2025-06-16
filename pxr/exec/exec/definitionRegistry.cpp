@@ -151,7 +151,7 @@ Exec_DefinitionRegistry::GetComputationDefinition(
 
     // Otherwise, look for a plugin computation.
 
-    const EsfPrimInterface::PrimSchemaID schemaID =
+    const EsfPrimSchemaID schemaID =
         providerPrim.GetPrimSchemaID(journal);
 
     // Get the composed prim definition, creating it if necesseary, and use it

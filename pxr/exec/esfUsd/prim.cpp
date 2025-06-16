@@ -56,7 +56,7 @@ EsfUsd_Prim::_GetType() const
     return _GetWrapped().GetPrimTypeInfo().GetSchemaType();
 }
 
-EsfPrimInterface::PrimSchemaID
+EsfPrimSchemaID
 EsfUsd_Prim::_GetPrimSchemaID() const
 {
     // We use the address of the UsdPrimTypeInfo as the prim schema ID, since it

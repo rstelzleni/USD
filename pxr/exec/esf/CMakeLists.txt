@@ -12,6 +12,7 @@ pxr_library(esf
     PUBLIC_HEADERS
         api.h
         journal.h
+        primSchemaID.h
 
     PUBLIC_CLASSES
         attribute

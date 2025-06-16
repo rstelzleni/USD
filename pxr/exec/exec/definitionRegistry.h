@@ -227,7 +227,7 @@ private:
     // This is a concurrent map to allow computation lookup to happen in
     // parallel with lazy caching of composed prim definitions.
     mutable tbb::concurrent_unordered_map<
-        EsfPrimInterface::PrimSchemaID,
+        EsfPrimSchemaID,
         _ComposedPrimDefinition,
         TfHash>
     _composedPrimDefinitions;
