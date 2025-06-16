@@ -18,7 +18,9 @@
 #include "pxr/exec/exec/valueExtractor.h"
 #include "pxr/exec/exec/valueKey.h"
 
+#include "pxr/base/arch/functionLite.h"
 #include "pxr/base/tf/bits.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/base/tf/span.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/base/work/loops.h"
@@ -268,6 +270,8 @@ Exec_RequestImpl::_Compile(
 void
 Exec_RequestImpl::_Schedule()
 {
+    TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
+
     // The compute request only needs to be rebuilt if the compiled outputs
     // change.
     if (!_computeRequest) {
@@ -294,6 +298,8 @@ Exec_RequestImpl::_Schedule()
 Exec_CacheView
 Exec_RequestImpl::_CacheValues(ExecSystem *const system)
 {
+    TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
+
     if (!TF_VERIFY(system)) {
         return Exec_CacheView();
     }

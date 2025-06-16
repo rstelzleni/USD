@@ -9,6 +9,8 @@
 #include "pxr/exec/exec/inputKey.h"
 #include "pxr/exec/exec/nodeRecompilationInfo.h"
 
+#include "pxr/base/arch/functionLite.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/exec/vdf/node.h"
 #include "pxr/exec/vdf/types.h"
 
@@ -48,6 +50,8 @@ Exec_NodeRecompilationInfoTable::SetNodeRecompilationInfo(
     const EsfObject &provider,
     Exec_InputKeyVectorConstRefPtr &&inputKeys)
 {
+    TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
+
     const VdfIndex nodeIndex = VdfNode::GetIndexFromId(node->GetId());
 
     // Grow the vector to ensure we can store recompilation info at `nodeIndex`.

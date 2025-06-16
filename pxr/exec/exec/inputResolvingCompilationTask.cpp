@@ -11,6 +11,8 @@
 #include "pxr/exec/exec/outputProvidingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/base/arch/functionLite.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/esf/attribute.h"
 #include "pxr/exec/esf/journal.h"
@@ -26,6 +28,7 @@ Exec_InputResolvingCompilationTask::_Compile(
     TaskPhases &taskPhases)
 {
     TRACE_FUNCTION();
+    TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
 
     taskPhases.Invoke(
     // Generate the output key (or multiple output keys) to compile from the

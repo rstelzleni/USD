@@ -12,6 +12,8 @@
 #include "pxr/exec/exec/inputResolvingCompilationTask.h"
 #include "pxr/exec/exec/program.h"
 
+#include "pxr/base/arch/functionLite.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/esf/editReason.h"
@@ -25,6 +27,7 @@ Exec_OutputProvidingCompilationTask::_Compile(
     TaskPhases &taskPhases)
 {
     TRACE_FUNCTION();
+    TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
 
     const Exec_ComputationDefinition *const computationDefinition =
         _outputKey.GetComputationDefinition();

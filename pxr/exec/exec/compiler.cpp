@@ -13,6 +13,8 @@
 #include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/valueKey.h"
 
+#include "pxr/base/arch/functionLite.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/base/tf/span.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/base/work/dispatcher.h"
@@ -38,6 +40,7 @@ std::vector<VdfMaskedOutput>
 Exec_Compiler::Compile(TfSpan<const ExecValueKey> valueKeys)
 {
     TRACE_FUNCTION();
+    TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
 
     // Note that the returned vector should always have the same size as
     // valueKeys.  Any key that failed to compile should yield a null masked

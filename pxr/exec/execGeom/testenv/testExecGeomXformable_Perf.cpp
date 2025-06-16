@@ -14,6 +14,7 @@
 #include "pxr/base/arch/timing.h"
 #include "pxr/base/gf/matrix4d.h"
 #include "pxr/base/gf/vec3d.h"
+#include "pxr/base/tf/mallocTag.h"
 #include "pxr/base/tf/pxrCLI11/CLI11.h"
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/trace/aggregateNode.h"
@@ -298,14 +299,99 @@ _WritePerfstats(
         metricTemplate, "extract_values_2_time", extractValues2Time);
 }
 
+namespace {
+
+// Class used to gather and report memory measurements.
+class _MemoryMetrics {
+public:
+    void
+    RecordMetric(const char *const tag)
+    {
+        // If we're not measuring memory, return early.
+        if (!TfMallocTag::IsInitialized()) {
+            return;
+        }
+
+        const size_t memInBytes = TfMallocTag::GetMaxTotalBytes();
+
+        TfMallocTag::CallTree tree;
+        const bool success = TfMallocTag::GetCallTree(&tree);
+        if (!TF_VERIFY(success)) {
+            return;
+        }
+
+        std::ofstream mallocTagFile(TfStringPrintf("%s.mallocTag", tag));
+        tree.Report(mallocTagFile);
+
+        _stats.emplace_back(tag, memInBytes);
+    }
+
+    void
+    WritePerfstats(const bool recompile)
+    {
+        _stats.emplace_back(
+            "mem_high_water_mark", TfMallocTag::GetMaxTotalBytes());
+
+        std::ofstream statsFile("perfstats.raw");
+        for (const auto &[tag, memInBytes] : _stats) {
+            _DumpMemStat(tag, memInBytes, statsFile);
+        }
+    }
+
+private:
+    static double
+    _BytesToMiB(size_t numBytes)
+    {
+        return static_cast<double>(numBytes) / (1024 * 1024);
+    }
+
+    static void
+    _DumpMemStat(
+        const std::string &tag,
+        const size_t memInBytes,
+        std::ofstream &file)
+    {
+        const std::string memInMiBString =
+            TfStringPrintf("%f", _BytesToMiB(memInBytes));
+
+        // Print the value to stdout, with a label.
+        const std::string label = TfStringReplace(tag, "_", " ");
+        std::cout << label << ": " << memInMiBString << " MiB\n";
+
+        // Write the value to the perfstats file.
+        static const char *const metricTemplate =
+            "{'profile':'%s','metric':'memory','value':%s,'samples':1}\n";
+        file << TfStringPrintf(
+            metricTemplate, tag.c_str(), memInMiBString.c_str());
+    }
+
+private:
+
+    // Vector of (tag, memory in bytes) for each stat collected.
+    std::vector<std::pair<std::string, size_t>> _stats;
+};
+
+} // anonymous namespace
+
 static void
 TestExecGeomXformable_Perf(
-    unsigned branchingFactor,
-    unsigned treeDepth,
-    bool recompile,
-    bool outputAsSpy)
+    const unsigned branchingFactor,
+    const unsigned treeDepth,
+    const bool measureMemory,
+    const bool recompile,
+    const bool outputAsSpy)
 {
-    TraceCollector::GetInstance().SetEnabled(true);
+    _MemoryMetrics memMetrics;
+
+    if (measureMemory) {
+        std::string errorMessage;
+        const bool initialized = TfMallocTag::Initialize(&errorMessage);
+        TF_VERIFY(
+            initialized,
+            "Failed to initialize TfMallocTag: %s", errorMessage.c_str());
+    } else {
+        TraceCollector::GetInstance().SetEnabled(true);
+    }
 
     // Instantiate a hierarchy of Xform prims on a stage and get access to the
     // leaf prims.
@@ -324,6 +410,7 @@ TestExecGeomXformable_Perf(
     }
 
     TRACE_MARKER("Begin exec");
+    memMetrics.RecordMetric("mem_at_start");
 
     ExecUsdSystem execSystem(usdStage);
 
@@ -350,8 +437,10 @@ TestExecGeomXformable_Perf(
 
         execSystem.PrepareRequest(request);
         TF_AXIOM(request.IsValid());
+        memMetrics.RecordMetric("mem_prepare_request_1");
 
         ExecUsdCacheView cache = execSystem.CacheValues(request);
+        memMetrics.RecordMetric("mem_cache_values_1");
 
         {
             TRACE_SCOPE("Extract values");
@@ -383,6 +472,7 @@ TestExecGeomXformable_Perf(
             TF_AXIOM(rootChildSpec);
             rootChildSpec->SetTypeName("Scope");
         }
+        memMetrics.RecordMetric("mem_scene_edit_1");
 
         TRACE_MARKER("Re-exec 1");
 
@@ -391,8 +481,10 @@ TestExecGeomXformable_Perf(
 
             execSystem.PrepareRequest(request);
             TF_AXIOM(request.IsValid());
+            memMetrics.RecordMetric("mem_prepare_request_2");
 
             ExecUsdCacheView cache = execSystem.CacheValues(request);
+            memMetrics.RecordMetric("mem_cache_values_2");
 
             {
                 TRACE_SCOPE("Extract values");
@@ -423,6 +515,7 @@ TestExecGeomXformable_Perf(
                 leafPrimSpec->SetTypeName("Scope");
             }
         }
+        memMetrics.RecordMetric("mem_scene_edit_2");
 
         TRACE_MARKER("Re-exec 2");
 
@@ -447,9 +540,11 @@ TestExecGeomXformable_Perf(
 
             execSystem.PrepareRequest(request);
             TF_AXIOM(request.IsValid());
+            memMetrics.RecordMetric("mem_prepare_request_3");
 
             // TODO: Compute and extract values again.
             ExecUsdCacheView cache = execSystem.CacheValues(request);
+            memMetrics.RecordMetric("mem_cache_values_3");
 
             {
                 TRACE_SCOPE("Extract values");
@@ -462,30 +557,37 @@ TestExecGeomXformable_Perf(
         }
     }
 
-    TraceCollector::GetInstance().SetEnabled(false);
+    if (measureMemory) {
+        memMetrics.RecordMetric("mem_at_end");
+        memMetrics.WritePerfstats(recompile);
+    } else {
+        TraceCollector::GetInstance().SetEnabled(false);
 
-    const TraceReporterPtr globalReporter = TraceReporter::GetGlobalReporter();
-    globalReporter->UpdateTraceTrees();
+        const TraceReporterPtr globalReporter =
+            TraceReporter::GetGlobalReporter();
+        globalReporter->UpdateTraceTrees();
 
-    {
-        if (outputAsSpy) {
-            std::ofstream traceFile("test.spy");
-            globalReporter->SerializeProcessedCollections(traceFile);
-        } else {
-            std::ofstream traceFile("test.trace");
-            globalReporter->Report(traceFile);
+        {
+            if (outputAsSpy) {
+                std::ofstream traceFile("test.spy");
+                globalReporter->SerializeProcessedCollections(traceFile);
+            } else {
+                std::ofstream traceFile("test.trace");
+                globalReporter->Report(traceFile);
+            }
         }
-    }
 
-    _WritePerfstats(globalReporter, recompile);
+        _WritePerfstats(globalReporter, recompile);
+    }
 }
 
 int 
 main(int argc, char **argv) 
 {
-    unsigned numThreads = WorkGetConcurrencyLimit();
     unsigned branchingFactor = 0;
     unsigned treeDepth = 0;
+    unsigned numThreads = WorkGetConcurrencyLimit();
+    bool measureMemory = false;
     bool outputAsSpy = false;
     bool recompile = false;
 
@@ -504,7 +606,10 @@ main(int argc, char **argv)
         "The depth of the Xform tree to build.")
         ->required(true);
     app.add_option(
-        "--numThreads", numThreads, "The number of threads to use");
+        "--numThreads", numThreads, "The number of threads to use.");
+    app.add_flag(
+        "--memory", measureMemory,
+        "Measure memory, instead of time (the default).");
     app.add_flag(
         "--recompile", recompile,
         "Measure recompilation time in response to various scene edits.");
@@ -517,5 +622,6 @@ main(int argc, char **argv)
     std::cout << "Running with " << numThreads << " threads.\n";
     WorkSetConcurrencyLimit(numThreads);
 
-    TestExecGeomXformable_Perf(branchingFactor, treeDepth, recompile, outputAsSpy);
+    TestExecGeomXformable_Perf(
+        branchingFactor, treeDepth, measureMemory, recompile, outputAsSpy);
 }
