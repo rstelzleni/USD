@@ -3208,7 +3208,29 @@ _AddClassBasedArc(
         //      prefers the weaker of the two.  Currently, this just
         //      leaves the one that happened to get populated first
         //      in place, which is too loosey-goosey.
-        return child;
+
+        // XXX:
+        // For specializes arcs being implied to the root of the prim index,
+        // we prefer the node with the stronger origin to maintain legacy
+        // strength ordering behavior. For now this is a targeted workaround,
+        // but this may serve as a general approach for resolving duplicate
+        // arcs per the above TODO in the future.
+        if (PcpIsSpecializeArc(arcType) && parent.IsRootNode()
+            && _IsImpliedClassBasedArc(arcType, parent, origin)) {
+
+            if (PcpCompareNodeStrength(origin, child.GetOriginNode()) == -1) {
+                // Mark all nodes in the child subtree as inert so they are
+                // ignored by the duplicate check when adding the new node
+                // later.
+                _InertSubtree(child);
+            }
+            else {
+                return child;
+            }
+        }
+        else {
+            return child;
+        }
     }
 
     _ArcOptions opts;
