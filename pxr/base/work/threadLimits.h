@@ -88,6 +88,14 @@ WORK_API void WorkSetConcurrencyLimitArgument(int n);
 ///
 WORK_API void WorkSetMaximumConcurrencyLimit();
 
+/// Returns true if a limit between 1 and the physical concurrency can be set, 
+/// and the implementation will make a best effort to respect the limit.
+///
+/// Returns false if the implementation can only support 1 or the physical 
+/// concurrency. If there is an attempt to set a limit between 1 and the 
+/// physical concurrency the limit will default to the physical concurrency.
+WORK_API bool WorkSupportsGranularThreadLimits();
+
 PXR_NAMESPACE_CLOSE_SCOPE
 
 #endif

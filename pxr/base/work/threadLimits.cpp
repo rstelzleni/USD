@@ -217,4 +217,10 @@ WorkHasConcurrency()
     return WorkGetConcurrencyLimit() > 1;
 }
 
+bool
+WorkSupportsGranularThreadLimits()
+{
+    return true;
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -62,6 +62,12 @@ pxr_build_test(testWorkThreadLimits
     CPPFILES
         testenv/testWorkThreadLimits.cpp
 ) 
+pxr_build_test(testWorkThreadLimitsTBB
+    LIBRARIES
+        work
+    CPPFILES
+        testenv/testWorkThreadLimitsTBB.cpp
+) 
 pxr_register_test(testWorkDispatcher
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkDispatcher"
 )
@@ -85,12 +91,23 @@ pxr_register_test(testWorkThreadLimits3
     ENV PXR_WORK_THREAD_LIMIT=3
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimits"
 )
+pxr_register_test(testWorkThreadLimitsTBBDefault
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimitsTBB"
+)
+pxr_register_test(testWorkThreadLimitsTBB1
+    ENV PXR_WORK_THREAD_LIMIT=1
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimitsTBB"
+)
+pxr_register_test(testWorkThreadLimitsTBB3
+    ENV PXR_WORK_THREAD_LIMIT=3
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimitsTBB"
+)
 pxr_register_test(testWorkThreadLimitsRawTBBMax
     RUN_SERIAL
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimits --rawtbb"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimitsTBB --rawtbb"
 )
 pxr_register_test(testWorkThreadLimitsRawTBB2
     RUN_SERIAL
     ENV PXR_WORK_THREAD_LIMIT=2
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimits --rawtbb"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkThreadLimitsTBB --rawtbb"
 )
