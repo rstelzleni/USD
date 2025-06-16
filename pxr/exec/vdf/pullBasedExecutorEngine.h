@@ -19,6 +19,7 @@
 #include "pxr/exec/vdf/executionStats.h"
 #include "pxr/exec/vdf/executionTypeRegistry.h"
 #include "pxr/exec/vdf/mask.h"
+#include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/networkUtil.h"
 #include "pxr/exec/vdf/node.h"
 #include "pxr/exec/vdf/output.h"

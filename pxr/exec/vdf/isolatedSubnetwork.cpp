@@ -7,6 +7,7 @@
 #include "pxr/exec/vdf/isolatedSubnetwork.h"
 
 #include "pxr/exec/vdf/connection.h"
+#include "pxr/exec/vdf/network.h"
 
 #include "pxr/base/trace/trace.h"
 

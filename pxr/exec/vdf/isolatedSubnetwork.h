@@ -11,17 +11,18 @@
 
 #include "pxr/pxr.h"
 
+#include "pxr/exec/vdf/api.h"
+#include "pxr/exec/vdf/types.h"
+
 #include "pxr/base/tf/functionRef.h"
 #include "pxr/base/tf/pxrTslRobinMap/robin_map.h"
 #include "pxr/base/tf/pxrTslRobinMap/robin_set.h"
-#include "pxr/exec/vdf/api.h"
-#include "pxr/exec/vdf/network.h"
-#include "pxr/exec/vdf/types.h"
 
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class VdfNetwork;
 class VdfNode;
 
 ////////////////////////////////////////////////////////////////////////////////

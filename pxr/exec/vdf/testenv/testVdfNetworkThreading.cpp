@@ -7,6 +7,7 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/vdf/context.h"
+#include "pxr/exec/vdf/network.h"
 #include "pxr/exec/vdf/node.h"
 #include "pxr/exec/vdf/poolChainIndexer.h"
 
