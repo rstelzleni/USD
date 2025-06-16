@@ -287,12 +287,6 @@ TestRecompileChangedRelationshipTargets(Fixture &fixture)
 // relationship (but are no longer targeted) do not cause uncompilation of
 // inputs that depend on the new targets of that relationship.
 //
-// TODO: Currently, there is an over-invalidation bug where changes to old
-// targets still trigger input uncompilation, even though that object is no
-// longer a target. This test case is written to capture the current
-// behavior, but it will be updated when the over-invalidation issue is
-// resolved.
-//
 static void
 TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
 {
@@ -346,10 +340,6 @@ TestRecompileAfterChangingOldRelationshipTarget(Fixture &fixture)
 
     // Deactivate </X>. This should not affect the compiled network because
     // <X.attr>'s computeValue is no longer connected to the callback node.
-    //
-    // TODO: There is currently a bug where the input is still uncompiled
-    // because the old rule listening for Resync </X.attr> is still active in
-    // the uncompilation table. This will be fixed in a future change.
     fixture.GetPrimAtPath("/X").SetActive(false);
     fixture.GraphNetwork(
         "TestRecompileAfterChangingOldRelationshipTarget-4.dot");

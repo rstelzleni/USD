@@ -12,12 +12,11 @@
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/api.h"
+#include "pxr/exec/exec/uncompilationTarget.h"
 
-#include "pxr/base/tf/token.h"
 #include "pxr/exec/esf/editReason.h"
-#include "pxr/exec/vdf/types.h"
 
-#include "tbb/concurrent_vector.h"
+#include <tbb/concurrent_vector.h>
 
 #include <initializer_list>
 #include <string>
@@ -26,48 +25,30 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 /// A rule for uncompiling an object in the VdfNetwork.
 ///
-/// If the `inputName` field is empty, the rule indicates that the node with id
-/// `nodeId` should be uncompiled.
-///
-/// If the `inputName` field is non-empty, the rule indicates that the input
-/// named `inputName` on the node with id `nodeId` should be uncompiled (i.e.
-/// uncompile all inbound VdfConnections on that input).
-///
 /// The rule is applicable to scene changes whose reasons intersect the
 /// `reasons` field. These reasons implicitly correspond to an SdfPath
-/// maintained by the Exec_UncompliationTable.
-///
-/// \note
-/// `nodeId` may refer to a node that no longer exists in the network, and it
-/// may not contain an input with name `inputName`. Such rules are said to be
-/// "dangling".
+/// maintained by the Exec_UncompliationTable. If the reasons match, then
+/// `target` should be uncompiled.
 ///
 struct Exec_UncompilationRule
 {
-    VdfId nodeId;
-    TfToken inputName;
+    Exec_UncompilationTarget target;
     EsfEditReason reasons;
 
-    /// The default constructor is deleted because there is no reasonable
-    /// default value for nodeId.
+    /// Constructs a new rule.
     ///
-    Exec_UncompilationRule() = delete;
-
-    /// Constructs a rule for uncompiling a node.
-    Exec_UncompilationRule(VdfId nodeId_, EsfEditReason reasons_)
-        : nodeId(nodeId_)
-        , reasons(reasons_) 
-    {}
-
-    /// Constructs a rule for uncompiling an input.
-    Exec_UncompilationRule(
-        VdfId nodeId_,
-        const TfToken &inputName_,
-        EsfEditReason reasons_)
-        : nodeId(nodeId_)
-        , inputName(inputName_)
+    /// The type of \p target_ must be a type held by the
+    /// Exec_UncompilationTarget variant.
+    ///
+    template <class TargetType>
+    Exec_UncompilationRule(TargetType &&target_, const EsfEditReason reasons_)
+        : target(std::forward<TargetType>(target_))
         , reasons(reasons_)
     {}
+
+    /// Returns a string describing the rule's target and reasons.
+    EXEC_API
+    std::string GetDescription() const;
 };
 
 /// Contains a set of rules for uncompiling objects in the VdfNetwork.
@@ -175,7 +156,7 @@ public:
 
     /// @}
 
-    /// Gets a string describing all rules in the set.
+    /// Returns a string describing all rules in the set.
     EXEC_API std::string GetDescription() const;
 
 private:

@@ -10,8 +10,8 @@
 #include "pxr/exec/exec/runtime.h"
 #include "pxr/exec/exec/uncompilationRuleSet.h"
 #include "pxr/exec/exec/uncompilationTable.h"
+#include "pxr/exec/exec/uncompilationTarget.h"
 
-#include "pxr/base/tf/token.h"
 #include "pxr/base/trace/trace.h"
 #include "pxr/exec/esf/editReason.h"
 #include "pxr/usd/sdf/path.h"
@@ -19,6 +19,75 @@
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+// Visits an Exec_UncompilationTarget to determine if the target is still
+// valid for uncompilation.
+//
+class Exec_Uncompiler::_IsValidTargetVisitor {
+public:
+    Exec_Uncompiler &uncompiler;
+
+    // Exec_NodeUncompilationTarget is valid if its node id refers to an
+    // existing node.
+    //
+    bool operator()(Exec_NodeUncompilationTarget &target) const {
+        return uncompiler._program->GetNodeById(target.GetNodeId());
+    }
+
+    // Exec_InputUncompilationTarget is valid if has has not been invalidated
+    // by an earlier scene change, and it refers to a node that still exists
+    // in the network.
+    //
+    bool operator()(Exec_InputUncompilationTarget &target) const {
+        if (!target.IsValid()) {
+            return false;
+        }
+
+        if (!uncompiler._program->GetNodeById(*target.GetNodeId())) {
+            // The node no longer exists. By invalidating the target here, other
+            // rules for the same target don't need to re-check the existence of
+            // the node.
+            target.Invalidate();
+            return false;
+        }
+
+        return true;
+    }
+};
+
+// Visits an Exec_UncompilationTarget to uncompile objects from the network.
+class Exec_Uncompiler::_UncompileTargetVisitor {
+public:
+    Exec_Uncompiler &uncompiler;
+
+    // Exec_NodeUncompilationTargets need to clear all runtime data associated
+    // with the node before disconnecting and deleting the node.
+    //
+    void operator()(Exec_NodeUncompilationTarget &target) const {
+        VdfNode *const node =
+            uncompiler._program->GetNodeById(target.GetNodeId());
+        
+        uncompiler._runtime->DeleteData(*node);
+        uncompiler._program->DisconnectAndDeleteNode(node);
+    }
+
+    // Exec_InputUncompilationTarget needs to disconnect connections from the
+    // targeted input.
+    //
+    void operator()(Exec_InputUncompilationTarget &target) const {
+        VdfNode *const node =
+            uncompiler._program->GetNodeById(*target.GetNodeId());
+        VdfInput *const input = node->GetInput(*target.GetInputName());
+
+        uncompiler._program->DisconnectInput(input);
+
+        // Once the input has been uncompiled, we invalidate existing rules that
+        // refer to the same input, so that they don't trigger on future scene
+        // changes. When the input is recompiled, exec will create a new set of
+        // rules for the input, which are not invalidated by this call.
+        target.Invalidate();
+    }
+};
 
 void
 Exec_Uncompiler::UncompileForSceneChange(
@@ -77,14 +146,15 @@ Exec_Uncompiler::_ProcessUncompilationRuleSet(
 
     Exec_UncompilationRuleSet::iterator ruleSetIter = ruleSet->begin();
     while (ruleSetIter != ruleSet->end()) {
-        const Exec_UncompilationRule &rule = *ruleSetIter;
+        Exec_UncompilationRule &rule = *ruleSetIter;
         
-        // If the rule pertains to a node that no longer exists, then we
-        // "garbage collect" that rule from the rule set. This can happen if
+        // If the target of the rule is no longer valid, then we "garbage
+        // collect" that rule from the rule set. This can happen if
         // uncompilation rules for another path uncompiled the same object in
         // the network.
-        VdfNode *const node = _program->GetNodeById(rule.nodeId);
-        if (!node) {
+        const bool isValidTarget =
+            std::visit(_IsValidTargetVisitor{*this}, rule.target);
+        if (!isValidTarget) {
             if (editReasons & EsfEditReason::ResyncedObject) {
                 // If the change is a recursive resync, don't bother erasing the
                 // individual rule, because the entire rule set is already going
@@ -102,25 +172,9 @@ Exec_Uncompiler::_ProcessUncompilationRuleSet(
             continue;
         }
 
-        // If the rule's input name is empty, then the entire node should be
-        // uncompiled. Otherwise, only uncompile the input on that node.
-        if (rule.inputName.IsEmpty()) {
-            _runtime->DeleteData(*node);
-            _program->DisconnectAndDeleteNode(node);
-            _didUncompile = true;
-        }
-        else {
-            // TODO: Disconnecting the input does not delete the node, nor does
-            // it delete the input. This means that other rules targeting this
-            // input remain active, even though the input was uncompiled. To
-            // handle this, we need to implement a tombstone mechanism to
-            // deactivate those rules, which can be added in a future version.
-            // For now, the only supported edit reason is Resync which prevents
-            // this from being a problem, but it needs to be corrected when
-            // we handle namespace edits.
-            _program->DisconnectInput(node->GetInput(rule.inputName));
-            _didUncompile = true;
-        }
+        // Uncompile the objects targeted by the rule.
+        std::visit(_UncompileTargetVisitor{*this}, rule.target);
+        _didUncompile = true;
 
         // The rule has triggered and is no longer valid.
         ruleSetIter = ruleSet->erase(ruleSetIter);

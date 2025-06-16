@@ -60,6 +60,11 @@ private:
         EsfEditReason editReasons,
         Exec_UncompilationRuleSet *ruleSet);
 
+    // These visitor classes perform different actions depending on the type
+    // held by an Exec_UncompilationTarget variant.
+    class _IsValidTargetVisitor;
+    class _UncompileTargetVisitor;
+
 private:
     Exec_Program *_program;
     Exec_Runtime *_runtime;

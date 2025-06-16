@@ -17,8 +17,10 @@ Exec_UncompilationTable::AddRulesForNode(
 {
     TRACE_FUNCTION();
 
+    const Exec_NodeUncompilationTarget target(nodeId);
+
     for (const auto& [path, editReasons] : journal) {
-        _FindOrInsert(path).emplace_back(nodeId, TfToken(), editReasons);
+        _FindOrInsert(path).emplace_back(target, editReasons);
     }
 }
 
@@ -30,8 +32,15 @@ Exec_UncompilationTable::AddRulesForInput(
 {
     TRACE_FUNCTION();
 
+    // All rules created for this input *must* be copy-constructed from the same
+    // Exec_InputUncompilationTarget. This ensures all the rules share a common
+    // identity. The first of these rules to match a scene change will
+    // invalidate the shared identity, which in turn will disable the remaining
+    // rules constructed from this target.
+    const Exec_InputUncompilationTarget target(nodeId, inputName);
+
     for (const auto& [path, editReasons] : journal) {
-        _FindOrInsert(path).emplace_back(nodeId, inputName, editReasons);
+        _FindOrInsert(path).emplace_back(target, editReasons);
     }
 }
 

@@ -69,6 +69,7 @@ pxr_library(exec
         runtime
         uncompilationRuleSet
         uncompilationTable
+        uncompilationTarget
         uncompiler
         valueExtractor
 
