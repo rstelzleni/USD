@@ -155,8 +155,10 @@ def GetCodeLocation(framesUp):
     i.e. the function someCode()."""
     import sys
     f_back = sys._getframe(framesUp).f_back
-    return (f_back.f_globals['__name__'], f_back.f_code.co_name,
-            f_back.f_code.co_filename, f_back.f_lineno)
+    return (f_back.f_globals.get('__name__', '<unknown>'),
+            f_back.f_code.co_name,
+            f_back.f_code.co_filename,
+            f_back.f_lineno)
 
 PreparePythonModule()
 
@@ -266,5 +268,36 @@ class ScopeDescription(_ScopeDescription, contextlib.ContextDecorator):
     needed, use the with-statement pattern instead.
     """
     pass
+
+class CatchAndRepostErrors(contextlib.ContextDecorator):
+    """This context manager & decorator can be used to catch Tf.ErrorException
+    and repost its held errors to the thread's Tf.Error list without raising a
+    Python exception, halting unwinding.  For example, the following will raise
+    a Tf.ErrorException containing the "test" Coding Error.  This will be
+    caught by the CatchAndRepostErrors object, and the "test" Error will be
+    re-posted to the thread's error list.  Then exception propagation will
+    cease and ordinary control flow will continue.
+
+        with Tf.CatchAndRepostErrors():
+            Tf.RaiseCodingError('test')
+
+    This can be useful to sidestep SIP's virtual function bindings from
+    blocking exceptions, retaining Tf.Errors so they can propagate to callers.
+    Here, the `paintGL()` virtual override can capture any Tf.ErrorExceptions
+    raised during its execution, and by reposting the errors to the Tf.Error
+    list, callers can observe them later.
+
+        @Tf.CatchAndRepostErrors():
+        def paintGL(self):
+            self._renderer.Render()
+    """
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, excType, excValue, tb):
+        return (RepostErrors(excValue)
+                if isinstance(excValue, ErrorException)
+                else False)
 
 del contextlib
