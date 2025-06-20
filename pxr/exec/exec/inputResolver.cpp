@@ -431,11 +431,6 @@ private:
     // If after traversal, the current object is valid, but does not define
     // the computation specified by \p inputKey, then the result does not
     // contain an output key for that object.
-    //
-    // XXX: This returns a vector of output keys, because we eventually support
-    // traversals that "fan-out" to multiple providers (e.g. inputs on attribute
-    // connections, inputs on namespace children, etc.). For now, inputs can
-    // only resolve to 0 or 1 output keys.
     // 
     Exec_OutputKeyVector _ResolveInput(const Exec_InputKey &inputKey)
     {
