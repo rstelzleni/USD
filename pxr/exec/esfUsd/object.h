@@ -98,6 +98,7 @@ private:
     TfToken _GetName() const final;
     EsfPrim _GetPrim() const final;
     EsfStage _GetStage() const final;
+    EsfSchemaConfigKey _GetSchemaConfigKey() const final;
     bool IsPrim() const final;
     bool IsAttribute() const final;
     bool IsRelationship() const final;

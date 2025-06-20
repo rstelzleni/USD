@@ -39,7 +39,6 @@ private:
     EsfRelationship _GetRelationship(
         const TfToken &relationshipName) const final;
     TfType _GetType() const final;
-    EsfPrimSchemaID _GetPrimSchemaID() const final;
     bool IsPseudoRoot() const final;
 };
 

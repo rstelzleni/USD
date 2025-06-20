@@ -56,17 +56,6 @@ EsfUsd_Prim::_GetType() const
     return _GetWrapped().GetPrimTypeInfo().GetSchemaType();
 }
 
-EsfPrimSchemaID
-EsfUsd_Prim::_GetPrimSchemaID() const
-{
-    // We use the address of the UsdPrimTypeInfo as the prim schema ID, since it
-    // is unique to the set of types and applied schemas for the prim and it is
-    // stable, since it is guaranteed to stay alive at least as long as the
-    // UsdStage.
-    return EsfPrimInterface::CreatePrimSchemaID(
-        &_GetWrapped().GetPrimTypeInfo());
-}
-
 bool
 EsfUsd_Prim::IsPseudoRoot() const
 {

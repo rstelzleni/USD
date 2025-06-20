@@ -68,13 +68,4 @@ EsfPrimInterface::GetType(EsfJournal *journal) const
     return _GetType();
 }
 
-EsfPrimSchemaID
-EsfPrimInterface::GetPrimSchemaID(EsfJournal *journal) const
-{
-    if (journal) {
-        journal->Add(_GetPath(), EsfEditReason::ResyncedObject);
-    }
-    return _GetPrimSchemaID();
-}
-
 PXR_NAMESPACE_CLOSE_SCOPE

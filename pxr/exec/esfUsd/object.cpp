@@ -64,6 +64,23 @@ EsfUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetStage() const
 }
 
 template <class InterfaceType, class UsdObjectType>
+EsfSchemaConfigKey
+EsfUsd_ObjectImpl<InterfaceType, UsdObjectType>::_GetSchemaConfigKey() const
+{
+    // We use the address of the UsdPrimTypeInfo as the schema config key, since
+    // it is unique to the set of types and applied schemas for the prim and it
+    // is stable, since it is guaranteed to stay alive at least as long as the
+    // UsdStage.
+    if constexpr (std::is_base_of_v<UsdPrim, UsdObjectType>) {
+        return EsfObjectInterface::CreateSchemaConfigKey(
+            &_GetWrapped().GetPrimTypeInfo());
+    } else {
+        return EsfObjectInterface::CreateSchemaConfigKey(
+            &_GetWrapped().GetPrim().GetPrimTypeInfo());
+    }
+}
+
+template <class InterfaceType, class UsdObjectType>
 bool
 EsfUsd_ObjectImpl<InterfaceType, UsdObjectType>::IsPrim() const
 {

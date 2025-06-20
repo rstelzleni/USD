@@ -57,4 +57,13 @@ EsfObjectInterface::GetPrim(EsfJournal *journal) const
     return _GetPrim();
 }
 
+EsfSchemaConfigKey
+EsfObjectInterface::GetSchemaConfigKey(EsfJournal *journal) const
+{
+    if (journal) {
+        journal->Add(_GetPath().GetPrimPath(), EsfEditReason::ResyncedObject);
+    }
+    return _GetSchemaConfigKey();
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE
