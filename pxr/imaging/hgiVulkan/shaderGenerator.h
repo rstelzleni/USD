@@ -77,8 +77,9 @@ private:
 
     void _AddDescriptorSetLayoutBinding(
         uint32_t bindingIndex,
-        VkDescriptorType descriptorType);
-    
+        VkDescriptorType descriptorType,
+        uint32_t descriptorCount);
+
     HgiVulkanShaderSectionUniquePtrVector _shaderSections;
     Hgi const *_hgi;
     uint32_t _textureBindIndexStart;

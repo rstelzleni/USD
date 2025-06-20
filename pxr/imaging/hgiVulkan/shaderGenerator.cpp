@@ -287,9 +287,13 @@ HgiVulkanShaderGenerator::_WriteTextures(
             desc.writable
                 ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
                 : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        const uint32_t descriptorCount =
+            desc.arraySize > 0
+                ? desc.arraySize
+                : 1;
 
         _AddDescriptorSetLayoutBinding(
-            textureBindIndex, descriptorType);
+            textureBindIndex, descriptorType, descriptorCount);
     }
 }
 
@@ -352,9 +356,10 @@ HgiVulkanShaderGenerator::_WriteBuffers(
             isUniformBufferBinding
                 ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
                 : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        const uint32_t descriptorCount = 1;
 
         _AddDescriptorSetLayoutBinding(
-            bindIndex, descriptorType);
+            bindIndex, descriptorType, descriptorCount);
     }
 }
 
@@ -614,7 +619,8 @@ HgiVulkanShaderGenerator::GetDescriptorSetInfo()
 void
 HgiVulkanShaderGenerator::_AddDescriptorSetLayoutBinding(
     uint32_t bindingIndex,
-    VkDescriptorType descriptorType)
+    VkDescriptorType descriptorType,
+    uint32_t descriptorCount)
 {
     if (_descriptorSetInfo.empty()) {
         // For now, all bindings are part of a single descriptor set.
@@ -630,7 +636,7 @@ HgiVulkanShaderGenerator::_AddDescriptorSetLayoutBinding(
     VkDescriptorSetLayoutBinding &bindInfo = setInfo.bindings.emplace_back();
     bindInfo.binding = bindingIndex;
     bindInfo.descriptorType = descriptorType;
-    bindInfo.descriptorCount = 1;
+    bindInfo.descriptorCount = descriptorCount;
     bindInfo.stageFlags = stageFlags;
     bindInfo.pImmutableSamplers = nullptr;
 
