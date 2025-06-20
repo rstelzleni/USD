@@ -60,6 +60,12 @@ EsfObjectInterface::GetPrim(EsfJournal *journal) const
 EsfSchemaConfigKey
 EsfObjectInterface::GetSchemaConfigKey(EsfJournal *journal) const
 {
+    // We need to handle the pseudo-root specially, to avoid journaling for
+    // the empty path.
+    if (_GetPath().IsAbsoluteRootPath()) {
+        return EsfSchemaConfigKey();
+    }
+
     if (journal) {
         journal->Add(_GetPath().GetPrimPath(), EsfEditReason::ResyncedObject);
     }
