@@ -3,8 +3,11 @@
         {
             "Info": {
                 "Exec" : {
-                    "RegistersComputationsForSchemas": {
+                    "Schemas": {
                         "TestExecConflictingPluginRegistrationSchema": {
+                        },
+                        "TestExecConflictingComputationalSchema": {
+                            "allowsPluginComputations": true
                         }
                     }
                 }

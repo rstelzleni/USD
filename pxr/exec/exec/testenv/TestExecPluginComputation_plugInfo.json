@@ -3,8 +3,14 @@
         {
             "Info": {
                 "Exec" : {
-                    "RegistersComputationsForSchemas": {
+                    "Schemas": {
                         "TestExecPluginComputationSchema": {
+                        },
+                        "TestExecNonComputationalSchema": {
+                            "allowsPluginComputations": false
+                        },
+                        "UnknownSchemaType": {
+                            "allowsPluginComputations": false
                         }
                     }
                 }

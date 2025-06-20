@@ -88,17 +88,26 @@ struct Exec_InputKey;
 /// computations are requested on a prim that uses `MySchemaType`:
 ///
 /// ```
-//     "Info": {
-//         "Exec" : {
-//             "RegistersComputationsForSchemas": {
-//                 "MySchemaType1": {
-//                 },
-//                 "MySchemaType2": {
-//                 }
-//             }
-//         }
-//     }
+///     "Info": {
+///         "Exec": {
+///             "Schemas": {
+///                 "MyComputationalSchema1": {
+///                     "allowsPluginComputations": true
+///                 },
+///                 "MyComputationalSchema2": {
+///                 },
+///                 "MyNonComputationalSchema": {
+///                     "allowsPluginComputations": false
+///                 }
+///             }
+///         }
+///     }
 /// ```
+///
+/// The boolean `allowsPluginComputations` is used to declare schemas for which
+/// computations _cannot_ be registered. If `allowsPluginComputations` isn't
+/// present in the plugInfo, its value defaults to true. I.e., schemas that
+/// appear in the Exec/Schemas plugInfo allow plugin computations by default.
 
 /// \defgroup group_Exec_ComputationRegistrations Computation Registrations
 ///

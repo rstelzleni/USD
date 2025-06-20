@@ -18,6 +18,7 @@
 #include "pxr/base/arch/systemInfo.h"
 #include "pxr/base/plug/plugin.h"
 #include "pxr/base/plug/registry.h"
+#include "pxr/base/tf/callContext.h"
 #include "pxr/base/tf/diagnostic.h"
 #include "pxr/base/tf/errorMark.h"
 #include "pxr/base/tf/pathUtils.h"
@@ -52,16 +53,38 @@ TF_DEFINE_PRIVATE_TOKENS(
     (multiApplySchemaComputation)
     (namespaceAncestorInput)
     (noInputsComputation)
+    (nonComputationalSchemaComputation)
     (primComputation)
     (relationshipName)
     (stageAccessComputation)
     (unknownSchemaTypeComputation)
 );
 
-// A type that is not registered with TfType.
+// Attempt to register a computation for a schema type that is not registered
+// with TfType.
+//
 EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestUnknownSchemaType)
 {
     self.PrimComputation(_tokens->unknownSchemaTypeComputation)
+        .Callback<double>(+[](const VdfContext &) { return 1.0; });
+}
+
+// Attempt to register a computation for a schema type that is tagged in
+// plugInfo as not allowing plugin computations.
+//
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecNonComputationalSchema)
+{
+    self.PrimComputation(_tokens->nonComputationalSchemaComputation)
+        .Callback<double>(+[](const VdfContext &) { return 1.0; });
+}
+
+// Attempt to register a computation for a schema type that has conflicting
+// plugInfo declarations with respect to whether or not it allows plugin
+// computations.
+//
+EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestExecConflictingComputationalSchema)
+{
+    self.PrimComputation(_tokens->nonComputationalSchemaComputation)
         .Callback<double>(+[](const VdfContext &) { return 1.0; });
 }
 
@@ -196,54 +219,114 @@ EXEC_REGISTER_COMPUTATIONS_FOR_SCHEMA(TestNamespacedSchemaType)
 class ExpectedErrors {
 public:
 
-    explicit ExpectedErrors(const size_t numErrors)
-        : _numErrors(numErrors)
+    // Expects the given number of errors to be emitted.
+    ExpectedErrors(
+        const TfCallContext &callContext,
+        const size_t numErrors)
+        : _callContext(callContext)
+        , _numErrors(numErrors)
     {
     }
 
-    explicit ExpectedErrors(const std::set<std::string> &expectedErrors)
-        : _expectedErrors(expectedErrors)
+    // Expects the given error messages to be emitted.
+    ExpectedErrors(
+        const TfCallContext &callContext,
+        const std::set<std::string> &expectedErrors)
+        : _callContext(callContext)
+        , _expectedErrors(expectedErrors)
         , _numErrors(_expectedErrors.size())
     {
     }
 
+    // Expects the given number of errors to be emitted, and we expect to find
+    // the given error messages among the, where the number of expect error
+    // messages is less than the number of expected errors.
+    //
+    ExpectedErrors(
+        const TfCallContext &callContext,
+        const size_t numErrors,
+        const std::set<std::string> &expectedErrors)
+        : _callContext(callContext)
+        , _expectedErrors(expectedErrors)
+        , _numErrors(numErrors)
+    {
+        TF_AXIOM(_expectedErrors.size() < _numErrors);
+    }
+
+    // The destructor is where we actually verify that the expected errors were
+    // emitted.
+    //
     ~ExpectedErrors() {
         const size_t numErrors = std::distance(_mark.begin(), _mark.end());
 
+        // If all that is required is an expected number of errors, return if
+        // the count matches.
         if (_expectedErrors.empty() && numErrors == _numErrors) {
             return;
         }
 
-        ASSERT_EQ(numErrors, _expectedErrors.size());
+        if (numErrors != _numErrors) {
+            // Make a vector, and not a set, to make the error message clear
+            // when the same error is emitted more than once.
+            std::vector<std::string> errors;
+            for (auto it=_mark.begin(); it!=_mark.end(); ++it) {
+                errors.push_back(it->GetCommentary());
+            }
+
+            TF_FATAL_ERROR(
+                "Expected numErrors == %zu; got %zu:\n  %s\n"
+                "in %s at line %zu of %s",
+                _numErrors, numErrors,
+                TfStringJoin(errors.begin(), errors.end(), "\n  ").c_str(),
+                _callContext.GetFunction(),
+                _callContext.GetLine(),
+                _callContext.GetFile());
+        }
 
         std::set<std::string> errors;
         for (auto it=_mark.begin(); it!=_mark.end(); ++it) {
             errors.insert(it->GetCommentary());
         }
 
-        if (errors != _expectedErrors) {
-            std::set<std::string> missingErrors, unexpectedErrors;
-            std::set_difference(
-                _expectedErrors.begin(), _expectedErrors.end(),
-                errors.begin(), errors.end(),
-                std::inserter(missingErrors, missingErrors.begin()));
-            std::set_difference(
-                errors.begin(), errors.end(),
-                _expectedErrors.begin(), _expectedErrors.end(),
-                std::inserter(unexpectedErrors, unexpectedErrors.begin()));
+        std::set<std::string> missingErrors, unexpectedErrors;
+        std::set_difference(
+            _expectedErrors.begin(), _expectedErrors.end(),
+            errors.begin(), errors.end(),
+            std::inserter(missingErrors, missingErrors.begin()));
+        std::set_difference(
+            errors.begin(), errors.end(),
+            _expectedErrors.begin(), _expectedErrors.end(),
+            std::inserter(unexpectedErrors, unexpectedErrors.begin()));
 
+        // If the number of expected errors is greater than the number of
+        // expected error messages, then we have a certain number of unexpected
+        // errors that we actually expect.
+        const size_t numExpectedUnexpectedErrors =
+            _numErrors > _expectedErrors.size()
+            ? (_numErrors - _expectedErrors.size()) : 0;
+
+        if (!missingErrors.empty() ||
+            unexpectedErrors.size() != numExpectedUnexpectedErrors) {
             std::string errorMessage =
                 "Emitted errors differed from expected errors:\n";
+
             if (!missingErrors.empty()) {
                 errorMessage += TfStringPrintf(
                     "Missing:\n  %s\n",
                     TfStringJoin(missingErrors, "\n  ").c_str());
             }
-            if (!unexpectedErrors.empty()) {
+            if (unexpectedErrors.size() != numExpectedUnexpectedErrors) {
                 errorMessage += TfStringPrintf(
                     "Unexpected:\n  %s\n",
                     TfStringJoin(unexpectedErrors, "\n  ").c_str());
             }
+
+            errorMessage +=
+                TfStringPrintf(
+                    "\nin %s at line %zu of %s",
+                    _callContext.GetFunction(),
+                    _callContext.GetLine(),
+                    _callContext.GetFile());
             TF_FATAL_ERROR("%s", errorMessage.c_str());
         }
 
@@ -251,10 +334,14 @@ public:
     }
 
 private:
+    const TfCallContext _callContext;
     const std::set<std::string> _expectedErrors;
     const size_t _numErrors;
     TfErrorMark _mark;
 };
+
+#define EXPECTED_ERRORS(name, ...)                                              \
+    ExpectedErrors name(TF_CALL_CONTEXT, __VA_ARGS__)
 
 static EsfStage
 _NewStageFromLayer(
@@ -290,19 +377,89 @@ _PrintInputKeys(
     std::cout << std::flush;
 }
 
+// This test case needs to run first in order to encounter the errors we look
+// for here.
+//
 static void
 TestRegistrationErrors()
 {
-    ExpectedErrors expected({
+    // The errors that are emitted because of conflicting plugins aren't stable
+    // because order can vary, so they are not included among the expected error
+    // messages here.
+    EXPECTED_ERRORS(expected, 7, {
         "Attempt to register computation 'unknownSchemaTypeComputation' using "
         "an unknown type.",
+
         "Attempt to register computation '__computeTime' with a name that uses "
-        "the prefix '__', which is reserved for builtin computations."
+        "the prefix '__', which is reserved for builtin computations.",
+
+        "Attempt to register computation 'nonComputationalSchemaComputation' "
+        "for schema TestExecNonComputationalSchema, which was declared as "
+        "not allowing plugin computations by plugin "
+        "'TestExecPluginComputation'.",
+
+        "Unknown schema type name 'UnknownSchemaType' encountered when reading "
+        "Exec plugInfo."
     });
 
     // The first time we pull on the defintion registry, errors for bad
     // registrations are emitted.
-    Exec_DefinitionRegistry::GetInstance();
+    const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
+    EsfJournal *const nullJournal = nullptr;
+
+    {
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def ConflictingPluginRegistrationSchema "Prim"
+        {
+        }
+        )usd");
+        const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim,
+                TfToken("conflictingRegistrationComputation"),
+                nullJournal);
+        TF_AXIOM(primCompDef);
+    }
+
+    {
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+            def Scope "Prim" (
+                apiSchemas = ["NonComputationalSchema"]
+            ) {
+            }
+        )usd");
+        const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim,
+                TfToken("nonComputationalSchemaComputation"),
+                nullJournal);
+        TF_AXIOM(!primCompDef);
+    }
+
+    {
+        // Make sure we don't find a computation that was registered on a
+        // schema with conflicting allowsPluginComputations plugInfo.
+        const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
+        def ConflictingComputationalSchema "Prim"
+        {
+        }
+        )usd");
+        const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
+        TF_AXIOM(prim->IsValid(nullJournal));
+
+        const Exec_ComputationDefinition *const primCompDef =
+            reg.GetComputationDefinition(
+                *prim,
+                TfToken("nonComputationalSchemaComputation"),
+                nullJournal);
+        TF_AXIOM(!primCompDef);
+    }
 }
 
 // Test that an unknown applied schema is ignored and we still find computations
@@ -350,33 +507,6 @@ TestStageBuiltinComputationOnPrim()
         reg.GetComputationDefinition(
             *prim, ExecBuiltinComputations->computeTime, nullJournal);
     TF_AXIOM(!primCompDef);
-}
-
-// This must be the first test case to be run that attempts to look for plugin
-// computations on a known schema type, in order of this case to be the one
-// that causes the expected error to be emitted.
-//
-static void
-TestConflictingPluginSchemaComputationRegistration()
-{
-    ExpectedErrors expected(1);
-
-    EsfJournal *const nullJournal = nullptr;
-    const Exec_DefinitionRegistry &reg = Exec_DefinitionRegistry::GetInstance();
-    const EsfStage stage = _NewStageFromLayer(R"usd(#usda 1.0
-        def ConflictingPluginRegistrationSchema "Prim"
-        {
-        }
-    )usd");
-    const EsfPrim prim = stage->GetPrimAtPath(SdfPath("/Prim"), nullJournal);
-    TF_AXIOM(prim->IsValid(nullJournal));
-
-    const Exec_ComputationDefinition *const primCompDef =
-        reg.GetComputationDefinition(
-            *prim,
-            TfToken("conflictingRegistrationComputation"),
-            nullJournal);
-    TF_AXIOM(primCompDef);
 }
 
 static void
@@ -722,7 +852,7 @@ TestPluginSchemaComputationRegistration()
     TF_AXIOM(prim->IsValid(nullJournal));
 
     {
-        ExpectedErrors expected({
+        EXPECTED_ERRORS(expected, {
             "Attempt to register computation 'unregisteredComputation' for "
             "schema TestExecComputationRegistrationCustomSchema, for which "
             "computation registration has already been completed."
@@ -817,7 +947,6 @@ int main()
     TestRegistrationErrors();
     TestUnknownSchemaType();
     TestStageBuiltinComputationOnPrim();
-    TestConflictingPluginSchemaComputationRegistration();
     TestTypedSchemaComputationRegistration();
     TestDerivedSchemaComputationRegistration();
     TestAppliedSchemaComputationRegistration();

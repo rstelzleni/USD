@@ -23,11 +23,19 @@ class ConflictingPluginRegistrationSchema "ConflictingPluginRegistrationSchema"
 {
 }	
 
+class ConflictingComputationalSchema "ConflictingComputationalSchema"
+{
+}	
+
 class "CustomAppliedSchema"
 {
 }
 
 class "CustomMultiApplySchema"
+{
+}
+
+class "NonComputationalSchema"
 {
 }
 

@@ -34,13 +34,21 @@ PXR_NAMESPACE_OPEN_SCOPE
 namespace {
 
 // A structure used to statically initialize a map from schema type names to
-// plugins that define computations for the named schema.
+// plugin data for the named schema.
 //
 struct _ExecPluginData {
     _ExecPluginData();
 
-    std::unordered_map<TfType, PlugPluginPtr, TfHash>
-    execSchemaPlugins;
+    // For each schema, we record the plugin that (may) define computations for
+    // that schema and a bool that indicates whether or not the schema is
+    // allowed to have plugin computations.
+    //
+    struct SchemaData {
+        PlugPluginPtr plugin;
+        bool allowsPluginComputations;
+    };
+
+    std::unordered_map<TfType, SchemaData, TfHash> execSchemaPlugins;
 
 private:
     void _GetPluginMetadata(const PlugPluginPtr &plugin);
@@ -330,6 +338,18 @@ Exec_DefinitionRegistry::_RegisterPrimComputation(
         return;
     }
 
+    if (const auto it = execPluginData->execSchemaPlugins.find(schemaType);
+        it != execPluginData->execSchemaPlugins.end() &&
+        !it->second.allowsPluginComputations) {
+        TF_CODING_ERROR(
+            "Attempt to register computation '%s' for schema %s, which was "
+            "declared as not allowing plugin computations by plugin '%s'.",
+            computationName.GetText(),
+            schemaType.GetTypeName().c_str(),
+            it->second.plugin->GetName().c_str());
+        return;
+    }
+
     if (TfStringStartsWith(
             computationName.GetString(),
             Exec_BuiltinComputations::builtinComputationNamePrefix)) {
@@ -489,7 +509,8 @@ Exec_DefinitionRegistry::_EnsurePluginComputationsLoaded(
     if (const auto it = execPluginData->execSchemaPlugins.find(schemaType);
         it != execPluginData->execSchemaPlugins.end()) {
 
-        if (const PlugPluginPtr plugin = it->second; TF_VERIFY(plugin)) {
+        if (const PlugPluginPtr &plugin = it->second.plugin;
+            TF_VERIFY(plugin)) {
             plugin->Load();
             return true;
         }
@@ -531,18 +552,49 @@ _ExecPluginData::_ExecPluginData() {
     }
 }
 
+static bool
+_AllowsPluginComputations(const JsValue &schemaValue) {
+    const JsOptionalValue allowsPluginComputationsValue =
+        JsFindValue(schemaValue.GetJsObject(), "allowsPluginComputations");
+    if (!allowsPluginComputationsValue) {
+        // In the absense of 'allowsPluginComputations' metadata, the schema is
+        // allowsPluginComputations by default.
+        return true;
+    }
+
+    if (!allowsPluginComputationsValue->IsBool()) {
+        TF_CODING_ERROR(
+            "Exec 'allowsPluginComputations' metadatum holding type %s; "
+            "expected type bool.",
+            allowsPluginComputationsValue->GetTypeName().c_str());
+        // On error, we consider the schema to *not* allow plugin computations.
+        return false;
+    }
+
+    return allowsPluginComputationsValue->GetBool();
+}
+
 // The plugInfo that we look for here is of the form:
 //
 //     "Info": {
-//         "Exec" : {
-//             "RegistersComputationsForSchemas": {
-//                 "MySchemaType1": {
+//         "Exec": {
+//             "Schemas": {
+//                 "MyComputationalSchema1": {
+//                     "allowsPluginComputations": true
 //                 },
-//                 "MySchemaType2": {
+//                 "MyComputationalSchema2": {
+//                 },
+//                 "MyNonComputationalSchema": {
+//                     "allowsPluginComputations": false
 //                 }
 //             }
 //         }
 //     }
+//
+// The boolean `allowsPluginComputations` is used to declare schemas for which
+// computations _cannot_ be registered. If `allowsPluginComputations` isn't
+// present in the plugInfo, its value defaults to true. I.e., schemas that
+// appear in the Exec/Schemas plugInfo allow plugin computations by default.
 //
 void
 _ExecPluginData::_GetPluginMetadata(const PlugPluginPtr &plugin) {
@@ -553,30 +605,60 @@ _ExecPluginData::_GetPluginMetadata(const PlugPluginPtr &plugin) {
     }
 
     const JsOptionalValue schemasValue =
-        JsFindValue(
-            metadataValue->GetJsObject(),
-            "RegistersComputationsForSchemas");
+        JsFindValue(metadataValue->GetJsObject(), "Schemas");
     if (!schemasValue) {
         return;
     }
 
-    // Note that we don't yet look for any keys in the objects that
-    // represent schemas, but this paves the way for per-schema metadata
-    // that might be required in the future.
-    const JsObject &schemas = schemasValue->GetJsObject();
-    for (const auto& [schemaName, value] : schemas) {
+    for (const auto& [schemaName, schemaValue] : schemasValue->GetJsObject()) {
         const TfType schemaType = TfType::FindByName(schemaName);
-        if (TF_VERIFY(!schemaType.IsUnknown())) {
-            const auto [it, emplaced] =
-                execSchemaPlugins.emplace(schemaType, plugin);
-            if (!emplaced) {
-                TF_CODING_ERROR(
-                    "Plugin '%s' defines computations for schema %s, which "
-                    "already has computations defined in plugin '%s'",
-                    plugin->GetName().c_str(),
-                    schemaType.GetTypeName().c_str(),
-                    it->second->GetName().c_str());
-            }
+        if (schemaType.IsUnknown()) {
+            TF_CODING_ERROR(
+                "Unknown schema type name '%s' encountered when reading Exec "
+                "plugInfo.",
+                schemaName.c_str());
+            continue;
+        }
+
+        // Attempt to emplace an entry mapping the schema type to the plugin,
+        // noting whether or not the schema allows computations to be registered
+        // for it.
+        const bool allowsPluginComputations =
+            _AllowsPluginComputations(schemaValue);
+        const auto [it, emplaced] =
+            execSchemaPlugins.emplace(
+                schemaType,
+                _ExecPluginData::SchemaData{plugin, allowsPluginComputations});
+        if (emplaced) {
+            continue;
+        }
+
+        // Emit a suitable error, since we already had an entry for this schema.
+        const PlugPluginPtr &oldPlugin = it->second.plugin;
+        const bool oldAllowsPluginComputations =
+            it->second.allowsPluginComputations;
+        if (allowsPluginComputations == oldAllowsPluginComputations) {
+            TF_CODING_ERROR(
+                "Plugin '%s' declares schema %s as %sallowing plugin "
+                "computations, but plugin '%s' already declared this schema.",
+                (allowsPluginComputations ? " " : "not "),
+                plugin->GetName().c_str(),
+                schemaType.GetTypeName().c_str(),
+                oldPlugin->GetName().c_str());
+        } else {
+            // In the case of disagreement, ensure the schema is marked as
+            // not allowing plugin computations.
+            it->second.allowsPluginComputations = false;
+
+            TF_CODING_ERROR(
+                "Plugin '%s' declares schema %s as %sallowing plugin "
+                "computations, but plugin '%s' already declared it as "
+                "%sallowing plugin computations.",
+                (allowsPluginComputations ? " " : "not "),
+                plugin->GetName().c_str(),
+                schemaType.GetTypeName().c_str(),
+                oldPlugin->GetName().c_str(),
+                (oldAllowsPluginComputations ? " " : "not "));
         }
     }
 }

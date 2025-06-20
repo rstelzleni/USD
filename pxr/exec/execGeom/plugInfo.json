@@ -3,8 +3,12 @@
         {
             "Info": {
                 "Exec" : {
-                    "RegistersComputationsForSchemas": {
+                    "Schemas": {
                         "UsdGeomXformable": {
+                            "allowsPluginComputations": true
+                        },
+                        "UsdGeomScope": {
+                            "allowsPluginComputations": false
                         }
                     }
                 }

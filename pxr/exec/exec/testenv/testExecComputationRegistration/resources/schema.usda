@@ -46,6 +46,12 @@ class ConflictingPluginRegistrationSchema "ConflictingPluginRegistrationSchema" 
 {
 }
 
+class ConflictingComputationalSchema "ConflictingComputationalSchema" {
+    inherits = </Typed>
+)
+{
+}
+
 class "CustomAppliedSchema" (
     inherits = </APISchemaBase>
 )
@@ -53,6 +59,12 @@ class "CustomAppliedSchema" (
 }
 
 class "CustomMultiApplySchema" (
+    inherits = </APISchemaBase>
+)
+{
+}
+
+class "NonComputationalSchema" (
     inherits = </APISchemaBase>
 )
 {
