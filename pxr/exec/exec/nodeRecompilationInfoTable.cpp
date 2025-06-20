@@ -50,6 +50,10 @@ Exec_NodeRecompilationInfoTable::SetNodeRecompilationInfo(
     const EsfObject &provider,
     Exec_InputKeyVectorConstRefPtr &&inputKeys)
 {
+    // TODO: This tag currently fails to collect any allocations because the
+    // tbb allocator doesn't doesn't obtain allocations from malloc. This is
+    // something we can potentially address now that we are implementing our
+    // own zero allocator.
     TfAutoMallocTag tag("Exec", __ARCH_PRETTY_FUNCTION__);
 
     const VdfIndex nodeIndex = VdfNode::GetIndexFromId(node->GetId());
