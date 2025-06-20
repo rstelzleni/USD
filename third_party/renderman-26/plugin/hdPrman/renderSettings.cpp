@@ -442,6 +442,9 @@ HdPrman_RenderSettings::UpdateAndRender(
         //     per-product.
         _UpdateCameraContextFromProduct(product, &cameraContext);
 
+        // Some camera params may override values on the integrator. 
+        param->UpdateIntegrator(renderIndex);
+
         // This _cannot_ be moved to Sync since the camera Sprim wouldn't have
         // been updated.
         _UpdateRileyCamera(
