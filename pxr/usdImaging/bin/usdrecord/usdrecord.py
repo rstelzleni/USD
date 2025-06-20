@@ -152,6 +152,16 @@ def main() -> int:
             'the CPU, but additionally it will prevent any tasks that require '
             'the GPU from being invoked.'))
 
+    # Note: The argument passed via the command line (disableDrawMode) is
+    # inverted from the variable in which it is stored (drawModeEnabled).
+    parser.add_argument('--disableDrawMode', action='store_false',
+        dest='drawModeEnabled',
+        help=(
+            "Disables support for USD draw modes. If set, UsdGeomModelAPI's "
+            'draw modes will be ignored, and no geometry will be replaced '
+            'with a draw mode standin. Everything will render as if '
+            'applyDrawMode = false.'))
+
     # Note: The argument passed via the command line (disableCameraLight)
     # is inverted from the variable in which it is stored (cameraLightEnabled)
     parser.add_argument('--disableCameraLight', action='store_false',
@@ -326,7 +336,7 @@ def main() -> int:
 
     # Initialize FrameRecorder 
     frameRecorder = UsdAppUtils.FrameRecorder(
-        rendererPluginId, args.gpuEnabled)
+        rendererPluginId, args.gpuEnabled, args.drawModeEnabled)
     if args.rpPrimPath:
         frameRecorder.SetActiveRenderPassPrimPath(args.rpPrimPath)
     if args.rsPrimPath:
