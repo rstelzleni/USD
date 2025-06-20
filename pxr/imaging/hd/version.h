@@ -109,8 +109,9 @@
 // 78 -> 79: Added Hgi::GarbageCollect.
 // 79 -> 80: Added refinedSolidWireOnSurf and solidWireOnSurf to HD_REPR_TOKENS.
 // 80 -> 81: Added IsValid() to HdRenderParam.
+// 81 -> 82: Added hgi/version.h
 
-#define HD_API_VERSION 81
+#define HD_API_VERSION 82
 
 // 1  ->  2: SimpleLighting -> FallbackLighting
 #define HD_SHADER_API 2

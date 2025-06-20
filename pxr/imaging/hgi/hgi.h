@@ -25,6 +25,7 @@
 #include "pxr/imaging/hgi/shaderProgram.h"
 #include "pxr/imaging/hgi/texture.h"
 #include "pxr/imaging/hgi/types.h"
+#include "pxr/imaging/hgi/version.h"
 
 #include <atomic>
 #include <memory>
