@@ -7,7 +7,6 @@
 #ifndef PXR_EXEC_EXEC_INPUT_KEY_H
 #define PXR_EXEC_EXEC_INPUT_KEY_H
 
-#include "pxr/base/tf/staticData.h"
 #include "pxr/pxr.h"
 
 #include "pxr/exec/exec/providerResolution.h"
@@ -57,16 +56,7 @@ struct Exec_InputKey
 class Exec_InputKeyVector
 {
 public:
-    /// Constructs an Exec_InputKeyVector by forwarding \p args to the
-    /// TfSmallVector constructor.
-    ///
-    template <class... Args>
-    Exec_InputKeyVector(Args &&...args)
-        : _inputKeys(std::forward<Args>(args)...)
-        , _refCount(0)
-    {}
-
-    /// Returns a TfDelegatedCountPtr for a new Exec_InputKeyVector.
+    /// Returns a TfDelegatedCountPtr to a new Exec_InputKeyVector.
     template <class... Args>
     static TfDelegatedCountPtr<Exec_InputKeyVector> MakeShared(Args &&...args) {
         return TfMakeDelegatedCountPtr<Exec_InputKeyVector>(
@@ -95,6 +85,20 @@ public:
     }
 
 private:
+    // TfDelegatedCountPtr needs to call constructors.
+    template <typename ValueType, typename... Args>
+    friend TfDelegatedCountPtr<ValueType>
+    TfMakeDelegatedCountPtr(Args&&... args);
+
+    // Constructs an Exec_InputKeyVector by forwarding \p args to the
+    // TfSmallVector constructor.
+    //
+    template <class... Args>
+    explicit Exec_InputKeyVector(Args &&...args)
+        : _inputKeys(std::forward<Args>(args)...)
+        , _refCount(0)
+    {}
+
     // Increments the refcount.
     friend void TfDelegatedCountIncrement(
         const Exec_InputKeyVector *const inputKeys) noexcept {
