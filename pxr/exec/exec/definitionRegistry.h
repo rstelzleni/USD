@@ -12,6 +12,7 @@
 #include "pxr/exec/exec/api.h"
 #include "pxr/exec/exec/computationDefinition.h"
 #include "pxr/exec/exec/inputKey.h"
+#include "pxr/exec/exec/pluginComputationDefinition.h"
 #include "pxr/exec/exec/types.h"
 
 #include "pxr/exec/esf/prim.h"

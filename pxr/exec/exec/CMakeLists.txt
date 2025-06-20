@@ -64,6 +64,7 @@ pxr_library(exec
         nodeRecompilationInfoTable
         outputKey
         outputProvidingCompilationTask
+        pluginComputationDefinition
         program
         registrationBarrier
         requestTracker
