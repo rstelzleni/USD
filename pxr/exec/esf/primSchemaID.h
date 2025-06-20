@@ -21,13 +21,13 @@ PXR_NAMESPACE_OPEN_SCOPE
 class EsfPrimSchemaID {
   public:
     /// Only null IDs can be constructed publicly.
-    EsfPrimSchemaID() : _id(nullptr) {}
+    constexpr EsfPrimSchemaID() = default;
 
-    bool operator==(EsfPrimSchemaID id) const {
+    constexpr bool operator==(EsfPrimSchemaID id) const {
         return _id == id._id;
     }
 
-    bool operator!=(EsfPrimSchemaID id) const {
+    constexpr bool operator!=(EsfPrimSchemaID id) const {
         return !(*this == id);
     }
 
@@ -37,17 +37,17 @@ class EsfPrimSchemaID {
     }
 
   private:
-    // Derived classes can construct a EsfPrimSchemaID by calling
+    // Derived classes can construct an EsfPrimSchemaID by calling
     // EsfPrimInterface::CreateEsfPrimSchemaID.
     //
     friend class EsfPrimInterface;
-    explicit EsfPrimSchemaID(const void *const id)
+    constexpr explicit EsfPrimSchemaID(const void *const id)
         : _id(id)
     {
     }
 
   private:
-    const void *_id;
+    const void *_id = nullptr;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
