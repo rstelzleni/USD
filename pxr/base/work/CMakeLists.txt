@@ -8,18 +8,26 @@ pxr_library(work
         TBB::tbb
 
     PUBLIC_CLASSES
-        detachedTask
         dispatcher
         loops
         reduce
         singularTask
         threadLimits
         utils
+        workTBB/detachedTask
+        workTBB/dispatcher
+        workTBB/threadLimits
 
     PUBLIC_HEADERS
         api.h
+        detachedTask.h
         sort.h
         withScopedParallelism.h
+        workTBB/impl.h
+        workTBB/loops.h
+        workTBB/reduce.h
+        workTBB/sort.h
+        workTBB/withScopedParallelism.h
 
     PYMODULE_CPPFILES
         module.cpp
@@ -66,7 +74,7 @@ pxr_build_test(testWorkThreadLimitsTBB
     LIBRARIES
         work
     CPPFILES
-        testenv/testWorkThreadLimitsTBB.cpp
+        workTBB/testenv/testWorkThreadLimitsTBB.cpp
 ) 
 pxr_register_test(testWorkDispatcher
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testWorkDispatcher"

@@ -9,6 +9,7 @@
 
 #include "pxr/pxr.h"
 #include "pxr/base/work/api.h"
+#include "pxr/base/work/workTBB/impl.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
