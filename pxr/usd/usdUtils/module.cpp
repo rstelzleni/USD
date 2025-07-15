@@ -18,6 +18,9 @@ TF_WRAP_MODULE
     TF_WRAP( FlattenLayerStack );
     TF_WRAP( Introspection );
     TF_WRAP( Pipeline );
+#if PY_MAJOR_VERSION >= 3
+    TF_WRAP( PythonLoggingDiagnosticDelegate );
+#endif
     TF_WRAP( RegisteredVariantSet );
     TF_WRAP( SparseValueWriter );
     TF_WRAP( StageCache );
