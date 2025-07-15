@@ -23,6 +23,7 @@ pxr_library(usdUtils
         introspection
         localizeAsset
         pipeline
+        pythonLoggingDiagnosticDelegate
         registeredVariantSet
         sparseValueWriter
         stageCache
@@ -50,6 +51,7 @@ pxr_library(usdUtils
         wrapIntrospection.cpp
         wrapLocalizeAsset.cpp
         wrapPipeline.cpp
+        wrapPythonLoggingDiagnosticDelegate.cpp
         wrapRegisteredVariantSet.cpp
         wrapSparseValueWriter.cpp
         wrapStageCache.cpp
@@ -86,6 +88,7 @@ pxr_test_scripts(
     testenv/testUsdUtilsLocalizeAsset.py
     testenv/testUsdUtilsModifyAssetPaths.py
     testenv/testUsdUtilsPipeline.py
+    testenv/testUsdUtilsPythonLoggingDiagnosticDelegate.py
     testenv/testUsdUtilsSparseValueWriter.py
     testenv/testUsdUtilsStageCache.py
     testenv/testUsdUtilsStitch.py
@@ -505,6 +508,12 @@ pxr_register_test(testUsdUtilsPipeline
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdUtilsPipeline"
     TESTENV testenv/testUsdUtilsPipeline
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testUsdUtilsPythonLoggingDiagnosticDelegate
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdUtilsPythonLoggingDiagnosticDelegate"
     EXPECTED_RETURN_CODE 0
 )
 
