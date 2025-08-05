@@ -1,11 +1,21 @@
 {
     "Plugins": [
         {
-            "Info" : {},
-            "LibraryPath": "../../libusd_hydraPassthrough.so",
+            "Info" : {
+                "Types": {
+                    "HdTinyRendererPlugin": {
+                        "bases": [
+                            "HdRendererPlugin"
+                        ],
+                        "displayName": "Hydra Passthrough Renderer Plugin",
+                        "priority": 99
+                    }
+                }
+            },
+            "LibraryPath": "@PLUG_INFO_LIBRARY_PATH@",
             "Name": "HydraPassthrough",
-            "ResourcePath": "resources",
-            "Root": "..",
+            "ResourcePath": "@PLUG_INFO_RESOURCE_PATH@",
+            "Root": "@PLUG_INFO_ROOT@",
             "Type": "library"
         }
     ]
