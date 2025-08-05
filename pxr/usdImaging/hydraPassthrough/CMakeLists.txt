@@ -24,6 +24,7 @@ pxr_library(hydraPassthrough
 
     PYMODULE_CPPFILES
         module.cpp
+        wrapRenderManager.cpp
         wrapTest.cpp
 
     PYMODULE_FILES

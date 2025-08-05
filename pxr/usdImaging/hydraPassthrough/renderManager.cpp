@@ -17,7 +17,7 @@ void HdPassthroughRenderManager::Initialize() {
     // Scene delegate ID is used for what?
     _sceneDelegateId = SdfPath("/HdPassthroughSceneDelegate");
 
-    if (!_SetRendererPlugin(TfToken("HdTiny"))) {
+    if (!_SetRendererPlugin(TfToken("HdTinyRendererPlugin"))) {
         TF_CODING_ERROR("Failed to set renderer plugin.");
         return;
     }
@@ -50,8 +50,7 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
     // UsdImagingGLEngine does this, what is it for?
      TF_PY_ALLOW_THREADS_IN_SCOPE();
 
-    HdPluginRenderDelegateUniqueHandle _renderDelegate =
-        registry.CreateRenderDelegate(id);
+    _renderDelegate = registry.CreateRenderDelegate(id);
     if (!_renderDelegate) {
         return false;
     }
