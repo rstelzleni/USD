@@ -1,7 +1,10 @@
 #include "renderManager.h"
 
+#include "pxr/usdImaging/usdImaging/stageSceneIndex.h"
+
 #include "pxr/imaging/hd/rendererPluginRegistry.h"
 #include "pxr/imaging/hdsi/legacyDisplayStyleOverrideSceneIndex.h"
+
 
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -24,8 +27,77 @@ void HdPassthroughRenderManager::Initialize() {
     _engine = std::make_unique<HdEngine>();
 }
 
-void HdPassthroughRenderManager::RenderFrame() {
-    // Render a frame
+void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
+    if (!stage) {
+        TF_CODING_ERROR("No stage provided for rendering.");
+        return;
+    }
+
+    if (!_engine || !_renderIndex || !_sceneIndex || !_stageSceneIndex) {
+        TF_CODING_ERROR("Render engine or index not initialized.");
+        return;
+    }
+
+    TF_PY_ALLOW_THREADS_IN_SCOPE();
+
+    // Set up the scene index with the stage
+    _stageSceneIndex->SetStage(stage);
+
+    // Set up the render tasks
+    const SdfPath taskId = SdfPath("/HdPassthroughRenderManager/RenderTask");
+    _taskControllerSceneIndex = HdxTaskControllerSceneIndex::New(
+        taskId,
+        _renderDelegate.GetPluginId(),
+        [](const TfToken &name) {
+            //if (name == HdAovTokens->color) {
+                // There seems to be no way to do this without allocating a buffer,
+                // so aim for a small one. This might be worth investigating further.
+                //
+                // Note this could also include a clear color, and a settings map.
+            //    return HdAovDescriptor(HdFormatUNorm8, /*multisample*/false, {});
+            //}
+            return HdAovDescriptor();
+        },
+        false // gpuEnabled
+    );
+    if (!_taskControllerSceneIndex) {
+        TF_CODING_ERROR("Failed to create task controller scene index.");
+        return;
+    }
+    _renderIndex->InsertSceneIndex(
+        _taskControllerSceneIndex,
+        taskId,
+        /* needsPrefixing = */ false);
+
+    // Set the render collection
+    // subdivide by default, for now, I guess.
+    HdReprSelector reprSelector = HdReprSelector(HdReprTokens->refined);
+    const TfToken collectionName = HdTokens->geometry;
+    // This should probably be persistent, it's expensive to update
+    HdRprimCollection collection = HdRprimCollection(collectionName, reprSelector);
+    // Yikes
+    const SdfPathVector paths = {
+        _sceneDelegateId, // This is SdfPath::AbsoluteRootPath() in this context
+    };
+    collection.SetRootPaths(paths);
+    _taskControllerSceneIndex->SetCollection(collection);
+
+    // _PrepareRender
+    // Tags can include guides, proxies, etc.
+    TfTokenVector renderTags{
+        HdRenderTagTokens->geometry
+    };
+    //_taskControllerSceneIndex->SetFreeCameraClipPlanes(params.clipPlanes);
+    _taskControllerSceneIndex->SetRenderTags(renderTags);
+    // Includes things like culling style, override color, camera lights, etc.
+    // Use defaults for now
+    HdxRenderTaskParams params;
+    _taskControllerSceneIndex->SetRenderParams(params);
+    // Prepare render here also uses some extra scene indices for things like cull
+    // style, pruning lights and materials.
+
+    // Render the frame using the engine
+    _engine->Execute(_renderIndex.get(), _taskControllerSceneIndex->GetRenderingTaskPaths());
 }
 
 void HdPassthroughRenderManager::Cleanup()
@@ -89,36 +161,6 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
         HdsiLegacyDisplayStyleOverrideSceneIndex::New(sceneIndices.finalSceneIndex);
 
     _renderIndex->InsertSceneIndex(_sceneIndex, _sceneDelegateId);
-
-    /*
-    if (_allowAsynchronousSceneProcessing) {
-        if (HdSceneIndexBaseRefPtr si = _renderIndex->GetTerminalSceneIndex()) {
-            si->SystemMessage(HdSystemMessageTokens->asyncAllow, nullptr);
-        }
-    }
-    */
-
-    /*
-    if (_GetUseTaskControllerSceneIndex()) {
-        const SdfPath taskControllerPath =
-            _ComputeControllerPath(_renderDelegate);
-        _taskControllerSceneIndex = HdxTaskControllerSceneIndex::New(
-            taskControllerPath,
-            renderDelegate.GetPluginId(),
-            [renderDelegate = _renderDelegate.Get()](const TfToken &name) {
-                return renderDelegate->GetDefaultAovDescriptor(name); },
-            _gpuEnabled);
-        _renderIndex->InsertSceneIndex(
-            _taskControllerSceneIndex,
-            taskControllerPath,
-            false); // needsPrefixing 
-    } else {
-        _taskController = std::make_unique<HdxTaskController>(
-            _renderIndex.get(),
-            _ComputeControllerPath(_renderDelegate),
-            _gpuEnabled);
-    }
-    */
 
     return true;
 }

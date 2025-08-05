@@ -7,8 +7,10 @@
 #include "pxr/imaging/hd/driver.h"
 #include "pxr/imaging/hd/engine.h"
 #include "pxr/imaging/hd/pluginRenderDelegateUniqueHandle.h"
+#include "pxr/imaging/hdx/taskControllerSceneIndex.h"
 
 #include "pxr/usd/sdf/path.h"
+#include "pxr/usd/usd/stage.h"
 
 #include "pxr/base/tf/declarePtrs.h"
 
@@ -25,7 +27,7 @@ public:
     void Initialize();
 
     // Render a frame
-    void RenderFrame();
+    void Render(const UsdStageRefPtr& stage);
 
     // Cleanup resources
     void Cleanup();
@@ -37,6 +39,7 @@ private:
     SdfPath _sceneDelegateId;
     UsdImagingStageSceneIndexRefPtr _stageSceneIndex;
     HdSceneIndexBaseRefPtr _sceneIndex;
+    HdxTaskControllerSceneIndexRefPtr _taskControllerSceneIndex;
     HdDriver _driver;
     std::unique_ptr<HdRenderIndex> _renderIndex;
     HdPluginRenderDelegateUniqueHandle _renderDelegate;
