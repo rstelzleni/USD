@@ -7,6 +7,7 @@ pxr_library(hydraPassthrough
         tf
         hd
         hdsi
+        hdx
         sdf
         usd
         usdImaging

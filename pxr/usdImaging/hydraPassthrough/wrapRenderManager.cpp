@@ -16,7 +16,7 @@ wrapRenderManager()
     class_<This, noncopyable>("RenderManager")
         .def(init<>())
         .def("initialize", &This::Initialize)
-        .def("renderFrame", &This::RenderFrame)
+        .def("render", &This::Render)
         .def("cleanup", &This::Cleanup)
         ;
 }
