@@ -1,4 +1,5 @@
 set(DIRS
+    hydraPassthrough
     usdImaging
     usdImagingGL
     usdProcImaging
