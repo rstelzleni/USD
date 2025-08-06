@@ -15,13 +15,23 @@ HdTinyRenderPass::HdTinyRenderPass(HdRenderIndex *index,
     : HdRenderPass(index, collection) {}
 
 HdTinyRenderPass::~HdTinyRenderPass() {
-  std::cout << "Destroying renderPass" << std::endl;
+    std::cout << "Destroying renderPass" << std::endl;
 }
 
 void HdTinyRenderPass::_Execute(
     HdRenderPassStateSharedPtr const &renderPassState,
     TfTokenVector const &renderTags) {
-  std::cout << "=> Execute RenderPass" << std::endl;
+    std::cout << "=> Execute RenderPass" << std::endl;
+
+
+    const auto &drawableRprims =
+        GetRenderIndex()->GetDrawItems(GetRprimCollection(), renderTags);
+
+    for (const auto &rPrim : drawableRprims) {
+        std::cout << "Rendering RPrim: " << rPrim->GetRprimID() << std::endl;
+        // Here you would typically call the render delegate to draw the rPrim.
+        // For this example, we just print the path.
+    }
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
