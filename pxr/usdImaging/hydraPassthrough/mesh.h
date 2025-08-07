@@ -1,11 +1,5 @@
-//
-// Copyright 2020 Pixar
-//
-// Licensed under the terms set forth in the LICENSE.txt file available at
-// https://openusd.org/license.
-//
-#ifndef EXTRAS_IMAGING_EXAMPLES_HD_TINY_MESH_H
-#define EXTRAS_IMAGING_EXAMPLES_HD_TINY_MESH_H
+#ifndef USD_IMAGING_HYDRA_PASSTHROUGH_MESH_H
+#define USD_IMAGING_HYDRA_PASSTHROUGH_MESH_H
 
 #include "pxr/pxr.h"
 
@@ -15,7 +9,7 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-/// \class HdTinyMesh
+/// \class HydraPassthroughMesh
 ///
 /// This class is an example of a Hydra Rprim, or renderable object, and it
 /// gets created on a call to HdRenderIndex::InsertRprim() with a type of
@@ -34,16 +28,16 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// can do the heavy work of releasing state (such as handles into the top-level
 /// scene), so that object population and existence aren't tied to each other.
 ///
-class HdTinyMesh final : public HdMesh {
+class HydraPassthroughMesh final : public HdMesh {
 public:
-  HF_MALLOC_TAG_NEW("new HdTinyMesh");
+  HF_MALLOC_TAG_NEW("new HydraPassthroughMesh");
 
-  /// HdTinyMesh constructor.
+  /// HydraPassthroughMesh constructor.
   ///   \param id The scene-graph path to this mesh.
-  HdTinyMesh(SdfPath const &id);
+  HydraPassthroughMesh(SdfPath const &id);
 
-  /// HdTinyMesh destructor.
-  ~HdTinyMesh() override = default;
+  /// HydraPassthroughMesh destructor.
+  ~HydraPassthroughMesh() override = default;
 
   /// Inform the scene graph which state needs to be downloaded in the
   /// first Sync() call: in this case, topology and points data to build
@@ -106,8 +100,8 @@ protected:
   HdDirtyBits _PropagateDirtyBits(HdDirtyBits bits) const override;
 
   // This class does not support copying.
-  HdTinyMesh(const HdTinyMesh &) = delete;
-  HdTinyMesh &operator=(const HdTinyMesh &) = delete;
+  HydraPassthroughMesh(const HydraPassthroughMesh &) = delete;
+  HydraPassthroughMesh &operator=(const HydraPassthroughMesh &) = delete;
 
 private:
 
@@ -137,4 +131,4 @@ private:
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // EXTRAS_IMAGING_EXAMPLES_HD_TINY_MESH_H
+#endif // USD_IMAGING_HYDRA_PASSTHROUGH_MESH_H

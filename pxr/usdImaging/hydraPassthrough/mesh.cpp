@@ -1,9 +1,3 @@
-//
-// Copyright 2020 Pixar
-//
-// Licensed under the terms set forth in the LICENSE.txt file available at
-// https://openusd.org/license.
-//
 #include "mesh.h"
 
 #include <iostream>
@@ -12,9 +6,9 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-HdTinyMesh::HdTinyMesh(SdfPath const &id) : HdMesh(id) {}
+HydraPassthroughMesh::HydraPassthroughMesh(SdfPath const &id) : HdMesh(id) {}
 
-HdDirtyBits HdTinyMesh::GetInitialDirtyBitsMask() const {
+HdDirtyBits HydraPassthroughMesh::GetInitialDirtyBitsMask() const {
     // XXX add topology and points dirty bits? Once I do how do I access that data?
     return HdChangeTracker::Clean // clean is 0, so nothing dirty. I'm not sure why people usually start the list with this
 //        | HdChangeTracker::InitRepr // what is this for? isn't this always done initially?
@@ -33,13 +27,13 @@ HdDirtyBits HdTinyMesh::GetInitialDirtyBitsMask() const {
 
 }
 
-HdDirtyBits HdTinyMesh::_PropagateDirtyBits(HdDirtyBits bits) const {
+HdDirtyBits HydraPassthroughMesh::_PropagateDirtyBits(HdDirtyBits bits) const {
     // No dirty bits to add
     return bits;
 }
 
-void HdTinyMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits) {
-    std::cout << "=> InitRepr for Tiny Mesh id=" << GetId() << " reprToken="
+void HydraPassthroughMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits) {
+    std::cout << "=> InitRepr for Passthrough Mesh id=" << GetId() << " reprToken="
                 << reprToken << " dirtyBits=" << *dirtyBits << std::endl;
     
     // Initialize the representation with a default Repr.
@@ -52,7 +46,7 @@ void HdTinyMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits) {
     bool isNew = it == _reprs.end();
 
     if (isNew) {
-        std::cout << "Creating new repr for Tiny Mesh id=" << GetId()
+        std::cout << "Creating new repr for Passthrough Mesh id=" << GetId()
                   << " reprToken=" << reprToken << std::endl;
 
         _reprs.emplace_back(reprToken, std::make_shared<HdRepr>());
@@ -73,27 +67,27 @@ void HdTinyMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits) {
         */
 
     } else {
-        std::cout << "Repr already exists for Tiny Mesh id=" << GetId()
+        std::cout << "Repr already exists for Passthrough Mesh id=" << GetId()
                   << " reprToken=" << reprToken << std::endl;
     }
 }
 
 
-void HdTinyMesh::Sync(HdSceneDelegate *sceneDelegate,
+void HydraPassthroughMesh::Sync(HdSceneDelegate *sceneDelegate,
                       HdRenderParam *renderParam, HdDirtyBits *dirtyBits,
                       TfToken const &reprToken)
 {
-    std::cout << "* (multithreaded) Sync Tiny Mesh id=" << GetId() << std::endl;
+    std::cout << "* (multithreaded) Sync Passthrough Mesh id=" << GetId() << std::endl;
     auto reprIt = std::find_if(_reprs.begin(), _reprs.end(),
             _ReprComparator(reprToken));
     if (reprIt == _reprs.end()) {
-        std::cout << "No repr found for Tiny Mesh id=" << GetId()
+        std::cout << "No repr found for Passthrough Mesh id=" << GetId()
             << " reprToken=" << reprToken << std::endl;
         return;
     }
     HdReprSharedPtr &repr = reprIt->second;
     if (!repr) {
-        std::cout << "Repr is null for Tiny Mesh id=" << GetId()
+        std::cout << "Repr is null for Passthrough Mesh id=" << GetId()
             << " reprToken=" << reprToken << std::endl;
         return;
     }
@@ -124,7 +118,7 @@ void HdTinyMesh::Sync(HdSceneDelegate *sceneDelegate,
 }
 
 void
-HdTinyMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
+HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                                 HdDirtyBits*     dirtyBits,
                                 HdMeshReprDesc const &desc)
 {
@@ -195,7 +189,7 @@ HdTinyMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
 
 
 TfTokenVector
-HdTinyMesh::_UpdateComputedPrimvarSources(HdSceneDelegate* sceneDelegate,
+HydraPassthroughMesh::_UpdateComputedPrimvarSources(HdSceneDelegate* sceneDelegate,
                                           HdDirtyBits dirtyBits)
 {
     HD_TRACE_FUNCTION();
