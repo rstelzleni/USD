@@ -18,7 +18,6 @@ pxr_library(hydraPassthrough
         renderManager
         rendererPlugin
         renderPass
-        test
 
     PUBLIC_HEADERS
         api.h
@@ -26,7 +25,6 @@ pxr_library(hydraPassthrough
     PYMODULE_CPPFILES
         module.cpp
         wrapRenderManager.cpp
-        wrapTest.cpp
 
     PYMODULE_FILES
         __init__.py
