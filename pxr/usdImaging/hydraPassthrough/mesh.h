@@ -7,8 +7,11 @@
 #ifndef EXTRAS_IMAGING_EXAMPLES_HD_TINY_MESH_H
 #define EXTRAS_IMAGING_EXAMPLES_HD_TINY_MESH_H
 
-#include "pxr/imaging/hd/mesh.h"
 #include "pxr/pxr.h"
+
+#include "pxr/imaging/hd/mesh.h"
+
+#include "pxr/base/gf/matrix4f.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -105,6 +108,31 @@ protected:
   // This class does not support copying.
   HdTinyMesh(const HdTinyMesh &) = delete;
   HdTinyMesh &operator=(const HdTinyMesh &) = delete;
+
+private:
+
+    TfTokenVector
+    _UpdateComputedPrimvarSources(HdSceneDelegate* sceneDelegate,
+                                  HdDirtyBits dirtyBits);
+    void
+    _PopulateMeshValues(HdSceneDelegate* sceneDelegate,
+                        HdDirtyBits*     dirtyBits,
+                        HdMeshReprDesc const &desc);
+
+    HdMeshTopology _topology;
+    GfMatrix4f _transform;
+    VtVec3fArray _points;
+
+    // A local cache of primvar scene data. "data" is a copy-on-write handle to
+    // the actual primvar buffer, and "interpolation" is the interpolation mode
+    // to be used. This cache is used in _PopulateMesh to populate the
+    // primvar sampler map in the prototype context, which is used for shading.
+    struct PrimvarSource {
+        VtValue data;
+        HdInterpolation interpolation;
+    };
+    TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> _primvarSourceMap;
+
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
