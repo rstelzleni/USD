@@ -1,11 +1,5 @@
-//
-// Copyright 2020 Pixar
-//
-// Licensed under the terms set forth in the LICENSE.txt file available at
-// https://openusd.org/license.
-//
-#ifndef EXTRAS_IMAGING_EXAMPLES_HD_TINY_RENDERER_PLUGIN_H
-#define EXTRAS_IMAGING_EXAMPLES_HD_TINY_RENDERER_PLUGIN_H
+#ifndef USD_IMAGING_HYDRA_PASSTHROUGH_RENDERER_PLUGIN_H
+#define USD_IMAGING_HYDRA_PASSTHROUGH_RENDERER_PLUGIN_H
 
 #include "pxr/imaging/hd/rendererPlugin.h"
 #include "pxr/pxr.h"
@@ -13,7 +7,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 ///
-/// \class HdTinyRendererPlugin
+/// \class HydraPassthroughRendererPlugin
 ///
 /// A registered child of HdRendererPlugin, this is the class that gets
 /// loaded when a Hydra application asks to draw with a certain renderer.
@@ -23,31 +17,31 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// prims (which translate scene data into drawable representations) and Hydra
 /// renderpasses (which draw the scene to the framebuffer).
 ///
-class HdTinyRendererPlugin final : public HdRendererPlugin {
+class HydraPassthroughRendererPlugin final : public HdRendererPlugin {
 public:
-  HdTinyRendererPlugin() = default;
-  virtual ~HdTinyRendererPlugin() = default;
+    HydraPassthroughRendererPlugin() = default;
+    virtual ~HydraPassthroughRendererPlugin() = default;
 
-  /// Construct a new render delegate of type HdTinyRenderDelegate.
-  virtual HdRenderDelegate *CreateRenderDelegate() override;
+    /// Construct a new render delegate of type HydraPassthroughRenderDelegate.
+    virtual HdRenderDelegate *CreateRenderDelegate() override;
 
-  /// Construct a new render delegate of type HdTinyRenderDelegate.
-  virtual HdRenderDelegate *
-  CreateRenderDelegate(HdRenderSettingsMap const &settingsMap) override;
+    /// Construct a new render delegate of type HydraPassthroughRenderDelegate.
+    virtual HdRenderDelegate *
+        CreateRenderDelegate(HdRenderSettingsMap const &settingsMap) override;
 
-  /// Destroy a render delegate created by this class's CreateRenderDelegate.
-  ///   \param renderDelegate The render delegate to delete.
-  virtual void DeleteRenderDelegate(HdRenderDelegate *renderDelegate) override;
+    /// Destroy a render delegate created by this class's CreateRenderDelegate.
+    ///   \param renderDelegate The render delegate to delete.
+    virtual void DeleteRenderDelegate(HdRenderDelegate *renderDelegate) override;
 
-  /// Checks to see if the plugin is supported on the running system.
-  virtual bool IsSupported(bool gpuEnabled = true) const override;
+    /// Checks to see if the plugin is supported on the running system.
+    virtual bool IsSupported(bool gpuEnabled = true) const override;
 
 private:
-  // This class does not support copying.
-  HdTinyRendererPlugin(const HdTinyRendererPlugin &) = delete;
-  HdTinyRendererPlugin &operator=(const HdTinyRendererPlugin &) = delete;
+    // This class does not support copying.
+    HydraPassthroughRendererPlugin(const HydraPassthroughRendererPlugin &) = delete;
+    HydraPassthroughRendererPlugin &operator=(const HydraPassthroughRendererPlugin &) = delete;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // EXTRAS_IMAGING_EXAMPLES_HD_TINY_RENDERER_PLUGIN_H
+#endif // USD_IMAGING_HYDRA_PASSTHROUGH_RENDERER_PLUGIN_H

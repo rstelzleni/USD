@@ -16,8 +16,6 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-
-
 class HdPassthroughRenderManager {
 public:
     HdPassthroughRenderManager() = default;

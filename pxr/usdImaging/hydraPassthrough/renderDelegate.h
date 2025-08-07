@@ -1,11 +1,5 @@
-//
-// Copyright 2020 Pixar
-//
-// Licensed under the terms set forth in the LICENSE.txt file available at
-// https://openusd.org/license.
-//
-#ifndef EXTRAS_IMAGING_EXAMPLES_HD_TINY_RENDER_DELEGATE_H
-#define EXTRAS_IMAGING_EXAMPLES_HD_TINY_RENDER_DELEGATE_H
+#ifndef USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DELEGATE_H
+#define USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DELEGATE_H
 
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/imaging/hd/renderDelegate.h"
@@ -15,7 +9,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 ///
-/// \class HdTinyRenderDelegate
+/// \class HydraPassthroughRenderDelegate
 ///
 /// Render delegates provide renderer-specific functionality to the render
 /// index, the main hydra state management structure. The render index uses
@@ -24,61 +18,61 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// responsible for creating renderpasses, which know how to draw this
 /// renderer's scene primitives.
 ///
-class HdTinyRenderDelegate final : public HdRenderDelegate {
+class HydraPassthroughRenderDelegate final : public HdRenderDelegate {
 public:
-  /// Render delegate constructor.
-  HdTinyRenderDelegate();
-  /// Render delegate constructor.
-  HdTinyRenderDelegate(HdRenderSettingsMap const &settingsMap);
-  /// Render delegate destructor.
-  virtual ~HdTinyRenderDelegate();
+    /// Render delegate constructor.
+    HydraPassthroughRenderDelegate();
+    /// Render delegate constructor.
+    HydraPassthroughRenderDelegate(HdRenderSettingsMap const &settingsMap);
+    /// Render delegate destructor.
+    virtual ~HydraPassthroughRenderDelegate();
 
-  /// Supported types
-  const TfTokenVector &GetSupportedRprimTypes() const override;
-  const TfTokenVector &GetSupportedSprimTypes() const override;
-  const TfTokenVector &GetSupportedBprimTypes() const override;
+    /// Supported types
+    const TfTokenVector &GetSupportedRprimTypes() const override;
+    const TfTokenVector &GetSupportedSprimTypes() const override;
+    const TfTokenVector &GetSupportedBprimTypes() const override;
 
-  // Basic value to return from the RD
-  HdResourceRegistrySharedPtr GetResourceRegistry() const override;
+    // Basic value to return from the RD
+    HdResourceRegistrySharedPtr GetResourceRegistry() const override;
 
-  // Prims
-  HdRenderPassSharedPtr
-  CreateRenderPass(HdRenderIndex *index,
-                   HdRprimCollection const &collection) override;
+    // Prims
+    HdRenderPassSharedPtr CreateRenderPass(
+            HdRenderIndex *index,
+            HdRprimCollection const &collection) override;
 
-  HdInstancer *CreateInstancer(HdSceneDelegate *delegate,
-                               SdfPath const &id) override;
-  void DestroyInstancer(HdInstancer *instancer) override;
+    HdInstancer *CreateInstancer(HdSceneDelegate *delegate,
+                                 SdfPath const &id) override;
+    void DestroyInstancer(HdInstancer *instancer) override;
 
-  HdRprim *CreateRprim(TfToken const &typeId, SdfPath const &rprimId) override;
-  void DestroyRprim(HdRprim *rPrim) override;
+    HdRprim *CreateRprim(TfToken const &typeId, SdfPath const &rprimId) override;
+    void DestroyRprim(HdRprim *rPrim) override;
 
-  HdSprim *CreateSprim(TfToken const &typeId, SdfPath const &sprimId) override;
-  HdSprim *CreateFallbackSprim(TfToken const &typeId) override;
-  void DestroySprim(HdSprim *sprim) override;
+    HdSprim *CreateSprim(TfToken const &typeId, SdfPath const &sprimId) override;
+    HdSprim *CreateFallbackSprim(TfToken const &typeId) override;
+    void DestroySprim(HdSprim *sprim) override;
 
-  HdBprim *CreateBprim(TfToken const &typeId, SdfPath const &bprimId) override;
-  HdBprim *CreateFallbackBprim(TfToken const &typeId) override;
-  void DestroyBprim(HdBprim *bprim) override;
+    HdBprim *CreateBprim(TfToken const &typeId, SdfPath const &bprimId) override;
+    HdBprim *CreateFallbackBprim(TfToken const &typeId) override;
+    void DestroyBprim(HdBprim *bprim) override;
 
-  void CommitResources(HdChangeTracker *tracker) override;
+    void CommitResources(HdChangeTracker *tracker) override;
 
-  HdRenderParam *GetRenderParam() const override;
+    HdRenderParam *GetRenderParam() const override;
 
 private:
-  static const TfTokenVector SUPPORTED_RPRIM_TYPES;
-  static const TfTokenVector SUPPORTED_SPRIM_TYPES;
-  static const TfTokenVector SUPPORTED_BPRIM_TYPES;
+    static const TfTokenVector SUPPORTED_RPRIM_TYPES;
+    static const TfTokenVector SUPPORTED_SPRIM_TYPES;
+    static const TfTokenVector SUPPORTED_BPRIM_TYPES;
 
-  void _Initialize();
+    void _Initialize();
 
-  HdResourceRegistrySharedPtr _resourceRegistry;
+    HdResourceRegistrySharedPtr _resourceRegistry;
 
-  // This class does not support copying.
-  HdTinyRenderDelegate(const HdTinyRenderDelegate &) = delete;
-  HdTinyRenderDelegate &operator=(const HdTinyRenderDelegate &) = delete;
+    // This class does not support copying.
+    HydraPassthroughRenderDelegate(const HydraPassthroughRenderDelegate &) = delete;
+    HydraPassthroughRenderDelegate &operator=(const HydraPassthroughRenderDelegate &) = delete;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
 
-#endif // EXTRAS_IMAGING_EXAMPLES_HD_TINY_RENDER_DELEGATE_H
+#endif // USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DELEGATE_H

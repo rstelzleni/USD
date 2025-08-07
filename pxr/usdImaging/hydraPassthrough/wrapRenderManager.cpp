@@ -15,8 +15,8 @@ wrapRenderManager()
     using This = HdPassthroughRenderManager;
     class_<This, noncopyable>("RenderManager")
         .def(init<>())
-        .def("initialize", &This::Initialize)
-        .def("render", &This::Render)
-        .def("cleanup", &This::Cleanup)
+        .def("Initialize", &This::Initialize)
+        .def("Render", &This::Render)
+        .def("Cleanup", &This::Cleanup)
         ;
 }

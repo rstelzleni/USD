@@ -20,7 +20,7 @@ void HdPassthroughRenderManager::Initialize() {
     // Scene delegate ID is used for what?
     _sceneDelegateId = SdfPath("/HdPassthroughSceneDelegate");
 
-    if (!_SetRendererPlugin(TfToken("HdTinyRendererPlugin"))) {
+    if (!_SetRendererPlugin(TfToken("HydraPassthroughRendererPlugin"))) {
         TF_CODING_ERROR("Failed to set renderer plugin.");
         return;
     }

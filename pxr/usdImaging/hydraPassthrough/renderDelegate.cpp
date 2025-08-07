@@ -1,9 +1,3 @@
-//
-// Copyright 2020 Pixar
-//
-// Licensed under the terms set forth in the LICENSE.txt file available at
-// https://openusd.org/license.
-//
 #include "renderDelegate.h"
 #include "mesh.h"
 #include "renderPass.h"
@@ -12,124 +6,124 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-const TfTokenVector HdTinyRenderDelegate::SUPPORTED_RPRIM_TYPES = {
+const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_RPRIM_TYPES = {
     HdPrimTypeTokens->mesh,
 };
 
-const TfTokenVector HdTinyRenderDelegate::SUPPORTED_SPRIM_TYPES = {};
+const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_SPRIM_TYPES = {};
 
-const TfTokenVector HdTinyRenderDelegate::SUPPORTED_BPRIM_TYPES = {};
+const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_BPRIM_TYPES = {};
 
-HdTinyRenderDelegate::HdTinyRenderDelegate() : HdRenderDelegate() {
-  _Initialize();
+HydraPassthroughRenderDelegate::HydraPassthroughRenderDelegate() : HdRenderDelegate() {
+    _Initialize();
 }
 
-HdTinyRenderDelegate::HdTinyRenderDelegate(
-    HdRenderSettingsMap const &settingsMap)
+HydraPassthroughRenderDelegate::HydraPassthroughRenderDelegate(
+        HdRenderSettingsMap const &settingsMap)
     : HdRenderDelegate(settingsMap) {
-  _Initialize();
+        _Initialize();
+    }
+
+void HydraPassthroughRenderDelegate::_Initialize() {
+    std::cout << "Creating Passthrough RenderDelegate" << std::endl;
+    _resourceRegistry = std::make_shared<HdResourceRegistry>();
 }
 
-void HdTinyRenderDelegate::_Initialize() {
-  std::cout << "Creating Tiny RenderDelegate" << std::endl;
-  _resourceRegistry = std::make_shared<HdResourceRegistry>();
+HydraPassthroughRenderDelegate::~HydraPassthroughRenderDelegate() {
+    _resourceRegistry.reset();
+    std::cout << "Destroying Passthrough RenderDelegate" << std::endl;
 }
 
-HdTinyRenderDelegate::~HdTinyRenderDelegate() {
-  _resourceRegistry.reset();
-  std::cout << "Destroying Tiny RenderDelegate" << std::endl;
+TfTokenVector const &HydraPassthroughRenderDelegate::GetSupportedRprimTypes() const {
+    return SUPPORTED_RPRIM_TYPES;
 }
 
-TfTokenVector const &HdTinyRenderDelegate::GetSupportedRprimTypes() const {
-  return SUPPORTED_RPRIM_TYPES;
+TfTokenVector const &HydraPassthroughRenderDelegate::GetSupportedSprimTypes() const {
+    return SUPPORTED_SPRIM_TYPES;
 }
 
-TfTokenVector const &HdTinyRenderDelegate::GetSupportedSprimTypes() const {
-  return SUPPORTED_SPRIM_TYPES;
+TfTokenVector const &HydraPassthroughRenderDelegate::GetSupportedBprimTypes() const {
+    return SUPPORTED_BPRIM_TYPES;
 }
 
-TfTokenVector const &HdTinyRenderDelegate::GetSupportedBprimTypes() const {
-  return SUPPORTED_BPRIM_TYPES;
+HdResourceRegistrySharedPtr HydraPassthroughRenderDelegate::GetResourceRegistry() const {
+    return _resourceRegistry;
 }
 
-HdResourceRegistrySharedPtr HdTinyRenderDelegate::GetResourceRegistry() const {
-  return _resourceRegistry;
-}
-
-void HdTinyRenderDelegate::CommitResources(HdChangeTracker *tracker) {
-  std::cout << "=> CommitResources RenderDelegate" << std::endl;
+void HydraPassthroughRenderDelegate::CommitResources(HdChangeTracker *tracker) {
+    std::cout << "=> CommitResources RenderDelegate" << std::endl;
 }
 
 HdRenderPassSharedPtr
-HdTinyRenderDelegate::CreateRenderPass(HdRenderIndex *index,
-                                       HdRprimCollection const &collection) {
-  std::cout << "Create RenderPass with Collection=" << collection.GetName()
-            << std::endl;
+HydraPassthroughRenderDelegate::CreateRenderPass(HdRenderIndex *index,
+        HdRprimCollection const &collection) {
+    std::cout << "Create RenderPass with Collection=" << collection.GetName()
+        << std::endl;
 
-  return HdRenderPassSharedPtr(new HdTinyRenderPass(index, collection));
+    return HdRenderPassSharedPtr(new HydraPassthroughRenderPass(index, collection));
 }
 
-HdRprim *HdTinyRenderDelegate::CreateRprim(TfToken const &typeId,
-                                           SdfPath const &rprimId) {
-  std::cout << "Create Tiny Rprim type=" << typeId.GetText()
-            << " id=" << rprimId << std::endl;
+HdRprim *HydraPassthroughRenderDelegate::CreateRprim(TfToken const &typeId,
+        SdfPath const &rprimId) {
+    std::cout << "Create Passthrough Rprim type=" << typeId.GetText()
+        << " id=" << rprimId << std::endl;
 
-  if (typeId == HdPrimTypeTokens->mesh) {
-    return new HdTinyMesh(rprimId);
-  } else {
-    TF_CODING_ERROR("Unknown Rprim type=%s id=%s", typeId.GetText(),
-                    rprimId.GetText());
-  }
-  return nullptr;
+    if (typeId == HdPrimTypeTokens->mesh) {
+        return new HydraPassthroughMesh(rprimId);
+    } else {
+        TF_CODING_ERROR("Unknown Rprim type=%s id=%s", typeId.GetText(),
+                rprimId.GetText());
+    }
+    return nullptr;
 }
 
-void HdTinyRenderDelegate::DestroyRprim(HdRprim *rPrim) {
-  std::cout << "Destroy Tiny Rprim id=" << rPrim->GetId() << std::endl;
-  delete rPrim;
+void HydraPassthroughRenderDelegate::DestroyRprim(HdRprim *rPrim) {
+    std::cout << "Destroy Passthrough Rprim id=" << rPrim->GetId() << std::endl;
+    delete rPrim;
 }
 
-HdSprim *HdTinyRenderDelegate::CreateSprim(TfToken const &typeId,
-                                           SdfPath const &sprimId) {
-  TF_CODING_ERROR("Unknown Sprim type=%s id=%s", typeId.GetText(),
-                  sprimId.GetText());
-  return nullptr;
+HdSprim *HydraPassthroughRenderDelegate::CreateSprim(TfToken const &typeId,
+        SdfPath const &sprimId) {
+    TF_CODING_ERROR("Unknown Sprim type=%s id=%s", typeId.GetText(),
+            sprimId.GetText());
+    return nullptr;
 }
 
-HdSprim *HdTinyRenderDelegate::CreateFallbackSprim(TfToken const &typeId) {
-  TF_CODING_ERROR("Creating unknown fallback sprim type=%s", typeId.GetText());
-  return nullptr;
+HdSprim *HydraPassthroughRenderDelegate::CreateFallbackSprim(TfToken const &typeId) {
+    TF_CODING_ERROR("Creating unknown fallback sprim type=%s", typeId.GetText());
+    return nullptr;
 }
 
-void HdTinyRenderDelegate::DestroySprim(HdSprim *sPrim) {
-  TF_CODING_ERROR("Destroy Sprim not supported");
+void HydraPassthroughRenderDelegate::DestroySprim(HdSprim *sPrim) {
+    TF_CODING_ERROR("Destroy Sprim not supported");
 }
 
-HdBprim *HdTinyRenderDelegate::CreateBprim(TfToken const &typeId,
-                                           SdfPath const &bprimId) {
-  TF_CODING_ERROR("Unknown Bprim type=%s id=%s", typeId.GetText(),
-                  bprimId.GetText());
-  return nullptr;
+HdBprim *HydraPassthroughRenderDelegate::CreateBprim(TfToken const &typeId,
+        SdfPath const &bprimId) {
+    TF_CODING_ERROR("Unknown Bprim type=%s id=%s", typeId.GetText(),
+            bprimId.GetText());
+    return nullptr;
 }
 
-HdBprim *HdTinyRenderDelegate::CreateFallbackBprim(TfToken const &typeId) {
-  TF_CODING_ERROR("Creating unknown fallback bprim type=%s", typeId.GetText());
-  return nullptr;
+HdBprim *HydraPassthroughRenderDelegate::CreateFallbackBprim(TfToken const &typeId) {
+    TF_CODING_ERROR("Creating unknown fallback bprim type=%s", typeId.GetText());
+    return nullptr;
 }
 
-void HdTinyRenderDelegate::DestroyBprim(HdBprim *bPrim) {
-  TF_CODING_ERROR("Destroy Bprim not supported");
+void HydraPassthroughRenderDelegate::DestroyBprim(HdBprim *bPrim) {
+    TF_CODING_ERROR("Destroy Bprim not supported");
 }
 
-HdInstancer *HdTinyRenderDelegate::CreateInstancer(HdSceneDelegate *delegate,
-                                                   SdfPath const &id) {
-  TF_CODING_ERROR("Creating Instancer not supported id=%s", id.GetText());
-  return nullptr;
+HdInstancer *HydraPassthroughRenderDelegate::CreateInstancer(HdSceneDelegate *delegate,
+        SdfPath const &id) {
+    TF_CODING_ERROR("Creating Instancer not supported id=%s", id.GetText());
+    return nullptr;
 }
 
-void HdTinyRenderDelegate::DestroyInstancer(HdInstancer *instancer) {
-  TF_CODING_ERROR("Destroy instancer not supported");
+void HydraPassthroughRenderDelegate::DestroyInstancer(HdInstancer *instancer) {
+    TF_CODING_ERROR("Destroy instancer not supported");
 }
 
-HdRenderParam *HdTinyRenderDelegate::GetRenderParam() const { return nullptr; }
+HdRenderParam *HydraPassthroughRenderDelegate::GetRenderParam() const { return nullptr; }
 
 PXR_NAMESPACE_CLOSE_SCOPE
