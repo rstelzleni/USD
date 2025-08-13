@@ -1,6 +1,7 @@
 #include "renderDelegate.h"
 #include "mesh.h"
 #include "renderPass.h"
+#include "renderParam.h"
 
 #include <iostream>
 
@@ -27,6 +28,8 @@ HydraPassthroughRenderDelegate::HydraPassthroughRenderDelegate(
 void HydraPassthroughRenderDelegate::_Initialize() {
     std::cout << "Creating Passthrough RenderDelegate" << std::endl;
     _resourceRegistry = std::make_shared<HdResourceRegistry>();
+    _renderData = HydraPassthroughRenderData::New();
+    _renderParam = std::make_unique<HydraPassthroughRenderParam>(_renderData);
 }
 
 HydraPassthroughRenderDelegate::~HydraPassthroughRenderDelegate() {
@@ -60,7 +63,7 @@ HydraPassthroughRenderDelegate::CreateRenderPass(HdRenderIndex *index,
     std::cout << "Create RenderPass with Collection=" << collection.GetName()
         << std::endl;
 
-    return HdRenderPassSharedPtr(new HydraPassthroughRenderPass(index, collection));
+    return HdRenderPassSharedPtr(new HydraPassthroughRenderPass(index, collection, this));
 }
 
 HdRprim *HydraPassthroughRenderDelegate::CreateRprim(TfToken const &typeId,
@@ -124,6 +127,13 @@ void HydraPassthroughRenderDelegate::DestroyInstancer(HdInstancer *instancer) {
     TF_CODING_ERROR("Destroy instancer not supported");
 }
 
-HdRenderParam *HydraPassthroughRenderDelegate::GetRenderParam() const { return nullptr; }
+HdRenderParam *HydraPassthroughRenderDelegate::GetRenderParam() const
+{ 
+    return _renderParam.get();
+}
+
+HydraPassthroughRenderDataRefPtr HydraPassthroughRenderDelegate::GetRenderData() const {
+    return _renderData;
+}
 
 PXR_NAMESPACE_CLOSE_SCOPE

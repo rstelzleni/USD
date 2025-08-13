@@ -1,10 +1,13 @@
 #ifndef USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DELEGATE_H
 #define USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DELEGATE_H
 
+#include "pxr/pxr.h"
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/imaging/hd/renderDelegate.h"
 #include "pxr/imaging/hd/resourceRegistry.h"
-#include "pxr/pxr.h"
+
+#include "pxr/usdImaging/hydraPassthrough/renderData.h"
+
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -26,6 +29,9 @@ public:
     HydraPassthroughRenderDelegate(HdRenderSettingsMap const &settingsMap);
     /// Render delegate destructor.
     virtual ~HydraPassthroughRenderDelegate();
+
+    /// Support for passing out render data
+    HydraPassthroughRenderDataRefPtr GetRenderData() const;
 
     /// Supported types
     const TfTokenVector &GetSupportedRprimTypes() const override;
@@ -67,6 +73,10 @@ private:
     void _Initialize();
 
     HdResourceRegistrySharedPtr _resourceRegistry;
+
+    HydraPassthroughRenderDataRefPtr _renderData;
+
+    std::unique_ptr<HdRenderParam> _renderParam;
 
     // This class does not support copying.
     HydraPassthroughRenderDelegate(const HydraPassthroughRenderDelegate &) = delete;

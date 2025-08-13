@@ -1,5 +1,6 @@
 #include "renderManager.h"
 
+#include "pxr/usdImaging/hydraPassthrough/renderDelegate.h"
 #include "pxr/usdImaging/usdImaging/stageSceneIndex.h"
 
 #include "pxr/imaging/hd/rendererPluginRegistry.h"
@@ -113,6 +114,15 @@ void HdPassthroughRenderManager::Cleanup()
 
     _renderIndex = nullptr;
     _renderDelegate = nullptr;
+}
+
+HydraPassthroughRenderDataRefPtr HdPassthroughRenderManager::GetRenderData() const {
+    auto rd = dynamic_cast<HydraPassthroughRenderDelegate*>(_renderDelegate.Get());
+    if (!rd) {
+        TF_CODING_ERROR("Render delegate is not a HydraPassthroughRenderDelegate.");
+        return nullptr;
+    }
+    return rd->GetRenderData();
 }
 
 bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {

@@ -18,5 +18,8 @@ wrapRenderManager()
         .def("Initialize", &This::Initialize)
         .def("Render", &This::Render)
         .def("Cleanup", &This::Cleanup)
+
+        .def("GetRenderData", &This::GetRenderData,
+             return_value_policy<return_by_value>())
         ;
 }
