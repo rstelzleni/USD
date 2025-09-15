@@ -11,6 +11,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+class HdCamera;
+
 ///
 /// \class HydraPassthroughRenderDelegate
 ///
@@ -77,6 +79,8 @@ private:
     HydraPassthroughRenderDataRefPtr _renderData;
 
     std::unique_ptr<HdRenderParam> _renderParam;
+
+    TfHashMap<SdfPath, HdCamera*, SdfPath::Hash> _cameraMap;
 
     // This class does not support copying.
     HydraPassthroughRenderDelegate(const HydraPassthroughRenderDelegate &) = delete;
