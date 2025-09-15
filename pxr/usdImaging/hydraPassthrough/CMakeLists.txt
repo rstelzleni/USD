@@ -47,3 +47,12 @@ pxr_library(hydraPassthrough
         plugInfo.json
 )
 
+pxr_test_scripts(
+    testenv/testCameraData.py
+)
+
+pxr_register_test(testCameraData
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testCameraData"
+    EXPECTED_RETURN_CODE 0
+)
