@@ -3,6 +3,8 @@
 #include "renderPass.h"
 #include "renderParam.h"
 
+#include "pxr/imaging/hd/camera.h"
+
 #include <iostream>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -11,7 +13,9 @@ const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_RPRIM_TYPES = {
     HdPrimTypeTokens->mesh,
 };
 
-const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_SPRIM_TYPES = {};
+const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_SPRIM_TYPES = {
+    HdPrimTypeTokens->camera,
+};
 
 const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_BPRIM_TYPES = {};
 
@@ -55,6 +59,15 @@ HdResourceRegistrySharedPtr HydraPassthroughRenderDelegate::GetResourceRegistry(
 
 void HydraPassthroughRenderDelegate::CommitResources(HdChangeTracker *tracker) {
     std::cout << "=> CommitResources RenderDelegate" << std::endl;
+    for (const auto& it : _cameraMap) {
+        HdCamera *cam = it.second;
+        // Don't include the internal camera created by our render task.
+        if (cam->GetId().GetString().find("/RenderTask/") != std::string::npos) {
+            continue;
+        }
+        std::cout << "Committing camera id=" << cam->GetId() << std::endl;
+        _renderData->AddCamera(cam);
+    }
 }
 
 HdRenderPassSharedPtr
@@ -87,18 +100,43 @@ void HydraPassthroughRenderDelegate::DestroyRprim(HdRprim *rPrim) {
 
 HdSprim *HydraPassthroughRenderDelegate::CreateSprim(TfToken const &typeId,
         SdfPath const &sprimId) {
+    if (typeId == HdPrimTypeTokens->camera) {
+        // Track the camera we return here so we can extract the camera data
+        // once it's synced.
+        std::cout << "Create Passthrough Camera id=" << sprimId << std::endl;
+        HdCamera *camera = new HdCamera(sprimId);
+        _cameraMap[sprimId] = camera;
+        return camera;
+    }
+
+    // Should be unreachable
     TF_CODING_ERROR("Unknown Sprim type=%s id=%s", typeId.GetText(),
             sprimId.GetText());
     return nullptr;
 }
 
 HdSprim *HydraPassthroughRenderDelegate::CreateFallbackSprim(TfToken const &typeId) {
+    if (typeId == HdPrimTypeTokens->camera) {
+        std::cout << "Create Passthrough Fallback Camera" << std::endl;
+        return new HdCamera(SdfPath::EmptyPath());
+    }
+
+    // Should be unreachable
     TF_CODING_ERROR("Creating unknown fallback sprim type=%s", typeId.GetText());
     return nullptr;
 }
 
 void HydraPassthroughRenderDelegate::DestroySprim(HdSprim *sPrim) {
-    TF_CODING_ERROR("Destroy Sprim not supported");
+    std::cout << "Destroy Passthrough Camera id=" << sPrim->GetId() << std::endl;
+    if (dynamic_cast<HdCamera*>(sPrim)) {
+        // Remove from our camera map if it's there
+        auto it = _cameraMap.find(sPrim->GetId());
+        if (it != _cameraMap.end()) {
+            std::cout << "  Clean up tracking data structure" << std::endl;
+            _cameraMap.erase(it);
+        }
+    }
+    delete sPrim;
 }
 
 HdBprim *HydraPassthroughRenderDelegate::CreateBprim(TfToken const &typeId,
