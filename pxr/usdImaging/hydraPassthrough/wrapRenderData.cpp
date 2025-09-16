@@ -21,6 +21,12 @@ namespace {
     {
         return self.clipPlanes;
     }
+
+    const std::string _GetLensDistortionType(
+        const HydraPassthroughRenderData::CameraData &self)
+    {
+        return self.lensDistortionType.GetString();
+    }
 }
 
 void
@@ -86,7 +92,7 @@ wrapRenderData()
         .def_readonly("shutterOpen", &This::CameraData::shutterOpen)
         .def_readonly("shutterClose", &This::CameraData::shutterClose)
         .def_readonly("linearExposureScale", &This::CameraData::linearExposureScale)
-        .def_readonly("lensDistortionType", &This::CameraData::lensDistortionType)
+        .def("GetLensDistortionType", ::_GetLensDistortionType)
         .def_readonly("lensDistortionK1", &This::CameraData::lensDistortionK1)
         .def_readonly("lensDistortionK2", &This::CameraData::lensDistortionK2)
         .def_readonly("lensDistortionCenter", &This::CameraData::lensDistortionCenter)
