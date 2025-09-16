@@ -18,7 +18,8 @@ void HdPassthroughRenderManager::Initialize() {
     // This is basically blind data for our use
     _driver = {TfToken("HdPassthroughDriver"), VtValue()};
 
-    // Scene delegate ID is used for what?
+    // Scene delegate ID is used to indentify our scene index. So, all
+    // paths in the renderer will be preceded with this.
     _sceneDelegateId = SdfPath("/HdPassthroughSceneDelegate");
 
     if (!_SetRendererPlugin(TfToken("HydraPassthroughRendererPlugin"))) {
@@ -137,12 +138,6 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
         return false;
     }
 
-//    _SetRenderDelegateAndRestoreState(std::move(renderDelegate));
-
-    // Could restore state for new plugin here, but we'll just init for now
-    //GfMatrix4d rootTransform = GfMatrix4d(1.0);
-    //bool rootVisibility = true;
-
     // If a delegate exists already we need to destroy hydra memory here
 
     // Need a unique id string
@@ -158,9 +153,14 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
         HdRenderIndex::New(
             _renderDelegate.Get(), {&_driver}, renderInstanceId));
 
+    // Let the output render data know what prefix to expect on SdfPaths
+    GetRenderData()->SetSceneDelegateId(_sceneDelegateId);
+
     // Set up scene indices. We could provide a stage in this info object
     //
-    // Note that this supports selection and things we don't need
+    // Note that this supports selection and things we don't need. Also, this
+    // is where we have a dependency on UsdImaging. If we wrote our own scene
+    // indices we could avoid this.
     UsdImagingCreateSceneIndicesInfo info;
     const UsdImagingSceneIndices sceneIndices =
         UsdImagingCreateSceneIndices(info);

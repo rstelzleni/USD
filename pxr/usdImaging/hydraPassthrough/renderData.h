@@ -118,6 +118,14 @@ public:
 
     ~HydraPassthroughRenderData() = default;
 
+    void SetSceneDelegateId(const SdfPath& id) {
+        _sceneDelegateId = id;
+    }
+
+    const SdfPath& GetSceneDelegateId() const {
+        return _sceneDelegateId;
+    }
+
     void AddMesh(const SdfPath& id,
                  const MeshData& meshData);
 
@@ -139,6 +147,8 @@ public:
 
 private:
     HydraPassthroughRenderData() = default;
+
+    SdfPath _sceneDelegateId;
 
     // A map to store mesh data by their SdfPath identifiers.
     TfHashMap<SdfPath, MeshData, TfHash> _meshes;
