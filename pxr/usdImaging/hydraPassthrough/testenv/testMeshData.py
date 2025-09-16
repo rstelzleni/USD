@@ -1,0 +1,42 @@
+#!/pxrpythonsubst
+
+from pxr import Gf, HydraPassthrough, Sdf, Usd, UsdGeom
+import unittest
+
+
+class TestCameraData(unittest.TestCase):
+    def test_Basic(self):
+        stage = Usd.Stage.CreateInMemory()
+        cam = UsdGeom.Mesh.Define(stage, '/Mesh0')
+        cam = UsdGeom.Mesh.Define(stage, '/Mesh1')
+        cam = UsdGeom.Mesh.Define(stage, '/Mesh2')
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        m.Render(stage)
+
+        md = m.GetRenderData()
+
+        prefix = md.GetSceneDelegateId()
+
+        self.assertEqual(md.GetMeshCount(), 3)
+        mesh0 = md.GetMesh(Sdf.Path(prefix.AppendPath('Mesh0')))
+        self.assertEqual(mesh0.id, Sdf.Path(prefix.AppendPath('Mesh0')))
+
+        # Make sure all the getters work and translate to python
+        x = mesh0.visible
+        self.assertEqual(x, True)
+        x = mesh0.transform
+        self.assertEqual(x, Gf.Matrix4d(1))
+        x = mesh0.points
+        self.assertEqual(x, [])
+        x = mesh0.faceVertexIndices
+        self.assertEqual(x, [])
+        x = mesh0.triangleOriginalFaceIndices
+        self.assertEqual(x, [])
+        x = mesh0.triangleEdgeIndices
+        self.assertEqual(x, [])
+
+        m.Cleanup()
+
+if __name__ == "__main__":
+    unittest.main()

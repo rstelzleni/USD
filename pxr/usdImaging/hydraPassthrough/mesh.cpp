@@ -154,8 +154,9 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     if (!pointsIsComputed &&
         HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->points)) {
         VtValue value = sceneDelegate->Get(id, HdTokens->points);
-        _meshData.points = value.Get<VtVec3fArray>();
-        //_normalsValid = false;
+        if (not value.IsEmpty()) {
+            _meshData.points = value.Get<VtVec3fArray>();
+        }
     }
 
     if (HdChangeTracker::IsTopologyDirty(*dirtyBits, id)) {
