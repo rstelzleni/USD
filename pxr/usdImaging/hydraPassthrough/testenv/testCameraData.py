@@ -14,11 +14,11 @@ class TestCameraData(unittest.TestCase):
 
         md = m.GetRenderData()
 
-        prefix = '/HdPassthroughSceneDelegate'
+        prefix = md.GetSceneDelegateId()
 
         self.assertEqual(md.GetCameraCount(), 1)
         cam = md.GetCameraByIndex(0)
-        self.assertEqual(cam.id, Sdf.Path(prefix + '/Camera'))
+        self.assertEqual(cam.id, Sdf.Path(prefix.AppendPath('Camera')))
 
         # Make sure all the getters work and translate to python
         x = cam.transform

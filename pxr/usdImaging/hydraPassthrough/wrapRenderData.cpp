@@ -35,6 +35,8 @@ wrapRenderData()
     using This = HydraPassthroughRenderData;
     scope s = class_<This, TfWeakPtr<This>, noncopyable>("RenderData", no_init)
         .def(TfPyRefAndWeakPtr())
+        .def("GetSceneDelegateId", &This::GetSceneDelegateId,
+             return_value_policy<return_by_value>())
         .def("GetMeshCount", &This::GetMeshCount)
         .def("GetMesh", &This::GetMesh,
              (arg("id")),
