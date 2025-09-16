@@ -56,3 +56,13 @@ pxr_register_test(testCameraData
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testCameraData"
     EXPECTED_RETURN_CODE 0
 )
+
+pxr_test_scripts(
+    testenv/testMeshData.py
+)
+
+pxr_register_test(testMeshData
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testMeshData"
+    EXPECTED_RETURN_CODE 0
+)
