@@ -117,4 +117,31 @@ HydraPassthroughRenderData::GetCameraByIndex(size_t index) const {
     return &(it->second);
 }
 
+void
+HydraPassthroughRenderData::AddMaterial(const SdfPath& id, const MaterialData& matData) {
+    _materials[id] = matData;
+}
+
+const HydraPassthroughRenderData::MaterialData* 
+HydraPassthroughRenderData::GetMaterial(const SdfPath& id) const {
+    auto it = _materials.find(id);
+    if (it != _materials.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+const HydraPassthroughRenderData::MaterialData* 
+HydraPassthroughRenderData::GetMaterialByIndex(size_t index) const {
+    if (index >= _materials.size()) {
+        TF_RUNTIME_ERROR("Material index %zu out of range [0,%zu)",
+            index, _materials.size());
+        return nullptr;
+    }
+
+    auto it = _materials.begin();
+    std::advance(it, index);
+    return &(it->second);
+}
+
 PXR_NAMESPACE_CLOSE_SCOPE

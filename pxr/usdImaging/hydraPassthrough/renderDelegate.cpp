@@ -1,4 +1,5 @@
 #include "renderDelegate.h"
+#include "material.h"
 #include "mesh.h"
 #include "renderPass.h"
 #include "renderParam.h"
@@ -15,6 +16,7 @@ const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_RPRIM_TYPES = {
 
 const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_SPRIM_TYPES = {
     HdPrimTypeTokens->camera,
+    HdPrimTypeTokens->material,
 };
 
 const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_BPRIM_TYPES = {};
@@ -108,6 +110,10 @@ HdSprim *HydraPassthroughRenderDelegate::CreateSprim(TfToken const &typeId,
         _cameraMap[sprimId] = camera;
         return camera;
     }
+    else if (typeId == HdPrimTypeTokens->material) {
+        std::cout << "Create Passthrough Material id=" << sprimId << std::endl;
+        return new HydraPassthroughMaterial(sprimId);
+    }
 
     // Should be unreachable
     TF_CODING_ERROR("Unknown Sprim type=%s id=%s", typeId.GetText(),
@@ -119,6 +125,10 @@ HdSprim *HydraPassthroughRenderDelegate::CreateFallbackSprim(TfToken const &type
     if (typeId == HdPrimTypeTokens->camera) {
         std::cout << "Create Passthrough Fallback Camera" << std::endl;
         return new HdCamera(SdfPath::EmptyPath());
+    }
+    else if (typeId == HdPrimTypeTokens->material) {
+        std::cout << "Create Passthrough Fallback Material" << std::endl;
+        return new HydraPassthroughMaterial(SdfPath::EmptyPath());
     }
 
     // Should be unreachable

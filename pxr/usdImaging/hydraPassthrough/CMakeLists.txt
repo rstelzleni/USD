@@ -25,6 +25,8 @@ pxr_library(hydraPassthrough
         usdImaging
 
     PUBLIC_CLASSES
+        material
+        materialParam
         mesh
         renderData
         renderDelegate
@@ -34,6 +36,7 @@ pxr_library(hydraPassthrough
 
     PUBLIC_HEADERS
         api.h
+        renderParam.h
 
     PYMODULE_CPPFILES
         module.cpp
@@ -64,5 +67,15 @@ pxr_test_scripts(
 pxr_register_test(testMeshData
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testMeshData"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_test_scripts(
+    testenv/testMaterialData.py
+)
+
+pxr_register_test(testMaterialData
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testMaterialData"
     EXPECTED_RETURN_CODE 0
 )
