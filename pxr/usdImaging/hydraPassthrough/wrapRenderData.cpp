@@ -48,6 +48,13 @@ wrapRenderData()
         .def("GetCameraByIndex", &This::GetCameraByIndex,
                 (arg("index")),
                 return_internal_reference())
+        .def("GetMaterial", &This::GetMaterial,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetMaterialCount", &This::GetMaterialCount)
+        .def("GetMaterialByIndex", &This::GetMaterialByIndex,
+                (arg("index")),
+                return_internal_reference())
         ;
 
     class_<This::MeshData>("MeshData", no_init)
@@ -59,6 +66,11 @@ wrapRenderData()
 
         .def_readonly("triangleOriginalFaceIndices", &This::MeshData::triangleOriginalFaceIndices)
         .def_readonly("triangleEdgeIndices", &This::MeshData::triangleEdgeIndices)
+        ;
+
+    class_<This::MaterialData>("MaterialData", no_init)
+        .def_readonly("id", &This::MaterialData::id)
+        .def_readonly("materialTag", &This::MaterialData::tag)
         ;
 
     enum_<This::CameraData::Projection>("Projection")

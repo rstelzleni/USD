@@ -1,4 +1,6 @@
-#pragma once
+#ifndef USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_PARAM_H
+#define USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_PARAM_H
+
 
 #include "pxr/pxr.h"
 #include "pxr/usdImaging/hydraPassthrough/renderData.h"
@@ -22,3 +24,5 @@ private:
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
+
+#endif // USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_PARAM_H

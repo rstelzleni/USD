@@ -62,6 +62,32 @@ public:
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvarSourceMap;
     };
 
+    class MaterialData {
+    public:
+        SdfPath id;
+        enum class MaterialType {
+            Unknown,
+            PreviewSurface,
+            Volume,
+            Other
+        };
+        MaterialType type = MaterialType::Unknown;
+        TfToken tag = TfToken();
+    };
+
+    class TextureData {
+    public:
+        std::string filePath;
+        enum class TextureType {
+            Uv,
+            Field,
+            Ptex,
+            Udim,
+            Other
+        };
+        TextureType type = TextureType::Other;
+    };
+
     class CameraData {
     public:
         SdfPath id;
@@ -145,6 +171,17 @@ public:
 
     const CameraData* GetCameraByIndex(size_t index) const;
 
+    void AddMaterial(const SdfPath& id,
+                     const MaterialData& materialData);
+
+    const MaterialData* GetMaterial(const SdfPath& id) const;
+
+    size_t GetMaterialCount() const {
+        return _materials.size();
+    }
+
+    const MaterialData* GetMaterialByIndex(size_t index) const;
+
 private:
     HydraPassthroughRenderData() = default;
 
@@ -154,6 +191,8 @@ private:
     TfHashMap<SdfPath, MeshData, TfHash> _meshes;
 
     TfHashMap<SdfPath, CameraData, TfHash> _cameras;
+
+    TfHashMap<SdfPath, MaterialData, TfHash> _materials;
 
     // Default mesh data to return in case of errors.
     MeshData _defaultMeshData;
