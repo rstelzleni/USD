@@ -2,6 +2,8 @@
 
 #include "pxr/base/tf/hash.h"
 
+#include <sstream>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 HydraPassthroughMaterialParam::HydraPassthroughMaterialParam()
@@ -60,6 +62,28 @@ HdTupleType
 HydraPassthroughMaterialParam::GetTupleType() const
 {
     return HdGetValueTupleType(fallbackValue);
+}
+
+std::string
+HydraPassthroughMaterialParam::ToString() const
+{
+    std::stringstream ss;
+    ss << "HydraPassthroughMaterialParam {" << std::endl;
+    ss << "  paramType: " << (int)paramType << std::endl;
+    ss << "  name: " << name << std::endl;
+    ss << "  fallbackValue: " << TfStringify(fallbackValue) ;
+    ss << std::endl;
+    ss << "  samplerCoords: ";
+    for (auto const& sc : samplerCoords) {
+        ss << sc << " ";
+    }
+    ss << std::endl;
+    ss << "  textureType: " << (int)textureType << std::endl;
+    ss << "  swizzle: " << swizzle << std::endl;
+    ss << "  isPremultiplied: " << (isPremultiplied ? "true" : "false") << std::endl;
+    ss << "  arrayOfTexturesSize: " << arrayOfTexturesSize << std::endl;
+    ss << "}";
+    return ss.str();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

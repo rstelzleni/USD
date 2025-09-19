@@ -204,6 +204,7 @@ wrapTextureDescriptor()
     using This = HydraPassthroughTextureDescriptor;
 
     scope s = class_<This>("TextureDescriptor", no_init)
+        .def("__str__", &This::ToString)
         .def_readonly("name", &This::name)
         .def_readonly("filePath", &This::filePath)
         .def_readonly("type", &This::type)

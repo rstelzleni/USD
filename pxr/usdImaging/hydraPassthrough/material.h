@@ -28,6 +28,8 @@ public:
     /// Tell the change tracker we need to sync everything.
     HdDirtyBits GetInitialDirtyBitsMask() const override;
 
+    std::string ToString() const;
+
 private:
 
     // Read the material network and populate member variables

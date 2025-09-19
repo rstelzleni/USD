@@ -10,6 +10,7 @@
 #include "pxr/base/tf/staticTokens.h"
 
 #include <iostream>
+#include <sstream>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -1191,68 +1192,31 @@ HydraPassthroughMaterial::_AddMaterialToOutput(
     matData.textureDescriptors = _textureDescriptors;
 
     renderData->AddMaterial(matData.id, matData);
+ }
 
-    // XXX RYANS clean this up, move to string functions
-    std::cout << "Added material id=" << matData.id
-              << " type=" << (int)matData.type
-              << " tag=" << matData.tag
-              << " to render data" << std::endl;
-
-    std::cout << "  materialMetadata:" << std::endl;
+std::string
+HydraPassthroughMaterial::ToString() const
+{
+    std::stringstream ss;
+    ss << "HydraPassthroughMaterial {" << std::endl;
+    ss << "  id: " << GetId().GetText() << std::endl;
+    ss << "  isPreviewSurface: " << (_isPreviewSurface ? "true" : "false") << std::endl;
+    ss << "  isVolumeMaterial: " << (_isVolumeMaterial ? "true" : "false") << std::endl;
+    ss << "  materialTag: " << _materialTag << std::endl;
+    ss << "  materialMetadata:" << std::endl;
     for (auto const& it : _materialMetadata) {
-        std::cout << "    " << it.first << " = " << it.second << std::endl;
+        ss << "    " << it.first << " = " << it.second << std::endl;
     }
-    for (auto &it : _materialParams) {
-        std::cout << "  param: " << it.name << " type=" << (int)it.paramType
-                  << " fallback=";
-        if (it.fallbackValue.IsHolding<int>()) {
-            std::cout << it.fallbackValue.UncheckedGet<int>();
-        } else if (it.fallbackValue.IsHolding<float>()) {
-            std::cout << it.fallbackValue.UncheckedGet<float>();
-        } else if (it.fallbackValue.IsHolding<GfVec2f>()) {
-            std::cout << it.fallbackValue.UncheckedGet<GfVec2f>();
-        } else if (it.fallbackValue.IsHolding<GfVec3f>()) {
-            std::cout << it.fallbackValue.UncheckedGet<GfVec3f>();
-        } else if (it.fallbackValue.IsHolding<GfVec4f>()) {
-            std::cout << it.fallbackValue.UncheckedGet<GfVec4f>();
-        } else if (it.fallbackValue.IsHolding<TfToken>()) {
-            std::cout << it.fallbackValue.UncheckedGet<TfToken>();
-        } else if (it.fallbackValue.IsHolding<std::string>()) {
-            std::cout << it.fallbackValue.UncheckedGet<std::string>();
-        } else if (it.fallbackValue.IsHolding<bool>()) {
-            std::cout << (it.fallbackValue.UncheckedGet<bool>() ? "true" : "false");
-        } else if (it.fallbackValue.IsEmpty()) {
-            std::cout << "(empty)";
-        } else {
-            std::cout << "(unprintable type)";
-        }
-        std::cout << std::endl;
-        std::cout << "    samplerCoords: ";
-        for (auto const& sc : it.samplerCoords) {
-            std::cout << sc << " ";
-        }
-        std::cout << std::endl;
-        std::cout << "    textureType: " << (int)it.textureType << std::endl;
-        std::cout << "    swizzle: " << it.swizzle << std::endl;
-        std::cout << "    isPremultiplied: " << (it.isPremultiplied ? "true" : "false") << std::endl;
-        std::cout << "    arrayOfTexturesSize: " << it.arrayOfTexturesSize << std::endl;
+    ss << "  materialParams:" << std::endl;
+    for (auto const& it : _materialParams) {
+        ss << "    " << it.ToString() << std::endl;
     }
-    std::cout << "  textureDescriptors:" << std::endl;
-    for (auto &it : _textureDescriptors) {
-        std::cout << "    name: " << it.name<< std::endl;
-        std::cout << "    filePath: " << it.filePath << std::endl;
-        std::cout << "    type: " << (int)it.type << std::endl;
-        std::cout << "    samplerParameters: " << std::endl;
-        std::cout << "      wrapS: " << (int)it.samplerParameters.wrapS << std::endl;
-        std::cout << "      wrapT: " << (int)it.samplerParameters.wrapT << std::endl;
-        std::cout << "      wrapR: " << (int)it.samplerParameters.wrapR << std::endl;
-        std::cout << "      minFilter: " << (int)it.samplerParameters.minFilter << std::endl;
-        std::cout << "      magFilter: " << (int)it.samplerParameters.magFilter << std::endl;
-        std::cout << "      borderColor: " << (int)it.samplerParameters.borderColor<< std::endl;
-        std::cout << "      enableCompare: " << (int)it.samplerParameters.enableCompare << std::endl;
-        std::cout << "      maxAnisotropy: " << it.samplerParameters.maxAnisotropy << std::endl;
-        std::cout << "    memoryRequest: " << it.memoryRequest << std::endl;
+    ss << "  textureDescriptors:" << std::endl;
+    for (auto const& it : _textureDescriptors) {
+        ss << "    " << it.ToString() << std::endl;
     }
-}
+    ss << "}";
+    return ss.str();
+ }
 
 PXR_NAMESPACE_CLOSE_SCOPE
