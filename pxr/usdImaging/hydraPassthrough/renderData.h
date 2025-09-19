@@ -21,6 +21,7 @@
 #include "pxr/base/vt/dictionary.h"
 #include "pxr/base/vt/value.h"
 
+#include <mutex>
 #include <string>
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -152,6 +153,7 @@ public:
                  const MeshData& meshData);
 
     size_t GetMeshCount() const {
+        const std::lock_guard<std::mutex> lock(_meshMutex);
         return _meshes.size();
     }
 
@@ -162,6 +164,7 @@ public:
     void AddCamera(const HdCamera* camera);
 
     size_t GetCameraCount() const {
+        const std::lock_guard<std::mutex> lock(_cameraMutex);
         return _cameras.size();
     }
 
@@ -173,6 +176,7 @@ public:
     const MaterialData* GetMaterial(const SdfPath& id) const;
 
     size_t GetMaterialCount() const {
+        const std::lock_guard<std::mutex> lock(_materialMutex);
         return _materials.size();
     }
 
@@ -183,11 +187,17 @@ private:
 
     SdfPath _sceneDelegateId;
 
-    // A map to store mesh data by their SdfPath identifiers.
+    // Mutexes for accessing data containers.
+    //
+    // Sync is multithreaded, so we need to handle concurrent access to our
+    // data structures.
+    mutable std::mutex _meshMutex;
+    mutable std::mutex _cameraMutex;
+    mutable std::mutex _materialMutex;
+
+    // Maps for content with lookup by SdfPath
     TfHashMap<SdfPath, MeshData, TfHash> _meshes;
-
     TfHashMap<SdfPath, CameraData, TfHash> _cameras;
-
     TfHashMap<SdfPath, MaterialData, TfHash> _materials;
 
     // Default mesh data to return in case of errors.
