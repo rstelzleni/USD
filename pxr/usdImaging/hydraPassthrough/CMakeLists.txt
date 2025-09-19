@@ -54,31 +54,31 @@ pxr_library(hydraPassthrough
 )
 
 pxr_test_scripts(
-    testenv/testCameraData.py
+    testenv/testHydraPassthroughCameraData.py
 )
 
-pxr_register_test(testCameraData
+pxr_register_test(testHydraPassthroughCameraData
     PYTHON
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testCameraData"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughCameraData"
     EXPECTED_RETURN_CODE 0
 )
 
 pxr_test_scripts(
-    testenv/testMeshData.py
+    testenv/testHydraPassthroughMeshData.py
 )
 
-pxr_register_test(testMeshData
+pxr_register_test(testHydraPassthroughMeshData
     PYTHON
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testMeshData"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughMeshData"
     EXPECTED_RETURN_CODE 0
 )
 
 pxr_test_scripts(
-    testenv/testMaterialData.py
+    testenv/testHydraPassthroughMaterialData.py
 )
 
-pxr_register_test(testMaterialData
+pxr_register_test(testHydraPassthroughMaterialData
     PYTHON
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testMaterialData"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughMaterialData"
     EXPECTED_RETURN_CODE 0
 )
