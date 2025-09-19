@@ -9,11 +9,13 @@ void
 HydraPassthroughRenderData::AddMesh(
     const SdfPath& id,
     const MeshData& meshData) {
+    const std::lock_guard<std::mutex> lock(_meshMutex);
     _meshes[id] = meshData;
 }
 
 const HydraPassthroughRenderData::MeshData&
 HydraPassthroughRenderData::GetMesh(const SdfPath& id) const {
+    const std::lock_guard<std::mutex> lock(_meshMutex);
     auto it = _meshes.find(id);
     if (it != _meshes.end()) {
         return it->second;
@@ -26,6 +28,7 @@ HydraPassthroughRenderData::GetMesh(const SdfPath& id) const {
 
 const HydraPassthroughRenderData::MeshData&
 HydraPassthroughRenderData::GetMeshByIndex(size_t index) const {
+    const std::lock_guard<std::mutex> lock(_meshMutex);
     if (index < _meshes.size()) {
         auto it = _meshes.begin();
         std::advance(it, index);
@@ -43,6 +46,7 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
         TF_RUNTIME_ERROR("Null camera pointer in passthrough AddCamera");
         return;
     }
+    const std::lock_guard<std::mutex> lock(_cameraMutex);
 
     CameraData camData;
     camData.id = camera->GetId();
@@ -106,6 +110,7 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
 
 const HydraPassthroughRenderData::CameraData* 
 HydraPassthroughRenderData::GetCameraByIndex(size_t index) const {
+    const std::lock_guard<std::mutex> lock(_cameraMutex);
     if (index >= _cameras.size()) {
         TF_RUNTIME_ERROR("Camera index %zu out of range [0,%zu)",
             index, _cameras.size());
@@ -119,11 +124,13 @@ HydraPassthroughRenderData::GetCameraByIndex(size_t index) const {
 
 void
 HydraPassthroughRenderData::AddMaterial(const SdfPath& id, const MaterialData& matData) {
+    const std::lock_guard<std::mutex> lock(_materialMutex);
     _materials[id] = matData;
 }
 
 const HydraPassthroughRenderData::MaterialData* 
 HydraPassthroughRenderData::GetMaterial(const SdfPath& id) const {
+    const std::lock_guard<std::mutex> lock(_materialMutex);
     auto it = _materials.find(id);
     if (it != _materials.end()) {
         return &(it->second);
@@ -133,6 +140,7 @@ HydraPassthroughRenderData::GetMaterial(const SdfPath& id) const {
 
 const HydraPassthroughRenderData::MaterialData* 
 HydraPassthroughRenderData::GetMaterialByIndex(size_t index) const {
+    const std::lock_guard<std::mutex> lock(_materialMutex);
     if (index >= _materials.size()) {
         TF_RUNTIME_ERROR("Material index %zu out of range [0,%zu)",
             index, _materials.size());
