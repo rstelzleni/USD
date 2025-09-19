@@ -28,18 +28,6 @@ public:
     /// Tell the change tracker we need to sync everything.
     HdDirtyBits GetInitialDirtyBitsMask() const override;
 
-    // Information necessary to allocate a texture.
-    struct TextureDescriptor
-    {
-        // A unique ID for the texture
-        TfToken name;
-        TfToken filePath;
-        HydraPassthroughMaterialParam::TextureType type;
-        HdSamplerParameters samplerParameters;
-        // Memory request size in bytes.
-        size_t memoryRequest;
-    };
-
 private:
 
     // Read the material network and populate member variables
@@ -60,7 +48,7 @@ private:
     TfToken _materialTag;
     VtDictionary _materialMetadata;
     std::vector<HydraPassthroughMaterialParam> _materialParams;
-    std::vector<TextureDescriptor> _textureDescriptors;
+    std::vector<HydraPassthroughTextureDescriptor> _textureDescriptors;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

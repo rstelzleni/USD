@@ -33,6 +33,7 @@ pxr_library(hydraPassthrough
         renderManager
         rendererPlugin
         renderPass
+        textureDescriptor
 
     PUBLIC_HEADERS
         api.h
@@ -40,8 +41,10 @@ pxr_library(hydraPassthrough
 
     PYMODULE_CPPFILES
         module.cpp
+        wrapMaterialParam.cpp
         wrapRenderData.cpp
         wrapRenderManager.cpp
+        wrapTextureDescriptor.cpp
 
     PYMODULE_FILES
         __init__.py

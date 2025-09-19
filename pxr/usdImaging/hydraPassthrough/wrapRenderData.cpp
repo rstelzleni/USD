@@ -27,6 +27,30 @@ namespace {
     {
         return self.lensDistortionType.GetString();
     }
+
+    const std::string _GetMaterialTag(
+        const HydraPassthroughRenderData::MaterialData &self)
+    {
+        return self.tag.GetString();
+    }
+
+    const VtDictionary &GetMaterialMetadata(
+        const HydraPassthroughRenderData::MaterialData &self)
+    {
+        return self.materialMetadata;
+    }
+
+    const std::vector<HydraPassthroughMaterialParam> &_GetMaterialParams(
+        const HydraPassthroughRenderData::MaterialData &self)
+    {
+        return self.materialParams;
+    }
+
+    const std::vector<HydraPassthroughTextureDescriptor> &_GetTextureDescriptors(
+        const HydraPassthroughRenderData::MaterialData &self)
+    {
+        return self.textureDescriptors;
+    }
 }
 
 void
@@ -68,9 +92,23 @@ wrapRenderData()
         .def_readonly("triangleEdgeIndices", &This::MeshData::triangleEdgeIndices)
         ;
 
+    enum_<This::MaterialData::MaterialType>("MaterialType")
+        .value("Unknown", This::MaterialData::MaterialType::Unknown)
+        .value("PreviewSurface", This::MaterialData::MaterialType::PreviewSurface)
+        .value("Volume", This::MaterialData::MaterialType::Volume)
+        .value("Other", This::MaterialData::MaterialType::Other)
+        ;
+
     class_<This::MaterialData>("MaterialData", no_init)
         .def_readonly("id", &This::MaterialData::id)
-        .def_readonly("materialTag", &This::MaterialData::tag)
+        .def_readonly("type", &This::MaterialData::type)
+        .def("GetMaterialTag", ::_GetMaterialTag)
+        .def("GetMaterialMetadata", ::GetMaterialMetadata,
+                      return_value_policy<TfPyMapToDictionary>())
+        .def("GetMaterialParams", ::_GetMaterialParams,
+                      return_value_policy<TfPySequenceToList>())
+        .def("GetTextureDescriptors", ::_GetTextureDescriptors,
+                      return_value_policy<TfPySequenceToList>())
         ;
 
     enum_<This::CameraData::Projection>("Projection")

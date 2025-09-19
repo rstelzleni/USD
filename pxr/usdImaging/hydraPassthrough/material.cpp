@@ -9,6 +9,8 @@
 #include "pxr/usd/sdr/shaderNode.h"
 #include "pxr/base/tf/staticTokens.h"
 
+#include <iostream>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 TF_DEFINE_PRIVATE_TOKENS(
@@ -33,7 +35,6 @@ TF_DEFINE_PRIVATE_TOKENS(
     (rotation)                  \
     (scale)                     \
     (translation)               \
-    (storm)                     \
     (bias)                      \
     (textureMemory)             \
     (fieldname)
@@ -366,7 +367,7 @@ _ResolveParameter(
 
 static void
 _MakeMaterialParamsForUnconnectedParam(
-    TfToken const& paramName,
+    std::string const& paramName,
     std::vector<HydraPassthroughMaterialParam> *params)
 {
     HydraPassthroughMaterialParam param;
@@ -378,7 +379,7 @@ _MakeMaterialParamsForUnconnectedParam(
 
 static void
 _MakeMaterialParamsForAdditionalPrimvar(
-    TfToken const& primvarName,
+    std::string const& primvarName,
     std::vector<HydraPassthroughMaterialParam> *params)
 {
     HydraPassthroughMaterialParam param;
@@ -393,7 +394,7 @@ _MakeMaterialParamsForPrimvarReader(
     HdMaterialNetwork2 const& network,
     HdMaterialNode2 const& node,
     SdfPath const& nodePath,
-    TfToken const& paramName,
+    std::string const& paramName,
     SdfPathSet* visitedNodes,
     std::vector<HydraPassthroughMaterialParam> *params)
 {
@@ -425,7 +426,7 @@ _MakeMaterialParamsForFieldReader(
     HdMaterialNetwork2 const& network,
     HdMaterialNode2 const& node,
     SdfPath const& nodePath,
-    TfToken const& paramName,
+    std::string const& paramName,
     SdfPathSet* visitedNodes,
     std::vector<HydraPassthroughMaterialParam> *params)
 {
@@ -588,7 +589,7 @@ _MakeMaterialParamsForTexture(
     TfToken const& paramName,
     SdfPathSet* visitedNodes,
     std::vector<HydraPassthroughMaterialParam> *params,
-    std::vector<HydraPassthroughMaterial::TextureDescriptor> *textureDescriptors,
+    std::vector<HydraPassthroughTextureDescriptor> *textureDescriptors,
     TfToken const& materialTag)
 {
     if (visitedNodes->find(nodePath) != visitedNodes->end()) return;
@@ -802,12 +803,15 @@ _MakeMaterialParamsForTexture(
 
     // Handle texture scale and bias
     //
-    // XXX RYANS this uses parameter names like textureName_storm_scale which
+    // These parameters extract texture scale and bias from the texture node
+    // and store them as parameters on in the material params. They get
+    // renamed so that they are unique per texture, like textureName__scale.
+    //
+    // XXX RYANS this uses parameter names like textureName__scale which
     // seems weird. Are these authored this way in the source data?
     HydraPassthroughMaterialParam texScaleParam;
     texScaleParam.paramType = HydraPassthroughMaterialParam::ParamType::Fallback;
-    texScaleParam.name = TfToken(paramName.GetString() + "_" +
-                                 _tokens->storm.GetString() + "_" +
+    texScaleParam.name = TfToken(paramName.GetString() + "__" +
                                  _tokens->scale.GetString());
     texScaleParam.fallbackValue = VtValue(_ResolveParameter(node, 
                                                             sdrNode, 
@@ -817,8 +821,7 @@ _MakeMaterialParamsForTexture(
 
     HydraPassthroughMaterialParam texBiasParam;
     texBiasParam.paramType = HydraPassthroughMaterialParam::ParamType::Fallback;
-    texBiasParam.name = TfToken(paramName.GetString() + "_" +
-                                _tokens->storm.GetString() + "_" +
+    texBiasParam.name = TfToken(paramName.GetString() + "__" +
                                 _tokens->bias.GetString());
     texBiasParam.fallbackValue = VtValue(_ResolveParameter(node, 
                                                            sdrNode, 
@@ -834,6 +837,7 @@ _MakeMaterialParamsForTexture(
         { paramName,
           textureFilePath,
           texParam.textureType,
+          sourceColorSpace,
           HdGetSamplerParameters(node, sdrNode, nodePath),
           memoryRequest });
 
@@ -847,7 +851,7 @@ _MakeParamsForInputParameter(
     TfToken const& paramName,
     SdfPathSet* visitedNodes,
     std::vector<HydraPassthroughMaterialParam> *params,
-    std::vector<HydraPassthroughMaterial::TextureDescriptor> *textureDescriptors,
+    std::vector<HydraPassthroughTextureDescriptor> *textureDescriptors,
     TfToken const& materialTag)
 {
     SdrRegistry& shaderReg = SdrRegistry::GetInstance();
@@ -939,7 +943,7 @@ _GatherMaterialParams(
     HdMaterialNetwork2 const& network,
     HdMaterialNode2 const& node,
     std::vector<HydraPassthroughMaterialParam> *params,
-    std::vector<HydraPassthroughMaterial::TextureDescriptor> *textureDescriptors,
+    std::vector<HydraPassthroughTextureDescriptor> *textureDescriptors,
     TfToken const& materialTag)
 {
     HD_TRACE_FUNCTION();
@@ -976,7 +980,7 @@ _GatherMaterialParams(
     for (auto& p : *params) {
         if (p.paramType != HydraPassthroughMaterialParam::ParamType::AdditionalPrimvar &&
             p.fallbackValue.IsEmpty()) {
-            p.fallbackValue = _GetParamFallbackValue(network, node, p.name);
+            p.fallbackValue = _GetParamFallbackValue(network, node, TfToken(p.name));
             // The opacityMode input on a PreviewSurface material is a token
             // input, this needs to be updated to an int VtValue for codegen.
             // The values are updated such that transparent = 1 and presence = 0. 
@@ -1141,49 +1145,6 @@ HydraPassthroughMaterial::Sync(HdSceneDelegate *sceneDelegate,
                   GetId().GetText());
     }
 
-        
-
-        // Got this far
-        // These are members, unless I split this out into a processor class
-        /*
-        if (!hdNetworkMap.terminals.empty() && !hdNetworkMap.map.empty()) {
-            _networkProcessor.ProcessMaterialNetwork(GetId(), hdNetworkMap,
-                                                    resourceRegistry.get());
-            fragmentSource = _networkProcessor.GetFragmentCode();
-            volumeSource = _networkProcessor.GetVolumeCode();
-            displacementSource = _networkProcessor.GetDisplacementCode();
-            materialMetadata = _networkProcessor.GetMetadata();
-            materialTag = _networkProcessor.GetMaterialTag();
-            params = _networkProcessor.GetMaterialParams();
-                textureDescriptors = _networkProcessor.GetTextureDescriptors();
-        }
-    }
-    */
-    //
-    // Update material parameters
-    //
-    /*
-    _materialNetworkShader->SetParams(params);
-
-    HdBufferSpecVector specs;
-    HdBufferSourceSharedPtrVector sources;
-
-    bool hasPtex = false;
-    for (auto const & param: params) {
-        if (param.IsPrimvarRedirect() || param.IsFallback() || 
-            param.IsTransform2d()) {
-            HdSt_MaterialNetworkShader::AddFallbackValueToSpecsAndSources(
-                param, &specs, &sources);
-        } else if (param.IsTexture()) {
-            HdSt_MaterialNetworkShader::AddFallbackValueToSpecsAndSources(
-                param, &specs, &sources);
-            if (param.textureType == HydraPassthroughMaterialParam::TextureType::Ptex) {
-                hasPtex = true;
-            }
-        }
-    }
-    */
-
     // If we ever support continuous rendering, we'll need to dirty rprims when a
     // material changes. To do that we'd call the commented code below. For now 
     // we set up and do a first render to extract info, then shut down the render
@@ -1192,6 +1153,7 @@ HydraPassthroughMaterial::Sync(HdSceneDelegate *sceneDelegate,
     //                     sceneDelegate->GetRenderIndex().GetChangeTracker();
     //    changeTracker.MarkAllRprimsDirty(HdChangeTracker::DirtyMaterialId);
 
+    // Add material to the output data
     _AddMaterialToOutput(renderParam);
 
     // These pipes are clean
@@ -1223,7 +1185,74 @@ HydraPassthroughMaterial::_AddMaterialToOutput(
         HydraPassthroughRenderData::MaterialData::MaterialType::Other;
     matData.tag = _materialTag;
 
+    // These are copies, so that they exist after the lifecycle of this object
+    matData.materialMetadata = _materialMetadata;
+    matData.materialParams = _materialParams;
+    matData.textureDescriptors = _textureDescriptors;
+
     renderData->AddMaterial(matData.id, matData);
+
+    // XXX RYANS clean this up, move to string functions
+    std::cout << "Added material id=" << matData.id
+              << " type=" << (int)matData.type
+              << " tag=" << matData.tag
+              << " to render data" << std::endl;
+
+    std::cout << "  materialMetadata:" << std::endl;
+    for (auto const& it : _materialMetadata) {
+        std::cout << "    " << it.first << " = " << it.second << std::endl;
+    }
+    for (auto &it : _materialParams) {
+        std::cout << "  param: " << it.name << " type=" << (int)it.paramType
+                  << " fallback=";
+        if (it.fallbackValue.IsHolding<int>()) {
+            std::cout << it.fallbackValue.UncheckedGet<int>();
+        } else if (it.fallbackValue.IsHolding<float>()) {
+            std::cout << it.fallbackValue.UncheckedGet<float>();
+        } else if (it.fallbackValue.IsHolding<GfVec2f>()) {
+            std::cout << it.fallbackValue.UncheckedGet<GfVec2f>();
+        } else if (it.fallbackValue.IsHolding<GfVec3f>()) {
+            std::cout << it.fallbackValue.UncheckedGet<GfVec3f>();
+        } else if (it.fallbackValue.IsHolding<GfVec4f>()) {
+            std::cout << it.fallbackValue.UncheckedGet<GfVec4f>();
+        } else if (it.fallbackValue.IsHolding<TfToken>()) {
+            std::cout << it.fallbackValue.UncheckedGet<TfToken>();
+        } else if (it.fallbackValue.IsHolding<std::string>()) {
+            std::cout << it.fallbackValue.UncheckedGet<std::string>();
+        } else if (it.fallbackValue.IsHolding<bool>()) {
+            std::cout << (it.fallbackValue.UncheckedGet<bool>() ? "true" : "false");
+        } else if (it.fallbackValue.IsEmpty()) {
+            std::cout << "(empty)";
+        } else {
+            std::cout << "(unprintable type)";
+        }
+        std::cout << std::endl;
+        std::cout << "    samplerCoords: ";
+        for (auto const& sc : it.samplerCoords) {
+            std::cout << sc << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "    textureType: " << (int)it.textureType << std::endl;
+        std::cout << "    swizzle: " << it.swizzle << std::endl;
+        std::cout << "    isPremultiplied: " << (it.isPremultiplied ? "true" : "false") << std::endl;
+        std::cout << "    arrayOfTexturesSize: " << it.arrayOfTexturesSize << std::endl;
+    }
+    std::cout << "  textureDescriptors:" << std::endl;
+    for (auto &it : _textureDescriptors) {
+        std::cout << "    name: " << it.name<< std::endl;
+        std::cout << "    filePath: " << it.filePath << std::endl;
+        std::cout << "    type: " << (int)it.type << std::endl;
+        std::cout << "    samplerParameters: " << std::endl;
+        std::cout << "      wrapS: " << (int)it.samplerParameters.wrapS << std::endl;
+        std::cout << "      wrapT: " << (int)it.samplerParameters.wrapT << std::endl;
+        std::cout << "      wrapR: " << (int)it.samplerParameters.wrapR << std::endl;
+        std::cout << "      minFilter: " << (int)it.samplerParameters.minFilter << std::endl;
+        std::cout << "      magFilter: " << (int)it.samplerParameters.magFilter << std::endl;
+        std::cout << "      borderColor: " << (int)it.samplerParameters.borderColor<< std::endl;
+        std::cout << "      enableCompare: " << (int)it.samplerParameters.enableCompare << std::endl;
+        std::cout << "      maxAnisotropy: " << it.samplerParameters.maxAnisotropy << std::endl;
+        std::cout << "    memoryRequest: " << it.memoryRequest << std::endl;
+    }
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
