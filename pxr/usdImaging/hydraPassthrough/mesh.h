@@ -73,6 +73,8 @@ public:
     void Sync(HdSceneDelegate *sceneDelegate, HdRenderParam *renderParam,
             HdDirtyBits *dirtyBits, TfToken const &reprToken) override;
 
+    std::string ToString() const;
+
 protected:
     // Initialize the given representation of this Rprim.
     // This is called prior to syncing the prim, the first time the repr

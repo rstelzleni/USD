@@ -2,6 +2,7 @@
 #include "renderParam.h"
 
 #include <iostream>
+#include <sstream>
 
 #include "pxr/imaging/hd/meshUtil.h"
 #include "pxr/imaging/hd/extComputationUtils.h"
@@ -116,20 +117,30 @@ void HydraPassthroughMesh::Sync(HdSceneDelegate *sceneDelegate,
     _PopulateMeshValues(sceneDelegate, dirtyBits, desc);
 
     renderData->AddMesh(GetId(), _meshData);
+ }
 
-    // XXX Temp. Keeping for now while debugging
-    printf("Sync results\n");
-    printf("  points: %zu\n", _meshData.points.size());
-    for (const auto& p : _meshData.points) {
-        printf("    %f %f %f\n", p[0], p[1], p[2]);
-    }
-    printf("  topology: %s\n", _meshData.topology.GetScheme().GetText());
-    printf("  transform:\n");
-    printf("    %.3f %.3f %.3f %.3f\n", _meshData.transform[0][0], _meshData.transform[0][1], _meshData.transform[0][2], _meshData.transform[0][3]);
-    printf("    %.3f %.3f %.3f %.3f\n", _meshData.transform[1][0], _meshData.transform[1][1], _meshData.transform[1][2], _meshData.transform[1][3]);
-    printf("    %.3f %.3f %.3f %.3f\n", _meshData.transform[2][0], _meshData.transform[2][1], _meshData.transform[2][2], _meshData.transform[2][3]);
-    printf("    %.3f %.3f %.3f %.3f\n", _meshData.transform[3][0], _meshData.transform[3][1], _meshData.transform[3][2], _meshData.transform[3][3]);
-
+std::string
+HydraPassthroughMesh::ToString() const {
+    std::stringstream ss;
+    ss << "HydraPassthroughMesh {" << std::endl;
+    ss << "  id: " << GetId().GetText() << std::endl;
+    ss << "  points: " << _meshData.points.size() << std::endl;
+    ss << "  topology: " << _meshData.topology.GetScheme().GetText() << std::endl;
+    ss << "  faceVertexIndices: " << _meshData.faceVertexIndices.size() << std::endl;
+    ss << "  triangleOriginalFaceIndices: " << _meshData.triangleOriginalFaceIndices.size() << std::endl;
+    ss << "  triangleEdgeIndices: " << _meshData.triangleEdgeIndices.size() << std::endl;
+    ss << "  transform: " << std::endl;
+    ss << "    " << _meshData.transform[0][0] << " "<< _meshData.transform[0][1] << " "
+       << _meshData.transform[0][2] << " " << _meshData.transform[0][3] << std::endl;
+    ss << "    " << _meshData.transform[1][0] << " "<< _meshData.transform[1][1] << " "
+       << _meshData.transform[1][2] << " " << _meshData.transform[1][3] << std::endl;
+    ss << "    " << _meshData.transform[2][0] << " "<< _meshData.transform[2][1] << " "
+       << _meshData.transform[2][2] << " " << _meshData.transform[2][3] << std::endl;
+    ss << "    " << _meshData.transform[3][0] << " "<< _meshData.transform[3][1] << " "
+       << _meshData.transform[3][2] << " " << _meshData.transform[3][3] << std::endl;
+    ss << "  visible: " << (_meshData.visible ? "true" : "false") << std::endl;
+    ss << "}";
+    return ss.str();
 }
 
 void

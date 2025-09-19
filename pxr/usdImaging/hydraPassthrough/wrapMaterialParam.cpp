@@ -27,6 +27,7 @@ wrapMaterialParam()
 {
     using This = HydraPassthroughMaterialParam;
     scope s = class_<This >("MaterialParam", no_init)
+        .def("__str__", &This::ToString)
         .def_readonly("paramType", &This::paramType)
         .def_readonly("name", &This::name)
         .def_readonly("fallbackValue", &This::fallbackValue)

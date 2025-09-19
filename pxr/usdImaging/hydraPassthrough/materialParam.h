@@ -81,6 +81,8 @@ public:
     // See Hd/types.h for type values and helper functions
     HdTupleType GetTupleType() const;
 
+    std::string ToString() const;
+
     ParamType paramType { ParamType::Fallback };
     std::string name;
     VtValue fallbackValue;
