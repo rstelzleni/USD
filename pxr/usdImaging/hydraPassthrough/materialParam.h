@@ -50,6 +50,7 @@ public:
     // Not all these are supported, but we want to know if they're present
     // in the data, and the client can handle that as needed.
     enum class TextureType {
+        None,
         Uv,     // Standard 2D texture accessed by UV coordinates
         Field,  // 3D texture accessed by field coordinates
         Ptex,   // Ptex texture
@@ -59,9 +60,9 @@ public:
     HydraPassthroughMaterialParam();
 
     HydraPassthroughMaterialParam(ParamType paramType,
-                                  TfToken const& name, 
+                                  std::string const& name, 
                                   VtValue const& fallbackValue,
-                                  TfTokenVector const& samplerCoords=TfTokenVector(),
+                                  std::vector<std::string> const& samplerCoords=std::vector<std::string>(),
                                   TextureType textureType=TextureType::Uv,
                                   std::string const& swizzle=std::string(),
                                   bool const isPremultiplied=false,
@@ -80,36 +81,15 @@ public:
     // See Hd/types.h for type values and helper functions
     HdTupleType GetTupleType() const;
 
-    bool IsTexture() const {
-        return paramType == ParamType::Texture;
-    }
-    bool IsPrimvarRedirect() const {
-        return paramType == ParamType::PrimvarRedirect;
-    }
-    bool IsFieldRedirect() const {
-        return paramType == ParamType::FieldRedirect;
-    }
-    bool IsFallback() const {
-        return paramType == ParamType::Fallback;
-    }
-    bool IsAdditionalPrimvar() const {
-        return paramType == ParamType::AdditionalPrimvar;
-    }
-    bool IsTransform2d() const {
-        return paramType == ParamType::Transform2d;
-    }
-    bool IsArrayOfTextures() const {
-        return IsTexture() && arrayOfTexturesSize > 0;
-    }
-
     ParamType paramType { ParamType::Fallback };
-    TfToken name;
+    std::string name;
     VtValue fallbackValue;
-    TfTokenVector samplerCoords;
-    TextureType textureType { TextureType::Uv };
+    std::vector<std::string> samplerCoords;
+    TextureType textureType { TextureType::None };
     std::string swizzle;
     bool isPremultiplied { false };
 
+    // XXX RYANS where is this set?
     // If paramType is ParamTypeTexture, this indicates both if the textures
     // should be bound as an array of textures and the size of the array. If
     // arrayOfTexturesSize is 0, then do not bind as an array of textures, but
@@ -117,7 +97,6 @@ public:
     // array of textures of size 1).
     size_t arrayOfTexturesSize { 0 };
 };
-
 
 PXR_NAMESPACE_CLOSE_SCOPE
 

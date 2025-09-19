@@ -1,9 +1,12 @@
-#pragma once
+#ifndef PXR_USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DATA_H
+#define PXR_USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DATA_H
 
 #include "pxr/pxr.h"
 
 #include "pxr/imaging/hd/enums.h"
 #include "pxr/imaging/hd/meshTopology.h"
+#include "pxr/usdImaging/hydraPassthrough/materialParam.h"
+#include "pxr/usdImaging/hydraPassthrough/textureDescriptor.h"
 
 #include "pxr/usd/sdf/path.h"
 
@@ -15,6 +18,7 @@
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/hashmap.h"
 #include "pxr/base/vt/array.h"
+#include "pxr/base/vt/dictionary.h"
 #include "pxr/base/vt/value.h"
 
 #include <string>
@@ -73,19 +77,11 @@ public:
         };
         MaterialType type = MaterialType::Unknown;
         TfToken tag = TfToken();
-    };
-
-    class TextureData {
-    public:
-        std::string filePath;
-        enum class TextureType {
-            Uv,
-            Field,
-            Ptex,
-            Udim,
-            Other
-        };
-        TextureType type = TextureType::Other;
+        VtDictionary materialMetadata;
+        // These are copies of the data from HydraPassthroughMaterial, copied
+        // because we are not in control of the lifetime of that Sprim.
+        std::vector<HydraPassthroughMaterialParam> materialParams;
+        std::vector<HydraPassthroughTextureDescriptor> textureDescriptors;
     };
 
     class CameraData {
@@ -199,3 +195,5 @@ private:
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
+
+#endif // PXR_USD_IMAGING_HYDRA_PASSTHROUGH_RENDER_DATA_H

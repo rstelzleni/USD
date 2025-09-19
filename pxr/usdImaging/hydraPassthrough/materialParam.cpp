@@ -18,9 +18,9 @@ HydraPassthroughMaterialParam::HydraPassthroughMaterialParam()
 
 HydraPassthroughMaterialParam::HydraPassthroughMaterialParam(
         ParamType paramType,
-        TfToken const& name, 
+        std::string const& name, 
         VtValue const& fallbackValue,
-        TfTokenVector const& samplerCoords,
+        std::vector<std::string> const& samplerCoords,
         TextureType textureType,
         std::string const& swizzle,
         bool const isPremultiplied,
