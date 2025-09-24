@@ -35,6 +35,12 @@ class TestCameraData(unittest.TestCase):
         self.assertEqual(x, [])
         x = mesh0.triangleEdgeIndices
         self.assertEqual(x, [])
+        x = mesh0.materialId
+        self.assertEqual(x, Sdf.Path())
+        x = mesh0.GetAllPrimvars()
+        self.assertEqual(x, [])
+        x = mesh0.GetPrimvar('nonexistent')
+        self.assertEqual(x, None)
 
         m.Cleanup()
 

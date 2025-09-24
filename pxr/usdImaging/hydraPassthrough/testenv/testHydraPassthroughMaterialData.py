@@ -162,6 +162,21 @@ class TestMaterialData(unittest.TestCase):
                 self.assertEqual(t.GetMagFilter(), HydraPassthrough.TextureDescriptor.MagFilter.Linear)
                 self.assertEqual(t.GetBorderColor(), HydraPassthrough.TextureDescriptor.BorderColor.TransparentBlack)
                 self.assertEqual(t.GetMaxAnisotropy(), 16)
+
+        # check on the bound mesh
+        bound_mesh = md.GetMesh(Sdf.Path(prefix.AppendPath('Mesh')))
+        self.assertEqual(bound_mesh.materialId, mat0.id)
+        self.assertEqual(len(bound_mesh.GetAllPrimvars()), 2) # uv and points
+        primvar = bound_mesh.GetPrimvar('uv')
+        self.assertTrue(primvar is not None)
+        self.assertEqual(primvar.name, 'uv')
+        self.assertEqual(primvar.interpolation, 'varying')
+        self.assertEqual(primvar.data, [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+        self.assertEqual(primvar.role, 'textureCoordinate')
+        primvar = bound_mesh.GetPrimvar('points')
+        self.assertTrue(primvar is not None)
+        primvar = bound_mesh.GetPrimvar('nonexistent')
+        self.assertTrue(primvar is None)
                 
         m.Cleanup()
 

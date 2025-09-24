@@ -36,19 +36,31 @@ class HydraPassthroughRenderData :
 {
 public:
 
+    // XXX RYANS This needs to also support indices for indexed primvars
     struct PrimvarSource {
+        PrimvarSource() = default;
+        PrimvarSource(const VtValue& d, HdInterpolation interp)
+            : data(d), interpolation(interp) {}
+        PrimvarSource(const VtValue& d, HdInterpolation interp, const TfToken& r)
+            : data(d), interpolation(interp), role(r) {}
+
         VtValue data;
+        VtValue updatedData; // if we need to recompute for any reason (triangulation, subidivision)
         HdInterpolation interpolation;
+        TfToken role; // empty if none
     };
 
     class MeshData {
     public:
         SdfPath id;
+        SdfPath materialId;
         bool visible = true;
         GfMatrix4f transform;
         VtVec3fArray points;
         //VtVec3fArray normals;
-        //VtVec2fArray uvs;
+
+        // uvs are available in the primvars map, and may be named differently
+        // based on what the material expects.
         VtVec3iArray faceVertexIndices; // triangles only
 
         // Additional data for triangulation.
@@ -65,6 +77,7 @@ public:
         // Not available in python
         HdMeshTopology topology;
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvarSourceMap;
+        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
     };
 
     class MaterialData {
