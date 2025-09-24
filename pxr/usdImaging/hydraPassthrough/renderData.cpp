@@ -46,8 +46,8 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
         TF_RUNTIME_ERROR("Null camera pointer in passthrough AddCamera");
         return;
     }
-    const std::lock_guard<std::mutex> lock(_cameraMutex);
 
+    // XXX RYANS see also HdSceneDelegate::GetCameraParamValue
     CameraData camData;
     camData.id = camera->GetId();
     camData.transform = camera->GetTransform();
@@ -104,8 +104,10 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
             break;
     }
 
-    // Lens distortion parameters are not exposed in HdCamera
-    _cameras[camData.id] = camData;
+    {
+        const std::lock_guard<std::mutex> lock(_cameraMutex);
+        _cameras[camData.id] = camData;
+    }
 }
 
 const HydraPassthroughRenderData::CameraData* 
