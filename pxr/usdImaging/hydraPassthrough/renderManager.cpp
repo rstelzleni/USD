@@ -79,7 +79,7 @@ void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
     HdRprimCollection collection = HdRprimCollection(collectionName, reprSelector);
     // Yikes
     const SdfPathVector paths = {
-        _sceneDelegateId, // This is SdfPath::AbsoluteRootPath() in this context
+        _sceneDelegateId, // This is equivalent to SdfPath(/)  in this context
     };
     collection.SetRootPaths(paths);
     _taskControllerSceneIndex->SetCollection(collection);
