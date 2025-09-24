@@ -2,12 +2,17 @@
 #include "renderData.h"
 
 #include "pxr/base/tf/pyContainerConversions.h"
+#include "pxr/base/tf/pyOptional.h"
 #include "pxr/base/tf/pyPtrHelpers.h"
 #include "pxr/base/tf/pyResultConversions.h"
+
+#include "pxr/usd/usd/pyConversions.h"
 
 #include "pxr/external/boost/python.hpp"
 #include "pxr/external/boost/python/class.hpp"
 #include "pxr/external/boost/python/def.hpp"
+
+#include <optional>
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
@@ -51,6 +56,49 @@ namespace {
     {
         return self.textureDescriptors;
     }
+
+    class Primvar {
+    public:
+        Primvar(const TfToken &name,
+                const HydraPassthroughRenderData::PrimvarSource & source) :
+            name(name.GetString()),
+            interpolation(TfEnum::GetDisplayName(source.interpolation)),
+            data(UsdVtValueToPython(source.updatedData.IsEmpty() ?
+                    source.data : source.updatedData)),
+            role(source.role.GetString())
+        {}
+
+        std::string name;
+        std::string interpolation;
+        // Quick note about UsdVtValueToPython, it has a comment that says it
+        // is deprecated, but gives no alternative to call. It is also called
+        // all over the usd lib itself, and the deprecated comment is from
+        // before 2016 (i.e. before open sourcing).
+        object data;
+        std::string role;
+    };
+
+    std::vector<Primvar> _GetAllPrimvars(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        std::vector<Primvar> result;
+        result.reserve(self.primvars.size());
+        for (const auto &it : self.primvars) {
+            result.emplace_back(it.first, it.second);
+        }
+        return result;
+    }
+
+    std::optional<Primvar> _GetPrimvar(
+        const HydraPassthroughRenderData::MeshData &self,
+        const TfToken &name)
+    {
+        auto it = self.primvars.find(name);
+        if (it != self.primvars.end()) {
+            return Primvar(name, it->second);
+        }
+        return {};
+    }
 }
 
 void
@@ -81,8 +129,17 @@ wrapRenderData()
                 return_internal_reference())
         ;
 
+    class_<Primvar>("Primvar", no_init)
+        .def_readonly("name", &Primvar::name)
+        .def_readonly("interpolation", &Primvar::interpolation)
+        .def_readonly("data", &Primvar::data)
+        .def_readonly("role", &Primvar::role)
+        ;
+    TfPyOptional::python_optional<Primvar>();
+
     class_<This::MeshData>("MeshData", no_init)
         .def_readonly("id", &This::MeshData::id)
+        .def_readonly("materialId", &This::MeshData::materialId)
         .def_readonly("visible", &This::MeshData::visible)
         .def_readonly("transform", &This::MeshData::transform)
         .def_readonly("points", &This::MeshData::points)
@@ -90,6 +147,10 @@ wrapRenderData()
 
         .def_readonly("triangleOriginalFaceIndices", &This::MeshData::triangleOriginalFaceIndices)
         .def_readonly("triangleEdgeIndices", &This::MeshData::triangleEdgeIndices)
+
+        .def("GetAllPrimvars", &_GetAllPrimvars,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetPrimvar", &_GetPrimvar,(arg("name")))
         ;
 
     enum_<This::MaterialData::MaterialType>("MaterialType")
