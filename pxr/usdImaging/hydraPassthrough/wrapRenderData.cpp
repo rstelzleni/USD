@@ -63,19 +63,21 @@ namespace {
                 const HydraPassthroughRenderData::PrimvarSource & source) :
             name(name.GetString()),
             interpolation(TfEnum::GetDisplayName(source.interpolation)),
+            role(source.role.GetString()),
+            typeName(source.data.GetTypeName()),
             data(UsdVtValueToPython(source.updatedData.IsEmpty() ?
-                    source.data : source.updatedData)),
-            role(source.role.GetString())
+                    source.data : source.updatedData))
         {}
 
         std::string name;
         std::string interpolation;
+        std::string role;
+        std::string typeName;
         // Quick note about UsdVtValueToPython, it has a comment that says it
         // is deprecated, but gives no alternative to call. It is also called
         // all over the usd lib itself, and the deprecated comment is from
         // before 2016 (i.e. before open sourcing).
         object data;
-        std::string role;
     };
 
     std::vector<Primvar> _GetAllPrimvars(
@@ -107,8 +109,6 @@ wrapRenderData()
     using This = HydraPassthroughRenderData;
     scope s = class_<This, TfWeakPtr<This>, noncopyable>("RenderData", no_init)
         .def(TfPyRefAndWeakPtr())
-        .def("GetSceneDelegateId", &This::GetSceneDelegateId,
-             return_value_policy<return_by_value>())
         .def("GetMeshCount", &This::GetMeshCount)
         .def("GetMesh", &This::GetMesh,
              (arg("id")),
@@ -134,6 +134,7 @@ wrapRenderData()
         .def_readonly("interpolation", &Primvar::interpolation)
         .def_readonly("data", &Primvar::data)
         .def_readonly("role", &Primvar::role)
+        .def_readonly("typeName", &Primvar::typeName)
         ;
     TfPyOptional::python_optional<Primvar>();
 

@@ -34,6 +34,8 @@ public:
 
     HydraPassthroughRenderDataRefPtr GetRenderData() const;
 
+    static SdfPath GetSceneDelegateId();
+
 private:
 
     bool _SetRendererPlugin(const TfToken& id);

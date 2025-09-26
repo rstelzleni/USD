@@ -14,7 +14,7 @@ class TestCameraData(unittest.TestCase):
 
         md = m.GetRenderData()
 
-        prefix = md.GetSceneDelegateId()
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
 
         self.assertEqual(md.GetCameraCount(), 1)
         cam = md.GetCameraByIndex(0)

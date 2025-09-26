@@ -154,14 +154,6 @@ public:
 
     ~HydraPassthroughRenderData() = default;
 
-    void SetSceneDelegateId(const SdfPath& id) {
-        _sceneDelegateId = id;
-    }
-
-    const SdfPath& GetSceneDelegateId() const {
-        return _sceneDelegateId;
-    }
-
     void AddMesh(const SdfPath& id,
                  const MeshData& meshData);
 
@@ -197,8 +189,6 @@ public:
 
 private:
     HydraPassthroughRenderData() = default;
-
-    SdfPath _sceneDelegateId;
 
     // Mutexes for accessing data containers.
     //

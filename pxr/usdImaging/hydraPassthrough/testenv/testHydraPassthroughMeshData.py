@@ -16,7 +16,7 @@ class TestCameraData(unittest.TestCase):
 
         md = m.GetRenderData()
 
-        prefix = md.GetSceneDelegateId()
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
 
         self.assertEqual(md.GetMeshCount(), 3)
         mesh0 = md.GetMesh(Sdf.Path(prefix.AppendPath('Mesh0')))
