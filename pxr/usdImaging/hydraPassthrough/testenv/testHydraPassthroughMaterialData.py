@@ -67,7 +67,7 @@ class TestMaterialData(unittest.TestCase):
 
         md = m.GetRenderData()
 
-        prefix = md.GetSceneDelegateId()
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
 
         self.assertEqual(md.GetMaterialCount(), 3)
         mat0 = md.GetMaterial(Sdf.Path(prefix.AppendPath('Material0')))
@@ -97,7 +97,7 @@ class TestMaterialData(unittest.TestCase):
 
         md = m.GetRenderData()
 
-        prefix = md.GetSceneDelegateId()
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
 
         self.assertEqual(md.GetMaterialCount(), 1)
         mat0 = md.GetMaterial(Sdf.Path(prefix.AppendPath('Material')))
@@ -171,6 +171,7 @@ class TestMaterialData(unittest.TestCase):
         self.assertTrue(primvar is not None)
         self.assertEqual(primvar.name, 'uv')
         self.assertEqual(primvar.interpolation, 'varying')
+        self.assertEqual(primvar.typeName, 'VtArray<GfVec2f>')
         self.assertEqual(primvar.data, [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
         self.assertEqual(primvar.role, 'textureCoordinate')
         primvar = bound_mesh.GetPrimvar('points')

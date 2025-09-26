@@ -20,13 +20,18 @@ void HdPassthroughRenderManager::Initialize() {
 
     // Scene delegate ID is used to indentify our scene index. So, all
     // paths in the renderer will be preceded with this.
-    _sceneDelegateId = SdfPath("/HdPassthroughSceneDelegate");
+    _sceneDelegateId = GetSceneDelegateId();
 
     if (!_SetRendererPlugin(TfToken("HydraPassthroughRendererPlugin"))) {
         TF_CODING_ERROR("Failed to set renderer plugin.");
         return;
     }
     _engine = std::make_unique<HdEngine>();
+}
+
+/*static*/
+SdfPath HdPassthroughRenderManager::GetSceneDelegateId() {
+    return SdfPath("/HdPassthroughSceneDelegate");
 }
 
 void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
@@ -152,9 +157,6 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
     _renderIndex.reset(
         HdRenderIndex::New(
             _renderDelegate.Get(), {&_driver}, renderInstanceId));
-
-    // Let the output render data know what prefix to expect on SdfPaths
-    GetRenderData()->SetSceneDelegateId(_sceneDelegateId);
 
     // Set up scene indices. We could provide a stage in this info object
     //

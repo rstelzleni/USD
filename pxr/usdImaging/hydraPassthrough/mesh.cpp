@@ -142,7 +142,7 @@ HydraPassthroughMesh::ToString() const {
        << _meshData.transform[3][2] << " " << _meshData.transform[3][3] << std::endl;
     ss << "  visible: " << (_meshData.visible ? "true" : "false") << std::endl;
     ss << "  primvars: {" << std::endl;
-    for (auto const& pv : _meshData.primvarSourceMap) {
+    for (auto const& pv : _meshData.primvars) {
         ss << "    " << pv.first.GetText() << ": ";
         ss << TfStringify(pv.second.data);
         ss << " (" << pv.second.interpolation << ")";
