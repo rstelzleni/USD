@@ -9,4 +9,5 @@ TF_WRAP_MODULE
     TF_WRAP(RenderData);
     TF_WRAP(RenderManager);
     TF_WRAP(TextureDescriptor);
+    TF_WRAP(ValueDescriptor);
 }

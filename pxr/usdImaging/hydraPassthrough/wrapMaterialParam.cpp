@@ -1,5 +1,6 @@
 #include "pxr/pxr.h"
 #include "materialParam.h"
+#include "valueDescriptor.h"
 
 #include "pxr/base/tf/pyContainerConversions.h"
 #include "pxr/base/tf/pyPtrHelpers.h"
@@ -20,6 +21,12 @@ namespace
     {
         return self.samplerCoords;
     }
+
+    HydraPassthroughValueDescriptor _GetFallbackValue(
+        const HydraPassthroughMaterialParam &self)
+    {
+        return HydraPassthroughValueDescriptor(self.fallbackValue);
+    }
 }
 
 void
@@ -30,7 +37,7 @@ wrapMaterialParam()
         .def("__str__", &This::ToString)
         .def_readonly("paramType", &This::paramType)
         .def_readonly("name", &This::name)
-        .def_readonly("fallbackValue", &This::fallbackValue)
+        .def("GetFallbackValue", &_GetFallbackValue)
         .def("GetSamplerCoords", ::_GetSamplerCoords,
             return_value_policy<TfPySequenceToList>())
         .def_readonly("textureType", &This::textureType)

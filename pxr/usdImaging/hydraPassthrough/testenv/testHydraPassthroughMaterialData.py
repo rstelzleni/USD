@@ -115,7 +115,7 @@ class TestMaterialData(unittest.TestCase):
             self.assertTrue(isinstance(p.paramType, HydraPassthrough.MaterialParam.ParamType))
             if p.name == 'diffuseColor':
                 self.assertEqual(p.paramType, HydraPassthrough.MaterialParam.ParamType.Texture)
-                #self.assertEqual(p.fallbackValue, Gf.Vec3f(0,0,0))
+                self.assertEqual(p.GetFallbackValue().GetValue(), Gf.Vec3f(0,0,0))
                 self.assertEqual(p.GetSamplerCoords(), ['uv'])
                 self.assertEqual(p.textureType, HydraPassthrough.MaterialParam.TextureType.Uv)
                 self.assertEqual(p.swizzle, 'xyz')
@@ -123,7 +123,7 @@ class TestMaterialData(unittest.TestCase):
                 self.assertEqual(p.arrayOfTexturesSize, 0)
             elif p.name == 'opacity':
                 self.assertEqual(p.paramType, HydraPassthrough.MaterialParam.ParamType.Texture)
-                #self.assertEqual(p.fallbackValue, 0)
+                self.assertEqual(p.GetFallbackValue().GetValue(), 0)
                 self.assertEqual(p.GetSamplerCoords(), ['uv'])
                 self.assertEqual(p.textureType, HydraPassthrough.MaterialParam.TextureType.Uv)
                 self.assertEqual(p.swizzle, 'w')
@@ -131,7 +131,7 @@ class TestMaterialData(unittest.TestCase):
                 self.assertEqual(p.arrayOfTexturesSize, 0)
             elif p.name == 'uv':
                 self.assertEqual(p.paramType, HydraPassthrough.MaterialParam.ParamType.AdditionalPrimvar)
-                #self.assertEqual(p.fallbackValue, None)
+                self.assertTrue(p.GetFallbackValue().GetValue() is None)
                 self.assertEqual(p.GetSamplerCoords(), [])
                 # This seems wrong, this isn't a uv texture, it's a primvar. This is what storm does
                 # internally, so I guess we'll run with it for now.
@@ -171,8 +171,13 @@ class TestMaterialData(unittest.TestCase):
         self.assertTrue(primvar is not None)
         self.assertEqual(primvar.name, 'uv')
         self.assertEqual(primvar.interpolation, 'varying')
-        self.assertEqual(primvar.typeName, 'VtArray<GfVec2f>')
-        self.assertEqual(primvar.data, [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+        self.assertEqual(primvar.data.GetTypeName(), 'VtArray<GfVec2f>')
+        self.assertEqual(primvar.data.GetValue(), [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+        self.assertTrue(primvar.data.IsVec2())
+        self.assertFalse(primvar.data.IsVec3())
+        self.assertTrue(primvar.data.IsArray())
+        self.assertEqual(primvar.data.GetArraySize(), 4)
+        self.assertEqual(primvar.data.GetArrayItemDimension(), [2])
         self.assertEqual(primvar.role, 'textureCoordinate')
         primvar = bound_mesh.GetPrimvar('points')
         self.assertTrue(primvar is not None)
