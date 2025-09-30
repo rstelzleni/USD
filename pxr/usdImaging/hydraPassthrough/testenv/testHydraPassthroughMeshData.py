@@ -4,12 +4,12 @@ from pxr import Gf, HydraPassthrough, Sdf, Usd, UsdGeom
 import unittest
 
 
-class TestCameraData(unittest.TestCase):
+class TestMeshData(unittest.TestCase):
     def test_Basic(self):
         stage = Usd.Stage.CreateInMemory()
-        cam = UsdGeom.Mesh.Define(stage, '/Mesh0')
-        cam = UsdGeom.Mesh.Define(stage, '/Mesh1')
-        cam = UsdGeom.Mesh.Define(stage, '/Mesh2')
+        UsdGeom.Mesh.Define(stage, '/Mesh0')
+        UsdGeom.Mesh.Define(stage, '/Mesh1')
+        UsdGeom.Mesh.Define(stage, '/Mesh2')
         m = HydraPassthrough.RenderManager()
         m.Initialize()
         m.Render(stage)

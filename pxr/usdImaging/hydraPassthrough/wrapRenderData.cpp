@@ -1,5 +1,6 @@
 #include "pxr/pxr.h"
 #include "renderData.h"
+#include "valueDescriptor.h"
 
 #include "pxr/base/tf/pyContainerConversions.h"
 #include "pxr/base/tf/pyOptional.h"
@@ -64,20 +65,14 @@ namespace {
             name(name.GetString()),
             interpolation(TfEnum::GetDisplayName(source.interpolation)),
             role(source.role.GetString()),
-            typeName(source.data.GetTypeName()),
-            data(UsdVtValueToPython(source.updatedData.IsEmpty() ?
-                    source.data : source.updatedData))
+            data(source.updatedData.IsEmpty() ?
+                        source.data : source.updatedData)
         {}
 
         std::string name;
         std::string interpolation;
         std::string role;
-        std::string typeName;
-        // Quick note about UsdVtValueToPython, it has a comment that says it
-        // is deprecated, but gives no alternative to call. It is also called
-        // all over the usd lib itself, and the deprecated comment is from
-        // before 2016 (i.e. before open sourcing).
-        object data;
+        HydraPassthroughValueDescriptor data;
     };
 
     std::vector<Primvar> _GetAllPrimvars(
@@ -134,7 +129,6 @@ wrapRenderData()
         .def_readonly("interpolation", &Primvar::interpolation)
         .def_readonly("data", &Primvar::data)
         .def_readonly("role", &Primvar::role)
-        .def_readonly("typeName", &Primvar::typeName)
         ;
     TfPyOptional::python_optional<Primvar>();
 
