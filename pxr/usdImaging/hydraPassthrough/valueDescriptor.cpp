@@ -1,5 +1,7 @@
 #include "pxr/pxr.h"
 #include "pxr/usdImaging/hydraPassthrough/valueDescriptor.h"
+#include "pxr/usd/sdf/assetPath.h"
+#include "pxr/usd/sdf/pathExpression.h"
 #include "pxr/base/vt/typeHeaders.h"
 
 PXR_NAMESPACE_USING_DIRECTIVE
@@ -126,6 +128,14 @@ bool HydraPassthroughValueDescriptor::IsString() const {
     return false;
 }
 
+bool HydraPassthroughValueDescriptor::IsMatrix2() const {
+    if (_value.IsHolding<GfMatrix2f>()) { return true; }
+    if (_value.IsHolding<GfMatrix2d>()) { return true; }
+    if (_value.IsHolding<VtArray<GfMatrix2f>>()) { return true; }
+    if (_value.IsHolding<VtArray<GfMatrix2d>>()) { return true; }
+    return false;
+}
+
 bool HydraPassthroughValueDescriptor::IsMatrix3() const {
     if (_value.IsHolding<GfMatrix3f>()) { return true; }
     if (_value.IsHolding<GfMatrix3d>()) { return true; }
@@ -143,25 +153,31 @@ bool HydraPassthroughValueDescriptor::IsMatrix4() const {
 }
 
 bool HydraPassthroughValueDescriptor::IsQuat() const {
+    if (_value.IsHolding<GfQuath>()) { return true; }
     if (_value.IsHolding<GfQuatf>()) { return true; }
     if (_value.IsHolding<GfQuatd>()) { return true; }
+    if (_value.IsHolding<VtArray<GfQuath>>()) { return true; }
     if (_value.IsHolding<VtArray<GfQuatf>>()) { return true; }
     if (_value.IsHolding<VtArray<GfQuatd>>()) { return true; }
     return false;
 }
 
 bool HydraPassthroughValueDescriptor::IsDualQuat() const {
+    if (_value.IsHolding<GfDualQuath>()) { return true; }
     if (_value.IsHolding<GfDualQuatf>()) { return true; }
     if (_value.IsHolding<GfDualQuatd>()) { return true; }
+    if (_value.IsHolding<VtArray<GfDualQuath>>()) { return true; }
     if (_value.IsHolding<VtArray<GfDualQuatf>>()) { return true; }
     if (_value.IsHolding<VtArray<GfDualQuatd>>()) { return true; }
     return false;
 }
 
 bool HydraPassthroughValueDescriptor::IsVec2() const {
+    if (_value.IsHolding<GfVec2h>()) { return true; }
     if (_value.IsHolding<GfVec2f>()) { return true; }
     if (_value.IsHolding<GfVec2d>()) { return true; }
     if (_value.IsHolding<GfVec2i>()) { return true; }
+    if (_value.IsHolding<VtArray<GfVec2h>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec2f>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec2d>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec2i>>()) { return true; }
@@ -169,9 +185,11 @@ bool HydraPassthroughValueDescriptor::IsVec2() const {
 }
 
 bool HydraPassthroughValueDescriptor::IsVec3() const {
+    if (_value.IsHolding<GfVec3h>()) { return true; }
     if (_value.IsHolding<GfVec3f>()) { return true; }
     if (_value.IsHolding<GfVec3d>()) { return true; }
     if (_value.IsHolding<GfVec3i>()) { return true; }
+    if (_value.IsHolding<VtArray<GfVec3h>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec3f>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec3d>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec3i>>()) { return true; }
@@ -179,9 +197,11 @@ bool HydraPassthroughValueDescriptor::IsVec3() const {
 }
 
 bool HydraPassthroughValueDescriptor::IsVec4() const {
+    if (_value.IsHolding<GfVec4h>()) { return true; }
     if (_value.IsHolding<GfVec4f>()) { return true; }
     if (_value.IsHolding<GfVec4d>()) { return true; }
     if (_value.IsHolding<GfVec4i>()) { return true; }
+    if (_value.IsHolding<VtArray<GfVec4h>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec4f>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec4d>>()) { return true; }
     if (_value.IsHolding<VtArray<GfVec4i>>()) { return true; }
@@ -214,6 +234,11 @@ HydraPassthroughValueDescriptor::GetArrayItemDimension() const {
         }
 TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_VALUE_TYPES)
 #undef PROCESS_ENTRY
+        // SdfAssetPath and SdfPathExpression can get here, but aren't in VT_VALUE_TYPES
+        if (_value.IsHolding<VtArray<SdfAssetPath>>() ||
+            _value.IsHolding<VtArray<SdfPathExpression>>()) {
+            return { 1 };
+        }
         // If we get here, it's an array type we don't know about. Warn
         // and get out.
         TF_WARN("Unknown array type %s held in VtValue, cannot get item dimension.",

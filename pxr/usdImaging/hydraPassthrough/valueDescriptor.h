@@ -46,10 +46,11 @@ public:
     bool IsArray() const;
     bool IsFloat() const;
     bool IsInteger() const;
-    bool IsBool() const; // Bool with also return true for IsInteger
+    bool IsBool() const; // Bool will also return true for IsInteger
     bool IsString() const;
-    bool IsMatrix4() const;
+    bool IsMatrix2() const;
     bool IsMatrix3() const;
+    bool IsMatrix4() const;
     bool IsQuat() const;
     bool IsDualQuat() const;
     bool IsVec2() const;

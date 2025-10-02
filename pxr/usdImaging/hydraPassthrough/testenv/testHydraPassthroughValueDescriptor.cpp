@@ -7,6 +7,8 @@
 #include "pxr/base/vt/value.h"
 #include "pxr/base/vt/types.h"
 
+#include "pxr/base/gf/matrix2f.h"
+#include "pxr/base/gf/matrix2d.h"
 #include "pxr/base/gf/matrix3d.h"
 #include "pxr/base/gf/matrix3f.h"
 #include "pxr/base/gf/matrix4d.h"
@@ -37,6 +39,7 @@ static void testFloat() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -61,6 +64,7 @@ static void testDouble() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -85,6 +89,7 @@ static void testHalf() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -109,6 +114,7 @@ static void testInt() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -133,6 +139,7 @@ static void testBool() {
     TF_AXIOM(desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -157,6 +164,7 @@ static void testString() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -181,6 +189,7 @@ static void testToken() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -209,6 +218,7 @@ static void testArrayInt() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -241,6 +251,7 @@ static void testArrayFloat() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -273,6 +284,7 @@ static void testArrayString() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -301,6 +313,7 @@ static void testGfVec2i() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(desc.IsVec2());
@@ -319,6 +332,33 @@ static void testGfVec2i() {
     TF_AXIOM(v2[1] == 2);
 }
 
+static void testGfVec2h() {
+    VtValue v(GfVec2h(1.0f, 2.0f));
+    HydraPassthroughValueDescriptor desc(v);
+    TF_AXIOM(desc.IsFloat());
+    TF_AXIOM(!desc.IsInteger());
+    TF_AXIOM(!desc.IsBool());
+    TF_AXIOM(!desc.IsString());
+    TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
+    TF_AXIOM(!desc.IsMatrix3());
+    TF_AXIOM(!desc.IsMatrix4());
+    TF_AXIOM(desc.IsVec2());
+    TF_AXIOM(!desc.IsVec3());
+    TF_AXIOM(!desc.IsVec4());
+    TF_AXIOM(!desc.IsQuat());
+    TF_AXIOM(!desc.IsDualQuat());
+    TF_AXIOM(!desc.IsRange2());
+    TF_AXIOM(!desc.IsRange3());
+    TF_AXIOM(desc.GetTypeName() == "GfVec2h");
+    TF_AXIOM(desc.ToString() == "(1, 2)");
+    TF_AXIOM(desc.GetArraySize() == 0);
+    TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
+    GfVec2h v2 = desc.GetValue().Get<GfVec2h>();
+    TF_AXIOM(std::abs(float(v2[0]) - 1.0f) < 1e-10f);
+    TF_AXIOM(std::abs(float(v2[1]) - 2.0f) < 1e-10f);
+}
+
 static void testGfVec4d() {
     VtValue v(GfVec4d(1.0, 2.0, 3.0, 4.0));
     HydraPassthroughValueDescriptor desc(v);
@@ -327,6 +367,7 @@ static void testGfVec4d() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -357,6 +398,7 @@ static void testGfMatrix4f() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -395,6 +437,7 @@ static void testGfMatrix3d() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -423,6 +466,45 @@ static void testGfMatrix3d() {
     }
 }
 
+static void testGfMatrix2f() {
+    GfMatrix2f m(1.0f);
+    m[1][1] = 2.0f;
+    VtValue v(m);
+    HydraPassthroughValueDescriptor desc(v);
+    TF_AXIOM(desc.IsFloat());
+    TF_AXIOM(!desc.IsInteger());
+    TF_AXIOM(!desc.IsBool());
+    TF_AXIOM(!desc.IsString());
+    TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(desc.IsMatrix2());
+    TF_AXIOM(!desc.IsMatrix3());
+    TF_AXIOM(!desc.IsMatrix4());
+    TF_AXIOM(!desc.IsVec2());
+    TF_AXIOM(!desc.IsVec3());
+    TF_AXIOM(!desc.IsVec4());
+    TF_AXIOM(!desc.IsQuat());
+    TF_AXIOM(!desc.IsDualQuat());
+    TF_AXIOM(!desc.IsRange2());
+    TF_AXIOM(!desc.IsRange3());
+    TF_AXIOM(desc.GetTypeName() == "GfMatrix2f");
+    TF_AXIOM(desc.ToString() == 
+        "( (1, 0), (0, 2) )");
+    TF_AXIOM(desc.GetArraySize() == 0);
+    TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
+    GfMatrix2f m2 = desc.GetValue().Get<GfMatrix2f>();
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            if (i == j && i == 0) {
+                TF_AXIOM(std::abs(m2[i][j] - 1.0f) < 1e-10f);
+            } else if (i == j && i == 1) {
+                TF_AXIOM(std::abs(m2[i][j] - 2.0f) < 1e-10f);
+            } else {
+                TF_AXIOM(std::abs(m2[i][j] - 0.0f) < 1e-10f);
+            }
+        }
+    }
+}
+
 static void testGfQuatd() {
     VtValue v(GfQuatd(1.0, GfVec3d(0.0, 1.0, 0.0)));
     HydraPassthroughValueDescriptor desc(v);
@@ -431,6 +513,7 @@ static void testGfQuatd() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -461,6 +544,7 @@ static void testGfDualQuatf() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -497,6 +581,7 @@ static void testGfRange3d() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(!desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -532,6 +617,7 @@ static void testArrayGfVec4i() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -564,6 +650,7 @@ static void testArrayGfVec3f() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -600,6 +687,7 @@ static void testArrayGfMatrix4d() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -658,6 +746,7 @@ static void testArrayGfMatrix3f() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -701,6 +790,65 @@ static void testArrayGfMatrix3f() {
     }
 }
 
+static void testArrayGfMatrix2d() {
+    VtArray<GfMatrix2d> arr;
+    GfMatrix2d m1(1.0);
+    m1[1][1] = 2.0;
+    GfMatrix2d m2(3.0);
+    m2[1][1] = 4.0;
+    arr.push_back(m1);
+    arr.push_back(m2);
+    VtValue v(arr);
+    HydraPassthroughValueDescriptor desc(v);
+    TF_AXIOM(desc.IsFloat());
+    TF_AXIOM(!desc.IsInteger());
+    TF_AXIOM(!desc.IsBool());
+    TF_AXIOM(!desc.IsString());
+    TF_AXIOM(desc.IsArray());
+    TF_AXIOM(desc.IsMatrix2());
+    TF_AXIOM(!desc.IsMatrix3());
+    TF_AXIOM(!desc.IsMatrix4());
+    TF_AXIOM(!desc.IsVec2());
+    TF_AXIOM(!desc.IsVec3());
+    TF_AXIOM(!desc.IsVec4());
+    TF_AXIOM(!desc.IsQuat());
+    TF_AXIOM(!desc.IsDualQuat());
+    TF_AXIOM(!desc.IsRange2());
+    TF_AXIOM(!desc.IsRange3());
+    TF_AXIOM(desc.GetTypeName() == "VtArray<GfMatrix2d>");
+    TF_AXIOM(desc.ToString() == 
+        "[( (1, 0), (0, 2) ), "
+        "( (3, 0), (0, 4) )]");
+    TF_AXIOM(desc.GetArraySize() == 2);
+    TF_AXIOM(desc.GetArrayItemDimension().size() == 2);
+    TF_AXIOM(desc.GetArrayItemDimension()[0] == 2);
+    TF_AXIOM(desc.GetArrayItemDimension()[1] == 2);
+    VtArray<GfMatrix2d> arr2 = desc.GetValue().Get<VtArray<GfMatrix2d>>();
+    TF_AXIOM(arr2.size() == 2);
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            if (i == j && i == 0) {
+                TF_AXIOM(std::abs(arr2[0][i][j] - 1.0) < 1e-10);
+            } else if (i == j && i == 1) {
+                TF_AXIOM(std::abs(arr2[0][i][j] - 2.0) < 1e-10);
+            } else {
+                TF_AXIOM(std::abs(arr2[0][i][j] - 0.0) < 1e-10);
+            }
+        }
+    }
+    for (int i = 0; i < 2; ++i) {        
+        for (int j = 0; j < 2; ++j) {   
+            if (i == j && i == 0) {      
+                TF_AXIOM(std::abs(arr2[1][i][j] - 3.0) < 1e-10);      
+            } else if (i == j && i == 1) {      
+                TF_AXIOM(std::abs(arr2[1][i][j] - 4.0) < 1e-10);      
+            } else {      
+                TF_AXIOM(std::abs(arr2[1][i][j] - 0.0) < 1e-10);      
+            }      
+        }
+    }
+}
+
 static void testArrayGfQuatf() {
     VtArray<GfQuatf> arr;
     arr.push_back(GfQuatf(1.0f, GfVec3f(0.0f, 1.0f, 0.0f)));
@@ -712,6 +860,7 @@ static void testArrayGfQuatf() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -745,6 +894,7 @@ static void testArrayGfDualQuatd() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -781,6 +931,7 @@ static void testArrayGfRange2f() {
     TF_AXIOM(!desc.IsBool());
     TF_AXIOM(!desc.IsString());
     TF_AXIOM(desc.IsArray());
+    TF_AXIOM(!desc.IsMatrix2());
     TF_AXIOM(!desc.IsMatrix3());
     TF_AXIOM(!desc.IsMatrix4());
     TF_AXIOM(!desc.IsVec2());
@@ -824,7 +975,9 @@ int main(int argc, char *argv[])
     testString();
     testToken();
     testGfVec2i();
+    testGfVec2h();
     testGfVec4d();
+    testGfMatrix2f();
     testGfMatrix4f();
     testGfMatrix3d();
     testGfQuatd();
@@ -837,6 +990,7 @@ int main(int argc, char *argv[])
     testArrayString();
     testArrayGfVec4i();
     testArrayGfVec3f();
+    testArrayGfMatrix2d();
     testArrayGfMatrix4d();
     testArrayGfMatrix3f();
     testArrayGfQuatf();
