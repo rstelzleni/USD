@@ -5,39 +5,93 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+const HydraPassthroughRenderData::MeshData*
+HydraPassthroughRenderData::RenderData::GetMesh(const SdfPath& id) const {
+    auto it = meshes.find(id);
+    if (it != meshes.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+size_t
+HydraPassthroughRenderData::RenderData::GetMeshCount() const {
+    return meshes.size();
+}
+
+const HydraPassthroughRenderData::MeshData*
+HydraPassthroughRenderData::RenderData::GetMeshByIndex(size_t index) const {
+    if (index < meshes.size()) {
+        auto it = meshes.begin();
+        std::advance(it, index);
+        return &(it->second);
+    }
+    TF_RUNTIME_ERROR(
+        "Index %zu out of bounds for HydraPassthroughRenderData with %zu meshes.",
+        index, meshes.size());
+    return nullptr;
+}
+
+const HydraPassthroughRenderData::CameraData*
+HydraPassthroughRenderData::RenderData::GetCamera(const SdfPath& id) const {
+    auto it = cameras.find(id);
+    if (it != cameras.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+size_t
+HydraPassthroughRenderData::RenderData::GetCameraCount() const {
+    return cameras.size();
+}
+
+const HydraPassthroughRenderData::CameraData* 
+HydraPassthroughRenderData::RenderData::GetCameraByIndex(size_t index) const {
+    if (index >= cameras.size()) {
+        TF_RUNTIME_ERROR("Camera index %zu out of range [0,%zu)",
+            index, cameras.size());
+        return nullptr;
+    }
+
+    auto it = cameras.begin();
+    std::advance(it, index);
+    return &(it->second);
+}
+
+const HydraPassthroughRenderData::MaterialData* 
+HydraPassthroughRenderData::RenderData::GetMaterial(const SdfPath& id) const {
+    auto it = materials.find(id);
+    if (it != materials.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+size_t
+HydraPassthroughRenderData::RenderData::GetMaterialCount() const {
+    return materials.size();
+}
+
+const HydraPassthroughRenderData::MaterialData* 
+HydraPassthroughRenderData::RenderData::GetMaterialByIndex(size_t index) const {
+    if (index >= materials.size()) {
+        TF_RUNTIME_ERROR("Material index %zu out of range [0,%zu)",
+            index, materials.size());
+        return nullptr;
+    }
+
+    auto it = materials.begin();
+    std::advance(it, index);
+    return &(it->second);
+}
+
 void
 HydraPassthroughRenderData::AddMesh(
     const SdfPath& id,
     const MeshData& meshData) {
     const std::lock_guard<std::mutex> lock(_meshMutex);
-    _meshes[id] = meshData;
-}
-
-const HydraPassthroughRenderData::MeshData&
-HydraPassthroughRenderData::GetMesh(const SdfPath& id) const {
-    const std::lock_guard<std::mutex> lock(_meshMutex);
-    auto it = _meshes.find(id);
-    if (it != _meshes.end()) {
-        return it->second;
-    }
-    TF_RUNTIME_ERROR(
-        "Mesh with id '%s' not found in HydraPassthroughRenderData.",
-        id.GetText());
-    return _defaultMeshData;
-}
-
-const HydraPassthroughRenderData::MeshData&
-HydraPassthroughRenderData::GetMeshByIndex(size_t index) const {
-    const std::lock_guard<std::mutex> lock(_meshMutex);
-    if (index < _meshes.size()) {
-        auto it = _meshes.begin();
-        std::advance(it, index);
-        return it->second;
-    }
-    TF_RUNTIME_ERROR(
-        "Index %zu out of bounds for HydraPassthroughRenderData with %zu meshes.",
-        index, _meshes.size());
-    return _defaultMeshData;
+    _renderData.meshes[id] = meshData;
 }
 
 void
@@ -106,52 +160,86 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
 
     {
         const std::lock_guard<std::mutex> lock(_cameraMutex);
-        _cameras[camData.id] = camData;
+        _renderData.cameras[camData.id] = camData;
     }
-}
-
-const HydraPassthroughRenderData::CameraData* 
-HydraPassthroughRenderData::GetCameraByIndex(size_t index) const {
-    const std::lock_guard<std::mutex> lock(_cameraMutex);
-    if (index >= _cameras.size()) {
-        TF_RUNTIME_ERROR("Camera index %zu out of range [0,%zu)",
-            index, _cameras.size());
-        return nullptr;
-    }
-
-    auto it = _cameras.begin();
-    std::advance(it, index);
-    return &(it->second);
 }
 
 void
-HydraPassthroughRenderData::AddMaterial(const SdfPath& id, const MaterialData& matData) {
+HydraPassthroughRenderData::AddMaterial(const SdfPath& id, 
+                                        const MaterialData& matData) {
     const std::lock_guard<std::mutex> lock(_materialMutex);
-    _materials[id] = matData;
+    _renderData.materials[id] = matData;
 }
 
-const HydraPassthroughRenderData::MaterialData* 
-HydraPassthroughRenderData::GetMaterial(const SdfPath& id) const {
-    const std::lock_guard<std::mutex> lock(_materialMutex);
-    auto it = _materials.find(id);
-    if (it != _materials.end()) {
-        return &(it->second);
-    }
-    return nullptr;
+HydraPassthroughRenderData::RenderData
+HydraPassthroughRenderData::ExtractRenderDataCopy() const {
+    const std::lock_guard<std::mutex> lock1(_meshMutex);
+    const std::lock_guard<std::mutex> lock2(_cameraMutex);
+    const std::lock_guard<std::mutex> lock3(_materialMutex);
+    return _renderData;
 }
 
-const HydraPassthroughRenderData::MaterialData* 
-HydraPassthroughRenderData::GetMaterialByIndex(size_t index) const {
-    const std::lock_guard<std::mutex> lock(_materialMutex);
-    if (index >= _materials.size()) {
-        TF_RUNTIME_ERROR("Material index %zu out of range [0,%zu)",
-            index, _materials.size());
-        return nullptr;
-    }
+size_t
+HydraPassthroughRenderData::GetMeshCount() const
+{
+    const std::lock_guard<std::mutex> lock(_meshMutex);
+    return _renderData.GetMeshCount();
+}
 
-    auto it = _materials.begin();
-    std::advance(it, index);
-    return &(it->second);
+const HydraPassthroughRenderData::MeshData*
+HydraPassthroughRenderData::GetMesh(const SdfPath& id) const
+{
+    const std::lock_guard<std::mutex> lock(_meshMutex);
+    return _renderData.GetMesh(id);
+}
+
+const HydraPassthroughRenderData::MeshData*
+HydraPassthroughRenderData::GetMeshByIndex(size_t index) const
+{
+    const std::lock_guard<std::mutex> lock(_meshMutex);
+    return _renderData.GetMeshByIndex(index);
+}
+
+const HydraPassthroughRenderData::CameraData*
+HydraPassthroughRenderData::GetCamera(const SdfPath& id) const
+{
+    const std::lock_guard<std::mutex> lock(_cameraMutex);
+    return _renderData.GetCamera(id);
+}
+
+size_t
+HydraPassthroughRenderData::GetCameraCount() const
+{
+    const std::lock_guard<std::mutex> lock(_cameraMutex);
+    return _renderData.GetCameraCount();
+}
+
+const HydraPassthroughRenderData::CameraData*
+HydraPassthroughRenderData::GetCameraByIndex(size_t index) const
+{
+    const std::lock_guard<std::mutex> lock(_cameraMutex);
+    return _renderData.GetCameraByIndex(index);
+}
+
+const HydraPassthroughRenderData::MaterialData*
+HydraPassthroughRenderData::GetMaterial(const SdfPath& id) const
+{
+    const std::lock_guard<std::mutex> lock(_materialMutex);
+    return _renderData.GetMaterial(id);
+}
+
+size_t
+HydraPassthroughRenderData::GetMaterialCount() const
+{
+    const std::lock_guard<std::mutex> lock(_materialMutex);
+    return _renderData.GetMaterialCount();
+}
+
+const HydraPassthroughRenderData::MaterialData *
+HydraPassthroughRenderData::GetMaterialByIndex(size_t index) const
+{
+    const std::lock_guard<std::mutex> lock(_materialMutex);
+    return _renderData.GetMaterialByIndex(index);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

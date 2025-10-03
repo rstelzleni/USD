@@ -148,6 +148,25 @@ public:
         WindowPolicy windowPolicy = WindowPolicy::Fit;
     };
 
+    /// The main render contents, as a type that is copyable in c++
+    /// and python.
+    class RenderData {
+    public:
+        TfHashMap<SdfPath, MeshData, TfHash> meshes;
+        TfHashMap<SdfPath, CameraData, TfHash> cameras;
+        TfHashMap<SdfPath, MaterialData, TfHash> materials;
+
+        const MeshData* GetMesh(const SdfPath& id) const;
+        size_t GetMeshCount() const;
+        const MeshData* GetMeshByIndex(size_t index) const;
+        const CameraData* GetCamera(const SdfPath& id) const;
+        size_t GetCameraCount() const;
+        const CameraData* GetCameraByIndex(size_t index) const;
+        const MaterialData* GetMaterial(const SdfPath& id) const;
+        size_t GetMaterialCount() const;
+        const MaterialData* GetMaterialByIndex(size_t index) const;
+    };
+
     static HydraPassthroughRenderDataRefPtr New() {
         return TfCreateRefPtr(new HydraPassthroughRenderData());
     }
@@ -157,35 +176,31 @@ public:
     void AddMesh(const SdfPath& id,
                  const MeshData& meshData);
 
-    size_t GetMeshCount() const {
-        const std::lock_guard<std::mutex> lock(_meshMutex);
-        return _meshes.size();
-    }
-
-    const MeshData& GetMesh(const SdfPath& id) const;
-
-    const MeshData& GetMeshByIndex(size_t index) const;
-
     void AddCamera(const HdCamera* camera);
-
-    size_t GetCameraCount() const {
-        const std::lock_guard<std::mutex> lock(_cameraMutex);
-        return _cameras.size();
-    }
-
-    const CameraData* GetCameraByIndex(size_t index) const;
 
     void AddMaterial(const SdfPath& id,
                      const MaterialData& materialData);
 
+    /// Extract a copy of the contained RenderData.
+    ///
+    /// This copy does not have mutexes, and is just a snapshot of the
+    /// data at a point in time. It is useful for extracting python
+    /// copies that will exist and be cachable even after the render
+    /// manager has performed its cleanup.
+    RenderData ExtractRenderDataCopy() const;
+
+    // Duplicate some api from RenderData. This is for the contained
+    // instance of render data, and is protected by the mutexes.
+    size_t GetMeshCount() const;
+    const MeshData* GetMesh(const SdfPath& id) const;
+    const MeshData* GetMeshByIndex(size_t index) const;
+    const CameraData* GetCamera(const SdfPath& id) const;
+    size_t GetCameraCount() const;
+    const CameraData* GetCameraByIndex(size_t index) const;
     const MaterialData* GetMaterial(const SdfPath& id) const;
-
-    size_t GetMaterialCount() const {
-        const std::lock_guard<std::mutex> lock(_materialMutex);
-        return _materials.size();
-    }
-
+    size_t GetMaterialCount() const;
     const MaterialData* GetMaterialByIndex(size_t index) const;
+    // End duplicate api
 
 private:
     HydraPassthroughRenderData() = default;
@@ -198,13 +213,8 @@ private:
     mutable std::mutex _cameraMutex;
     mutable std::mutex _materialMutex;
 
-    // Maps for content with lookup by SdfPath
-    TfHashMap<SdfPath, MeshData, TfHash> _meshes;
-    TfHashMap<SdfPath, CameraData, TfHash> _cameras;
-    TfHashMap<SdfPath, MaterialData, TfHash> _materials;
-
-    // Default mesh data to return in case of errors.
-    MeshData _defaultMeshData;
+    // The actual contained data.
+    RenderData _renderData;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

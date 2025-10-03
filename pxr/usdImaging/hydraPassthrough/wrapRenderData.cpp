@@ -109,19 +109,42 @@ wrapRenderData()
              (arg("id")),
              return_internal_reference())
         .def("GetMeshByIndex", &This::GetMeshByIndex,
-                (arg("index")),
-                return_internal_reference())
+             (arg("index")),
+             return_internal_reference())
         .def("GetCameraCount", &This::GetCameraCount)
         .def("GetCameraByIndex", &This::GetCameraByIndex,
-                (arg("index")),
-                return_internal_reference())
+             (arg("index")),
+             return_internal_reference())
         .def("GetMaterial", &This::GetMaterial,
              (arg("id")),
              return_internal_reference())
         .def("GetMaterialCount", &This::GetMaterialCount)
         .def("GetMaterialByIndex", &This::GetMaterialByIndex,
-                (arg("index")),
-                return_internal_reference())
+             (arg("index")),
+             return_internal_reference())
+
+        .def("ExtractRenderDataCopy", &This::ExtractRenderDataCopy)
+        ;
+
+    class_<This::RenderData>("RenderDataStruct", no_init)
+        .def("GetMeshCount", &This::RenderData::GetMeshCount)
+        .def("GetMesh", &This::RenderData::GetMesh,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetMeshByIndex", &This::RenderData::GetMeshByIndex,
+             (arg("index")),
+             return_internal_reference())
+        .def("GetCameraCount", &This::RenderData::GetCameraCount)
+        .def("GetCameraByIndex", &This::RenderData::GetCameraByIndex,
+             (arg("index")),
+             return_internal_reference())
+        .def("GetMaterial", &This::RenderData::GetMaterial,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetMaterialCount", &This::RenderData::GetMaterialCount)
+        .def("GetMaterialByIndex", &This::RenderData::GetMaterialByIndex,
+             (arg("index")),
+             return_internal_reference())
         ;
 
     class_<Primvar>("Primvar", no_init)
