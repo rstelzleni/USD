@@ -109,6 +109,9 @@ _GetGlslfxForTerminal(
 // translucent, etc. We'll do our best to report that to the caller. It's
 // kind of unfortunate that this logic is locked up in HdSt and we have to
 // duplicate it here.
+//
+// XXX RYANS these should be an enum returned from python
+// See HdSt tokens.h
 static TfToken
 _GetMaterialTag(
     VtDictionary const& metadata,
