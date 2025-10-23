@@ -13,7 +13,7 @@ using HioGlslfxSharedPtr = std::shared_ptr<class HioGlslfx>;
 
 /// \class HydraPassthroughMaterial
 ///
-/// Material prim for syncing material properties.
+/// Material sprim for syncing material properties.
 ///
 class HydraPassthroughMaterial final : public HdMaterial {
 public:
@@ -46,7 +46,8 @@ private:
     bool _isPreviewSurface{false};
     bool _isVolumeMaterial{false};
 
-    std::string _displacementSource;
+    std::string _displacementSource; // unused at the moment, but we'll want it
+                                     // for materials with displacement
     TfToken _materialTag;
     VtDictionary _materialMetadata;
     std::vector<HydraPassthroughMaterialParam> _materialParams;
