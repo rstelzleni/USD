@@ -230,18 +230,14 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
         _doubleSided = IsDoubleSided(sceneDelegate);
     }
     if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->normals) ||
-        HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->widths) ||
-        HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->primvar)) {
+        HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->widths) ) {
         _UpdatePrimvarSources(sceneDelegate, *dirtyBits);
     }
     */
 
     if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->primvar)) {
-        // Below is dated info, latest:
-        //
-        // The _UpdatePrimvarSources function pulls primvars that are used
-        // in computations. We want all primvars, so I think we'll need to
-        // do that like the below.
+        // In HdEmbreeMesh::_UpdatePrimvarSources, they pull primvars that are
+        // used in computations, but we want all primvars, so we do this here.
         for (size_t i=0; i < HdInterpolationCount; ++i) {
             HdInterpolation interp = static_cast<HdInterpolation>(i);
             HdPrimvarDescriptorVector primvars =
@@ -284,7 +280,7 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
         // For the moment, without subdiv refinement, this is only face-varying
         // primvars, and uvs could be face varying.
         //
-        // XXX RYANS Note that _meshData.primvarSourceMap may need the same behavior,
+        // Note that _meshData.primvarSourceMap may need the same behavior,
         // depending on what the computations are doing
         for (auto & pv : _meshData.primvars) {
             if (pv.second.interpolation == HdInterpolationFaceVarying) {

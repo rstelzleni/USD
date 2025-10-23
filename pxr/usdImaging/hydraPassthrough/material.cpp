@@ -714,9 +714,6 @@ _MakeMaterialParamsForTexture(
     // connections to inputs and pick one that has a 'primvar' or 'transform2d' 
     // node attached. That could also be problematic if you connect a primvar or 
     // transform2d to one of the other inputs of the texture node.
-    //
-    // XXX RYANS
-    // Couldn't this also look for connections of type texcoord2d?
     auto stIt = node.inputConnections.find(_tokens->st);
     if (stIt == node.inputConnections.end()) {
         stIt = node.inputConnections.find(_tokens->uv);
@@ -810,9 +807,6 @@ _MakeMaterialParamsForTexture(
     // These parameters extract texture scale and bias from the texture node
     // and store them as parameters on in the material params. They get
     // renamed so that they are unique per texture, like textureName__scale.
-    //
-    // XXX RYANS this uses parameter names like textureName__scale which
-    // seems weird. Are these authored this way in the source data?
     HydraPassthroughMaterialParam texScaleParam;
     texScaleParam.paramType = HydraPassthroughMaterialParam::ParamType::Fallback;
     texScaleParam.name = TfToken(paramName.GetString() + "__" +
@@ -909,9 +903,6 @@ _MakeParamsForInputParameter(
                             params);
                         return;
                     } else if (sdrRole == SdrNodeRole->Field) {
-                        // XXX RYANS
-                        // Not really supporting volumes yet, but it might not
-                        // hurt to add the parameters if they exist.
                         _MakeMaterialParamsForFieldReader(
                             network,
                             upstreamNode,
@@ -1042,7 +1033,6 @@ HydraPassthroughMaterial::GetInitialDirtyBitsMask() const
 {
     return AllDirty;
 }
-
 
 bool
 HydraPassthroughMaterial::_ProcessMaterialNetwork(

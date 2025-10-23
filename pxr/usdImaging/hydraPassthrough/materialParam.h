@@ -20,23 +20,16 @@ public:
     typedef size_t ID;
 
     // Indicates the kind of material parameter.
-    // XXX RYANS update these comments about HdGet, and maybe the names
-    // to remove the Redirect parts.
+    // XXX RYANS and maybe the names to remove the Redirect parts.
     enum class ParamType {
         // This is a shader specified fallback value that is
         // not connected to either a primvar or texture.
         Fallback,
         // This is a parameter that is connected to a texture.
         Texture,
-        // Creates an accessor HdGet_name() that either reads a
-        // primvar with a potentially different name (given in
-        // samplerCoords) if it exists or uses the fallback value.
-        // It corresponds to a primvar reader shading node.
+        // Corresponds to a primvar reader shading node.
         PrimvarRedirect,
-        // Creates an accessor HdGet_name(vec3) that either reads
-        // from a field texture with a potentially different name (given
-        // in samplerCoords) if it exists or uses the fallback value.
-        // It corresponds to a field reader shading node.
+        // Corresponds to a field reader shading node.
         FieldRedirect,
         // Additional primvar needed by material. One that is not connected to
         // a input parameter (ParamTypePrimvar).
@@ -88,11 +81,15 @@ public:
     VtValue fallbackValue;
     std::vector<std::string> samplerCoords;
     TextureType textureType { TextureType::None };
+
+    // Swizzle looks like xyzw, rgba, etc.
     std::string swizzle;
     bool isPremultiplied { false };
 
-    // XXX RYANS where is this set?
-    // If paramType is ParamTypeTexture, this indicates both if the textures
+    // In our current implementation this is never set. In the HdSt code this
+    // value is used to indicate if the texture is an array of textures.
+    //
+    // If paramType is ParamType::Texture, this indicates both if the textures
     // should be bound as an array of textures and the size of the array. If
     // arrayOfTexturesSize is 0, then do not bind as an array of textures, but
     // rather a single texture (whereas arrayOfTexturesSize = 1 indicates an
