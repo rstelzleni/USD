@@ -1021,11 +1021,9 @@ _GatherMaterialParams(
 
 HydraPassthroughMaterial::HydraPassthroughMaterial(SdfPath const& id)
     : HdMaterial(id) {
-    TF_STATUS("Creating HydraPassthroughMaterial with id=%s", id.GetText());
 }
 
 HydraPassthroughMaterial::~HydraPassthroughMaterial() {
-    TF_STATUS("Destroying HydraPassthroughMaterial with id=%s", GetId().GetText());
 }
 
 HdDirtyBits
@@ -1133,10 +1131,12 @@ HydraPassthroughMaterial::Sync(HdSceneDelegate *sceneDelegate,
         return;
     }
 
-    if (_ProcessMaterialNetwork(sceneDelegate)) {
-        TF_STATUS("HydraPassthroughMaterial::Sync: "
-                  "Processed material network for id=%s",
-                  GetId().GetText());
+    TF_STATUS("HydraPassthroughMaterial::Sync called for id=%s",
+                GetId().GetText());
+
+    if (!_ProcessMaterialNetwork(sceneDelegate)) {
+        TF_RUNTIME_ERROR("Failed to process material network for id=%s",
+                         GetId().GetText());
     }
 
     // If we ever support continuous rendering, we'll need to dirty rprims when a
