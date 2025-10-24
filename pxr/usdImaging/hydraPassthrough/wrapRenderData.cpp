@@ -9,6 +9,8 @@
 
 #include "pxr/usd/usd/pyConversions.h"
 
+#include "pxr/imaging/hdSt/tokens.h"
+
 #include "pxr/external/boost/python.hpp"
 #include "pxr/external/boost/python/class.hpp"
 #include "pxr/external/boost/python/def.hpp"
@@ -18,6 +20,41 @@
 PXR_NAMESPACE_USING_DIRECTIVE
 
 using namespace pxr_boost::python;
+
+// Use an enum to return the MaterialTag values. In C++ these are TfTokens,
+// but in HdSt tokens.h they are defined as a limited set of values. We'll
+// return these as an enum in python so that it also has this limited set.
+//
+// Note that I _think_ it is possible for glslfx at least to define new values
+// for material tags that are not in the token list. However, these would not
+// be used in HdSt to my knowledge, so I'm not supporting them here either. If
+// we encounter such a tag (I haven't seen any so far) we'll log a warning and
+// return 'other', which is not one of the normal HdSt tags. The other values
+// here are taken from Hd tokens.h.
+//
+// The tags supported by Storm are:
+//    defaultMaterialTag : opaque geometry
+//    masked : opaque geometry that uses cutout masks (e.g., foliage)
+//    displayInOverlay : geometry that should be drawn on top (e.g. guides)
+//    translucentToSelection: opaque geometry that allows occluded selection
+//                            to show through
+//    additive : transparent geometry (cheap OIT solution w/o sorting)
+//    translucent: transparent geometry (OIT solution w/ sorted fragment lists)
+//    volume : transparent geoometry (raymarched)
+//
+// Also, these can be blank, so in that case I'm returning defaultMaterialTag.
+// I only want to use other to mean, unrecognized tag.
+
+enum class MaterialTag {
+    other,
+    defaultMaterialTag,
+    masked,
+    displayInOverlay,
+    translucentToSelection,
+    additive,
+    translucent,
+    volume
+};
 
 namespace {
     // Need this to be a function so that it can use TfPySequenceToList
@@ -34,10 +71,26 @@ namespace {
         return self.lensDistortionType.GetString();
     }
 
-    const std::string _GetMaterialTag(
+    const MaterialTag _GetMaterialTag(
         const HydraPassthroughRenderData::MaterialData &self)
     {
-        return self.tag.GetString();
+        std::unordered_map<TfToken, MaterialTag, TfToken::HashFunctor> tagMap = {
+            {TfToken(), MaterialTag::defaultMaterialTag},
+            {HdStMaterialTagTokens->defaultMaterialTag, MaterialTag::defaultMaterialTag},
+            {HdStMaterialTagTokens->masked, MaterialTag::masked},
+            {HdStMaterialTagTokens->displayInOverlay, MaterialTag::displayInOverlay},
+            {HdStMaterialTagTokens->translucentToSelection, MaterialTag::translucentToSelection},
+            {HdStMaterialTagTokens->additive, MaterialTag::additive},
+            {HdStMaterialTagTokens->translucent, MaterialTag::translucent},
+            {HdStMaterialTagTokens->volume, MaterialTag::volume},
+        };
+        auto it = tagMap.find(self.tag);
+        if (it != tagMap.end()) {
+            return it->second;
+        }
+        TF_WARN("Material %s has unrecognized material tag '%s'",
+                self.id.GetText(), self.tag.GetText());
+        return MaterialTag::other;
     }
 
     const VtDictionary &GetMaterialMetadata(
@@ -180,6 +233,17 @@ wrapRenderData()
         .value("PreviewSurface", This::MaterialData::MaterialType::PreviewSurface)
         .value("Volume", This::MaterialData::MaterialType::Volume)
         .value("Other", This::MaterialData::MaterialType::Other)
+        ;
+
+    enum_<MaterialTag>("MaterialTag")
+        .value("Other", MaterialTag::other)
+        .value("Default", MaterialTag::defaultMaterialTag)
+        .value("Masked", MaterialTag::masked)
+        .value("DisplayInOverlay", MaterialTag::displayInOverlay)
+        .value("TranslucentToSelection", MaterialTag::translucentToSelection)
+        .value("Additive", MaterialTag::additive)
+        .value("Translucent", MaterialTag::translucent)
+        .value("Volume", MaterialTag::volume)
         ;
 
     class_<This::MaterialData>("MaterialData", no_init)

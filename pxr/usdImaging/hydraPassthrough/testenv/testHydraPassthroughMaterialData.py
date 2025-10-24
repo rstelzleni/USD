@@ -86,7 +86,7 @@ class TestMaterialData(unittest.TestCase):
 
         # Make sure all the getters work and translate to python
         self.assertEqual(mat0.type, HydraPassthrough.RenderData.MaterialType.Other)
-        self.assertEqual(mat0.GetMaterialTag(), '')
+        self.assertEqual(mat0.GetMaterialTag(), HydraPassthrough.RenderData.MaterialTag.Default)
         self.assertEqual(mat0.GetMaterialMetadata(), {})
         self.assertEqual(mat0.GetMaterialParams(), [])
         self.assertEqual(mat0.GetTextureDescriptors(), [])
@@ -117,7 +117,7 @@ class TestMaterialData(unittest.TestCase):
 
         # Make sure all the getters work and translate to python
         self.assertEqual(mat0.type, HydraPassthrough.RenderData.MaterialType.PreviewSurface)
-        self.assertEqual(mat0.GetMaterialTag(), 'translucent')
+        self.assertEqual(mat0.GetMaterialTag(), HydraPassthrough.RenderData.MaterialTag.Translucent)
         self.assertEqual(len(mat0.GetMaterialParams()), 21)
         self.assertEqual(len(mat0.GetTextureDescriptors()), 2)
         self.assertEqual(mat0.GetMaterialMetadata(), {})
