@@ -5,6 +5,7 @@
 
 #include "pxr/usdImaging/hydraPassthrough/materialParam.h"
 #include "pxr/usdImaging/hydraPassthrough/renderData.h"
+#include "pxr/usdImaging/hydraPassthrough/renderParam.h"
 #include "pxr/imaging/hd/material.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -34,7 +35,8 @@ private:
 
     // Read the material network and populate member variables
     bool _ProcessMaterialNetwork(
-        HdSceneDelegate *sceneDelegate);
+        HdSceneDelegate *sceneDelegate,
+        HydraPassthroughGlslfxCache &glslfxCache);
 
     // Export material information into the render data
     void _AddMaterialToOutput(
