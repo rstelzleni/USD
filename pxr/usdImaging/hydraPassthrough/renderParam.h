@@ -8,6 +8,9 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+using HioGlslfxSharedPtr = std::shared_ptr<class HioGlslfx>;
+using HydraPassthroughGlslfxCache = std::unordered_map<size_t, HioGlslfxSharedPtr>;
+
 class HydraPassthroughRenderParam : public HdRenderParam {
 public:
     HydraPassthroughRenderParam(HydraPassthroughRenderDataRefPtr renderData)
@@ -19,8 +22,14 @@ public:
         return _renderData;
     }
 
+    // Get the glslfx cache associated with this render param.
+    HydraPassthroughGlslfxCache &GetGlslfxCache() {
+        return _glslfxCache;
+    }
+
 private:
     HydraPassthroughRenderDataRefPtr _renderData;
+    HydraPassthroughGlslfxCache _glslfxCache;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

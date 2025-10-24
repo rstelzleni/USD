@@ -67,7 +67,8 @@ static void
 _GetGlslfxForTerminal(
     HioGlslfxSharedPtr& glslfxOut,
     size_t *glslfxOutHash,
-    TfToken const& nodeTypeId)
+    TfToken const& nodeTypeId,
+    HydraPassthroughGlslfxCache& glslfxCache)
 {
     HD_TRACE_FUNCTION();
 
@@ -87,11 +88,14 @@ _GetGlslfxForTerminal(
                 *glslfxOutHash = TfHash()(glslfxFilePath);
             }
 
-            // XXX RYANS
-            // This reads the glslfx file and parses it into some data structures.
-            // It will often be the same glslfx file, so we should probably be
-            // caching these.
-            glslfxOut = std::make_shared<HioGlslfx>(glslfxFilePath);
+            auto cacheIt = glslfxCache.find(*glslfxOutHash);
+            if (cacheIt != glslfxCache.end()) {
+                glslfxOut = cacheIt->second;
+            }
+            else {
+                glslfxOut = std::make_shared<HioGlslfx>(glslfxFilePath);
+                glslfxCache[*glslfxOutHash] = glslfxOut;
+            }
         } else {
             std::string const& sourceCode = sdrNode->GetSourceCode();
             if (!sourceCode.empty()) {
@@ -1034,7 +1038,8 @@ HydraPassthroughMaterial::GetInitialDirtyBitsMask() const
 
 bool
 HydraPassthroughMaterial::_ProcessMaterialNetwork(
-    HdSceneDelegate *sceneDelegate)
+    HdSceneDelegate *sceneDelegate,
+    HydraPassthroughGlslfxCache &glslfxCache)
 {
     // This function is similar to HdStMaterialNetwork::ProcessMaterialNetwork
     // That version allocates gpu resources so we can't use it (or copy it)
@@ -1092,7 +1097,7 @@ HydraPassthroughMaterial::_ProcessMaterialNetwork(
 
                 // Extract the glslfx and metadata for surface
                 _GetGlslfxForTerminal(_surfaceGfx, &_surfaceGfxHash,
-                                      surfTerminal->nodeTypeId);
+                                      surfTerminal->nodeTypeId, glslfxCache);
                 if (_surfaceGfx && _surfaceGfx->IsValid()) {
 
                     //_fragmentSource = _surfaceGfx->GetSurfaceSource();
@@ -1134,7 +1139,17 @@ HydraPassthroughMaterial::Sync(HdSceneDelegate *sceneDelegate,
     TF_STATUS("HydraPassthroughMaterial::Sync called for id=%s",
                 GetId().GetText());
 
-    if (!_ProcessMaterialNetwork(sceneDelegate)) {
+    HydraPassthroughRenderParam *rp =
+        dynamic_cast<HydraPassthroughRenderParam*>(renderParam);
+    if (!rp) {
+        TF_CODING_ERROR("HydraPassthroughMaterial::Sync: "
+                  "renderParam is not a HydraPassthroughRenderParam, "
+                  "cannot proceed.");
+        *dirtyBits = Clean;
+        return;
+    }
+
+    if (!_ProcessMaterialNetwork(sceneDelegate, rp->GetGlslfxCache())) {
         TF_RUNTIME_ERROR("Failed to process material network for id=%s",
                          GetId().GetText());
     }
