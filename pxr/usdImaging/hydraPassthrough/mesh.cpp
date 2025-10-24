@@ -38,8 +38,6 @@ HdDirtyBits HydraPassthroughMesh::_PropagateDirtyBits(HdDirtyBits bits) const {
 }
 
 void HydraPassthroughMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits) {
-    TF_STATUS("HydraPassthroughMesh::_InitRepr called for id=%s, reprToken=%s",
-                GetId().GetText(), reprToken.GetText());
     
     // Initialize the representation with a default Repr.
     // An rprim owns a shared data object, and it also has potentially 
@@ -51,9 +49,6 @@ void HydraPassthroughMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirt
     bool isNew = it == _reprs.end();
 
     if (isNew) {
-        TF_STATUS("Creating new repr for id=%s, reprToken=%s",
-                    GetId().GetText(), reprToken.GetText());
-
         _reprs.emplace_back(reprToken, std::make_shared<HdRepr>());
         *dirtyBits |= HdChangeTracker::DirtyRepr;
         /*
@@ -73,7 +68,6 @@ void HydraPassthroughMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirt
 
     }
 }
-
 
 void HydraPassthroughMesh::Sync(HdSceneDelegate *sceneDelegate,
                       HdRenderParam *renderParam, HdDirtyBits *dirtyBits,
@@ -243,11 +237,24 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
             HdPrimvarDescriptorVector primvars =
                 sceneDelegate->GetPrimvarDescriptors(id, interp);
             for (HdPrimvarDescriptor const& pv: primvars) {
-                _meshData.primvars[pv.name] = {
-                    sceneDelegate->Get(id, pv.name),
-                    interp,
-                    pv.role
-                };
+                if (pv.indexed) {
+                    VtIntArray indices;
+                    VtValue indexedValue =
+                        sceneDelegate->GetIndexedPrimvar(id, pv.name, &indices);
+                    _meshData.primvars[pv.name] = {
+                        indexedValue,
+                        interp,
+                        pv.role,
+                        indices
+                    };
+                }
+                else {
+                    _meshData.primvars[pv.name] = {
+                        sceneDelegate->Get(id, pv.name),
+                        interp,
+                        pv.role
+                    };
+                }
             }
         }
     }

@@ -66,13 +66,16 @@ namespace {
             interpolation(TfEnum::GetDisplayName(source.interpolation)),
             role(source.role.GetString()),
             data(source.updatedData.IsEmpty() ?
-                        source.data : source.updatedData)
-        {}
+                        source.data : source.updatedData),
+            indices(source.indices)
+        {
+        }
 
         std::string name;
         std::string interpolation;
         std::string role;
         HydraPassthroughValueDescriptor data;
+        VtIntArray indices;
     };
 
     std::vector<Primvar> _GetAllPrimvars(
@@ -152,6 +155,7 @@ wrapRenderData()
         .def_readonly("interpolation", &Primvar::interpolation)
         .def_readonly("data", &Primvar::data)
         .def_readonly("role", &Primvar::role)
+        .def_readonly("indices", &Primvar::indices)
         ;
     TfPyOptional::python_optional<Primvar>();
 

@@ -37,6 +37,17 @@ def populate_example_material(stage, material):
     )
 
 
+def populate_indexed_primvar(mesh):
+    # add some vertex colors in an indexed primvar
+    primvars_api = UsdGeom.PrimvarsAPI(mesh)
+    color_primvar = primvars_api.CreatePrimvar(
+        "displayColor", Sdf.ValueTypeNames.Color3fArray, UsdGeom.Tokens.vertex
+    )
+    color_primvar.Set([(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)])
+    color_primvar.SetIndices([0, 1, 2, 0])
+    color_primvar.SetInterpolation(UsdGeom.Tokens.vertex)
+
+
 def populate_mesh(mesh):
     # hard code some billboards
     mesh.CreatePointsAttr(
@@ -89,6 +100,7 @@ class TestMaterialData(unittest.TestCase):
 
         mesh = UsdGeom.Mesh.Define(stage, '/Mesh')
         populate_mesh(mesh)
+        populate_indexed_primvar(mesh)
         assign_material_to_mesh(mat, mesh)
 
         m = HydraPassthrough.RenderManager()
@@ -166,7 +178,7 @@ class TestMaterialData(unittest.TestCase):
         # check on the bound mesh
         bound_mesh = md.GetMesh(Sdf.Path(prefix.AppendPath('Mesh')))
         self.assertEqual(bound_mesh.materialId, mat0.id)
-        self.assertEqual(len(bound_mesh.GetAllPrimvars()), 2) # uv and points
+        self.assertEqual(len(bound_mesh.GetAllPrimvars()), 3) # displayColor, uv and points
         primvar = bound_mesh.GetPrimvar('uv')
         self.assertTrue(primvar is not None)
         self.assertEqual(primvar.name, 'uv')
@@ -179,11 +191,27 @@ class TestMaterialData(unittest.TestCase):
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [2])
         self.assertEqual(primvar.role, 'textureCoordinate')
+        self.assertEqual(primvar.indices, [])
         primvar = bound_mesh.GetPrimvar('points')
         self.assertTrue(primvar is not None)
         primvar = bound_mesh.GetPrimvar('nonexistent')
         self.assertTrue(primvar is None)
-                
+
+        # check indexed primvar
+        primvar = bound_mesh.GetPrimvar('displayColor')
+        self.assertTrue(primvar is not None)
+        self.assertEqual(primvar.name, 'displayColor')
+        self.assertEqual(primvar.interpolation, 'vertex')
+        self.assertEqual(primvar.data.GetTypeName(), 'VtArray<GfVec3f>')
+        self.assertEqual(primvar.data.GetValue(), [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)])
+        self.assertTrue(primvar.data.IsVec3())
+        self.assertFalse(primvar.data.IsVec2())
+        self.assertTrue(primvar.data.IsArray())
+        self.assertEqual(primvar.data.GetArraySize(), 3)
+        self.assertEqual(primvar.data.GetArrayItemDimension(), [3])
+        self.assertEqual(primvar.role, 'color')
+        self.assertEqual(primvar.indices, [0, 1, 2, 0])
+
         m.Cleanup()
 
 if __name__ == "__main__":

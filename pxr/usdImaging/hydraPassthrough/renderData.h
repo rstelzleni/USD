@@ -43,11 +43,15 @@ public:
             : data(d), interpolation(interp) {}
         PrimvarSource(const VtValue& d, HdInterpolation interp, const TfToken& r)
             : data(d), interpolation(interp), role(r) {}
+        PrimvarSource(const VtValue& d, HdInterpolation interp,
+                      const TfToken& r, const VtIntArray& i)
+            : data(d), interpolation(interp), role(r), indices(i) {}
 
         VtValue data;
         VtValue updatedData; // if we need to recompute for any reason (triangulation, subidivision)
         HdInterpolation interpolation;
         TfToken role; // empty if none
+        VtIntArray indices; // for indexed primvars
     };
 
     class MeshData {
