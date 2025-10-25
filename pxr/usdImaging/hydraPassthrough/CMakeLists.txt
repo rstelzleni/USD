@@ -25,20 +25,28 @@ pxr_library(hydraPassthrough
         usdImaging
 
     PUBLIC_CLASSES
+        material
+        materialParam
         mesh
         renderData
         renderDelegate
         renderManager
         rendererPlugin
         renderPass
+        textureDescriptor
+        valueDescriptor
 
     PUBLIC_HEADERS
         api.h
+        renderParam.h
 
     PYMODULE_CPPFILES
         module.cpp
+        wrapMaterialParam.cpp
         wrapRenderData.cpp
         wrapRenderManager.cpp
+        wrapTextureDescriptor.cpp
+        wrapValueDescriptor.cpp
 
     PYMODULE_FILES
         __init__.py
@@ -46,4 +54,43 @@ pxr_library(hydraPassthrough
     RESOURCE_FILES
         plugInfo.json
 )
+
+pxr_build_test(testHydraPassthroughValueDescriptor
+    LIBRARIES
+        tf
+        gf
+        vt
+        hydraPassthrough
+    CPPFILES
+        testenv/testHydraPassthroughValueDescriptor.cpp
+)
+
+pxr_test_scripts(
+    testenv/testHydraPassthroughCameraData.py
+    testenv/testHydraPassthroughMeshData.py
+    testenv/testHydraPassthroughMaterialData.py
+)
+
+pxr_register_test(testHydraPassthroughCameraData
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughCameraData"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testHydraPassthroughMeshData
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughMeshData"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testHydraPassthroughMaterialData
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughMaterialData"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testHydraPassthroughValueDescriptor
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughValueDescriptor"
+)
+
 

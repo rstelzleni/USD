@@ -18,14 +18,20 @@ void HdPassthroughRenderManager::Initialize() {
     // This is basically blind data for our use
     _driver = {TfToken("HdPassthroughDriver"), VtValue()};
 
-    // Scene delegate ID is used for what?
-    _sceneDelegateId = SdfPath("/HdPassthroughSceneDelegate");
+    // Scene delegate ID is used to indentify our scene index. So, all
+    // paths in the renderer will be preceded with this.
+    _sceneDelegateId = GetSceneDelegateId();
 
     if (!_SetRendererPlugin(TfToken("HydraPassthroughRendererPlugin"))) {
         TF_CODING_ERROR("Failed to set renderer plugin.");
         return;
     }
     _engine = std::make_unique<HdEngine>();
+}
+
+/*static*/
+SdfPath HdPassthroughRenderManager::GetSceneDelegateId() {
+    return SdfPath("/HdPassthroughSceneDelegate");
 }
 
 void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
@@ -78,7 +84,7 @@ void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
     HdRprimCollection collection = HdRprimCollection(collectionName, reprSelector);
     // Yikes
     const SdfPathVector paths = {
-        _sceneDelegateId, // This is SdfPath::AbsoluteRootPath() in this context
+        _sceneDelegateId, // This is equivalent to SdfPath(/)  in this context
     };
     collection.SetRootPaths(paths);
     _taskControllerSceneIndex->SetCollection(collection);
@@ -137,12 +143,6 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
         return false;
     }
 
-//    _SetRenderDelegateAndRestoreState(std::move(renderDelegate));
-
-    // Could restore state for new plugin here, but we'll just init for now
-    //GfMatrix4d rootTransform = GfMatrix4d(1.0);
-    //bool rootVisibility = true;
-
     // If a delegate exists already we need to destroy hydra memory here
 
     // Need a unique id string
@@ -160,7 +160,9 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
 
     // Set up scene indices. We could provide a stage in this info object
     //
-    // Note that this supports selection and things we don't need
+    // Note that this supports selection and things we don't need. Also, this
+    // is where we have a dependency on UsdImaging. If we wrote our own scene
+    // indices we could avoid this.
     UsdImagingCreateSceneIndicesInfo info;
     const UsdImagingSceneIndices sceneIndices =
         UsdImagingCreateSceneIndices(info);

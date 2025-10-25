@@ -21,5 +21,8 @@ wrapRenderManager()
 
         .def("GetRenderData", &This::GetRenderData,
              return_value_policy<return_by_value>())
+
+        .def("GetSceneDelegateId", &This::GetSceneDelegateId)
+        .staticmethod("GetSceneDelegateId")
         ;
 }
