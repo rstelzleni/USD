@@ -50,6 +50,8 @@ static void testFloat() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "float");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "1.234");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -75,6 +77,8 @@ static void testDouble() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "double");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "1.234");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -100,6 +104,8 @@ static void testHalf() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "pxr_half::half");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "1.5");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -125,6 +131,8 @@ static void testInt() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "int");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Integer);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "123");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -150,6 +158,8 @@ static void testBool() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "bool");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Bool);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "1"); // note, 1, not true (TfStringify output)
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -175,6 +185,8 @@ static void testString() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "string");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::String);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "hello");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -200,6 +212,8 @@ static void testToken() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "TfToken");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::String);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "hello");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -229,6 +243,8 @@ static void testArrayInt() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<int>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Integer);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "[1, 2, 3]");
     TF_AXIOM(desc.GetArraySize() == 3);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
@@ -262,6 +278,8 @@ static void testArrayFloat() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<float>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "[1, 2, 3]");
     TF_AXIOM(desc.GetArraySize() == 3);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
@@ -295,6 +313,8 @@ static void testArrayString() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<string>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::String);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Scalar);
     TF_AXIOM(desc.ToString() == "[one, two, three]");
     TF_AXIOM(desc.GetArraySize() == 3);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
@@ -324,6 +344,8 @@ static void testGfVec2i() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfVec2i");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Integer);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Vec2);
     TF_AXIOM(desc.ToString() == "(1, 2)");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -351,6 +373,8 @@ static void testGfVec2h() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfVec2h");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Vec2);
     TF_AXIOM(desc.ToString() == "(1, 2)");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -378,6 +402,8 @@ static void testGfVec4d() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfVec4d");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Vec4);
     TF_AXIOM(desc.ToString() == "(1, 2, 3, 4)");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -409,6 +435,8 @@ static void testGfMatrix4f() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfMatrix4f");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Matrix4);
     TF_AXIOM(desc.ToString() == 
         "( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 2) )");
     TF_AXIOM(desc.GetArraySize() == 0);
@@ -448,6 +476,8 @@ static void testGfMatrix3d() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfMatrix3d");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Matrix3);
     TF_AXIOM(desc.ToString() == 
         "( (1, 0, 0), (0, 1, 0), (0, 0, 2) )");
     TF_AXIOM(desc.GetArraySize() == 0);
@@ -487,6 +517,8 @@ static void testGfMatrix2f() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfMatrix2f");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Matrix2);
     TF_AXIOM(desc.ToString() == 
         "( (1, 0), (0, 2) )");
     TF_AXIOM(desc.GetArraySize() == 0);
@@ -524,6 +556,8 @@ static void testGfQuatd() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfQuatd");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Quat);
     TF_AXIOM(desc.ToString() == "(1, 0, 1, 0)");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -555,6 +589,8 @@ static void testGfDualQuatf() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfDualQuatf");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::DualQuat);
     TF_AXIOM(desc.ToString() == "((1, 0, 1, 0), (0, 1, 0, 0))");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -592,6 +628,8 @@ static void testGfRange3d() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "GfRange3d");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Range3);
     TF_AXIOM(desc.ToString() == "[(1, 2, 3)...(4, 5, 6)]");
     TF_AXIOM(desc.GetArraySize() == 0);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 0);
@@ -628,6 +666,8 @@ static void testArrayGfVec4i() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfVec4i>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Integer);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Vec4);
     TF_AXIOM(desc.ToString() == "[(1, 2, 3, 4), (5, 6, 7, 8)]");
     TF_AXIOM(desc.GetArraySize() == 2);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
@@ -661,6 +701,8 @@ static void testArrayGfVec3f() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfVec3f>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Vec3);
     TF_AXIOM(desc.ToString() == "[(1, 2, 3), (4, 5, 6), (7, 8, 9)]");
     TF_AXIOM(desc.GetArraySize() == 3);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
@@ -698,6 +740,8 @@ static void testArrayGfMatrix4d() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfMatrix4d>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Matrix4);
     TF_AXIOM(desc.ToString() == 
         "[( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 2) ), "
         "( (3, 0, 0, 0), (0, 3, 0, 0), (0, 0, 3, 0), (0, 0, 0, 4) )]");
@@ -757,6 +801,8 @@ static void testArrayGfMatrix3f() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfMatrix3f>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Matrix3);
     TF_AXIOM(desc.ToString() == 
         "[( (1, 0, 0), (0, 1, 0), (0, 0, 2) ), "
         "( (3, 0, 0), (0, 3, 0), (0, 0, 4) )]");
@@ -816,6 +862,8 @@ static void testArrayGfMatrix2d() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfMatrix2d>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Matrix2);
     TF_AXIOM(desc.ToString() == 
         "[( (1, 0), (0, 2) ), "
         "( (3, 0), (0, 4) )]");
@@ -871,6 +919,8 @@ static void testArrayGfQuatf() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfQuatf>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Quat);
     TF_AXIOM(desc.ToString() == "[(1, 0, 1, 0), (0, 1, 0, 0)]");
     TF_AXIOM(desc.GetArraySize() == 2);
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
@@ -905,6 +955,8 @@ static void testArrayGfDualQuatd() {
     TF_AXIOM(!desc.IsRange2());
     TF_AXIOM(!desc.IsRange3());
     TF_AXIOM(desc.GetTypeName() == "VtArray<GfDualQuatd>");
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::DualQuat);
     TF_AXIOM(desc.ToString() == 
         "[((1, 0, 1, 0), (0, 1, 0, 0)), ((0, 1, 0, 0), (1, 0, 1, 0))]");
     TF_AXIOM(desc.GetArraySize() == 2);
@@ -947,6 +999,8 @@ static void testArrayGfRange2f() {
     TF_AXIOM(desc.GetArrayItemDimension().size() == 1);
     TF_AXIOM(desc.GetArrayItemDimension()[0] == 2);
     VtArray<GfRange2f> arr2 = desc.GetValue().Get<VtArray<GfRange2f>>();
+    TF_AXIOM(desc.GetScalarType() == HydraPassthroughValueDescriptor::ScalarType::Float);
+    TF_AXIOM(desc.GetElementShape() == HydraPassthroughValueDescriptor::ElementShape::Range2);
     TF_AXIOM(arr2.size() == 2);
     GfRange2f r1 = arr2[0];
     GfVec2f r1min = r1.GetMin();

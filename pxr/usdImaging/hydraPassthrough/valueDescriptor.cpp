@@ -102,6 +102,62 @@ std::string HydraPassthroughValueDescriptor::GetTypeName() const {
     return _value.GetTypeName();
 }
 
+HydraPassthroughValueDescriptor::ScalarType
+HydraPassthroughValueDescriptor::GetScalarType() const {
+    if (IsFloat()) {
+        return ScalarType::Float;
+    }
+    if (IsBool()) {
+        // Bool is true for IsInteger as well, so check before checking int
+        return ScalarType::Bool;
+    }
+    if (IsInteger()) {
+        return ScalarType::Integer;
+    }
+    if (IsString()) {
+        return ScalarType::String;
+    }
+    return ScalarType::Unknown;
+}
+
+HydraPassthroughValueDescriptor::ElementShape
+HydraPassthroughValueDescriptor::GetElementShape() const {
+    if (IsMatrix2()) {
+        return ElementShape::Matrix2;
+    }
+    if (IsMatrix3()) {
+        return ElementShape::Matrix3;
+    }
+    if (IsMatrix4()) {
+        return ElementShape::Matrix4;
+    }
+    if (IsQuat()) {
+        return ElementShape::Quat;
+    }
+    if (IsDualQuat()) {
+        return ElementShape::DualQuat;
+    }
+    if (IsVec2()) {
+        return ElementShape::Vec2;
+    }
+    if (IsVec3()) {
+        return ElementShape::Vec3;
+    }
+    if (IsVec4()) {
+        return ElementShape::Vec4;
+    }
+    if (IsRange2()) {
+        return ElementShape::Range2;
+    }
+    if (IsRange3()) {
+        return ElementShape::Range3;
+    }
+    if (IsFloat() || IsInteger() || IsBool() || IsString()) {
+        return ElementShape::Scalar;
+    }
+    return ElementShape::Unknown;
+}
+
 bool HydraPassthroughValueDescriptor::IsArray() const {
     return _value.IsArrayValued();
 }

@@ -36,7 +36,6 @@ class HydraPassthroughRenderData :
 {
 public:
 
-    // XXX RYANS This needs to also support indices for indexed primvars
     struct PrimvarSource {
         PrimvarSource() = default;
         PrimvarSource(const VtValue& d, HdInterpolation interp)
@@ -60,7 +59,7 @@ public:
         SdfPath materialId;
         bool visible = true;
         GfMatrix4f transform;
-        VtVec3fArray points;
+        VtValue points;
         //VtVec3fArray normals;
 
         // uvs are available in the primvars map, and may be named differently

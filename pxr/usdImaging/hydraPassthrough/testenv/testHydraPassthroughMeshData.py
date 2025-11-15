@@ -27,14 +27,14 @@ class TestMeshData(unittest.TestCase):
         self.assertEqual(x, True)
         x = mesh0.transform
         self.assertEqual(x, Gf.Matrix4d(1))
-        x = mesh0.points
-        self.assertEqual(x, [])
-        x = mesh0.faceVertexIndices
-        self.assertEqual(x, [])
-        x = mesh0.triangleOriginalFaceIndices
-        self.assertEqual(x, [])
-        x = mesh0.triangleEdgeIndices
-        self.assertEqual(x, [])
+        x = mesh0.GetPoints()
+        self.assertEqual(x.GetValue(), None)
+        x = mesh0.GetFaceVertexIndices()
+        self.assertEqual(x.GetValue(), [])
+        x = mesh0.GetTriangleOriginalFaceIndices()
+        self.assertEqual(x.GetValue(), [])
+        x = mesh0.GetTriangleEdgeIndices()
+        self.assertEqual(x.GetValue(), [])
         x = mesh0.materialId
         self.assertEqual(x, Sdf.Path())
         x = mesh0.GetAllPrimvars()

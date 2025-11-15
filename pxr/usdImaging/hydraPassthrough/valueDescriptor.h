@@ -23,6 +23,35 @@ public:
     HydraPassthroughValueDescriptor() = default;
     HydraPassthroughValueDescriptor(const VtValue& value);
 
+    /// Scalar type of the held value.
+    enum class ScalarType {
+        Unknown,
+        Float,
+        Integer,
+        Bool,
+        String
+    };
+
+    /// Element shape of the held value.
+    ///
+    /// This plus ScalarType gives the type of object being represented,
+    /// plus its scalar representation. Then whether it is an array of these
+    /// objects is determined separately.
+    enum class ElementShape {
+        Unknown,
+        Scalar,
+        Matrix2,
+        Matrix3,
+        Matrix4,
+        Quat,
+        DualQuat,
+        Vec2,
+        Vec3,
+        Vec4,
+        Range2,
+        Range3
+    };
+
     /// Return the held value
     VtValue GetValue() const;
 
@@ -38,6 +67,10 @@ public:
     TfPyObjWrapper GetPyValue() const;
 
     std::string GetTypeName() const;
+
+    ScalarType GetScalarType() const;
+
+    ElementShape GetElementShape() const;
 
     // These type queries are not fully expressive of what vt value
     // can represent. They're intended to help with creating a python
