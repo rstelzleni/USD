@@ -209,13 +209,13 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     object _ConvertMatrix(const T& mat) {
         const size_t numRows = T::numRows;;
         const size_t numCols = T::numColumns;
-        tuple matTuple;
+        list matTuple;
         for (size_t r = 0; r < numRows; ++r) {
             for (size_t c = 0; c < numCols; ++c) {
-                matTuple += mat[r][c];
+                matTuple.append(mat[r][c]);
             }
         }
-        return matTuple;
+        return tuple(matTuple);
     }
 
     object _ConvertMatrices(const VtValue& value) {
@@ -620,7 +620,7 @@ wrapValueDescriptor()
         ;
 
     enum_<This::ScalarType>("ScalarType")
-        .value("Unkownw", This::ScalarType::Unknown)
+        .value("Unknown", This::ScalarType::Unknown)
         .value("Float", This::ScalarType::Float)
         .value("Integer", This::ScalarType::Integer)
         .value("Bool", This::ScalarType::Bool)
