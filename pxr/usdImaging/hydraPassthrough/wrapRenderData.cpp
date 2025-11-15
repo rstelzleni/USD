@@ -57,6 +57,31 @@ enum class MaterialTag {
 };
 
 namespace {
+
+    HydraPassthroughValueDescriptor _GetMeshPoints(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(self.points);
+    }
+
+    HydraPassthroughValueDescriptor _GetMeshFaceVertexIndices(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.faceVertexIndices));
+    }
+
+    HydraPassthroughValueDescriptor _GetMeshTriangleOriginalFaceIndices(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.triangleOriginalFaceIndices));
+    }
+
+    HydraPassthroughValueDescriptor _GetMeshTriangleEdgeIndices(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.triangleEdgeIndices));
+    }
+
     // Need this to be a function so that it can use TfPySequenceToList
     // return_value_policy.
     const std::vector<GfVec4d> &_GetClippingPlanes(
@@ -217,15 +242,15 @@ wrapRenderData()
         .def_readonly("materialId", &This::MeshData::materialId)
         .def_readonly("visible", &This::MeshData::visible)
         .def_readonly("transform", &This::MeshData::transform)
-        .def_readonly("points", &This::MeshData::points)
-        .def_readonly("faceVertexIndices", &This::MeshData::faceVertexIndices)
-
-        .def_readonly("triangleOriginalFaceIndices", &This::MeshData::triangleOriginalFaceIndices)
-        .def_readonly("triangleEdgeIndices", &This::MeshData::triangleEdgeIndices)
 
         .def("GetAllPrimvars", &_GetAllPrimvars,
              return_value_policy<TfPySequenceToList>())
         .def("GetPrimvar", &_GetPrimvar,(arg("name")))
+
+        .def("GetPoints", ::_GetMeshPoints)
+        .def("GetFaceVertexIndices", ::_GetMeshFaceVertexIndices)
+        .def("GetTriangleOriginalFaceIndices", ::_GetMeshTriangleOriginalFaceIndices)
+        .def("GetTriangleEdgeIndices", ::_GetMeshTriangleEdgeIndices)
         ;
 
     enum_<This::MaterialData::MaterialType>("MaterialType")

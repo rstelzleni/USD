@@ -120,7 +120,7 @@ HydraPassthroughMesh::ToString() const {
     ss << "HydraPassthroughMesh {" << std::endl;
     ss << "  id: " << GetId().GetText() << std::endl;
     ss << "  materialId: " << _meshData.materialId.GetText() << std::endl;
-    ss << "  points: " << _meshData.points.size() << std::endl;
+    ss << "  points: " << _meshData.points.Get<VtVec3fArray>().size() << std::endl;
     ss << "  topology: " << _meshData.topology.GetScheme().GetText() << std::endl;
     ss << "  faceVertexIndices: " << _meshData.faceVertexIndices.size() << std::endl;
     ss << "  triangleOriginalFaceIndices: " << _meshData.triangleOriginalFaceIndices.size() << std::endl;
@@ -183,7 +183,7 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
         HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->points)) {
         VtValue value = sceneDelegate->Get(id, HdTokens->points);
         if (not value.IsEmpty()) {
-            _meshData.points = value.Get<VtVec3fArray>();
+            _meshData.points = value;
         }
     }
 
