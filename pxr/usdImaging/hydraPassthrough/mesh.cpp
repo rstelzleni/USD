@@ -672,16 +672,15 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
                 requireSmoothNormals);
     }
 
-//    /* FACEVARYING PRIMVARS */
-//    if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
-//        _PopulateFaceVaryingPrimvars(sceneDelegate,
-//                                     renderParam,
-//                                     repr,
-//                                     desc,
-//                                     drawItem,
-//                                     geomSubsetDescIndex,
-//                                     dirtyBits);
-//    }
+    /* FACEVARYING PRIMVARS */
+    if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
+        printf("XXX Populating face-varying primvars for id=%s\n", id.GetText());
+        MeshUtil::PopulateFaceVaryingPrimvars(
+                this, id, sceneDelegate, resourceRegistry.get(), &_topology,
+                &_fvarTopologyTracker,
+                nullptr /*drawItem*/, dirtyBits);
+    }
+
 //
 //    /* ELEMENT PRIMVARS */
 //    if ((requireFlatNormals && (*dirtyBits & DirtyFlatNormals)) ||

@@ -236,17 +236,71 @@ static inline HdTypeTypeCasterMap _MakeHdTypeTypeCasterMap() {
     };
 }
 
+using HdTypeArrayTypeCasterMap = std::unordered_map<HdType, std::function<VtValue(const void*, size_t)>>;
+static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
+    return HdTypeArrayTypeCasterMap {
+        { HdTypeBool, [](const void* data, size_t n) { auto p = static_cast<const bool*>(data); return VtValue(VtArray<bool>(p, p + n)); } },
+        { HdTypeInt8, [](const void* data, size_t n) { auto p = static_cast<const int8_t*>(data); return VtValue(VtArray<int8_t>(p, p + n)); } },
+        { HdTypeUInt8, [](const void* data, size_t n) { auto p = static_cast<const uint8_t*>(data); return VtValue(VtArray<uint8_t>(p, p + n)); } },
+        { HdTypeInt16, [](const void* data, size_t n) { auto p = static_cast<const int16_t*>(data); return VtValue(VtArray<int16_t>(p, p + n)); } },
+        { HdTypeUInt16, [](const void* data, size_t n) { auto p = static_cast<const uint16_t*>(data); return VtValue(VtArray<uint16_t>(p, p + n)); } },
+        { HdTypeInt32, [](const void* data, size_t n) { auto p = static_cast<const int32_t*>(data); return VtValue(VtArray<int32_t>(p, p + n)); } },
+        { HdTypeInt32Vec2, [](const void* data, size_t n) { auto p = static_cast<const GfVec2i*>(data); return VtValue(VtArray<GfVec2i>(p, p + n)); } },
+        { HdTypeInt32Vec3, [](const void* data, size_t n) { auto p = static_cast<const GfVec3i*>(data); return VtValue(VtArray<GfVec3i>(p, p + n)); } },
+        { HdTypeInt32Vec4, [](const void* data, size_t n) { auto p = static_cast<const GfVec4i*>(data); return VtValue(VtArray<GfVec4i>(p, p + n)); } }, 
+        { HdTypeUInt32, [](const void* data, size_t n) { auto p = static_cast<const uint32_t*>(data); return VtValue(VtArray<uint32_t>(p, p + n)); } },
+        { HdTypeUInt32Vec2, [](const void* data, size_t n) { auto p = static_cast<const GfVec2i*>(data); return VtValue(VtArray<GfVec2i>(p, p + n)); } },
+        { HdTypeUInt32Vec3, [](const void* data, size_t n) { auto p = static_cast<const GfVec3i*>(data); return VtValue(VtArray<GfVec3i>(p, p + n)); } },
+        { HdTypeUInt32Vec4, [](const void* data, size_t n) { auto p = static_cast<const GfVec4i*>(data); return VtValue(VtArray<GfVec4i>(p, p + n)); } },
+        { HdTypeFloat, [](const void* data, size_t n) { auto p = static_cast<const float*>(data); return VtValue(VtArray<float>(p, p + n)); } },
+        { HdTypeFloatVec2, [](const void* data, size_t n) { auto p = static_cast<const GfVec2f*>(data); return VtValue(VtArray<GfVec2f>(p, p + n)); } },
+        { HdTypeFloatVec3, [](const void* data, size_t n) { auto p = static_cast<const GfVec3f*>(data); return VtValue(VtArray<GfVec3f>(p, p + n)); } },
+        { HdTypeFloatVec4, [](const void* data, size_t n) { auto p = static_cast<const GfVec4f*>(data); return VtValue(VtArray<GfVec4f>(p, p + n)); } },
+        { HdTypeFloatMat3, [](const void* data, size_t n) { auto p = static_cast<const GfMatrix3f*>(data); return VtValue(VtArray<GfMatrix3f>(p, p + n)); } },
+        { HdTypeFloatMat4, [](const void* data, size_t n) { auto p = static_cast<const GfMatrix4f*>(data); return VtValue(VtArray<GfMatrix4f>(p, p + n)); } },
+        { HdTypeDouble, [](const void* data, size_t n) { auto p = static_cast<const double*>(data); return VtValue(VtArray<double>(p, p + n)); } },
+        { HdTypeDoubleVec2, [](const void* data, size_t n) { auto p = static_cast<const GfVec2d*>(data); return VtValue(VtArray<GfVec2d>(p, p + n)); } },
+        { HdTypeDoubleVec3, [](const void* data, size_t n) { auto p = static_cast<const GfVec3d*>(data); return VtValue(VtArray<GfVec3d>(p, p + n)); } },
+        { HdTypeDoubleVec4, [](const void* data, size_t n) { auto p = static_cast<const GfVec4d*>(data); return VtValue(VtArray<GfVec4d>(p, p + n)); } },
+        { HdTypeDoubleMat3, [](const void* data, size_t n) { auto p = static_cast<const GfMatrix3d*>(data); return VtValue(VtArray<GfMatrix3d>(p, p + n)); } },
+        { HdTypeDoubleMat4, [](const void* data, size_t n) { auto p = static_cast<const GfMatrix4d*>(data); return VtValue(VtArray<GfMatrix4d>(p, p + n)); } },
+        { HdTypeHalfFloat, [](const void* data, size_t n) { auto p = static_cast<const GfHalf*>(data); return VtValue(VtArray<GfHalf>(p, p + n)); } },
+        { HdTypeHalfFloatVec2, [](const void* data, size_t n) { auto p = static_cast<const GfVec2h*>(data); return VtValue(VtArray<GfVec2h>(p, p + n)); } },
+        { HdTypeHalfFloatVec3, [](const void* data, size_t n) { auto p = static_cast<const GfVec3h*>(data); return VtValue(VtArray<GfVec3h>(p, p + n)); } },
+        { HdTypeHalfFloatVec4, [](const void* data, size_t n) { auto p = static_cast<const GfVec4h*>(data); return VtValue(VtArray<GfVec4h>(p, p + n)); } },
+        // This type should be unreachable in our code
+        // { HdTypeInt32_2_10_10_10_REV, [](const void* data, size_t n) { auto p = static_cast<const HdVec4f_2_10_10_10_REV*>(data); return VtValue(VtArray<HdVec4f_2_10_10_10_REV>(p, p + n));
+    };
+}
+
 static VtValue
-_CastRenderDataToCppType(const void* data, const HdTupleType& tupleType) {
+_CastRenderDataToCppType(HdBufferSourceSharedPtr const &source) {
     // Use the types in HdTupleType to cast the void * into a type VtValue recognizes,
     // then return the VtValue.
     static const HdTypeTypeCasterMap typeCasterMap = _MakeHdTypeTypeCasterMap();
-    auto casterIt = typeCasterMap.find(tupleType.type);
-    if (casterIt == typeCasterMap.end()) {
-        TF_RUNTIME_ERROR("Unsupported HdType %d in _CastRenderDataToCppType", tupleType.type);
-        return VtValue();
+    static const HdTypeArrayTypeCasterMap arrayTypeCasterMap = _MakeHdArrayTypeCasterMap();
+    const auto &tupleType = source->GetTupleType();
+    const auto &data = source->GetData();
+    const auto &dataSize = source->GetNumElements();
+    if (dataSize == 1) {
+        auto casterIt = typeCasterMap.find(tupleType.type);
+        if (casterIt == typeCasterMap.end()) {
+            TF_RUNTIME_ERROR("Unsupported HdType %d in _CastRenderDataToCppType", tupleType.type);
+            return VtValue();
+        }
+        printf(">> Converting single value of HdType %d using caster %ld\n", tupleType.type, tupleType.count);
+        return casterIt->second(data);
+    } else if (dataSize > 1) {
+        // This is a VtArray type
+        auto casterIt = arrayTypeCasterMap.find(tupleType.type);
+        if (casterIt == arrayTypeCasterMap.end()) {
+            TF_RUNTIME_ERROR("Unsupported HdType %d in _CastRenderDataToCppType", tupleType.type);
+            return VtValue();
+        }
+        printf(">> Converting array value of HdType %d using caster %ld\n", tupleType.type, tupleType.count);
+        return casterIt->second(data, dataSize);
     }
-    return casterIt->second(data);
+    return VtValue();
 }
 
 void
@@ -278,38 +332,7 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
 
-        // XXX still to figure out, how do we pass interpolation type? store it up
-        // from and only update here? i do think we still need it. Or do we, does
-        // subdivision bake this in? do we need it for renders if we aren't subdividing?
-
-        // But nope, this is a void star, need a typed value. or do we? maybe we
-        // can get away with passing a void buffer, size and type? source->GetTypleType, etc
-        //VtValue value = vtSource->GetData();
-
-        // My output model is wrong. There is one set of indices for
-        // the mesh, and all primvars including points are indexed
-        // by that. 
-        //
-        // Also, in the calling function we don't seem to get generic
-        // sources, though some are registered for the topology. I
-        // suspect that doesn't get into the output, which is fine
-        //
-        // Note that indices also includes primitiveParams and edgeIndices
-        //
-        // XXX Ok, time to fix this for reals.
-        // Next step, replace the primvar data structure and edit the mesh
-        // data structure to store more accurately this data. A single
-        // indices array, a points array, a series of primvars which contain
-        // arbitrary data wtih a structure declaring its type (if possible, we
-        // may also need to convert back to VtValue).
-        //
-        // I think probably VtValue for primvar data, it sucks that we'll need
-        // to recreate VtValues here, then convert them into the interface types
-        // in the server, but it's probably the cleanest way. The alternative is
-        // to construct a directly typed array for each primvar type, but marshalling
-        // that through in a way that isn't gross is tough. Definitely a wart that
-        // we could consider in the future when refactoring.
-        VtValue value(_CastRenderDataToCppType(source->GetData(), source->GetTupleType()));
+        VtValue value(_CastRenderDataToCppType(source)); //source->GetData(), source->GetTupleType()));
 
         switch (sourceType) {
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Index:
@@ -370,7 +393,7 @@ HydraPassthroughRenderData::CopyPrimvarBufferSources(
             }
             // XXX get name exists on the base class I think
             const TfToken& name = vtSource->GetName();
-            VtValue value(_CastRenderDataToCppType(source->GetData(), source->GetTupleType()));
+            VtValue value(_CastRenderDataToCppType(source)); //source->GetData(), source->GetTupleType()));
 
             if (sourceType == HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar) {
                 printf("RRR copying primvar source %s, interpolation %s\n", name.GetText(), TfEnum::GetDisplayName(interpolation).c_str());
