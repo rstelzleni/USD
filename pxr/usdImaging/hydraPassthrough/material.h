@@ -29,6 +29,9 @@ public:
     /// Tell the change tracker we need to sync everything.
     HdDirtyBits GetInitialDirtyBitsMask() const override;
 
+    /// True if any material param has a texture that's ptex
+    bool HasPtex() const;
+
     std::string ToString() const;
 
 private:

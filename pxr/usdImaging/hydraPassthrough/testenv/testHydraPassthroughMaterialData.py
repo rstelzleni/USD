@@ -103,6 +103,8 @@ class TestMaterialData(unittest.TestCase):
         populate_indexed_primvar(mesh)
         assign_material_to_mesh(mat, mesh)
 
+        print('Stage:\n%s' % stage.GetRootLayer().ExportToString())
+
         m = HydraPassthrough.RenderManager()
         m.Initialize()
         m.Render(stage)
