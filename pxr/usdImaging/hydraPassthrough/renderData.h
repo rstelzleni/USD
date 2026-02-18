@@ -3,10 +3,11 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/imaging/hd/enums.h"
-#include "pxr/imaging/hd/meshTopology.h"
 #include "pxr/usdImaging/hydraPassthrough/materialParam.h"
+#include "pxr/usdImaging/hydraPassthrough/meshTopology.h"
+#include "pxr/usdImaging/hydraPassthrough/resourceRegistry.h"
 #include "pxr/usdImaging/hydraPassthrough/textureDescriptor.h"
+#include "pxr/imaging/hd/enums.h"
 
 #include "pxr/usd/sdf/path.h"
 
@@ -36,6 +37,7 @@ class HydraPassthroughRenderData :
 {
 public:
 
+    /*
     struct PrimvarSource {
         PrimvarSource() = default;
         PrimvarSource(const VtValue& d, HdInterpolation interp)
@@ -52,7 +54,51 @@ public:
         TfToken role; // empty if none
         VtIntArray indices; // for indexed primvars
     };
+    */
 
+    // These do not include indices for indexed primvars, because if this is
+    // a subdivision surface these have already been baked in. If we need them
+    // for non-subdiv meshes, we'll need to add them in.
+    //
+    // See also HdSt resourceBinder.cpp for data we might need to add here, and
+    // to the mesh. There's moer computation done there, especially around
+    // instancing and type mapping
+    struct PrimvarSource {
+        PrimvarSource() = default;
+        PrimvarSource(const VtValue& d) : data(d) {}
+        PrimvarSource(const VtValue& d, HdInterpolation interpolation) 
+            : data(d), interpolation(interpolation) {}
+
+        VtValue data;
+        HdInterpolation interpolation;
+
+        // Or possibly the hlsl type? We could add this for clients, but there's
+        // a question in my mind about types here. For instance, if hdst would have
+        // used uint for a primvar, but we provide the output data as int, the client
+        // would need to do a conversion. Do we want to suggest that? And if so, is
+        // this the right way to communicat it?
+        //
+        // Also applies to things like float vs double, dmat vs mat, etc.
+        // TfToken glslType;
+    };
+
+    class MeshData {
+    public:
+        SdfPath id;
+        SdfPath materialId;
+        bool visible{true};
+        GfMatrix4f transform;
+        GfMatrix4f transformInverse;
+        VtValue points;
+        VtValue normals;
+        VtVec3iArray faceVertexIndices; // triangles only
+        VtIntArray triangleOriginalFaceIndices;
+        VtIntArray triangleEdgeIndices;
+        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
+
+    };
+
+    /*
     class MeshData {
     public:
         SdfPath id;
@@ -78,10 +124,11 @@ public:
         VtIntArray triangleEdgeIndices;
 
         // Not available in python
-        HdMeshTopology topology;
+//        HydraPassthroughMeshTopology topology;
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvarSourceMap;
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
     };
+    */
 
     class MaterialData {
     public:
@@ -183,6 +230,24 @@ public:
 
     void AddMaterial(const SdfPath& id,
                      const MaterialData& materialData);
+
+    /// Copy a potentially computed primvar source value into the render data.
+    void CopyPrimvarBufferSource(
+            const SdfPath& id,
+            HdBufferSourceSharedPtr const &source,
+            HydraPassthroughResourceRegistry::PrimvarSourceType sourceType,
+            HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
+
+    /// Copy a list of potentially computed primvar source values into the
+    /// render data.
+    ///
+    /// These all share a single prim and are of a single type, like index,
+    /// points, primvar.
+    void CopyPrimvarBufferSources(
+            const SdfPath& id,
+            HdBufferSourceSharedPtrVector const &sources,
+            HydraPassthroughResourceRegistry::PrimvarSourceType sourceType,
+            HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
 
     /// Extract a copy of the contained RenderData.
     ///

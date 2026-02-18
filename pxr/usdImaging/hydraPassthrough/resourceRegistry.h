@@ -1,0 +1,167 @@
+#ifndef USD_IMAGING_HYDRA_PASSTHROUGH_RESOURCE_REGISTRY_H
+#define USD_IMAGING_HYDRA_PASSTHROUGH_RESOURCE_REGISTRY_H
+
+#include "pxr/pxr.h"
+
+#include "pxr/imaging/hd/bufferArrayRange.h"
+#include "pxr/imaging/hd/bufferSource.h"
+#include "pxr/imaging/hd/perfLog.h"
+#include "pxr/imaging/hd/resourceRegistry.h"
+#include "pxr/imaging/hd/types.h"
+#include "pxr/usd/sdf/path.h"
+#include "pxr/base/tf/declarePtrs.h"
+
+#include <atomic>
+
+#include <tbb/concurrent_vector.h>
+
+PXR_NAMESPACE_OPEN_SCOPE
+
+TF_DECLARE_REF_PTRS(HydraPassthroughRenderData);
+
+/// \class HydraPassthroughResourceRegistry
+class HydraPassthroughResourceRegistry : public HdResourceRegistry {
+public:
+
+    /// Type of computed primvar source
+    enum class PrimvarSourceType {
+        Index,
+        Points,
+        Primvar,
+        Generic
+    };
+
+public:
+    HydraPassthroughResourceRegistry();
+    ~HydraPassthroughResourceRegistry() = default;
+
+    /// Sets the render data to copy output into.
+    ///
+    /// Must be called before Commit, so there is a location to send the output
+    void SetRenderData(HydraPassthroughRenderDataRefPtr const &renderData) {
+        _renderData = renderData;
+    }
+
+    // Add Source apis
+    //
+    // Sources in this context are cpu computations. In other resource
+    // registries sources are computedon the cpu and computations are
+    // computed on the gpu. We'll use the same terminology for consistency
+
+    /// Append multiple sources
+    /*
+    void AddSources(HdBufferArrayRangeSharedPtr const &range,
+                    HdBufferSourceSharedPtrVector &&sources);
+
+    /// Append a source data for given range
+    void AddSource(HdBufferArrayRangeSharedPtr const &range,
+                   HdBufferSourceSharedPtr const &source);
+                   */
+
+    /// Append a computation for Index data
+    void AddIndexSources(SdfPath const &id,
+                         HdBufferSourceSharedPtrVector &&sources);
+
+    /// Append a computation for Points data
+    void AddPointsSource(SdfPath const &id,
+                         HdBufferSourceSharedPtr const &source);
+
+    // Append a computation for a Primvar
+    void AddPrimvarSource(SdfPath const &id,
+                          HdBufferSourceSharedPtr const &source,
+                          HdInterpolation interpolation);
+
+    /// Append a list of primvar computations
+    void AddPrimvarSources(SdfPath const &id,
+                           HdBufferSourceSharedPtrVector &&sources,
+                           HdInterpolation interpolation);
+
+    /// Append a source data just to be resolved (used for cpu computations).
+    void AddGenericSource(SdfPath const &id,
+                          HdBufferSourceSharedPtr const &source);
+
+protected:
+
+    // Kicks off parallel computations
+    void _Commit() override;
+
+    // Cleans up resources post render
+    //
+    // This seems a litle goofy, but is the design. It seems weird to create
+    // objects like topology builders in another class then destroy them here.
+    void _GarbageCollect() override;
+
+private:
+    // See this TODO below, which I copied from HdStResourceRegistry. This
+    // comment is from 2020, so I wonder if this will still happen. But,
+    // keeping it here for breadcrumbs in the future.
+    //
+    // TODO: this is a transient structure. we'll revisit the BufferSource
+    // interface later.
+    struct _PendingSource {
+
+        /*
+        _PendingSource(HdBufferArrayRangeSharedPtr const &range,
+                       HdBufferSourceSharedPtr     const &source)
+            : range(range)
+            , sources(1, source)
+        {
+        }
+
+        _PendingSource(HdBufferArrayRangeSharedPtr const &range,
+                       HdBufferSourceSharedPtrVector     && sources)
+            : range(range)
+            , sources(std::move(sources))
+        {
+        }
+        */
+        _PendingSource(HdBufferSourceSharedPtr const &source,
+                       SdfPath const &id,
+                       PrimvarSourceType type,
+                       HdInterpolation interpolation)
+            : type(type)
+            , sources(1, source)
+            , id(id)
+            , interpolation(interpolation)
+        {
+        }
+        
+        _PendingSource(HdBufferSourceSharedPtrVector &&sources,
+                       SdfPath const &id,
+                       PrimvarSourceType type,
+                       HdInterpolation interpolation)
+            : type(type)
+            , sources(std::move(sources))
+            , id(id)
+            , interpolation(interpolation)
+        {
+        }
+
+        //HdBufferArrayRangeSharedPtr range;
+        PrimvarSourceType type { PrimvarSourceType::Generic };
+        HdBufferSourceSharedPtrVector sources;
+        SdfPath id;
+
+        // Will only be set for primvar sources
+        HdInterpolation interpolation { HdInterpolation::HdInterpolationCount };
+    };
+
+    void _AddSource(HdBufferSourceSharedPtr const &source,
+                    SdfPath const &path,
+                    PrimvarSourceType type,
+                    HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
+    void _AddSources(HdBufferSourceSharedPtrVector &&sources,
+                     SdfPath const &path,
+                     PrimvarSourceType type,
+                     HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
+
+    typedef tbb::concurrent_vector<_PendingSource> _PendingSourceList;
+    _PendingSourceList    _pendingSources;
+    std::atomic_size_t    _numBufferSourcesToResolve;
+
+    HydraPassthroughRenderDataRefPtr _renderData;
+};
+
+PXR_NAMESPACE_CLOSE_SCOPE
+
+#endif // USD_IMAGING_HYDRA_PASSTHROUGH_RESOURCE_REGISTRY_H

@@ -25,15 +25,27 @@ pxr_library(hydraPassthrough
         usdImaging
 
     PUBLIC_CLASSES
+        computation
+        computationInputs
+        computationUtil
+        extCompPrimvarBufferSource
+        fvarTopologyTracker
         material
         materialParam
         mesh
+        meshTopology
+        meshUtil
+        primUtil
+        quadrangulate
         renderData
         renderDelegate
         renderManager
         rendererPlugin
         renderPass
+        resourceRegistry
+        subdivision
         textureDescriptor
+        triangulate
         valueDescriptor
 
     PUBLIC_HEADERS

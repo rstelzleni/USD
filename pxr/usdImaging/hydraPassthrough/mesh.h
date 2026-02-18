@@ -3,12 +3,15 @@
 
 #include "pxr/pxr.h"
 
+#include "pxr/usdImaging/hydraPassthrough/fvarTopologyTracker.h"
 #include "pxr/usdImaging/hydraPassthrough/renderData.h"
 #include "pxr/imaging/hd/mesh.h"
 
 #include "pxr/base/gf/matrix4f.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+class HydraPassthroughResourceRegistry;
 
 /// \class HydraPassthroughMesh
 ///
@@ -108,15 +111,33 @@ protected:
 
 private:
 
+    void
+    _UpdateTopologyDependentComputations(
+        HdSceneDelegate* sceneDelegate,
+        const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry,
+        HdMeshReprDesc const &desc,
+        HdDirtyBits* dirtyBits);
+
     TfTokenVector _UpdateComputedPrimvarSources(
             HdSceneDelegate* sceneDelegate,
-            HdDirtyBits dirtyBits);
+            HdDirtyBits* dirtyBits);
 
     void _PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                             HdDirtyBits*     dirtyBits,
-                            HdMeshReprDesc const &desc);
+                            HdMeshReprDesc const &desc,
+                            HdReprSharedPtr &repr);
 
     HydraPassthroughRenderData::MeshData _meshData;
+
+    // Internal mesh data, not available in python
+    HydraPassthroughMeshTopology _topology;
+    HydraPassthroughFvarTopologyTracker _fvarTopologyTracker;
+
+    bool _hasMirroredTransform{false};
+    bool _sceneNormals{false};
+    bool _displayOpacity{false};
+
+    HdInterpolation _sceneNormalsInterpolation{};
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
