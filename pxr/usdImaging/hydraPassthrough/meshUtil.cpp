@@ -79,7 +79,6 @@ _QuadrangulatePrimvar(HdBufferSourceSharedPtr const &source,
     }
 }
 
-/*
 HdBufferSourceSharedPtr
 _QuadrangulateFaceVaryingPrimvar(
     HdBufferSourceSharedPtr const &source,
@@ -96,7 +95,7 @@ _QuadrangulateFaceVaryingPrimvar(
 
     // don't transfer source to gpu, it needs to be quadrangulated.
     // but it still has to be resolved, so add it to registry.
-    resourceRegistry->AddPrimvarSource(source);
+    resourceRegistry->AddPrimvarSource(id, source, HdInterpolationFaceVarying);
 
     return quadSource;
 }
@@ -113,11 +112,10 @@ _TriangulateFaceVaryingPrimvar(HdBufferSourceSharedPtr const &source,
 
     // don't transfer source to gpu, it needs to be triangulated.
     // but it still has to be resolved, so add it to registry.
-    resourceRegistry->AddPrimvarSource(source);
+    resourceRegistry->AddPrimvarSource(id, source, HdInterpolationFaceVarying);
 
     return triSource;
 }
-*/
 
 // Enqueues a refinement computation to 'computations' for the primvar data
 // in 'source',
@@ -171,7 +169,6 @@ _RefineOrQuadrangulateVertexAndVaryingPrimvar(
     // XXX original returns the source, is that cleaner?
 }
 
-/*
 HdBufferSourceSharedPtr
 _RefineOrQuadrangulateOrTriangulateFaceVaryingPrimvar(
     HdBufferSourceSharedPtr source,
@@ -189,11 +186,11 @@ _RefineOrQuadrangulateOrTriangulateFaceVaryingPrimvar(
     // whut?
     //
     if (doRefine) {
-        _RefinePrimvar(source, topology, resourceRegistry, computations, 
-                       HydraPassthroughMeshTopology::INTERPOLATE_FACEVARYING,
+        _RefinePrimvar(source, topology, id, resourceRegistry, computations, 
+                       HdInterpolationFaceVarying,
                        channel);
     } else if (doQuadrangulate) {
-        source = _QuadrangulateFaceVaryingPrimvar(source, topology, id, 
+        source = _QuadrangulateFaceVaryingPrimvar(source, topology, id,
                                                   resourceRegistry);
     } else {
         source = _TriangulateFaceVaryingPrimvar(source, topology, id, 
@@ -202,7 +199,6 @@ _RefineOrQuadrangulateOrTriangulateFaceVaryingPrimvar(
 
     return source;
 }
-*/
 
 //-------------------------------------------------
 
@@ -552,7 +548,7 @@ PopulateVertexPrimvars(
 
     // Track the last vertex index to distinguish between vertex and varying
     // while processing.
-    const int vertexPartitionIndex = int(primvars.size()-1);
+    auto vertexPartitionIndex = primvars.size()-1;
 
     // Add varying primvars so we can process them all together, below.
     /*
@@ -564,10 +560,13 @@ PopulateVertexPrimvars(
      *
      * Note if we fully remove this, we can update the loop below to remove the isVarying
      * check too.
+     * 
+     * Ok, below is face varying, this is varying. So, we do need to do this, but
+     * need to keep them separate. This function should be named PopulateVertexAndVaryingPrimvars
+    */
     HdPrimvarDescriptorVector varyingPvs = PrimUtil::GetPrimvarDescriptors(
             rprim, sceneDelegate, HdInterpolationVarying);
     primvars.insert(primvars.end(), varyingPvs.begin(), varyingPvs.end());
-    */
     printf("XXX Found %zu vertex primvars\n", primvars.size());
 
     HdExtComputationPrimvarDescriptorVector compPrimvars =
@@ -751,6 +750,9 @@ PopulateVertexPrimvars(
         auto pos = std::find(primvars.begin(), primvars.end(), primvar);
         if (pos != primvars.end()) {
             primvars.erase(pos);
+            if (pos <= primvars.begin() + vertexPartitionIndex) {
+                --vertexPartitionIndex;
+            }
         }
     }
 
@@ -830,7 +832,12 @@ PopulateVertexPrimvars(
     if (!sources.empty()) {
         // add sources to update queue
         printf("Mesh Util: Adding %zu primvar sources for %s\n", sources.size(), id.GetText());
-        resourceRegistry->AddPrimvarSources(id, std::move(sources), HdInterpolationVertex);
+        HdBufferSourceSharedPtrVector vertexSources(
+            sources.begin(), sources.begin() + vertexPartitionIndex + 1);
+        HdBufferSourceSharedPtrVector varyingSources(
+            sources.begin() + vertexPartitionIndex + 1, sources.end());
+        resourceRegistry->AddPrimvarSources(id, std::move(vertexSources), HdInterpolationVertex);
+        resourceRegistry->AddPrimvarSources(id, std::move(varyingSources), HdInterpolationVarying);
     }
     // add gpu computations to queue.
 //    for (auto const& compQueuePair : computations) {
@@ -844,6 +851,205 @@ PopulateVertexPrimvars(
             resourceRegistry->AddPrimvarSource(id, src, HdInterpolationVertex);
         }
     }
+}
+
+void
+PopulateFaceVaryingPrimvars(
+        HdRprim const* rprim,
+        SdfPath const& id,
+        HdSceneDelegate* sceneDelegate,
+        HydraPassthroughResourceRegistry *resourceRegistry,
+        HydraPassthroughMeshTopology * topology,
+        HydraPassthroughFvarTopologyTracker* fvarTopologyTracker,
+        HdDrawItem *drawItem,
+        //int geomSubsetDescIndex,
+        HdDirtyBits *dirtyBits)
+        //bool requireSmoothNormals)
+{
+    HD_TRACE_FUNCTION();
+    HF_MALLOC_TAG_FUNCTION();
+
+    HdPrimvarDescriptorVector primvars =
+        PrimUtil::GetPrimvarDescriptors(
+            rprim, sceneDelegate, HdInterpolationFaceVarying);
+//                this, drawItem, sceneDelegate,
+//            HdInterpolationFaceVarying, repr, desc.geomStyle,
+//                geomSubsetDescIndex, _topology->GetGeomSubsets().size());
+    if (primvars.empty())
+    {
+        return;
+    }
+
+    HdBufferSourceSharedPtrVector sources;
+    sources.reserve(primvars.size());
+    ComputationUtil::ComputationComputeQueuePairVector computations;
+
+    int refineLevel = topology ? topology->GetRefineLevel() : 0;
+    int numFaceVaryings = topology ? topology->GetNumFaceVaryings() : 0;
+
+    TfToken fvarLinearInterpRule =
+        topology->GetSubdivTags().GetFaceVaryingInterpolationRule();
+    
+    // Fvar primvars only need to be refined when the fvar linear interpolation 
+    // rule is not "linear all"
+    const bool doRefine = (refineLevel > 0 && 
+        fvarLinearInterpRule != PxOsdOpenSubdivTokens->all);
+    // At higher levels of refinement that do not require full OSD primvar 
+    // refinement, we might want to quadrangulate instead
+    const bool doQuadrangulate =
+        UseQuadIndices(sceneDelegate->GetRenderIndex(),
+                       sceneDelegate->GetMaterialId(id),
+                       topology) ||
+        (refineLevel > 0 && !topology->RefinesToTriangles());
+
+    // Track primvars that are skipped because they have zero elements
+    HdPrimvarDescriptorVector zeroElementPrimvars;
+
+    // If any primvars use doubles, we need to know if the Hgi backend supports
+    // these, or if they need to be converted to floats.
+    const bool doublesSupported = true; //_GetDoubleSupport(resourceRegistry);
+
+    // XXX Member variables in the old code, see if we need these.
+    // Currently, they are all giving warnings about being set but not used
+    [[maybe_unused]] HdType _pointsDataType = HdType::HdTypeInvalid;
+    [[maybe_unused]] bool _sceneNormals = false;
+    [[maybe_unused]] HdInterpolation _sceneNormalsInterpolation = HdInterpolationCount;
+    [[maybe_unused]] bool _displayOpacity = false;
+ 
+    for (HdPrimvarDescriptor const& primvar: primvars) {
+        if (!HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, primvar.name)) {
+            continue;
+        }
+
+        VtValue value;
+        // If refining and primvar is indexed, get unflattened primvar
+        const bool useUnflattendPrimvar = doRefine && primvar.indexed;
+        if (useUnflattendPrimvar) {
+            VtIntArray indices(0);
+            value = sceneDelegate->GetIndexedPrimvar(id, primvar.name, &indices);
+        } else {
+            value = sceneDelegate->Get(id, primvar.name);
+        }
+        
+        if (!value.IsEmpty()) {
+            HdBufferSourceSharedPtr source =
+                std::make_shared<HdVtBufferSource>(primvar.name, value, 1,
+                                                   doublesSupported);
+
+            if (!useUnflattendPrimvar && source->GetNumElements() == 0) {
+                // zero elements for primvars will be treated as if the primvar
+                // doesn't exist, so no warning is necessary
+                zeroElementPrimvars.push_back(primvar);
+                continue;
+            }
+
+            // verify primvar length
+            if ((int)source->GetNumElements() != numFaceVaryings && 
+                !useUnflattendPrimvar) {
+                HF_VALIDATION_WARN(id, 
+                    "# of facevaryings mismatch (%d != %d)"
+                    " for primvar %s",
+                    (int)source->GetNumElements(), numFaceVaryings,
+                    primvar.name.GetText());
+                continue;
+            }
+
+            if (source->GetName() == HdTokens->normals) {
+                _sceneNormalsInterpolation = HdInterpolationFaceVarying;
+                _sceneNormals = true;
+            } else if (source->GetName() == HdTokens->displayOpacity) {
+                _displayOpacity = true;
+            }
+
+            int channel = 0;
+            if (doRefine) {
+                channel = 
+                    fvarTopologyTracker->GetChannelFromPrimvar(primvar.name);
+
+                // Invalid fvar topologies may have been skipped when
+                // processed by _GatherFaceVaryingTopologies() in which
+                // case a validation warning will have been posted already
+                // and we should skip further refinement here.
+                if (channel < 0) {
+                    continue;
+                }
+            }
+
+            source = _RefineOrQuadrangulateOrTriangulateFaceVaryingPrimvar(
+                source, topology, id,  doRefine, doQuadrangulate, 
+                resourceRegistry, &computations, channel);
+            
+            sources.push_back(source);
+        }
+    }
+
+    // remove the primvars with zero elements from further processing
+    for (HdPrimvarDescriptor const& primvar: zeroElementPrimvars) {
+        auto pos = std::find(primvars.begin(), primvars.end(), primvar);
+        if (pos != primvars.end()) {
+            primvars.erase(pos);
+        }
+    }
+
+    /*
+    HdBufferArrayRangeSharedPtr const &bar =
+        drawItem->GetFaceVaryingPrimvarRange();
+
+    if (HdStCanSkipBARAllocationOrUpdate(sources, computations, bar, *dirtyBits)) {
+        return;
+    }
+
+    // XXX: This should be based off the DirtyPrimvarDesc bit.
+    bool hasDirtyPrimvarDesc = (*dirtyBits & HdChangeTracker::DirtyPrimvar);
+    HdBufferSpecVector removedSpecs;
+    if (hasDirtyPrimvarDesc) {
+        // no internally generated facevarying primvars
+        TfTokenVector internallyGeneratedPrimvars; // empty
+        removedSpecs = HdStGetRemovedPrimvarBufferSpecs(bar, primvars, 
+            internallyGeneratedPrimvars, id);
+    }
+
+    HdBufferSpecVector bufferSpecs;
+    HdBufferSpec::GetBufferSpecs(sources, &bufferSpecs);
+    HdStGetBufferSpecsFromCompuations(computations, &bufferSpecs);
+
+    HdBufferArrayRangeSharedPtr range =
+        resourceRegistry->UpdateNonUniformBufferArrayRange(
+            HdTokens->primvar, bar, bufferSpecs, removedSpecs,
+            HdBufferArrayUsageHintBitsStorage);
+    
+    HdStUpdateDrawItemBAR(
+        range,
+        drawItem->GetDrawingCoord()->GetFaceVaryingPrimvarIndex(),
+        &_sharedData,
+        renderParam,
+        &(sceneDelegate->GetRenderIndex().GetChangeTracker()));
+
+    if (!sources.empty() || !computations.empty()) {
+        // If sources or computations are to be queued against the resulting
+        // BAR, we expect it to be valid.
+        if (!TF_VERIFY(drawItem->GetFaceVaryingPrimvarRange()->IsValid())) {
+            return;
+        }
+    }
+*/
+
+    if (!sources.empty()) {
+        resourceRegistry->AddPrimvarSources(id, std::move(sources), HdInterpolationFaceVarying);
+        //resourceRegistry->AddSources(
+        //    drawItem->GetFaceVaryingPrimvarRange(), std::move(sources));
+    }
+
+    // add gpu computations to queue.
+    /*
+     * Not sure what to do with this
+    for (auto const& compQueuePair : computations) {
+        HdStComputationSharedPtr const& comp = compQueuePair.first;
+        HdStComputeQueue queue = compQueuePair.second;
+        resourceRegistry->AddComputation(
+            drawItem->GetFaceVaryingPrimvarRange(), comp, queue);
+    }
+    */
 }
 
 bool

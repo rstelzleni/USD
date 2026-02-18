@@ -42,6 +42,16 @@ namespace HydraPassthroughMeshUtil
         HdDirtyBits *dirtyBits,
         bool requireSmoothNormals);
 
+    void PopulateFaceVaryingPrimvars(
+        HdRprim const* rprim,
+        SdfPath const& id,
+        HdSceneDelegate* sceneDelegate,
+        HydraPassthroughResourceRegistry *resourceRegistry,
+        HydraPassthroughMeshTopology * topology,
+        HydraPassthroughFvarTopologyTracker* fvarTopologyTracker,
+        HdDrawItem *drawItem,
+        HdDirtyBits *dirtyBits);
+
     bool UseQuadIndices(
         const HdRenderIndex &renderIndex,
         const SdfPath &materialId,
