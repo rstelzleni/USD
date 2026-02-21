@@ -4,11 +4,9 @@
 #include "renderParam.h"
 #include "resourceRegistry.h"
 
-#include <iostream>
-#include <sstream>
-
 #include "pxr/imaging/hd/extComputationUtils.h"
 #include "pxr/imaging/hd/meshUtil.h"
+#include "pxr/imaging/hf/diagnostic.h"
 
 #include "pxr/base/tf/diagnosticLite.h"
 
@@ -62,21 +60,6 @@ void HydraPassthroughMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirt
     if (isNew) {
         _reprs.emplace_back(reprToken, std::make_shared<HdRepr>());
         *dirtyBits |= HdChangeTracker::DirtyRepr;
-        /*
-        // add new repr
-        _reprs.emplace_back(reprToken, std::make_shared<HdRepr>());
-        HdReprSharedPtr &repr = _reprs.back().second;
-
-        // set dirty bit to say we need to sync a new repr (buffer array
-        // ranges may change)
-        *dirtyBits |= HdChangeTracker::DirtyRepr;
-
-        HdRepr::DrawItemUniquePtr drawItem =
-            std::make_unique<HdDrawItem>(&_sharedData);
-        //HdDrawingCoord *drawingCoord = drawItem->GetDrawingCoord();
-        repr->AddDrawItem(std::move(drawItem));
-        */
-
     }
 }
 
@@ -151,9 +134,6 @@ HydraPassthroughMesh::ToString() const {
         ss << "    " << pv.first.GetText() << ": ";
         ss << TfStringify(pv.second.data);
         ss << " (" << pv.second.interpolation << ")";
-//        if (!pv.second.role.IsEmpty()) {
-//            ss << " role=" << pv.second.role.GetText();
-//        }
         ss << std::endl;
     }
     ss << "  }" << std::endl;
@@ -188,38 +168,17 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
         SetMaterialId(_meshData.materialId);
     }
 
-    /*
-    TfTokenVector computedPrimvars =
-        _UpdateComputedPrimvarSources(sceneDelegate, dirtyBits);
-
-    // If we didn't get points from a computed primvar, get them from an attr
-    bool pointsIsComputed =
-        std::find(computedPrimvars.begin(), computedPrimvars.end(),
-                  HdTokens->points) != computedPrimvars.end();
-    if (!pointsIsComputed &&
-        HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->points)) {
-        VtValue value = sceneDelegate->Get(id, HdTokens->points);
-        if (not value.IsEmpty()) {
-            _meshData.points = value;
-        }
-    }
-    */
-
-    // When we add animation we'll want to cache these, as they're unlikely
-    // to change frame to frame.
     if (HdChangeTracker::IsTopologyDirty(*dirtyBits, id)) {
-        //_meshData.topology = sceneDelegate->GetMeshTopology(id);
+        // It would be good to cache these topology objects, they can repeat in
+        // a scene, and especially if we add animation support, they can be
+        // reused across frames. Topology has a built in hash function for this.
         MeshUtil::PopulateMeshTopology(
             this,
             id,
             sceneDelegate,
-            dirtyBits, // XXX can get rid of these next params now
-            HdChangeTracker::IsSubdivTagsDirty(*dirtyBits, id),
-            HdChangeTracker::IsDisplayStyleDirty(*dirtyBits, id),
-            HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id),
+            dirtyBits,
             &_topology,
-            &_fvarTopologyTracker
-            );
+            &_fvarTopologyTracker);
 
         // This is an Hd level concept, I'm not sure if its required for our
         // case, but doing it since it is expected
@@ -232,22 +191,8 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                 sceneDelegate,
                 resourceRegistry,
                 desc,
-                dirtyBits
-                );
+                dirtyBits);
     }
-
-    
-    /*
-    if (HdChangeTracker::IsSubdivTagsDirty(*dirtyBits, id) &&
-        _meshData.topology.GetRefineLevel() > 0) {
-        _meshData.topology.SetSubdivTags(sceneDelegate->GetSubdivTags(id));
-    }
-    if (HdChangeTracker::IsDisplayStyleDirty(*dirtyBits, id)) {
-        HdDisplayStyle const displayStyle = sceneDelegate->GetDisplayStyle(id);
-        _meshData.topology = HdMeshTopology(_meshData.topology,
-            displayStyle.refineLevel);
-    }
-    */
 
     if (HdChangeTracker::IsTransformDirty(*dirtyBits, id)) {
         // XXX fixme, handle nested transforms
@@ -268,95 +213,7 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     if (HdChangeTracker::IsDoubleSidedDirty(*dirtyBits, id)) {
         _doubleSided = IsDoubleSided(sceneDelegate);
     }
-    if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->normals) ||
-        HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->widths) ) {
-        _UpdatePrimvarSources(sceneDelegate, *dirtyBits);
-    }
     */
-
-    /*
-     * Below was workarounds for not doing computations on primvars
-
-    if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->primvar)) {
-        // In HdEmbreeMesh::_UpdatePrimvarSources, they pull primvars that are
-        // used in computations, but we want all primvars, so we do this here.
-        for (size_t i=0; i < HdInterpolationCount; ++i) {
-            HdInterpolation interp = static_cast<HdInterpolation>(i);
-            HdPrimvarDescriptorVector primvars =
-                sceneDelegate->GetPrimvarDescriptors(id, interp);
-            for (HdPrimvarDescriptor const& pv: primvars) {
-                if (pv.indexed) {
-                    VtIntArray indices;
-                    VtValue indexedValue =
-                        sceneDelegate->GetIndexedPrimvar(id, pv.name, &indices);
-                    _meshData.primvars[pv.name] = {
-                        indexedValue,
-                        interp,
-                        pv.role,
-                        indices
-                    };
-                }
-                else {
-                    _meshData.primvars[pv.name] = {
-                        sceneDelegate->Get(id, pv.name),
-                        interp,
-                        pv.role
-                    };
-                }
-            }
-        }
-    }
-
-    // Now that we're through the top level dirty bits, do dependent
-    // computations.
-    if (HdChangeTracker::IsTopologyDirty(*dirtyBits, id)) {
-        // XXX RYANS This doesn't do open subdiv refinement. I think we'd
-        // need to get access to the PxOsdTopology from this topology object
-        // and then call some other utilities to make subdivs work.
-        //
-        // HdStMesh relies heavily on GPU computation for this, we'll likely
-        // need to go to Osd apis directly so we can call CPU versions.
-        //
-        // Note also, HdSt does all this triangulation/quadrangulation in
-        // conputations, I'm not sure if there's an advantage there for this
-        // use case. See HdSt/triangulate.h and HdSt/quadrangulate.h
-
-        // If the topology is dirty, we need to update the face vertex counts
-        // and indices.
-        //
-        // We're making triangle meshes only currently
-        HdMeshUtil meshUtil(&_topology, GetId());
-        meshUtil.ComputeTriangleIndices(
-                &_meshData.faceVertexIndices,
-                &_meshData.triangleOriginalFaceIndices,
-                &_meshData.triangleEdgeIndices);
-
-        // Now we need to process any primvars that depend on the topology
-        // For the moment, without subdiv refinement, this is only face-varying
-        // primvars, and uvs could be face varying.
-        //
-        // Note that _meshData.primvarSourceMap may need the same behavior,
-        // depending on what the computations are doing
-        for (auto & pv : _meshData.primvars) {
-            if (pv.second.interpolation == HdInterpolationFaceVarying) {
-                VtValue result;
-                HdTupleType tupleType = HdGetValueTupleType(pv.second.data);
-                if(meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
-                    HdGetValueData(pv.second.data),
-                    tupleType.count,
-                    tupleType.type,
-                    &result)) {
-                    // replace the primvar data with the triangulated version
-                    pv.second.updatedData = result;
-                }
-                else {
-                    TF_WARN("Failed to compute triangulated face-varying primvar for %s",
-                            pv.first.GetText());
-                }
-            }
-        }
-    }
-*/
 
     // It seems like you should only clear the "Scene" dirty bits because
     // there are other dirty bits we shouldn't process in Sync.
@@ -372,9 +229,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
     HdDirtyBits*     dirtyBits
     )
 {
-    // if refined, we submit a subdivision preprocessing
-    // no matter what desc says
-    // (see the lengthy comment in PopulateVertexPrimvar)
+    // If refined, we submit a subdivision preprocessing no matter what desc says
     if (_topology.GetRefineLevel() > 0) {
         // OpenSubdiv preprocessing
         HdBufferSourceSharedPtr
@@ -382,230 +237,81 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         resourceRegistry->AddGenericSource(GetId(), topologySource);
     }
 
-    // we also need quadinfo if requested.
+    const auto &id = GetId();
+    const bool doQuadrangulate = MeshUtil::UseQuadIndices(
+                                                sceneDelegate->GetRenderIndex(),
+                                                sceneDelegate->GetMaterialId(id),
+                                                &_topology);
+
+    // We also need quadinfo if requested.
     // Note that this is needed even if refineLevel > 0, in case
     // HdMeshGeomStyleHull is going to be used.
     //
     // See HdStMesh::_UseQuadIndices
-    /*
-    if (useQuadIndices) {
+    if (doQuadrangulate) {
         // Quadrangulate preprocessing
         HdBufferSourceSharedPtr quadInfoBuilder =
-            topology->GetQuadInfoBuilderComputation(id);
-        resourceRegistry->AddGenericSource(quadInfoBuilder);
+            _topology.GetQuadInfoBuilderComputation(id);
+        resourceRegistry->AddGenericSource(id, quadInfoBuilder);
     }
-    */
 
-    // Sigh, we need to deal with these
     const HdGeomSubsets &geomSubsets = _topology.GetGeomSubsets();
 
     // Normal case
     if (geomSubsets.empty() || desc.geomStyle == HdMeshGeomStylePoints) {
 
-        // ask again registry if there's a shareable buffer range for the topology
-        //HdInstance<HdBufferArrayRangeSharedPtr> rangeInstance =
-        //    resourceRegistry->RegisterMeshIndexRange(_topologyId, indexToken);
+        HdBufferSourceSharedPtrVector sources;
+        HdBufferSourceSharedPtr source;
 
-        //if (rangeInstance.IsFirstInstance()) {
-            // if not exists, update actual topology buffer to range.
-            // Allocate new one if necessary.
-            HdBufferSourceSharedPtrVector sources;
-            HdBufferSourceSharedPtr source;
+        if (desc.geomStyle == HdMeshGeomStylePoints) {
+            // create coarse point indices
+            source = _topology.GetPointsIndexBuilderComputation();
+            sources.push_back(source);
+        } else if (_topology.GetRefineLevel() > 0) {
+            // description can also affect refine level if it indicates we're
+            // rendering a hull. We may need to take that into account if we
+            // support it. See HdStMesh::_GetRefineLevelForDesc
 
-            if (desc.geomStyle == HdMeshGeomStylePoints) {
-                // create coarse points indices
-                source = _topology.GetPointsIndexBuilderComputation();
-                sources.push_back(source);
-            } else if (_topology.GetRefineLevel() > 0) {
-                // description can also affect refine level if it indicates we're
-                // rendering a hull. We may need to take that into account if we
-                // support it. See HdStMesh::_GetRefineLevelForDesc
+            // create refined indices, primitiveParam and edgeIndices
+            source = _topology.GetOsdIndexBuilderComputation();
+            sources.push_back(source);
 
-                // create refined indices, primitiveParam and edgeIndices
-                source = _topology.GetOsdIndexBuilderComputation();
-                sources.push_back(source);
-
-                // Add face-varying indices and patch params to topology BAR if 
-                // necessary
-                if (_topology.GetSubdivTags().GetFaceVaryingInterpolationRule() !=
-                        PxOsdOpenSubdivTokens->all) {
-                    for (size_t i = 0; 
-                            i < _fvarTopologyTracker.GetNumTopologies(); 
-                            ++i) {
-                        HdBufferSourceSharedPtr fvarIndicesSource = 
-                            _topology.GetOsdFvarIndexBuilderComputation(i);
-                        sources.push_back(fvarIndicesSource);
-                    }
+            // Add computations for face varying primvar indices
+            if (_topology.GetSubdivTags().GetFaceVaryingInterpolationRule() !=
+                    PxOsdOpenSubdivTokens->all) {
+                for (size_t i = 0; 
+                        i < _fvarTopologyTracker.GetNumTopologies(); 
+                        ++i) {
+                    HdBufferSourceSharedPtr fvarIndicesSource = 
+                        _topology.GetOsdFvarIndexBuilderComputation(i);
+                    sources.push_back(fvarIndicesSource);
                 }
-            } else if (MeshUtil::UseQuadIndices(
-                        sceneDelegate->GetRenderIndex(),
-                        sceneDelegate->GetMaterialId(GetId()),
-                        &_topology)) {
-                // not refined = quadrangulate
-                // create quad indices, primitiveParam and edgeIndices
-                source = _topology.GetQuadIndexBuilderComputation(GetId());
-                sources.push_back(source);
-            } else {
-                // create triangle indices, primitiveParam and edgeIndices
-                source = _topology.GetTriangleIndexBuilderComputation(GetId());
-                sources.push_back(source);  
             }
-
-            resourceRegistry->AddIndexSources(GetId(), std::move(sources));
-
-            /*
-            // initialize buffer array
-            //   * indices
-            //   * primitiveParam
-            //   * fvarIndices (optional)
-            //   * fvarPatchParam (optional)
-            HdBufferSpecVector bufferSpecs;
-            HdBufferSpec::GetBufferSpecs(sources, &bufferSpecs);
-
-            // Set up the usage hints to mark topology as varying if
-            // there is a previously set range
-            HdBufferArrayUsageHint usageHint = 
-                HdBufferArrayUsageHintBitsIndex |
-                HdBufferArrayUsageHintBitsStorage;
-//            if (drawItem->GetTopologyRange()) {
-//                usageHint |= HdBufferArrayUsageHintBitsSizeVarying;
-//            }
-
-            // allocate new range
-            HdBufferArrayRangeSharedPtr range =
-                resourceRegistry->AllocateNonUniformBufferArrayRange(
-                        HdTokens->topology, bufferSpecs, usageHint);
-
-            // add sources to update queue
-            resourceRegistry->AddSources(range, std::move(sources));
-            */
-
-            // save new range to registry
-            //rangeInstance.SetValue(range);
-        //}
-
-        // If we are updating an existing topology, notify downstream
-        // systems of the change
-        /*
-        HdBufferArrayRangeSharedPtr const& orgRange =
-            drawItem->GetTopologyRange();
-        HdBufferArrayRangeSharedPtr newRange = rangeInstance.GetValue();
-
-        if (HdStIsValidBAR(orgRange) && (newRange != orgRange)) {
-            TF_DEBUG(HD_RPRIM_UPDATED).Msg("%s has varying topology"
-                    " (topology index = %d).\n", id.GetText(),
-                    drawItem->GetDrawingCoord()->GetTopologyIndex());
-
-            // Setup a flag to say this mesh's topology is varying
-            _hasVaryingTopology = true;
+        } else if (doQuadrangulate) {
+            // not refined = quadrangulate
+            // create quad indices, primitiveParam and edgeIndices
+            source = _topology.GetQuadIndexBuilderComputation(id);
+            sources.push_back(source);
+        } else {
+            // create triangle indices, primitiveParam and edgeIndices
+            source = _topology.GetTriangleIndexBuilderComputation(id);
+            sources.push_back(source);  
         }
 
-        HdStUpdateDrawItemBAR(
-                newRange,
-                drawItem->GetDrawingCoord()->GetTopologyIndex(),
-                &_sharedData,
-                renderParam,
-                &changeTracker);
-                */
+        resourceRegistry->AddIndexSources(id, std::move(sources));
+
     } else {
         // XXX will handle later, need test data
         // Geom subsets case
-//        HdBufferSourceSharedPtr indicesSource;
-//        HdBufferSourceSharedPtr fvarIndicesSource;
-//
-//        bool refined = false;
-//        bool quadrangulated = false;
-//        if (refineLevelForDesc > 0) {
-//            // create refined indices, primitiveParam and edgeIndices
-//            indicesSource = _topology->GetOsdIndexBuilderComputation();
-//            resourceRegistry->AddSource(indicesSource);
-//            // Add face-varying indices and patch params to topology BAR if 
-//            // necessary
-//            if (_topology->GetSubdivTags().GetFaceVaryingInterpolationRule() !=
-//                    PxOsdOpenSubdivTokens->all) {
-//                for (size_t i = 0; 
-//                        i < _fvarTopologyTracker->GetNumTopologies(); 
-//                        ++i) {
-//                    fvarIndicesSource = 
-//                        _topology->GetOsdFvarIndexBuilderComputation(i);
-//                    resourceRegistry->AddSource(fvarIndicesSource);
-//                }
-//            }
-//
-//            refined = true;
-//            if (_topology->GetScheme() == PxOsdOpenSubdivTokens->catmullClark ||
-//                    _topology->GetScheme() == PxOsdOpenSubdivTokens->bilinear) {
-//                quadrangulated = true;
-//            }
-//        } else if (_UseQuadIndices(sceneDelegate->GetRenderIndex(), _topology)) {
-//            // not refined = quadrangulate
-//            // create quad indices, primitiveParam and edgeIndices
-//            indicesSource = _topology->GetQuadIndexBuilderComputation(GetId());
-//            resourceRegistry->AddSource(indicesSource);
-//            quadrangulated = true;
-//        } else {
-//            // create triangle indices, primitiveParam and edgeIndices
-//            indicesSource = _topology->GetTriangleIndexBuilderComputation(GetId());
-//            resourceRegistry->AddSource(indicesSource);
-//        }
-//
-//        // If the mesh has been triangulated, quadrangulated, or refined (as 
-//        // refined indices are first triangulated or quadrangulated), we 
-//        // need to transform the subset's authored face indices, which are 
-//        // given in reference to the base faces of the mesh, to the indices
-//        // of the triangulated/quadrangulated faces. These buffer source
-//        // computations help us do that.
-//        HdBufferSourceSharedPtr geomSubsetFaceIndicesHelperSource = 
-//            _topology->GetGeomSubsetFaceIndexHelperComputation(
-//                    refined, quadrangulated);
-//        resourceRegistry->AddSource(geomSubsetFaceIndicesHelperSource);
-//
-//        if (refined) {
-//            _topology->GetOsdBaseFaceToRefinedFacesMapComputation(
-//                    resourceRegistry.get());
-//        }
-//
-//        // For original draw item
-//        const std::vector<int> *nonSubsetFaces = 
-//            _topology->GetNonSubsetFaces();
-//        _CreateTopologyRangeForGeomSubset(resourceRegistry, changeTracker, 
-//                renderParam, drawItem, indexToken, indicesSource,
-//                fvarIndicesSource, geomSubsetFaceIndicesHelperSource,
-//                VtIntArray(nonSubsetFaces->begin(), nonSubsetFaces->end()), 
-//                refined);
-//
-//        // For geom subsets draw items
-//        const size_t numGeomSubsets = geomSubsets.size();
-//        for (size_t i = 0; i < geomSubsets.size(); ++i) {
-//            HdGeomSubset geomSubset = geomSubsets[i];
-//            HdStDrawItem *subsetDrawItem = static_cast<HdStDrawItem*>(
-//                    repr->GetDrawItemForGeomSubset(
-//                        geomSubsetDescIndex, numGeomSubsets, i));
-//            _CreateTopologyRangeForGeomSubset(resourceRegistry, 
-//                    changeTracker, renderParam, subsetDrawItem, indexToken, 
-//                    indicesSource, fvarIndicesSource, 
-//                    geomSubsetFaceIndicesHelperSource, geomSubset.indices, 
-//                    refined);
-//        }
-//
+        // See HdStMesh::Sync for the similar if/else to this block, we can base
+        // the implementation on that, but using local implementations
+        // It will likely require updating our output format as well.
+        HF_VALIDATION_WARN(id, "Geom subsets not supported yet");
     }
 
-    // The index computations should be added to the resource registry at this
-    // point. Now we need to add primvar computations.
-    /* INSTANCE PRIMVARS */
-    /*
-    _UpdateInstancer(sceneDelegate, dirtyBits);
-    HdStUpdateInstancerData(sceneDelegate->GetRenderIndex(),
-                            renderParam,
-                            this,
-                            drawItem,
-                            &_sharedData,
-                            *dirtyBits);
-    
-    _displayOpacity = _displayOpacity ||
-            HdStIsInstancePrimvarExistentAndValid(
-            sceneDelegate->GetRenderIndex(), this, HdTokens->displayOpacity);
-            */
+    // Now populate primvar sources and computations that we need.
+
+    // For instancing, see HdStMesh in the section called "INSTACE PRIMVARS"
 
     // XXX See also HdStMesh::_PopulateAdjacency for smooth normals
     // In HdStMesh they loop over all reprdescs for the current repr to 
@@ -624,7 +330,6 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
 
     // temp, replace with real subset once supported
     const int geomSubsetDescIndex = 0;
-    const auto id = GetId();
 
     /* CONSTANT PRIMVARS, TRANSFORM, EXTENT AND PRIMID */
     if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id) ||
@@ -638,7 +343,6 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         
         // XXX we need this draw item to get bounds
         bool hasMirroredTransform = _hasMirroredTransform;
-        printf("XXX Populating constant primvars for id=%s\n", id.GetText());
         PrimUtil::PopulateConstantPrimvars(this,
                                      &_sharedData,
                                      sceneDelegate,
@@ -663,11 +367,10 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
             !sceneDelegate->Get(id, HdTokens->displayOpacity).IsEmpty();
     }
 
-    /* VERTEX PRIMVARS */
+    /* VERTEX AND VARYING PRIMVARS */
     if ((*dirtyBits & HdChangeTracker::NewRepr) ||
         HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
-        printf("XXX Populating vertex primvars for id=%s\n", id.GetText());
-        MeshUtil::PopulateVertexPrimvars(
+        MeshUtil::PopulateVertexAndVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
                 desc, nullptr /*drawItem*/, geomSubsetDescIndex, dirtyBits,
                 requireSmoothNormals);
@@ -675,7 +378,6 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
 
     /* FACEVARYING PRIMVARS */
     if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
-        printf("XXX Populating face-varying primvars for id=%s\n", id.GetText());
         MeshUtil::PopulateFaceVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
                 &_fvarTopologyTracker,
@@ -698,59 +400,5 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
 //
 
 }
-
-/*
-TfTokenVector
-HydraPassthroughMesh::_UpdateComputedPrimvarSources(HdSceneDelegate* sceneDelegate,
-                                                    HdDirtyBits* dirtyBits)
-{
-    HD_TRACE_FUNCTION();
-    
-    SdfPath const& id = GetId();
-
-    // Get all the dirty computed primvars
-    HdExtComputationPrimvarDescriptorVector dirtyCompPrimvars;
-    for (size_t i=0; i < HdInterpolationCount; ++i) {
-        HdExtComputationPrimvarDescriptorVector compPrimvars;
-        HdInterpolation interp = static_cast<HdInterpolation>(i);
-        compPrimvars = sceneDelegate->GetExtComputationPrimvarDescriptors
-                                    (GetId(), interp);
-
-        for (auto const& pv: compPrimvars) {
-            if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, pv.name)) {
-                dirtyCompPrimvars.emplace_back(pv);
-            }
-        }
-    }
-
-    if (dirtyCompPrimvars.empty()) {
-        return TfTokenVector();
-    }
-    
-    HdExtComputationUtils::ValueStore valueStore
-        = HdExtComputationUtils::GetComputedPrimvarValues(
-            dirtyCompPrimvars, sceneDelegate);
-
-    TfTokenVector compPrimvarNames;
-    // Update local primvar map and track the ones that were computed
-    for (auto const& compPrimvar : dirtyCompPrimvars) {
-        auto const it = valueStore.find(compPrimvar.name);
-        if (!TF_VERIFY(it != valueStore.end())) {
-            continue;
-        }
-        
-        compPrimvarNames.emplace_back(compPrimvar.name);
-        if (compPrimvar.name == HdTokens->points) {
-            _meshData.points = it->second.Get<VtVec3fArray>();
-        } else {
-            _meshData.primvarSourceMap[compPrimvar.name] =
-                {it->second, compPrimvar.interpolation};
-        }
-    }
-
-    return compPrimvarNames;
-}
-*/
-
 
 PXR_NAMESPACE_CLOSE_SCOPE

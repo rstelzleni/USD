@@ -37,25 +37,6 @@ class HydraPassthroughRenderData :
 {
 public:
 
-    /*
-    struct PrimvarSource {
-        PrimvarSource() = default;
-        PrimvarSource(const VtValue& d, HdInterpolation interp)
-            : data(d), interpolation(interp) {}
-        PrimvarSource(const VtValue& d, HdInterpolation interp, const TfToken& r)
-            : data(d), interpolation(interp), role(r) {}
-        PrimvarSource(const VtValue& d, HdInterpolation interp,
-                      const TfToken& r, const VtIntArray& i)
-            : data(d), interpolation(interp), role(r), indices(i) {}
-
-        VtValue data;
-        VtValue updatedData; // if we need to recompute for any reason (triangulation, subidivision)
-        HdInterpolation interpolation;
-        TfToken role; // empty if none
-        VtIntArray indices; // for indexed primvars
-    };
-    */
-
     // These do not include indices for indexed primvars, because if this is
     // a subdivision surface these have already been baked in. If we need them
     // for non-subdiv meshes, we'll need to add them in.
@@ -91,45 +72,12 @@ public:
         GfMatrix4f transformInverse;
         VtValue points;
         VtValue normals;
-        //VtVec3iArray faceVertexIndices; // triangles only
         VtIntArray faceVertexIndices; // triangles only
         VtIntArray triangleOriginalFaceIndices;
         VtIntArray triangleEdgeIndices;
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
 
     };
-
-    /*
-    class MeshData {
-    public:
-        SdfPath id;
-        SdfPath materialId;
-        bool visible = true;
-        GfMatrix4f transform;
-        VtValue points;
-        //VtVec3fArray normals;
-
-        // uvs are available in the primvars map, and may be named differently
-        // based on what the material expects.
-        VtVec3iArray faceVertexIndices; // triangles only
-
-        // Additional data for triangulation.
-        VtIntArray triangleOriginalFaceIndices;
-
-        // edges encoded like (I believe these are the only values, due to the
-        // triangulation approach)
-        //  0        show all edges
-        //  1        hide edge [2-0]
-        //  2        hide edge [0-1]
-        //  3        hide edges [0-1] and [2-0]
-        VtIntArray triangleEdgeIndices;
-
-        // Not available in python
-//        HydraPassthroughMeshTopology topology;
-        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvarSourceMap;
-        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
-    };
-    */
 
     class MaterialData {
     public:

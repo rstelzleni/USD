@@ -24,13 +24,10 @@ namespace HydraPassthroughMeshUtil
         SdfPath const& id,
         HdSceneDelegate* sceneDelegate,
         HdDirtyBits* dirtyBits,
-        bool updateSubdivTags,
-        bool updateDisplayStyle,
-        bool updatePrimvars,
         HydraPassthroughMeshTopology* meshTopology,
         HydraPassthroughFvarTopologyTracker* fvarTopologyTracker);
 
-    void PopulateVertexPrimvars(
+    void PopulateVertexAndVaryingPrimvars(
         HdRprim const* prim,
         SdfPath const& id,
         HdSceneDelegate* sceneDelegate,

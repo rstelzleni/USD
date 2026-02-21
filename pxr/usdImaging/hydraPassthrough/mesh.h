@@ -44,19 +44,13 @@ public:
     ~HydraPassthroughMesh() override = default;
 
     /// Inform the scene graph which state needs to be downloaded in the
-    /// first Sync() call: in this case, topology and points data to build
-    /// the geometry object in the scene graph.
+    /// first Sync() call: in this case, everything, since we don't
+    /// re-render this prim after creation.
     ///   \return The initial dirty state this mesh wants to query.
     HdDirtyBits GetInitialDirtyBitsMask() const override;
 
     /// Pull invalidated scene data and prepare/update the renderable
     /// representation.
-    ///
-    /// This function is told which scene data to pull through the
-    /// dirtyBits parameter. The first time it's called, dirtyBits comes
-    /// from _GetInitialDirtyBits(), which provides initial dirty state,
-    /// but after that it's driven by invalidation tracking in the scene
-    /// delegate.
     ///
     /// The contract for this function is that the prim can only pull on scene
     /// delegate buffers that are marked dirty. Scene delegates can and do
@@ -99,10 +93,7 @@ protected:
     // used to communicate that extra information is needed by the prim to
     // process the changes.
     //
-    // The return value is the new set of dirty bits, which replaces the bits
-    // passed in.
-    //
-    // See HdRprim::PropagateRprimDirtyBits()
+    // This is a pure virtual function so we have to provide, but it is a noop
     HdDirtyBits _PropagateDirtyBits(HdDirtyBits bits) const override;
 
     // This class does not support copying.
@@ -111,17 +102,18 @@ protected:
 
 private:
 
-    void
-    _UpdateTopologyDependentComputations(
+    // Once a new topology has been created in Sync, this function updates
+    // any dependent computations, like subdivision, quadrangulation,
+    // primvars, etc.
+    void _UpdateTopologyDependentComputations(
         HdSceneDelegate* sceneDelegate,
         const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry,
         HdMeshReprDesc const &desc,
         HdDirtyBits* dirtyBits);
 
-    TfTokenVector _UpdateComputedPrimvarSources(
-            HdSceneDelegate* sceneDelegate,
-            HdDirtyBits* dirtyBits);
 
+    // Fills out the mesh data for this mesh. Pulled out from Sync for
+    // readability, Sync has a lot of responsibilities.
     void _PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                             HdDirtyBits*     dirtyBits,
                             HdMeshReprDesc const &desc,

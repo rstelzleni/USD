@@ -1125,13 +1125,6 @@ HydraPassthroughSubdivision::SetRefinementTables(
     }
 
     _patchTable = std::move(patchTable);
-
-    /*
-    _maxNumFaceVarying = 0;
-    for (size_t i = 0; i < _faceVaryingStencils.size(); ++i) {
-        _maxNumFaceVarying = std::max(_maxNumFaceVarying, GetNumFaceVarying(i));
-    }
-    */
 }
 
 void
