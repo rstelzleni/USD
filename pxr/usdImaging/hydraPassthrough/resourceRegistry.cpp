@@ -6,6 +6,8 @@
 #include "pxr/imaging/hd/vtBufferSource.h"
 #include "pxr/usd/sdf/path.h"
 
+#include <iostream>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 static void
@@ -91,7 +93,8 @@ void HydraPassthroughResourceRegistry::_AddSource(
         HdBufferSourceSharedPtr const &source,
         SdfPath const &id,
         HydraPassthroughResourceRegistry::PrimvarSourceType type,
-        HdInterpolation interpolation)
+        HdInterpolation interpolation,
+        bool isIntermediate)
 {
     if (!source || !source->IsValid())
     {
@@ -100,11 +103,12 @@ void HydraPassthroughResourceRegistry::_AddSource(
     }
 
     if (source->HasPreChainedBuffer()) {
-        _AddSource(source->GetPreChainedBuffer(), id, type);
+        _AddSource(source->GetPreChainedBuffer(), id, type,
+                   interpolation, /*isIntermediate=*/true);
     }
 
     printf("SINGLE Adding source %s of type %d to pending sources\n", source->GetName().GetText(), (int)type);
-    _pendingSources.emplace_back(source, id, type, interpolation);
+    _pendingSources.emplace_back(source, id, type, interpolation, isIntermediate);
     ++_numBufferSourcesToResolve; // Atomic
 }
 
@@ -116,7 +120,8 @@ void HydraPassthroughResourceRegistry::_AddSources(
 {
     if (sources.empty())
     {
-        TF_RUNTIME_ERROR("sources list is empty");
+        TF_WARN("sources list is empty for id=%s, type=%d", id.GetText(), (int)type);
+        //TF_RUNTIME_ERROR("sources list is empty");
         return;
     }
 
@@ -127,7 +132,8 @@ void HydraPassthroughResourceRegistry::_AddSources(
         }
 
         if (source->HasPreChainedBuffer()) {
-            _AddSource(source->GetPreChainedBuffer(), id, type);
+            _AddSource(source->GetPreChainedBuffer(), id, type,
+                       interpolation, /*isIntermediate=*/true);
         }
 
         printf("NNN Adding source %s of type %d to pending sources\n", source->GetName().GetText(), (int)type);
@@ -260,10 +266,6 @@ HydraPassthroughResourceRegistry::AddSource(
 void
 HydraPassthroughResourceRegistry::_Commit()
 {
-    // Staging buffer size uses an atomic in anticipation of the
-    // Resolve loop being multithreaded.
-    std::atomic_size_t stagingBufferSize { 0 };
-
     TF_STATUS("Committing %zu pending buffer sources", _pendingSources.size());
 
     // TODO: requests should be sorted by resource, and range.
@@ -278,10 +280,12 @@ HydraPassthroughResourceRegistry::_Commit()
 
         // iterate until all buffer sources have been resolved.
         while (numBufferSourcesResolved < _numBufferSourcesToResolve) {
+            // split pending sources into batches that can be resolved in parallel
+            // First we'll do the index sources, then points, then primvars and generic.
+
             // iterate over all pending sources
             WorkParallelForEach(_pendingSources.begin(), _pendingSources.end(),
-                [&numBufferSourcesResolved, &stagingBufferSize](
-                        _PendingSource &req) {
+                [&numBufferSourcesResolved](_PendingSource &req) {
                     for (HdBufferSourceSharedPtr const& source: req.sources) {
                         // execute computation.
                         // call IsResolved first since Resolve is virtual and
@@ -315,6 +319,7 @@ HydraPassthroughResourceRegistry::_Commit()
                         }
                     }
                 });
+
             if (++numIterations > 100) {
                 TF_WARN("Too many iterations in resolving buffer source. "
                         "It's likely due to inconsistent dependency.");
@@ -333,6 +338,8 @@ HydraPassthroughResourceRegistry::_Commit()
         }
         */
 
+        std::cout << "Resolved " << numBufferSourcesResolved << " buffer sources (of " << _numBufferSourcesToResolve << ") in " << numIterations << " iterations" << std::endl;
+        //printf("Resolved %zu buffer sources (of %zu) in %d iterations\n", (size_t)numBufferSourcesResolved, _numBufferSourcesToResolve, numIterations);
         TF_VERIFY(numBufferSourcesResolved == _numBufferSourcesToResolve);
     }
 
@@ -344,6 +351,15 @@ HydraPassthroughResourceRegistry::_Commit()
 
         printf("XX===================================================\n");
         for (_PendingSource &pendingSource : _pendingSources) {
+
+            if (pendingSource.type == PrimvarSourceType::Generic) {
+                continue; // generic sources don't have data to copy, these are for topology
+            }
+
+            if (pendingSource.isIntermediate) {
+                printf("Skipping intermediate source for id=%s, type=%d\n", pendingSource.id.GetText(), (int)pendingSource.type);
+                continue; // intermediate sources are for computations and shouldn't be copied directly
+            }
 
             printf("Pending source for id=%s, type=%d\n", pendingSource.id.GetText(), (int)pendingSource.type);
             

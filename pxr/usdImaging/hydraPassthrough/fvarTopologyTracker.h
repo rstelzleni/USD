@@ -29,9 +29,9 @@ public:
         return _topologies;
     } 
 
-    /// Add a primvar and its corresponding toplogy to the tracker
+    /// Add a primvar and its corresponding topology to the tracker
     void AddOrUpdateTopology(const TfToken &primvar, 
-            const VtIntArray &topology);
+                             const VtIntArray &topology);
 
     /// Remove a primvar from the tracker.
     void RemovePrimvar(const TfToken &primvar);

@@ -251,6 +251,7 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
 
     if (HdChangeTracker::IsTransformDirty(*dirtyBits, id)) {
         // XXX fixme, handle nested transforms
+        // Also, are transforms always floats? should I use doubles?
         _meshData.transform = GfMatrix4f(sceneDelegate->GetTransform(id));
     }
 

@@ -282,6 +282,7 @@ _CastRenderDataToCppType(HdBufferSourceSharedPtr const &source) {
     const auto &tupleType = source->GetTupleType();
     const auto &data = source->GetData();
     const auto &dataSize = source->GetNumElements();
+    const auto &itemSize = tupleType.count;
     if (dataSize == 1) {
         auto casterIt = typeCasterMap.find(tupleType.type);
         if (casterIt == typeCasterMap.end()) {
@@ -297,8 +298,15 @@ _CastRenderDataToCppType(HdBufferSourceSharedPtr const &source) {
             TF_RUNTIME_ERROR("Unsupported HdType %d in _CastRenderDataToCppType", tupleType.type);
             return VtValue();
         }
+        // HdVtBufferSource converts Vt types into buffers suitable for the GPU, and in doing so
+        // has some disagreements with VtValue's representation of arrays. A VtArray of GfVec3i
+        // indices might be represented as a void* with type HdTypeInt32Vec3, or it may be represented
+        // as a void* with type HdTypeInt32 and an itemSize of 3. We need to handle both cases here.
+        // Luckily it appears that in HdVtBufferSource the itemSize is always 1 unless we have 
+        // multiples of the tupleType.count. So, A HdTypeInt32Vec3 will have item size 1, unless
+        // we should have several of them.
         printf(">> Converting array value of HdType %d using caster %ld\n", tupleType.type, tupleType.count);
-        return casterIt->second(data, dataSize);
+        return casterIt->second(data, dataSize * itemSize);
     }
     return VtValue();
 }
@@ -312,35 +320,83 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
 {
     // Early out if this is not a primvar, but ultimately we should handle points and indices
     // also maybe transform and transform inverse? others?
-    if (sourceType != HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar) {
+    if (sourceType != HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar &&
+        sourceType != HydraPassthroughResourceRegistry::PrimvarSourceType::Index) {
         return;
     }
+
+    // XXX we'll also get an fvarIndices0 index source which is for a bank of primvars. See
+    // _fvarTopologyTracker on mesh.cpp for a mapping of what primvars go to what channels.
+    // Need to figure out a way to represent this in the output
+    //
+    // Maybe a structure like:
+    //   faceVaryingChannels: [
+    //     { channel: 0, indices: [...], primvars: ["st"] }
+    //   ]
 
     const std::lock_guard<std::mutex> lock(_meshMutex);
     auto meshIt = _renderData.meshes.find(id);
     if (meshIt != _renderData.meshes.end()) {
 
+        printf(">>> Copying primvar buffer source for mesh %s, source name %s, interpolation %s, source type %s\n",
+            id.GetText(), source->GetName().GetText(), TfEnum::GetDisplayName(interpolation).c_str(),
+            typeid(*source).name());
+
+        /*
         auto const &vtSource = std::dynamic_pointer_cast<HdVtBufferSource>(source);
         if (!vtSource) {
             // Not a primvar source, for instance it could be an index builder
             //TF_RUNTIME_ERROR("Expected HdVtBufferSource for primvar source, got %s", typeid(*source).name());
             return;
         }
-        const TfToken& name = vtSource->GetName();
-        if (name == HdTokens->transform || name == HdTokens->transformInverse) {
-            // These are special cases, need to deal with them
-            return;
-        }
+        */
 
         VtValue value(_CastRenderDataToCppType(source)); //source->GetData(), source->GetTupleType()));
 
+        const TfToken& name = source->GetName();
+        if (name == HdTokens->transform) {
+            // XXX note there is no cast from GfMatrix4d to GfMatrix4f for some reason, this check may be
+            // useless. We do get GfMatrix4f here
+            if (value.CanCast<GfMatrix4f>()) {
+                meshIt->second.transform = value.Cast<GfMatrix4f>().Get<GfMatrix4f>();
+            }
+            else {
+                TF_RUNTIME_ERROR("Expected transform to be of type GfMatrix4d, got %s", value.GetTypeName().c_str());
+            }
+            return;
+        }
+        else if (name == HdTokens->transformInverse) {
+            if (value.CanCast<GfMatrix4f>()) {
+                meshIt->second.transformInverse = value.Cast<GfMatrix4f>().Get<GfMatrix4f>();
+            }
+            else {
+                TF_RUNTIME_ERROR("Expected transformInverse to be of type GfMatrix4d, got %s", value.GetTypeName().c_str());
+            }
+            return;
+        }
+        else if (name == HdTokens->points) {
+            meshIt->second.points = value;
+        }
+
         switch (sourceType) {
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Index:
-                meshIt->second.primvars[name] = { value, interpolation };
+                //if (value.CanCast<VtArray<GfVec3i>>()) {
+                //    printf("RRRRRRRRRRRRRRRRRRRRRRRRRRRRR got vertex indices for %s - %s\n", id.GetText(), name.GetText());
+                //    meshIt->second.faceVertexIndices = value.Cast<VtArray<GfVec3i>>().Get<VtArray<GfVec3i>>();
+                //}
+                if (value.CanCast<VtArray<int>>()) {
+                    printf("RRRRRRRRRRRRRRRRRRRRRRRRRRRRR got vertex indices for %s - %s\n", id.GetText(), name.GetText());
+                    meshIt->second.faceVertexIndices = value.Cast<VtArray<int>>().Get<VtArray<int>>();
+                }
+                else {
+                    TF_WARN("Expected index source to be of type VtArray<GfVec3i>, got %s for %s - %s", value.GetTypeName().c_str(), id.GetText(), name.GetText());
+                }
+                //meshIt->second.primvars[name] = { value, interpolation };
                 //meshIt->second.primvars[name] = { value, HdInterpolation::HdInterpolationCount, TfToken("index") };
                 break;
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Points:
-                meshIt->second.primvars[name] = { value, interpolation };
+                meshIt->second.points = value;
+                //meshIt->second.primvars[name] = { value, interpolation };
                 //meshIt->second.primvars[name] = { value, HdInterpolation::HdInterpolationCount, TfToken("points") };
                 break;
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar:
@@ -369,30 +425,16 @@ HydraPassthroughRenderData::CopyPrimvarBufferSources(
     auto meshIt = _renderData.meshes.find(id);
     if (meshIt != _renderData.meshes.end()) {
 
-        TfToken sourceTypeToken;
-        switch (sourceType) {
-            case HydraPassthroughResourceRegistry::PrimvarSourceType::Index:
-                sourceTypeToken = TfToken("index");
-                break;
-            case HydraPassthroughResourceRegistry::PrimvarSourceType::Points:
-                sourceTypeToken = TfToken("points");
-                break;
-            case HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar:
-                sourceTypeToken = TfToken("primvar");
-                break;
-            case HydraPassthroughResourceRegistry::PrimvarSourceType::Generic:
-                sourceTypeToken = TfToken("generic");
-                break;
-        }
-
         for (const auto& source : sources) {
+            /*
             auto const &vtSource = std::dynamic_pointer_cast<HdVtBufferSource>(source);
             if (!vtSource) {
                 TF_RUNTIME_ERROR("Expected HdVtBufferSource for primvar source, got %s", typeid(*source).name());
                 return;
             }
+            */
             // XXX get name exists on the base class I think
-            const TfToken& name = vtSource->GetName();
+            const TfToken& name = source->GetName();
             VtValue value(_CastRenderDataToCppType(source)); //source->GetData(), source->GetTupleType()));
 
             if (sourceType == HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar) {

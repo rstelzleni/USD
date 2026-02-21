@@ -426,6 +426,7 @@ void PopulateMeshTopology(
             fvarTopologyTracker->GetFvarTopologies());
     }
     
+    printf("NUMBER OF POINTS: %d\n", finalTopology->GetNumPoints());
     /*
      * Moved this here from below, then decided to put it back in Mesh
     // if refined, we submit a subdivision preprocessing
@@ -657,7 +658,7 @@ PopulateVertexPrimvars(
     int i = 0;
     for (HdPrimvarDescriptor const& primvar: primvars) {
         // If the index is greater than the last vertex index, isVarying=true.
-        bool isVarying = i++ > vertexPartitionIndex;
+        bool isVarying = i++ > int(vertexPartitionIndex);
 
         if (!HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, primvar.name)) {
             continue;
@@ -741,7 +742,10 @@ PopulateVertexPrimvars(
                 &computations, isVarying ? 
                     HdInterpolationVarying : HdInterpolationVertex);
 
-            sources.push_back(source);
+            // If we're refining the course source has already been added.
+            if (!doRefine) {
+                sources.push_back(source);
+            }
         }
     }
 
@@ -979,7 +983,9 @@ PopulateFaceVaryingPrimvars(
                 source, topology, id,  doRefine, doQuadrangulate, 
                 resourceRegistry, &computations, channel);
             
-            sources.push_back(source);
+            if (!doRefine) {
+                sources.push_back(source);
+            }
         }
     }
 

@@ -13,9 +13,16 @@ void
 wrapRenderManager()
 {
     using This = HdPassthroughRenderManager;
+    
+    // Can't nest this in render manager because we need to declare it before the
+    // Initialize function
+    class_<This::RenderSettings>("RenderSettings")
+        .def_readwrite("refineLevel", &This::RenderSettings::refineLevel)
+        ;
+
     class_<This, noncopyable>("RenderManager")
         .def(init<>())
-        .def("Initialize", &This::Initialize)
+        .def("Initialize", &This::Initialize, arg("settings")=This::RenderSettings())
         .def("Render", &This::Render)
         .def("Cleanup", &This::Cleanup)
 
@@ -25,4 +32,5 @@ wrapRenderManager()
         .def("GetSceneDelegateId", &This::GetSceneDelegateId)
         .staticmethod("GetSceneDelegateId")
         ;
+
 }

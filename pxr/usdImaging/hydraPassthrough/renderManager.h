@@ -23,8 +23,13 @@ public:
     HdPassthroughRenderManager() = default;
     ~HdPassthroughRenderManager();
 
+    struct RenderSettings {
+        RenderSettings() : refineLevel(1) {}
+        int refineLevel;
+    };
+
     // Initialize the render manager
-    void Initialize();
+    void Initialize(const RenderSettings& settings = RenderSettings());
 
     // Render a frame
     void Render(const UsdStageRefPtr& stage);

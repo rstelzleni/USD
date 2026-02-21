@@ -127,7 +127,6 @@ public:
     bool HasPreChainedBuffer() const override;
     HdBufferSourceSharedPtr GetPreChainedBuffer() const override;
 
-
 protected:
     bool _CheckValid() const override;
 
