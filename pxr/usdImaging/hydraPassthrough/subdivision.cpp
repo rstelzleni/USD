@@ -346,6 +346,10 @@ _OsdIndexComputation::Resolve()
         _SetResult(patchIndices);
 
         _PopulatePatchPrimitiveBuffer(patchTable);
+
+        printf("Refined BSpline Patches: Patch table indices range: min=%d, max=%d\n",
+                *std::min_element(indices.begin(), indices.end()),
+                *std::max_element(indices.begin(), indices.end()));
     } else if (HydraPassthroughSubdivision::RefinesToTriangles(scheme)) {
         // populate refined triangle indices.
         VtArray<GfVec3i> indices(ptableSize/3);
@@ -358,6 +362,10 @@ _OsdIndexComputation::Resolve()
         _SetResult(triIndices);
 
         _PopulateUniformPrimitiveBuffer(patchTable);
+        printf("Refined Tris: no patch table print yet\n");
+  //printf("Refined Tris: Patch table indices range: min=%d, max=%d\n",
+  //    *std::min_element(indices.begin(), indices.end()),
+  //    *std::max_element(indices.begin(), indices.end()));
     } else {
         // populate refined quad indices.
         size_t const numQuads = ptableSize / 4;
@@ -377,7 +385,12 @@ _OsdIndexComputation::Resolve()
                 outputIndices.EmitQuadFace(quadIndices);
             }
         }
-
+        /*
+        printf("ADSFASDFASDFASDFASDFASDFD\n");
+        printf("Refined Quads: numQuads=%zu, numIndicesPerQuad=%d, len(indices)=%zu\n",
+            numQuads, numIndicesPerQuad, indices.size());
+        printf("triangulate=%d\n", _topology->TriangulateQuads());
+        */
         // refined quads index buffer
         HdBufferSourceSharedPtr quadIndices =
             std::make_shared<HdVtBufferSource>(
@@ -385,9 +398,14 @@ _OsdIndexComputation::Resolve()
         _SetResult(quadIndices);
 
         _PopulateUniformPrimitiveBuffer(patchTable);
+
+//        printf("Refined Quads: Patch table indices range: min=%d, max=%d\n",
+//                *std::min_element(indices.begin(), indices.end()),
+//                *std::max_element(indices.begin(), indices.end()));
     }
 
     _SetResolved();
+
     return true;
 }
 
@@ -1166,6 +1184,12 @@ HydraPassthroughSubdivision::RefineCPU(
         stencilTable->GetControlIndices(),
         stencilTable->GetWeights()
     );
+
+    printf("XXXXXXXXX HydraPassthroughSubdivision::RefineCPU: source %s GetNumControlVertices=%d, GetNumStencils=%d, numTotalElements=%zu\n",
+              source->GetName().GetText(),
+           stencilTable->GetNumControlVertices(),
+           stencilTable->GetNumStencils(),
+           numTotalElements);
 }
 
 VtIntArray

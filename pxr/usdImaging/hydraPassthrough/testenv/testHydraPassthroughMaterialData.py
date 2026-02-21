@@ -49,6 +49,8 @@ def populate_indexed_primvar(mesh):
 
 
 def populate_mesh(mesh):
+    mesh.GetSubdivisionSchemeAttr().Set("none")
+
     # hard code some billboards
     mesh.CreatePointsAttr(
         [(-1.0, 0.0, -1.0), (1.0, 0.0, -1.0), (1.0, 0.0, 1.0), (-1.0, 0.0, 1.0)]

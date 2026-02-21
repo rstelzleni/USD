@@ -118,22 +118,26 @@ private:
         _PendingSource(HdBufferSourceSharedPtr const &source,
                        SdfPath const &id,
                        PrimvarSourceType type,
-                       HdInterpolation interpolation)
+                       HdInterpolation interpolation,
+                       bool isIntermediate = false)
             : type(type)
             , sources(1, source)
             , id(id)
             , interpolation(interpolation)
+            , isIntermediate(isIntermediate)
         {
         }
         
         _PendingSource(HdBufferSourceSharedPtrVector &&sources,
                        SdfPath const &id,
                        PrimvarSourceType type,
-                       HdInterpolation interpolation)
+                       HdInterpolation interpolation,
+                       bool isIntermediate = false)
             : type(type)
             , sources(std::move(sources))
             , id(id)
             , interpolation(interpolation)
+            , isIntermediate(isIntermediate)
         {
         }
 
@@ -144,12 +148,17 @@ private:
 
         // Will only be set for primvar sources
         HdInterpolation interpolation { HdInterpolation::HdInterpolationCount };
+
+        // True for buffers that are inputs, for instance, unsubdivided points in a
+        // subdivision surface
+        bool isIntermediate { false };
     };
 
     void _AddSource(HdBufferSourceSharedPtr const &source,
                     SdfPath const &path,
                     PrimvarSourceType type,
-                    HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
+                    HdInterpolation interpolation = HdInterpolation::HdInterpolationCount,
+                    bool isIntermediate = false);
     void _AddSources(HdBufferSourceSharedPtrVector &&sources,
                      SdfPath const &path,
                      PrimvarSourceType type,

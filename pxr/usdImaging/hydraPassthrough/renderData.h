@@ -91,7 +91,8 @@ public:
         GfMatrix4f transformInverse;
         VtValue points;
         VtValue normals;
-        VtVec3iArray faceVertexIndices; // triangles only
+        //VtVec3iArray faceVertexIndices; // triangles only
+        VtIntArray faceVertexIndices; // triangles only
         VtIntArray triangleOriginalFaceIndices;
         VtIntArray triangleEdgeIndices;
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
