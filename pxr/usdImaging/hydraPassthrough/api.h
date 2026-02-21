@@ -1,9 +1,3 @@
-//
-// Copyright 2017 Pixar
-//
-// Licensed under the terms set forth in the LICENSE.txt file available at
-// https://openusd.org/license.
-//
 #ifndef PXR_USD_IMAGING_HYDRA_PASSTHROUGH_API_H
 #define PXR_USD_IMAGING_HYDRA_PASSTHROUGH_API_H
 

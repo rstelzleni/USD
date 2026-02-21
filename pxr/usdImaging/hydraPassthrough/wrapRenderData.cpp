@@ -143,36 +143,13 @@ namespace {
             name(name.GetString()),
             interpolation(TfEnum::GetDisplayName(source.interpolation)),
             data(source.data)
-  //          indices(source.indices)
         {
         }
 
         std::string name;
         std::string interpolation;
         HydraPassthroughValueDescriptor data;
-//        VtIntArray indices;
     };
-    /*
-    class Primvar {
-    public:
-        Primvar(const TfToken &name,
-                const HydraPassthroughRenderData::PrimvarSource & source) :
-            name(name.GetString()),
-            interpolation(TfEnum::GetDisplayName(source.interpolation)),
-            role(source.role.GetString()),
-            data(source.updatedData.IsEmpty() ?
-                        source.data : source.updatedData),
-            indices(source.indices)
-        {
-        }
-
-        std::string name;
-        std::string interpolation;
-        std::string role;
-        HydraPassthroughValueDescriptor data;
-        VtIntArray indices;
-    };
-    */
 
     std::vector<Primvar> _GetAllPrimvars(
         const HydraPassthroughRenderData::MeshData &self)
@@ -250,8 +227,6 @@ wrapRenderData()
         .def_readonly("name", &Primvar::name)
         .def_readonly("interpolation", &Primvar::interpolation)
         .def_readonly("data", &Primvar::data)
-//        .def_readonly("role", &Primvar::role)
-//        .def_readonly("indices", &Primvar::indices)
         ;
     TfPyOptional::python_optional<Primvar>();
 

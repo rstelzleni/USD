@@ -209,7 +209,6 @@ def create_subdivided_sphere_usd(
 
 class TestSubdivision(unittest.TestCase):
     def test_Basic(self):
-        print("Testing subdivision of a UV sphere with primvars...")
         stage = Usd.Stage.CreateInMemory()
         create_subdivided_sphere_usd(stage, num_latitude=4, num_longitude=8)
 
