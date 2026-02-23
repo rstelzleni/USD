@@ -1,5 +1,7 @@
 #include "renderData.h"
 
+#include "pxr/usdImaging/hydraPassthrough/fvarTopologyTracker.h"
+
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/imaging/hd/camera.h"
 #include "pxr/imaging/hd/tokens.h"
@@ -309,6 +311,70 @@ _CastRenderDataToCppType(HdBufferSourceSharedPtr const &source) {
     return VtValue();
 }
 
+static void _UpdateFaceVaryingChannels(HydraPassthroughRenderData::MeshData& meshData, const TfToken& primvarName) {
+    // If this is a face varying primvar, we need to add it to the appropriate
+    // channel in faceVaryingChannels
+
+    // Find the channel for this primvar
+    int channel = meshData.fvarTopologyTracker->GetChannelFromPrimvar(primvarName);
+    if (channel < 0) {
+        TF_RUNTIME_ERROR("Primvar %s is marked as face varying but has no associated channel in the fvar topology tracker", primvarName.GetText());
+        return;
+    }
+
+    // Find the channel if it exists, otherwise create a new one
+    auto it = std::find_if(meshData.faceVaryingChannels.begin(), meshData.faceVaryingChannels.end(),
+        [channel](const HydraPassthroughRenderData::FaceVaryingChannel& c) { return c.channel == channel; });
+    if (it == meshData.faceVaryingChannels.end()) {
+        // Create new channel
+        meshData.faceVaryingChannels.push_back({channel, {}, {primvarName}});
+    } else {
+        // Add primvar to existing channel
+        it->primvars.push_back(primvarName);
+    }
+}
+
+static void _UpdateFaceVaryingIndices(int channel, HydraPassthroughRenderData::MeshData& meshData, const VtValue& indices) {
+    // This is an index buffer for a face varying primvar channel. We need to
+    // add it to the appropriate channel in our output structure
+    if (channel < 0) {
+        TF_RUNTIME_ERROR("Invalid face varying channel %d for index buffer", channel);
+        return;
+    }
+
+    // Find the channel if it exists, otherwise create a new one
+    auto it = std::find_if(meshData.faceVaryingChannels.begin(), meshData.faceVaryingChannels.end(),
+        [channel](const HydraPassthroughRenderData::FaceVaryingChannel& c) { return c.channel == channel; });
+    if (it == meshData.faceVaryingChannels.end()) {
+        // Create new channel with this index buffer
+        meshData.faceVaryingChannels.push_back({channel, indices, {}});
+    } else {
+        // Add index buffer to existing channel
+        it->indices = indices;
+    }
+}
+
+static int _ExtractFaceVaryingChannelFromPrimvarName(const TfToken& name) {
+    // Primvars that are indexed by the face varying topology have names like
+    // "fvarIndices0", "fvarIndices1", etc. We need to extract the channel
+    // number from the name. It's crappy that we need to string parse for this,
+    // but there doesn't seem to be a cleaner way with the current
+    // architecture. This makes sense for GPU buffers because we don't need to
+    // pull out the indices separately, you don't ever have to do this parsing.
+    std::string nameStr = name.GetString();
+    std::string prefix = "fvarIndices"; // is there a public token for this? None in Hd
+    if (nameStr.rfind(prefix, 0) == 0) {
+        std::string channelStr = nameStr.substr(prefix.size());
+        try {
+            return std::stoi(channelStr);
+        } catch (const std::exception& e) {
+            TF_RUNTIME_ERROR("Failed to extract face varying channel from primvar name %s: %s", name.GetText(), e.what());
+            return -1;
+        }
+    }
+    return -1;
+}
+
 void
 HydraPassthroughRenderData::CopyPrimvarBufferSource(
         const SdfPath& id,
@@ -323,11 +389,10 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
         return;
     }
 
-    // XXX we'll also get an fvarIndices0 index source which is for a bank of primvars. See
+    // we'll also get an fvarIndices0 index source which is for a bank of primvars. See
     // _fvarTopologyTracker on mesh.cpp for a mapping of what primvars go to what channels.
-    // Need to figure out a way to represent this in the output
+    // We'll describe it like below. Move this documentation someplace useful
     //
-    // Maybe a structure like:
     //   faceVaryingChannels: [
     //     { channel: 0, indices: [...], primvars: ["st"] }
     //   ]
@@ -366,11 +431,23 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
 
         switch (sourceType) {
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Index:
-                if (value.CanCast<VtArray<int>>()) {
-                    meshIt->second.faceVertexIndices = value.Cast<VtArray<int>>().Get<VtArray<int>>();
-                }
-                else {
-                    TF_WARN("Expected index source to be of type VtArray<GfVec3i>, got %s for %s - %s", value.GetTypeName().c_str(), id.GetText(), name.GetText());
+                {
+                    int channel = _ExtractFaceVaryingChannelFromPrimvarName(name);
+                    if (channel >= 0) {
+                        // This is an index buffer for a face varying primvar channel.
+                        // We need to add it to the appropriate channel in our output structure
+                        _UpdateFaceVaryingIndices(channel, meshIt->second, value);
+                    }
+                    else {
+                        if (value.CanCast<VtArray<int>>()) {
+                            meshIt->second.faceVertexIndices = value.Cast<VtArray<int>>().Get<VtArray<int>>();
+                        }
+                        else {
+                            // Getting this warning in normal operation, I think because of parameter arrays.
+                            // XXX Handle parameters and original face indices
+                            TF_WARN("Expected index source to be of type VtArray<GfVec3i>, got %s for %s - %s", value.GetTypeName().c_str(), id.GetText(), name.GetText());
+                        }
+                    }
                 }
                 break;
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Points:
@@ -378,6 +455,9 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
                 break;
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar:
                 meshIt->second.primvars[name] = { value, interpolation };
+                if (interpolation == HdInterpolationFaceVarying) {
+                    _UpdateFaceVaryingChannels(meshIt->second, name);
+                }
                 break;
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Generic:
                 meshIt->second.primvars[name] = { value, interpolation };

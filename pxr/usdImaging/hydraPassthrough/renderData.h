@@ -28,6 +28,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 class HdCamera;
+class HydraPassthroughFvarTopologyTracker;
 
 TF_DECLARE_REF_PTRS(HydraPassthroughRenderData);
 
@@ -63,6 +64,15 @@ public:
         // TfToken glslType;
     };
 
+    // For face varying primvars we need to provide their own indices, separate
+    // from the mesh's faceVertexIndices. These are sorted into "channels" which
+    // can share an index buffer if they have the same topology.
+    struct FaceVaryingChannel {
+        int channel;
+        VtValue indices;
+        std::vector<TfToken> primvars;
+    };
+
     class MeshData {
     public:
         SdfPath id;
@@ -76,7 +86,12 @@ public:
         VtIntArray triangleOriginalFaceIndices;
         VtIntArray triangleEdgeIndices;
         TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
+        std::vector<FaceVaryingChannel> faceVaryingChannels;
 
+        // Not wrapped to python, valid only so long as the rprim mesh exists
+        //
+        // We need this only to populate the face varying primvar index channels
+        HydraPassthroughFvarTopologyTracker *fvarTopologyTracker;
     };
 
     class MaterialData {

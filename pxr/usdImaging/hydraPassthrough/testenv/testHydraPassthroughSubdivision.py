@@ -252,6 +252,28 @@ class TestSubdivision(unittest.TestCase):
         self.assertEqual(mesh.GetPrimvar('displayColor').data.GetArraySize(), 140)
         self.assertEqual(mesh.GetPrimvar('normals').data.GetArraySize(), 140)
 
+        # Check that we got an index buffer for st, it is face varying so needs its
+        # own indices in the subdivided mesh.
+        primvar_indices = mesh.GetFaceVaryingChannels()
+        self.assertEqual(len(primvar_indices), 1)
+        found = False
+        for pi in primvar_indices:
+            channel = pi.channel
+            indices = pi.GetIndices()
+            names = pi.GetPrimvarNames()
+            if 'st' in names:
+                found = True
+                self.assertEqual(names, ['st'])
+                self.assertEqual(channel, 0)
+                self.assertEqual(indices.GetArraySize(), 112) # one item per face
+                self.assertEqual(indices.GetElementShape(), HydraPassthrough.ValueDescriptor.ElementShape.Vec4)
+                self.assertEqual(indices.GetScalarType(), HydraPassthrough.ValueDescriptor.ScalarType.Integer)
+                for idx in indices.GetValue():
+                    for i in [0, 1, 2, 3]: # quads only
+                        self.assertGreaterEqual(idx[i], 29) # uvs had 29 original verts
+                        self.assertLess(idx[i], 150)
+        self.assertTrue(found, "Expected to find face-varying indices for 'st' primvar")
+
 
 if __name__ == "__main__":
     unittest.main()

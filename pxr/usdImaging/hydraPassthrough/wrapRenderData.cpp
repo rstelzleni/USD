@@ -58,6 +58,23 @@ enum class MaterialTag {
 
 namespace {
 
+    HydraPassthroughValueDescriptor _GetFaceVaryingIndices(
+        const HydraPassthroughRenderData::FaceVaryingChannel& self)
+    {
+        return HydraPassthroughValueDescriptor(self.indices);
+    }
+
+    std::vector<std::string> _GetPrimvarNames(
+        const HydraPassthroughRenderData::FaceVaryingChannel& self)
+    {
+        std::vector<std::string> result;
+        result.reserve(self.primvars.size());
+        for (const auto& primvar : self.primvars) {
+            result.push_back(primvar.GetString());
+        }
+        return result;
+    }
+
     HydraPassthroughValueDescriptor _GetMeshPoints(
         const HydraPassthroughRenderData::MeshData &self)
     {
@@ -172,6 +189,12 @@ namespace {
         }
         return {};
     }
+
+    const std::vector<HydraPassthroughRenderData::FaceVaryingChannel> &_GetFaceVaryingChannels(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return self.faceVaryingChannels;
+    }
 }
 
 void
@@ -230,15 +253,24 @@ wrapRenderData()
         ;
     TfPyOptional::python_optional<Primvar>();
 
+    class_<This::FaceVaryingChannel>("FaceVaryingChannel", no_init)
+        .def_readonly("channel", &This::FaceVaryingChannel::channel)
+        .def("GetIndices", &_GetFaceVaryingIndices)
+        .def("GetPrimvarNames", &_GetPrimvarNames)
+        ;
+
     class_<This::MeshData>("MeshData", no_init)
         .def_readonly("id", &This::MeshData::id)
         .def_readonly("materialId", &This::MeshData::materialId)
         .def_readonly("visible", &This::MeshData::visible)
         .def_readonly("transform", &This::MeshData::transform)
+        .def_readonly("faceVaryingChannels", &This::MeshData::faceVaryingChannels)
 
         .def("GetAllPrimvars", &_GetAllPrimvars,
              return_value_policy<TfPySequenceToList>())
         .def("GetPrimvar", &_GetPrimvar,(arg("name")))
+        .def("GetFaceVaryingChannels", &_GetFaceVaryingChannels,
+             return_value_policy<TfPySequenceToList>())
 
         .def("GetPoints", ::_GetMeshPoints)
         .def("GetFaceVertexIndices", ::_GetMeshFaceVertexIndices)

@@ -193,11 +193,15 @@ class TestMaterialData(unittest.TestCase):
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [2])
 #        self.assertEqual(primvar.role, 'textureCoordinate')
-#        self.assertEqual(primvar.indices, [])
         primvar = bound_mesh.GetPrimvar('points')
         self.assertTrue(primvar is not None)
         primvar = bound_mesh.GetPrimvar('nonexistent')
         self.assertTrue(primvar is None)
+
+        # uv should not have its own indices because it's a varying primvar, not a face varying
+        # one. Verify that we got no face varying channels for this prim.
+        primvar_indices = bound_mesh.GetFaceVaryingChannels()
+        self.assertEqual(len(primvar_indices), 0)
 
         # check indexed primvar
         primvar = bound_mesh.GetPrimvar('displayColor')
@@ -218,7 +222,6 @@ class TestMaterialData(unittest.TestCase):
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [3])
 #        self.assertEqual(primvar.role, 'color')
-#        self.assertEqual(primvar.indices, [0, 1, 2, 0])
 
         m.Cleanup()
 
