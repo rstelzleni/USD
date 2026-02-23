@@ -38,10 +38,6 @@ class HydraPassthroughRenderData :
 {
 public:
 
-    // These do not include indices for indexed primvars, because if this is
-    // a subdivision surface these have already been baked in. If we need them
-    // for non-subdiv meshes, we'll need to add them in.
-    //
     // See also HdSt resourceBinder.cpp for data we might need to add here, and
     // to the mesh. There's more computation done there, especially around
     // instancing and type mapping
