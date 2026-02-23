@@ -158,6 +158,7 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
 
     SdfPath const& id = GetId();
     _meshData.id = id;
+    _meshData.fvarTopologyTracker = &_fvarTopologyTracker;
 
     ////////////////////////////////////////////////////////////////////////
     // 1. Pull scene data.
