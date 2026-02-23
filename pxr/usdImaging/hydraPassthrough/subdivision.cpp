@@ -2,31 +2,12 @@
 
 #include "pxr/usdImaging/hydraPassthrough/meshTopology.h"
 
-/*
-#include "pxr/imaging/hdSt/bufferArrayRange.h"
-#include "pxr/imaging/hdSt/bufferResource.h"
-#include "pxr/imaging/hdSt/glslProgram.h"
-#include "pxr/imaging/hdSt/resourceRegistry.h"
-#include "pxr/imaging/hdSt/subdivision.h"
-#include "pxr/imaging/hdSt/tokens.h"
-*/
-
 #include "pxr/imaging/hd/bufferArrayRange.h"
 #include "pxr/imaging/hd/meshUtil.h"
 #include "pxr/imaging/hd/perfLog.h"
 #include "pxr/imaging/hd/tokens.h"
 #include "pxr/imaging/hd/vtBufferSource.h"
-
 #include "pxr/imaging/hf/perfLog.h"
-
-/*
-#include "pxr/imaging/hgi/hgi.h"
-#include "pxr/imaging/hgi/computeCmds.h"
-#include "pxr/imaging/hgi/computePipeline.h"
-#include "pxr/imaging/hgi/shaderProgram.h"
-#include "pxr/imaging/hgi/tokens.h"
-*/
-
 #include "pxr/imaging/pxOsd/refinerFactory.h"
 #include "pxr/imaging/pxOsd/tokens.h"
 
@@ -48,6 +29,13 @@ namespace {
 
 // ---------------------------------------------------------------------------
 /// \class Hd_OsdTopologyComputation
+///
+/// Generates the OpenSubdiv stencil and patch tables and stores them on the
+/// owning subdivision object.
+///
+/// This buffer source doesn't return anything from its GetData() method. I'm
+/// not sure why it isn't a HdNullBufferSource, that may be related to
+/// scheduling dependencies that exist in HdSt but not here.
 class _OsdTopologyComputation final : public HdComputedBufferSource
 {
 public:
@@ -245,9 +233,11 @@ _OsdTopologyComputation::_CheckValid() const
 // ---------------------------------------------------------------------------
 /// \class _OsdIndexComputation
 ///
-/// OpenSubdiv refined index buffer computation.
-///
-/// computes index buffer and primitiveParam
+/// OpenSubdiv refined index buffer computation. Generates the refined indices
+/// for either quads or triangles depending on the subdivision scheme, and
+/// also generates a promitive param buffer that maps refined primitives to
+/// the coarse faces they came from, and also stores patch params (e.g. u/v
+/// param for limit patches).
 ///
 /// primitiveParam : refined quads to coarse faces mapping buffer
 ///
@@ -347,9 +337,6 @@ _OsdIndexComputation::Resolve()
 
         _PopulatePatchPrimitiveBuffer(patchTable);
 
-        printf("Refined BSpline Patches: Patch table indices range: min=%d, max=%d\n",
-                *std::min_element(indices.begin(), indices.end()),
-                *std::max_element(indices.begin(), indices.end()));
     } else if (HydraPassthroughSubdivision::RefinesToTriangles(scheme)) {
         // populate refined triangle indices.
         VtArray<GfVec3i> indices(ptableSize/3);
@@ -362,10 +349,6 @@ _OsdIndexComputation::Resolve()
         _SetResult(triIndices);
 
         _PopulateUniformPrimitiveBuffer(patchTable);
-        printf("Refined Tris: no patch table print yet\n");
-  //printf("Refined Tris: Patch table indices range: min=%d, max=%d\n",
-  //    *std::min_element(indices.begin(), indices.end()),
-  //    *std::max_element(indices.begin(), indices.end()));
     } else {
         // populate refined quad indices.
         size_t const numQuads = ptableSize / 4;
@@ -385,12 +368,7 @@ _OsdIndexComputation::Resolve()
                 outputIndices.EmitQuadFace(quadIndices);
             }
         }
-        /*
-        printf("ADSFASDFASDFASDFASDFASDFD\n");
-        printf("Refined Quads: numQuads=%zu, numIndicesPerQuad=%d, len(indices)=%zu\n",
-            numQuads, numIndicesPerQuad, indices.size());
-        printf("triangulate=%d\n", _topology->TriangulateQuads());
-        */
+
         // refined quads index buffer
         HdBufferSourceSharedPtr quadIndices =
             std::make_shared<HdVtBufferSource>(
@@ -398,10 +376,6 @@ _OsdIndexComputation::Resolve()
         _SetResult(quadIndices);
 
         _PopulateUniformPrimitiveBuffer(patchTable);
-
-//        printf("Refined Quads: Patch table indices range: min=%d, max=%d\n",
-//                *std::min_element(indices.begin(), indices.end()),
-//                *std::max_element(indices.begin(), indices.end()));
     }
 
     _SetResolved();
@@ -637,7 +611,9 @@ _OsdIndexComputation::_CheckValid() const
 // ---------------------------------------------------------------------------
 /// \class _OsdRefineComputationCPU
 ///
-/// OpenSubdiv CPU Refinement.
+/// OpenSubdiv CPU Refinement. Takes coarse vertex primvar data and applies the
+/// OpenSubdiv stencils to produce refined vertex primvar data.
+///
 /// This class isn't inherited from HdComputedBufferSource.
 /// GetData() returns the internal buffer to skip unecessary copy.
 ///
@@ -797,6 +773,10 @@ _OsdRefineComputationCPU::GetPreChainedBuffer() const
 
 // ---------------------------------------------------------------------------
 /// \class _OsdFvarIndexComputation
+///
+/// The equivelent of _OsdIndexComputation for face-varying data. Computes
+/// a refined index buffer for a channel of face varying primvars. Each primvar
+/// in that channel can share this index buffer.
 class _OsdFvarIndexComputation final : public HdComputedBufferSource
 {
 
@@ -975,6 +955,9 @@ _OsdFvarIndexComputation::_CheckValid() const {
 
 // ---------------------------------------------------------------------------
 // CPU stencil evaluation function
+//
+// This is what converts the course primvar data (points) into the refined
+// data (patch control vertices) using the stencils generated by OpenSubdiv.
 void
 _EvalStencilsCPU(
     std::vector<float> * primvarBuffer,
@@ -1177,12 +1160,6 @@ HydraPassthroughSubdivision::RefineCPU(
         stencilTable->GetControlIndices(),
         stencilTable->GetWeights()
     );
-
-    printf("XXXXXXXXX HydraPassthroughSubdivision::RefineCPU: source %s GetNumControlVertices=%d, GetNumStencils=%d, numTotalElements=%zu\n",
-              source->GetName().GetText(),
-           stencilTable->GetNumControlVertices(),
-           stencilTable->GetNumStencils(),
-           numTotalElements);
 }
 
 VtIntArray

@@ -3,32 +3,12 @@
 #include "quadrangulate.h"
 #include "pxr/usdImaging/hydraPassthrough/meshTopology.h"
 
-/*
-#include "pxr/imaging/hdSt/bufferArrayRange.h"
-#include "pxr/imaging/hdSt/bufferResource.h"
-#include "pxr/imaging/hdSt/glslProgram.h"
-#include "pxr/imaging/hdSt/meshTopology.h"
-#include "pxr/imaging/hdSt/quadrangulate.h"
-#include "pxr/imaging/hdSt/resourceRegistry.h"
-#include "pxr/imaging/hdSt/tokens.h"
-*/
-
 #include "pxr/imaging/hd/bufferArrayRange.h"
 #include "pxr/imaging/hd/meshUtil.h"
 #include "pxr/imaging/hd/perfLog.h"
 #include "pxr/imaging/hd/tokens.h"
 #include "pxr/imaging/hd/types.h"
 #include "pxr/imaging/hd/vtBufferSource.h"
-
-/*
-#include "pxr/imaging/hgi/hgi.h"
-#include "pxr/imaging/hgi/computeCmds.h"
-#include "pxr/imaging/hgi/computePipeline.h"
-#include "pxr/imaging/hgi/shaderProgram.h"
-#include "pxr/imaging/hgi/tokens.h"
-
-#include "pxr/imaging/hio/glslfx.h"
-*/
 
 #include "pxr/base/gf/vec2i.h"
 #include "pxr/base/gf/vec4i.h"
