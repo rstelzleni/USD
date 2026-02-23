@@ -42,7 +42,7 @@ public:
     // for non-subdiv meshes, we'll need to add them in.
     //
     // See also HdSt resourceBinder.cpp for data we might need to add here, and
-    // to the mesh. There's moer computation done there, especially around
+    // to the mesh. There's more computation done there, especially around
     // instancing and type mapping
     struct PrimvarSource {
         PrimvarSource() = default;
@@ -57,7 +57,7 @@ public:
         // a question in my mind about types here. For instance, if hdst would have
         // used uint for a primvar, but we provide the output data as int, the client
         // would need to do a conversion. Do we want to suggest that? And if so, is
-        // this the right way to communicat it?
+        // this the right way to communicate it?
         //
         // Also applies to things like float vs double, dmat vs mat, etc.
         // TfToken glslType;
