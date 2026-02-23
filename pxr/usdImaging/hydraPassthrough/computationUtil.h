@@ -23,7 +23,7 @@ namespace HydraPassthroughComputationUtil
 ///
 /// A prim determines the role for each queue based on its local knowledge of
 /// compute dependencies. Eg. HdStMesh knows computing normals should wait
-/// until the primvar refinement computation has fnished. It can assign one
+/// until the primvar refinement computation has finished. It can assign one
 /// queue to primvar refinement and a following queue for normal computations.
 ///
 enum class ComputeQueue {

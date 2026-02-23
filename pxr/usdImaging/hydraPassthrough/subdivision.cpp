@@ -615,7 +615,7 @@ _OsdIndexComputation::_CheckValid() const
 /// OpenSubdiv stencils to produce refined vertex primvar data.
 ///
 /// This class isn't inherited from HdComputedBufferSource.
-/// GetData() returns the internal buffer to skip unecessary copy.
+/// GetData() returns the internal buffer to skip unnecessary copy.
 ///
 class _OsdRefineComputationCPU final : public HdBufferSource
 {

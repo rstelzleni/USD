@@ -143,7 +143,7 @@ private:
 ///
 class HydraPassthroughQuadrangulateFaceVaryingComputation : public HdComputedBufferSource {
 public:
-    HydraPassthroughQuadrangulateFaceVaryingComputation(HydraPassthroughMeshTopology *topolgoy,
+    HydraPassthroughQuadrangulateFaceVaryingComputation(HydraPassthroughMeshTopology *topologoy,
                                            HdBufferSourceSharedPtr const &source,
                                            SdfPath const &id);
 

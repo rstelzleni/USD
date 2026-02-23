@@ -17,7 +17,7 @@ class HydraPassthroughMeshTopology;
 /// \class HydraPassthroughSubdivision
 ///
 /// Manages the subdivision tables from OpenSubdiv and creates computations
-/// that sue that data.
+/// that use that data.
 class HydraPassthroughSubdivision {
 public:
     HydraPassthroughSubdivision(int refineLevel);
