@@ -42,22 +42,6 @@ public:
         _renderData = renderData;
     }
 
-    // Add Source apis
-    //
-    // Sources in this context are cpu computations. In other resource
-    // registries sources are computedon the cpu and computations are
-    // computed on the gpu. We'll use the same terminology for consistency
-
-    /// Append multiple sources
-    /*
-    void AddSources(HdBufferArrayRangeSharedPtr const &range,
-                    HdBufferSourceSharedPtrVector &&sources);
-
-    /// Append a source data for given range
-    void AddSource(HdBufferArrayRangeSharedPtr const &range,
-                   HdBufferSourceSharedPtr const &source);
-                   */
-
     /// Append a computation for Index data
     void AddIndexSources(SdfPath const &id,
                          HdBufferSourceSharedPtrVector &&sources);
@@ -99,22 +83,6 @@ private:
     // TODO: this is a transient structure. we'll revisit the BufferSource
     // interface later.
     struct _PendingSource {
-
-        /*
-        _PendingSource(HdBufferArrayRangeSharedPtr const &range,
-                       HdBufferSourceSharedPtr     const &source)
-            : range(range)
-            , sources(1, source)
-        {
-        }
-
-        _PendingSource(HdBufferArrayRangeSharedPtr const &range,
-                       HdBufferSourceSharedPtrVector     && sources)
-            : range(range)
-            , sources(std::move(sources))
-        {
-        }
-        */
         _PendingSource(HdBufferSourceSharedPtr const &source,
                        SdfPath const &id,
                        PrimvarSourceType type,

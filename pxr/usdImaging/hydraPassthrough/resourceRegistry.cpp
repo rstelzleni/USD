@@ -144,12 +144,10 @@ HydraPassthroughResourceRegistry::_Commit()
 {
     TF_STATUS("Committing %zu pending buffer sources", _pendingSources.size());
 
-    // TODO: requests should be sorted by resource, and range.
     {
         HD_TRACE_SCOPE("Resolve");
-        // 1. resolve & resize phase:
-        // for each pending source, resolve and check if it needs buffer
-        // reallocation or not.
+        // resolve phase:
+        // for each pending source, resolve
 
         std::atomic_size_t numBufferSourcesResolved { 0 };
         int numIterations = 0;
@@ -220,7 +218,6 @@ HydraPassthroughResourceRegistry::_Commit()
 void
 HydraPassthroughResourceRegistry::_GarbageCollect()
 {
-    
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

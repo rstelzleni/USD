@@ -63,7 +63,6 @@ HdResourceRegistrySharedPtr HydraPassthroughRenderDelegate::GetResourceRegistry(
 void HydraPassthroughRenderDelegate::CommitResources(HdChangeTracker *tracker) {
     
     // Commit resources, which causes the computations to be run.
-    // XXX we need to extract the computed data after this
     _resourceRegistry->Commit();
 
     for (const auto& it : _cameraMap) {

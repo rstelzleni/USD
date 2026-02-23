@@ -15,7 +15,7 @@ HdPassthroughRenderManager::~HdPassthroughRenderManager() {
 }
 
 void HdPassthroughRenderManager::Initialize(const RenderSettings& settings) {
-    // This is basically blind data for our use.
+    // This is basically blind data for our use
     _driver = {TfToken("HdPassthroughDriver"), VtValue()};
 
     // Scene delegate ID is used to indentify our scene index. So, all
