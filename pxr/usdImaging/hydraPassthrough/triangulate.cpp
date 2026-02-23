@@ -103,9 +103,6 @@ HydraPassthroughTriangulateFaceVaryingComputation::Resolve()
     HD_TRACE_FUNCTION();
     HD_PERF_COUNTER_INCR(HdPerfTokens->triangulateFaceVarying);
 
-    // XXX delete me if this works
-    //HdMeshTopology* hdTopology = dynamic_cast<HdMeshTopology*>(_topology);
-
     VtValue result;
     HdMeshUtil meshUtil(_topology, _id);
     if(meshUtil.ComputeTriangulatedFaceVaryingPrimvar(

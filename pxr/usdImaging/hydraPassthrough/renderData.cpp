@@ -342,6 +342,7 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
         if (name == HdTokens->transform) {
             // XXX note there is no cast from GfMatrix4d to GfMatrix4f for some reason, this check may be
             // useless. We do get GfMatrix4f here
+            // But why? This should be double from the scene delegate
             if (value.CanCast<GfMatrix4f>()) {
                 meshIt->second.transform = value.Cast<GfMatrix4f>().Get<GfMatrix4f>();
             }

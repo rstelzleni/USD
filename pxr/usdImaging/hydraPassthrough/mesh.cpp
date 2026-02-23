@@ -194,11 +194,12 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                 dirtyBits);
     }
 
-    if (HdChangeTracker::IsTransformDirty(*dirtyBits, id)) {
+    // Should be handled in constant primvars population
+    //if (HdChangeTracker::IsTransformDirty(*dirtyBits, id)) {
         // XXX fixme, handle nested transforms
         // Also, are transforms always floats? should I use doubles?
-        _meshData.transform = GfMatrix4f(sceneDelegate->GetTransform(id));
-    }
+        //_meshData.transform = GfMatrix4f(sceneDelegate->GetTransform(id));
+    //}
 
     if (HdChangeTracker::IsVisibilityDirty(*dirtyBits, id)) {
         // Evidently we need to trigger this on the RPrim base class

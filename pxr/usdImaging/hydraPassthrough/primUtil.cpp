@@ -9,45 +9,20 @@ PXR_NAMESPACE_OPEN_SCOPE
 namespace HydraPassthroughPrimUtil
 {
 
-/*
- * This depends on the HdSt draw item's knowledge of its shader network.
- * Not supporting for now, but could add it.
- *
-static bool
-_IsEnabledPrimvarFiltering(HdStDrawItem const * drawItem)
-{
-    HdSt_MaterialNetworkShaderSharedPtr materialNetworkShader =
-        drawItem->GetMaterialNetworkShader();
-    return materialNetworkShader &&
-           materialNetworkShader->IsEnabledPrimvarFiltering();
-}
-*/
-
 
 // This function does almost nothing. Keeping it because HdSt uses it to filter
 // primvars based on what's required to render. If we decide to do that, we can
 // flesh this function out to match the HdSt/primUtils.cpp version.
+// In particular, see _IsEnabledPrimvarFiltering, which requires the HdSt draw
+// item's knowledge of its shader network.
 HdPrimvarDescriptorVector
 GetPrimvarDescriptors(
     HdRprim const * prim,
-//    HdDrawItem const * drawItem,
     HdSceneDelegate * delegate,
     HdInterpolation interpolation)
-//    HdReprSharedPtr const &repr,
-//    HdMeshGeomStyle descGeomStyle,
-//    int geomSubsetDescIndex,
-//    size_t numGeomSubsets)
 {
-    HD_TRACE_FUNCTION();
-
     HdPrimvarDescriptorVector primvars =
         prim->GetPrimvarDescriptors(delegate, interpolation);
-
-    // See HdSt/primUtils.cpp for filtering code based on material
-//    TfTokenVector filterNames;
-//    if (_IsEnabledPrimvarFiltering(drawItem)) {
-//        filterNames = _GetFilterNames(prim, drawItem);
-//    }
 
     return primvars;
 }
@@ -58,7 +33,6 @@ PopulateConstantPrimvars(
     HdRprimSharedData *sharedData,
     HdSceneDelegate *delegate,
     HydraPassthroughResourceRegistry *resourceRegistry,
-//    HdRenderParam *renderParam,
     HdDrawItem *drawItem,
     HdDirtyBits *dirtyBits,
     HdPrimvarDescriptorVector const& constantPrimvars,
@@ -206,61 +180,11 @@ PopulateConstantPrimvars(
             }
         }
     }
-
-    /*
-    HdBufferArrayRangeSharedPtr const& bar =
-        drawItem->GetConstantPrimvarRange();
-
-    if (HdStCanSkipBARAllocationOrUpdate(sources, bar, *dirtyBits)) {
-        return;
-    }
-    */
     
-    /* Not positive about this, but I think these are unneeded for CPU side computations 
-     *
-    HdBufferSpecVector bufferSpecs;
-    HdBufferSpec::GetBufferSpecs(sources, &bufferSpecs);
-
-    // XXX: This should be based off the DirtyPrimvarDesc bit.
-    bool hasDirtyPrimvarDesc = (*dirtyBits & HdChangeTracker::DirtyPrimvar);
-    HdBufferSpecVector removedSpecs;
-    if (hasDirtyPrimvarDesc) {
-        static TfTokenVector internallyGeneratedPrimvars =
-        {
-            HdTokens->transform,
-            HdTokens->transformInverse,
-            HdInstancerTokens->instancerTransform,
-            HdInstancerTokens->instancerTransformInverse,
-            HdTokens->isFlipped,
-            HdTokens->bboxLocalMin,
-            HdTokens->bboxLocalMax,
-            HdTokens->primID
-        };
-        removedSpecs = HdStGetRemovedOrReplacedPrimvarBufferSpecs(bar,
-            constantPrimvars, internallyGeneratedPrimvars, bufferSpecs, id);
-    }
-
-    HdBufferArrayRangeSharedPtr range =
-        resourceRegistry->UpdateShaderStorageBufferArrayRange(
-            HdTokens->primvar, bar, bufferSpecs, removedSpecs,
-            HdBufferArrayUsageHintBitsStorage);
-    
-     HdStUpdateDrawItemBAR(
-        range,
-        drawItem->GetDrawingCoord()->GetConstantPrimvarIndex(),
-        sharedData,
-        renderParam,
-        &(renderIndex.GetChangeTracker()));
-    */
-
-//    TF_VERIFY(drawItem->GetConstantPrimvarRange()->IsValid());
-
     // Write these computations to the resource registry
     if (!sources.empty()) {
         resourceRegistry->AddPrimvarSources(id, std::move(sources),
                           HdInterpolation::HdInterpolationConstant);
-        //resourceRegistry->AddSources(
-        //    drawItem->GetConstantPrimvarRange(), std::move(sources));
     }
 }
 

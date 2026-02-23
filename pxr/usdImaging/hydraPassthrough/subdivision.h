@@ -15,6 +15,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 class HydraPassthroughMeshTopology;
 
 /// \class HydraPassthroughSubdivision
+///
+/// Manages the subdivision tables from OpenSubdiv and creates computations
+/// that sue that data.
 class HydraPassthroughSubdivision {
 public:
     HydraPassthroughSubdivision(int refineLevel);
@@ -75,7 +78,11 @@ public:
         std::unique_ptr<OpenSubdiv::Far::PatchTable const> && patchTable);
 
 
-    // Refines the given source buffer into the primvarBuffer using CPU stencils
+    /// Refines the given source buffer into the primvarBuffer using CPU stencils.
+    ///
+    /// Used by the computations returned from here. The computations expect that
+    /// the lifetime of this object will outlive them, because they need this
+    /// function and the stencils and patch table that are managed by this object.
     void RefineCPU(
             HdBufferSourceSharedPtr const & source,
             std::vector<float> * primvarBuffer,

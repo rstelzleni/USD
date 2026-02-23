@@ -36,8 +36,6 @@ GetExtComputationPrimvarsComputations(
         byComputation[compPrimvar.sourceComputationId].push_back(compPrimvar);
     }
 
-    printf("Found %zu computations for <%s>\n", byComputation.size(), id.GetText());
-
     // Create computation primvar buffer sources by source computation
     for (CompPrimvarsByComputation::value_type it: byComputation) { 
         SdfPath const &computationId = it.first;
@@ -47,17 +45,12 @@ GetExtComputationPrimvarsComputations(
             static_cast<HdExtComputation const *>(
                 renderIndex.GetSprim(HdPrimTypeTokens->extComputation,
                                      computationId));
-
-        printf("Processing computation '%s' for <%s>\n",
-                computationId.GetText(), id.GetText());
         if (!(sourceComp && sourceComp->GetElementCount() > 0)) {
             continue;
         }
-        printf("Computation '%s' has %zu primvars\n",
-                computationId.GetText(), compPrimvars.size());
 
         if (!sourceComp->GetGpuKernelSource().empty()) {
-            TF_WARN("Gpu computations aren't supported yet in HydraPassthrough. "
+            TF_WARN("GPU computations aren't supported in HydraPassthrough. "
                      "Computation '%s' will be ignored on <%s>",
                      computationId.GetText(), id.GetText());
 
@@ -105,12 +98,8 @@ GetExtComputationPrimvarsComputations(
             for (HdExtComputationPrimvarDescriptor const & compPrimvar:
                                                                 compPrimvars) {
 
-                printf("Checking if primvar %s is dirty for <%s>\n",
-                        compPrimvar.name.GetText(), id.GetText());
                 if (HdChangeTracker::IsPrimvarDirty(dirtyBits, id,
                                                     compPrimvar.name)) {
-                    printf("Primvar %s is dirty for <%s>\n",
-                            compPrimvar.name.GetText(), id.GetText());
 
                     if (!cpuComputation) {
                        // Create the computation for the first dirty primvar

@@ -15,8 +15,6 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 /// Hd Buffer Source that binds a primvar to a Ext Computation output.
-/// This buffer source is compatible with being bound to a Bar, but
-/// we don't do so in this library.
 ///
 /// Analogous to HdStExtCompPrimvarBufferSource
 class HydraPassthroughExtCompPrimvarBufferSource final : public HdBufferSource
