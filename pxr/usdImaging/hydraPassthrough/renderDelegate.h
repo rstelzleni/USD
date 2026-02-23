@@ -67,8 +67,6 @@ public:
 
     HdRenderParam *GetRenderParam() const override;
 
-
-
 private:
     static const TfTokenVector SUPPORTED_RPRIM_TYPES;
     static const TfTokenVector SUPPORTED_SPRIM_TYPES;

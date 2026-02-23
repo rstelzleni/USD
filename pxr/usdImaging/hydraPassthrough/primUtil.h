@@ -20,13 +20,8 @@ namespace HydraPassthroughPrimUtil
 HdPrimvarDescriptorVector
 GetPrimvarDescriptors(
     HdRprim const * prim,
-//    HdDrawItem const * drawItem,
     HdSceneDelegate * delegate,
     HdInterpolation interpolation);
-//    const HdReprSharedPtr &repr = nullptr,
-//    HdMeshGeomStyle descGeomStyle = HdMeshGeomStyleInvalid,
-//    int geomSubsetDescIndex = 0,
-//    size_t numGeomSubsets = 0);
 
 void
 PopulateConstantPrimvars(
@@ -34,7 +29,6 @@ PopulateConstantPrimvars(
     HdRprimSharedData *sharedData,
     HdSceneDelegate *delegate,
     HydraPassthroughResourceRegistry *resourceRegistry,
-//    HdRenderParam *renderParam,
     HdDrawItem *drawItem,
     HdDirtyBits *dirtyBits,
     HdPrimvarDescriptorVector const& constantPrimvars,

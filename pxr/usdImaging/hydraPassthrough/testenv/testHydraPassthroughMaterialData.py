@@ -105,8 +105,6 @@ class TestMaterialData(unittest.TestCase):
         populate_indexed_primvar(mesh)
         assign_material_to_mesh(mat, mesh)
 
-        print('Stage:\n%s' % stage.GetRootLayer().ExportToString())
-
         m = HydraPassthrough.RenderManager()
         m.Initialize()
         m.Render(stage)
@@ -207,7 +205,6 @@ class TestMaterialData(unittest.TestCase):
         self.assertEqual(primvar.name, 'displayColor')
         self.assertEqual(primvar.interpolation, 'vertex')
         self.assertEqual(primvar.data.GetTypeName(), 'VtArray<GfVec3f>')
-        print(primvar.data.GetValue())
         # Note that in the input displayColor is a 3 item array with 4 indices to assign those
         # 3 colors to 4 vertices. In the output this is flattened to a 4 item array that follows
         # the vertex order. in other words

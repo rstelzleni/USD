@@ -398,9 +398,7 @@ PopulateVertexAndVaryingPrimvars(
 
     {
         // sources needed for computations
-        // XXX I'm not sure if we even should enqueue these, since computations
-        // are not going to actually run. Doing it in case some of these are useful
-        // buffers.
+        // Note if these are GPU computations they will not run, but CPU computations will.
         for (HdBufferSourceSharedPtr const & source : reserveOnlySources) {
             _RefineOrQuadrangulateVertexAndVaryingPrimvar(
                 source, topology, id,  doRefine, doQuadrangulate,

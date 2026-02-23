@@ -30,14 +30,6 @@ public:
         QuadsUntriangulated
     };
 
-    // Why not HdInterpolation? using that for now
-    /// Specifies type of interpolation to use in refinement
-    //enum Interpolation {
-    //    INTERPOLATE_VERTEX,
-    //    INTERPOLATE_VARYING,
-    //    INTERPOLATE_FACEVARYING,
-    //};
-
     HydraPassthroughMeshTopology(
         const HdMeshTopology &src,
         int refineLevel,
