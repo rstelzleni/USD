@@ -212,8 +212,11 @@ class TestSubdivision(unittest.TestCase):
         stage = Usd.Stage.CreateInMemory()
         create_subdivided_sphere_usd(stage, num_latitude=4, num_longitude=8)
 
+        render_settings = HydraPassthrough.RenderSettings()
+        render_settings.refineLevel = 1
+
         m = HydraPassthrough.RenderManager()
-        m.Initialize()
+        m.Initialize(render_settings)
         m.Render(stage)
         md = m.GetRenderData().ExtractRenderDataCopy()
         m.Cleanup()
