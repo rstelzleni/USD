@@ -63,9 +63,24 @@ public:
         // TfToken glslType;
     };
 
-    // For face varying primvars we need to provide their own indices, separate
-    // from the mesh's faceVertexIndices. These are sorted into "channels" which
-    // can share an index buffer if they have the same topology.
+    // Face Varying primvars may not share the topology of the mesh's
+    // faceVertexIndices. 
+    //
+    // UVs are a common example, they may be discontinuous across UV seams so
+    // they need their own indices. 
+    //
+    // To support this we have this structure for face varying channels. Each
+    // channel has its own set of indices, and a list of primvars that use that
+    // channel. For instance, if we have st and st2 primvars that both use the
+    // same topology, we would have one channel with the indices for the
+    // topology, and both st and st2 would be listed as primvars that use that
+    // channel.
+    //
+    // It would look like this:
+    //
+    //   faceVaryingChannels: [
+    //     { channel: 0, indices: [...], primvars: ["st", "st2"] }
+    //   ]
     struct FaceVaryingChannel {
         int channel;
         VtValue indices;

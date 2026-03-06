@@ -812,10 +812,11 @@ _OsdFvarIndexComputation::_OsdFvarIndexComputation (
     , _osdTopology(osdTopology)
     , _channel(channel)
 {
+    const std::string channelStr = std::to_string(_channel);
     _indicesName = TfToken(
-        "fvarIndices" + std::to_string(_channel));
+        HydraPassthroughSubdivision::PrimvarChannelIndexBaseName + channelStr);
     _patchParamName = TfToken(
-        "fvarPatchParam" + std::to_string(_channel));
+         HydraPassthroughSubdivision::FvarPatchParamBaseName + channelStr);
 }
 
 bool
@@ -1005,6 +1006,7 @@ HydraPassthroughSubdivision::HydraPassthroughSubdivision(int refineLevel)
 
 HydraPassthroughSubdivision::~HydraPassthroughSubdivision() = default;
 
+/*static*/
 bool
 HydraPassthroughSubdivision::RefinesToTriangles(TfToken const &scheme)
 {
@@ -1014,12 +1016,14 @@ HydraPassthroughSubdivision::RefinesToTriangles(TfToken const &scheme)
     return false;
 }
 
+/*static*/
 bool
 HydraPassthroughSubdivision::RefinesToBSplinePatches(TfToken const &scheme)
 {
     return scheme == PxOsdOpenSubdivTokens->catmullClark;
 }
 
+/*static*/
 bool
 HydraPassthroughSubdivision::RefinesToBoxSplineTrianglePatches(TfToken const &scheme)
 {
@@ -1031,6 +1035,26 @@ HydraPassthroughSubdivision::RefinesToBoxSplineTrianglePatches(TfToken const &sc
 #endif
     return false;
 }
+
+/*static*/
+int 
+HydraPassthroughSubdivision::GetChannelFromPrimvarChannelIndexName(const TfToken &name) 
+{
+    std::string nameStr = name.GetString();
+    std::string prefix = PrimvarChannelIndexBaseName;
+    if (nameStr.rfind(prefix, 0) == 0) {
+        std::string channelStr = nameStr.substr(prefix.size());
+        try {
+            return std::stoi(channelStr);
+        } catch (const std::exception& e) {
+            TF_RUNTIME_ERROR("Failed to extract face varying channel from primvar name %s: %s", name.GetText(), e.what());
+            return -1;
+        }
+    }
+    return -1;
+}
+
+
 
 OpenSubdiv::Far::StencilTable const *
 HydraPassthroughSubdivision::GetStencilTable(
