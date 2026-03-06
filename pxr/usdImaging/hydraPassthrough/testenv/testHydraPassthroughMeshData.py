@@ -31,10 +31,6 @@ class TestMeshData(unittest.TestCase):
         self.assertEqual(x.GetValue(), None)
         x = mesh0.GetFaceVertexIndices()
         self.assertEqual(x.GetValue(), [])
-        x = mesh0.GetTriangleOriginalFaceIndices()
-        self.assertEqual(x.GetValue(), [])
-        x = mesh0.GetTriangleEdgeIndices()
-        self.assertEqual(x.GetValue(), [])
         x = mesh0.materialId
         self.assertEqual(x, Sdf.Path())
         x = mesh0.GetAllPrimvars()

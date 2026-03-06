@@ -117,8 +117,6 @@ HydraPassthroughMesh::ToString() const {
     ss << "  points: " << _meshData.points.Get<VtVec3fArray>().size() << std::endl;
     ss << "  topology: " << _topology.GetScheme().GetText() << std::endl;
     ss << "  faceVertexIndices: " << _meshData.faceVertexIndices.size() << std::endl;
-    ss << "  triangleOriginalFaceIndices: " << _meshData.triangleOriginalFaceIndices.size() << std::endl;
-    ss << "  triangleEdgeIndices: " << _meshData.triangleEdgeIndices.size() << std::endl;
     ss << "  transform: " << std::endl;
     ss << "    " << _meshData.transform[0][0] << " "<< _meshData.transform[0][1] << " "
        << _meshData.transform[0][2] << " " << _meshData.transform[0][3] << std::endl;

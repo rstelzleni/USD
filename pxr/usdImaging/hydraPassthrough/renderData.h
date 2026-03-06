@@ -97,8 +97,6 @@ public:
         VtValue points;
         VtValue normals;
         VtIntArray faceVertexIndices; // triangles only
-        VtIntArray triangleOriginalFaceIndices;
-        VtIntArray triangleEdgeIndices;
         TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
         std::vector<FaceVaryingChannel> faceVaryingChannels;
 
