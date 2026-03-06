@@ -240,6 +240,12 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
     auto meshIt = _renderData.meshes.find(id);
     if (meshIt != _renderData.meshes.end()) {
 
+        if (source->GetNumElements() == 0) {
+            // Empty buffers, like index buffers for meshes with no indices, don't 
+            // need to be processed.
+            return;
+        }
+
         VtValue value(HydraPassthroughHdTypeUtil::CastRenderDataToCppType(source));
 
         // Special case names
@@ -267,9 +273,12 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             meshIt->second.points = value;
         }
 
+        // Handle each source according to its type
         switch (sourceType) {
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Index:
                 {
+                    // Check if this is an fvar index buffer.
+                    //
                     // We don't use the fvar tracker to check this, because it tracks what channel
                     // a primvar is in. For instance, "st" is in channel 0. In this index buffer case
                     // we're getting "here are the indices for a channel" and we'll get a name like
@@ -281,13 +290,27 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
                         _UpdateFaceVaryingIndices(channel, meshIt->second, value);
                     }
                     else {
+                        // Not an fvar index, it should be our face indices value
                         if (value.IsHolding<VtArray<int>>()) {
                             meshIt->second.faceVertexIndices = value.UncheckedGet<VtArray<int>>();
                         }
+                        // An unsubdivided triangle mesh will use GfVec3i for its indices here
+                        else if (value.IsHolding<VtArray<GfVec3i>>()) {
+                            const VtArray<GfVec3i>& vecIndices = value.UncheckedGet<VtArray<GfVec3i>>();
+                            VtIntArray intIndices(vecIndices.size() * 3);
+                            for (size_t i = 0; i < vecIndices.size(); ++i) {
+                                intIndices[i*3] = vecIndices[i][0];
+                                intIndices[i*3 + 1] = vecIndices[i][1];
+                                intIndices[i*3 + 2] = vecIndices[i][2];
+                            }
+                            meshIt->second.faceVertexIndices = intIndices;
+                        }
+                        // An unsubdivided quad mesh would use GfVec4i for indices, but we don't support
+                        // returning quads currently.
                         else {
-                            // Getting this warning in normal operation, I think because of parameter arrays.
-                            // XXX Handle parameters and original face indices
-                            TF_WARN("Expected index source to be of type VtArray<GfVec3i>, got %s for %s - %s", value.GetTypeName().c_str(), id.GetText(), name.GetText());
+                            TF_WARN("Expected index source to be of type VtArray<int> or VtArray<GfVec3i>, got %s for %s - %s",
+                                    value.GetTypeName().c_str(),
+                                    id.GetText(), name.GetText());
                         }
                     }
                 }
@@ -304,28 +327,6 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
         }
     } else {
         TF_RUNTIME_ERROR("Mesh with id %s not found when copying primvar buffer source", id.GetText());
-    }
-}
-
-void
-HydraPassthroughRenderData::CopyPrimvarBufferSources(
-        const SdfPath& id,
-        HdBufferSourceSharedPtrVector const &sources,
-        HydraPassthroughResourceRegistry::PrimvarSourceType sourceType,
-        HdInterpolation interpolation)
-{
-    const std::lock_guard<std::mutex> lock(_meshMutex);
-    auto meshIt = _renderData.meshes.find(id);
-    if (meshIt != _renderData.meshes.end()) {
-
-        for (const auto& source : sources) {
-            const TfToken& name = source->GetName();
-            VtValue value(HydraPassthroughHdTypeUtil::CastRenderDataToCppType(source));
-
-            meshIt->second.primvars[name] = { value, interpolation };
-        }
-    } else {
-        TF_RUNTIME_ERROR("Mesh with id %s not found when copying primvar buffer sources", id.GetText());
     }
 }
 

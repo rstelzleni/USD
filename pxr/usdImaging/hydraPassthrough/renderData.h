@@ -216,17 +216,6 @@ public:
             HydraPassthroughResourceRegistry::PrimvarSourceType sourceType,
             HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
 
-    /// Copy a list of potentially computed primvar source values into the
-    /// render data.
-    ///
-    /// These all share a single prim and are of a single type, like index,
-    /// points, primvar.
-    void CopyPrimvarBufferSources(
-            const SdfPath& id,
-            HdBufferSourceSharedPtrVector const &sources,
-            HydraPassthroughResourceRegistry::PrimvarSourceType sourceType,
-            HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
-
     /// Extract a copy of the contained RenderData.
     ///
     /// This copy does not have mutexes, and is just a snapshot of the

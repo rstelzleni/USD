@@ -183,17 +183,28 @@ HydraPassthroughResourceRegistry::_Commit()
 
         for (_PendingSource &pendingSource : _pendingSources) {
 
+            // Skip topology objects, these are the generic sources, and hold
+            // onto topology data that was intermediate. There's no data
+            // to copy
             if (pendingSource.type == PrimvarSourceType::Generic) {
-                continue; // generic sources don't have data to copy, these are for topology
+                continue;
             }
 
+            // Skip intermediate sources. These are things like the rough,
+            // unsubdivided points for a subdivision surface. They are inputs,
+            // and there will be similarly named outputs that will contain the
+            // final computed values.
             if (pendingSource.isIntermediate) {
-                continue; // intermediate sources are for computations and shouldn't be copied directly
+                continue;
             }
 
             // Now extract the computed data
             for (HdBufferSourceSharedPtr const& src : pendingSource.sources) {
-                _renderData->CopyPrimvarBufferSource(pendingSource.id, src, pendingSource.type, pendingSource.interpolation);
+                _renderData->CopyPrimvarBufferSource(
+                        pendingSource.id,
+                        src,
+                        pendingSource.type,
+                        pendingSource.interpolation);
             }
         }
     }
