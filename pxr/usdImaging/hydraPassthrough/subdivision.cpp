@@ -1042,7 +1042,8 @@ HydraPassthroughSubdivision::GetChannelFromPrimvarChannelIndexName(const TfToken
 {
     std::string nameStr = name.GetString();
     std::string prefix = PrimvarChannelIndexBaseName;
-    if (nameStr.rfind(prefix, 0) == 0) {
+    if (nameStr.size() > prefix.size() &&
+         nameStr.compare(0, prefix.size(), prefix) == 0) {
         std::string channelStr = nameStr.substr(prefix.size());
         try {
             return std::stoi(channelStr);
