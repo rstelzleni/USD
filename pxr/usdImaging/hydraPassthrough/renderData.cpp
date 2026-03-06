@@ -405,8 +405,8 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
 
         const TfToken& name = source->GetName();
         if (name == HdTokens->transform) {
-            if (value.CanCast<GfMatrix4d>()) {
-                meshIt->second.transform = value.Cast<GfMatrix4d>().Get<GfMatrix4d>();
+            if (value.IsHolding<GfMatrix4d>()) {
+                meshIt->second.transform = value.UncheckedGet<GfMatrix4d>();
             }
             else {
                 TF_RUNTIME_ERROR("Expected transform to be of type GfMatrix4d, got %s", value.GetTypeName().c_str());
@@ -414,8 +414,8 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
         else if (name == HdTokens->transformInverse) {
-            if (value.CanCast<GfMatrix4d>()) {
-                meshIt->second.transformInverse = value.Cast<GfMatrix4d>().Get<GfMatrix4d>();
+            if (value.IsHolding<GfMatrix4d>()) {
+                meshIt->second.transformInverse = value.UncheckedGet<GfMatrix4d>();
             }
             else {
                 TF_RUNTIME_ERROR("Expected transformInverse to be of type GfMatrix4d, got %s", value.GetTypeName().c_str());
@@ -436,8 +436,8 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
                         _UpdateFaceVaryingIndices(channel, meshIt->second, value);
                     }
                     else {
-                        if (value.CanCast<VtArray<int>>()) {
-                            meshIt->second.faceVertexIndices = value.Cast<VtArray<int>>().Get<VtArray<int>>();
+                        if (value.IsHolding<VtArray<int>>()) {
+                            meshIt->second.faceVertexIndices = value.UncheckedGet<VtArray<int>>();
                         }
                         else {
                             // Getting this warning in normal operation, I think because of parameter arrays.
