@@ -2,6 +2,7 @@
 
 #include "pxr/usdImaging/hydraPassthrough/fvarTopologyTracker.h"
 #include "pxr/usdImaging/hydraPassthrough/hdTypeUtil.h"
+#include "pxr/usdImaging/hydraPassthrough/subdivision.h"
 
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/imaging/hd/camera.h"
@@ -221,27 +222,6 @@ static void _UpdateFaceVaryingIndices(int channel, HydraPassthroughRenderData::M
     }
 }
 
-static int _ExtractFaceVaryingChannelFromPrimvarName(const TfToken& name) {
-    // Primvars that are indexed by the face varying topology have names like
-    // "fvarIndices0", "fvarIndices1", etc. We need to extract the channel
-    // number from the name. It's crappy that we need to string parse for this,
-    // but there doesn't seem to be a cleaner way with the current
-    // architecture. This makes sense for GPU buffers because we don't need to
-    // pull out the indices separately, you don't ever have to do this parsing.
-    std::string nameStr = name.GetString();
-    std::string prefix = "fvarIndices"; // is there a public token for this? None in Hd
-    if (nameStr.rfind(prefix, 0) == 0) {
-        std::string channelStr = nameStr.substr(prefix.size());
-        try {
-            return std::stoi(channelStr);
-        } catch (const std::exception& e) {
-            TF_RUNTIME_ERROR("Failed to extract face varying channel from primvar name %s: %s", name.GetText(), e.what());
-            return -1;
-        }
-    }
-    return -1;
-}
-
 void
 HydraPassthroughRenderData::CopyPrimvarBufferSource(
         const SdfPath& id,
@@ -255,14 +235,6 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
         sourceType != HydraPassthroughResourceRegistry::PrimvarSourceType::Index) {
         return;
     }
-
-    // we'll also get an fvarIndices0 index source which is for a bank of primvars. See
-    // _fvarTopologyTracker on mesh.cpp for a mapping of what primvars go to what channels.
-    // We'll describe it like below. Move this documentation someplace useful
-    //
-    //   faceVaryingChannels: [
-    //     { channel: 0, indices: [...], primvars: ["st"] }
-    //   ]
 
     const std::lock_guard<std::mutex> lock(_meshMutex);
     auto meshIt = _renderData.meshes.find(id);
@@ -296,7 +268,11 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
         switch (sourceType) {
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Index:
                 {
-                    int channel = _ExtractFaceVaryingChannelFromPrimvarName(name);
+                    // We don't use the fvar tracker to check this, because it tracks what channel
+                    // a primvar is in. For instance, "st" is in channel 0. In this index buffer case
+                    // we're getting "here are the indices for a channel" and we'll get a name like
+                    // "fvarIndices0" instead of "st". So, ask the subdiv class for the channel number.
+                    int channel = HydraPassthroughSubdivision::GetChannelFromPrimvarChannelIndexName(name);
                     if (channel >= 0) {
                         // This is an index buffer for a face varying primvar channel.
                         // We need to add it to the appropriate channel in our output structure

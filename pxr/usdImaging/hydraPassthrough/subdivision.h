@@ -20,6 +20,12 @@ class HydraPassthroughMeshTopology;
 /// that use that data.
 class HydraPassthroughSubdivision {
 public:
+    // Hard coded buffer source parameter names.
+    //
+    // Not tokens because we'll do string operations on them
+    static constexpr const char * PrimvarChannelIndexBaseName = "fvarIndices";
+    static constexpr const char * FvarPatchParamBaseName = "fvarPatchParam";
+
     HydraPassthroughSubdivision(int refineLevel);
     ~HydraPassthroughSubdivision();
 
@@ -33,6 +39,12 @@ public:
     /// Returns true if the subdivision for \a scheme generates box spline
     /// triangle patches.
     static bool RefinesToBoxSplineTrianglePatches(TfToken const &scheme);
+
+    /// Given the name of a face-varying primvar channel index, returns the
+    /// channel number. For instance, if the name is "fvarIndices3", this
+    /// function will return 3. If the name doesn't match the expected pattern,
+    /// returns -1.
+    static int GetChannelFromPrimvarChannelIndexName(const TfToken &name);
 
     int GetRefineLevel() const {
         return _refineLevel;
