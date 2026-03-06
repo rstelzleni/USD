@@ -26,7 +26,6 @@ public:
     /// Type of computed primvar source
     enum class PrimvarSourceType {
         Index,
-        Points,
         Primvar,
         Generic
     };
@@ -45,10 +44,6 @@ public:
     /// Append a computation for Index data
     void AddIndexSources(SdfPath const &id,
                          HdBufferSourceSharedPtrVector &&sources);
-
-    /// Append a computation for Points data
-    void AddPointsSource(SdfPath const &id,
-                         HdBufferSourceSharedPtr const &source);
 
     // Append a computation for a Primvar
     void AddPrimvarSource(SdfPath const &id,

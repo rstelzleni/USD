@@ -58,13 +58,6 @@ void HydraPassthroughResourceRegistry::AddIndexSources(
     _AddSources(std::move(sources), id, PrimvarSourceType::Index);
 }
 
-void HydraPassthroughResourceRegistry::AddPointsSource(
-        SdfPath const &id,
-        HdBufferSourceSharedPtr const &source)
-{
-    _AddSource(source, id, PrimvarSourceType::Points);
-}
-
 void HydraPassthroughResourceRegistry::AddPrimvarSource(
         SdfPath const &id,
         HdBufferSourceSharedPtr const &source,
