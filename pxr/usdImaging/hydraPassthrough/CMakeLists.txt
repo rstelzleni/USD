@@ -30,6 +30,7 @@ pxr_library(hydraPassthrough
         computationUtil
         extCompPrimvarBufferSource
         fvarTopologyTracker
+        hdTypeUtil
         material
         materialParam
         mesh
