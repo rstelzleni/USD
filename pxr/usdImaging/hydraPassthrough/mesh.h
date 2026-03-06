@@ -109,7 +109,8 @@ private:
         HdSceneDelegate* sceneDelegate,
         const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry,
         HdMeshReprDesc const &desc,
-        HdDirtyBits* dirtyBits);
+        HdReprSharedPtr &repr,
+        HdDirtyBits     *dirtyBits);
 
 
     // Fills out the mesh data for this mesh. Pulled out from Sync for

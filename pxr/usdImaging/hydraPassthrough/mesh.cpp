@@ -190,6 +190,7 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                 sceneDelegate,
                 resourceRegistry,
                 desc,
+                repr,
                 dirtyBits);
     }
 
@@ -226,7 +227,8 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
     HdSceneDelegate *sceneDelegate,
     const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry,
     HdMeshReprDesc const &desc,
-    HdDirtyBits*     dirtyBits
+    HdReprSharedPtr &repr,
+    HdDirtyBits     *dirtyBits
     )
 {
     // If refined, we submit a subdivision preprocessing no matter what desc says
@@ -331,6 +333,9 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
     // temp, replace with real subset once supported
     const int geomSubsetDescIndex = 0;
 
+    // Get the only draw item we created
+    HdDrawItem *drawItem = repr->GetDrawItem(0);
+
     /* CONSTANT PRIMVARS, TRANSFORM, EXTENT AND PRIMID */
     if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id) ||
         HdChangeTracker::IsTransformDirty(*dirtyBits, id) ||
@@ -347,7 +352,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
                                      &_sharedData,
                                      sceneDelegate,
                                      resourceRegistry.get(),
-                                     nullptr /*drawItem*/,
+                                     drawItem,
                                      dirtyBits,
                                      constantPrimvars,
                                      &hasMirroredTransform);
@@ -372,7 +377,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
         MeshUtil::PopulateVertexAndVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
-                desc, nullptr /*drawItem*/, geomSubsetDescIndex, dirtyBits,
+                desc, drawItem, geomSubsetDescIndex, dirtyBits,
                 requireSmoothNormals);
     }
 
@@ -381,7 +386,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         MeshUtil::PopulateFaceVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
                 &_fvarTopologyTracker,
-                nullptr /*drawItem*/, dirtyBits);
+                drawItem, dirtyBits);
     }
 
 //
