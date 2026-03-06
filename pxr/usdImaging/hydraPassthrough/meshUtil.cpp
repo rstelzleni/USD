@@ -368,7 +368,6 @@ PopulateVertexAndVaryingPrimvars(
     
     // XXX Member variables in the old code, see if we need these.
     // Currently, they are all giving warnings about being set but not used
-    [[maybe_unused]] HdType _pointsDataType = HdType::HdTypeInvalid;
     [[maybe_unused]] bool _sceneNormals = false;
     [[maybe_unused]] HdInterpolation _sceneNormalsInterpolation = HdInterpolationCount;
     [[maybe_unused]] bool _displayOpacity = false;
@@ -381,7 +380,6 @@ PopulateVertexAndVaryingPrimvars(
             for (HdBufferSourceSharedPtr const& source: computedSources) {
                 if (source->GetName() == HdTokens->points) {
                     isPointsComputedPrimvar = true;
-                    _pointsDataType = source->GetTupleType().type;
                 }
                 if (source->GetName() == HdTokens->normals) {
                     _sceneNormalsInterpolation = HdInterpolationVertex;
@@ -425,6 +423,13 @@ PopulateVertexAndVaryingPrimvars(
     // Track index to identify varying primvars.
     int i = 0;
     for (HdPrimvarDescriptor const& primvar: primvars) {
+
+        // At this point we have access to primvar.role, but the HdVtBufferSource
+        // doesn't hold onto that value. If we want the role in the output data
+        // we could derive from HdVtBufferSource and track that data in the new
+        // class, then extract it in RenderData. Not doing for now, because role
+        // is currently unused in our renderer
+
         // If the index is greater than the last vertex index, isVarying=true.
         bool isVarying = i++ > int(vertexPartitionIndex);
 
@@ -500,7 +505,6 @@ PopulateVertexAndVaryingPrimvars(
                         "primvar. Skipping authored value.");
                     continue;
                 }
-                _pointsDataType = source->GetTupleType().type;
             }
 
             _RefineOrQuadrangulateVertexAndVaryingPrimvar(
@@ -528,7 +532,8 @@ PopulateVertexAndVaryingPrimvars(
     }
 
     // Smooth normals could be computed here if we add the smooth normals
-    // computations. See HdSt_SmoothNormalsComputationGPU for reference
+    // computations. See HdSt_SmoothNormalsComputationGPU for reference.
+    // This is where we'd make use of the _sceneNormals local variable.
 
     // schedule buffer sources
     if (!sources.empty()) {
@@ -606,7 +611,6 @@ PopulateFaceVaryingPrimvars(
     const bool doublesSupported = true;
 
     // XXX Member variables in the old code, see if we need these.
-    [[maybe_unused]] HdType _pointsDataType = HdType::HdTypeInvalid;
     [[maybe_unused]] bool _sceneNormals = false;
     [[maybe_unused]] HdInterpolation _sceneNormalsInterpolation = HdInterpolationCount;
     [[maybe_unused]] bool _displayOpacity = false;
