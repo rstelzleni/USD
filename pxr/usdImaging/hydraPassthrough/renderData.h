@@ -41,10 +41,10 @@ public:
     // See also HdSt resourceBinder.cpp for data we might need to add here, and
     // to the mesh. There's more computation done there, especially around
     // instancing and type mapping
-    struct PrimvarSource {
-        PrimvarSource() = default;
-        PrimvarSource(const VtValue& d) : data(d) {}
-        PrimvarSource(const VtValue& d, HdInterpolation interpolation) 
+    struct PrimvarData {
+        PrimvarData() = default;
+        PrimvarData(const VtValue& d) : data(d) {}
+        PrimvarData(const VtValue& d, HdInterpolation interpolation) 
             : data(d), interpolation(interpolation) {}
 
         VtValue data;
@@ -81,7 +81,7 @@ public:
         VtIntArray faceVertexIndices; // triangles only
         VtIntArray triangleOriginalFaceIndices;
         VtIntArray triangleEdgeIndices;
-        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
+        TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
         std::vector<FaceVaryingChannel> faceVaryingChannels;
 
         // Not wrapped to python, valid only so long as the rprim mesh exists
