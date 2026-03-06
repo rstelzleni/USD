@@ -156,7 +156,7 @@ namespace {
     class Primvar {
     public:
         Primvar(const TfToken &name,
-                const HydraPassthroughRenderData::PrimvarSource & source) :
+                const HydraPassthroughRenderData::PrimvarData & source) :
             name(name.GetString()),
             interpolation(TfEnum::GetDisplayName(source.interpolation)),
             data(source.data)
