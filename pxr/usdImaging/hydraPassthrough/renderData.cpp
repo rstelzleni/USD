@@ -242,6 +242,7 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
 
         VtValue value(HydraPassthroughHdTypeUtil::CastRenderDataToCppType(source));
 
+        // Special case names
         const TfToken& name = source->GetName();
         if (name == HdTokens->transform) {
             if (value.IsHolding<GfMatrix4d>()) {
@@ -262,6 +263,7 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
         else if (name == HdTokens->points) {
+            // Points is a primvar type, but we want to hold out a separate copy
             meshIt->second.points = value;
         }
 
@@ -289,9 +291,6 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
                         }
                     }
                 }
-                break;
-            case HydraPassthroughResourceRegistry::PrimvarSourceType::Points:
-                meshIt->second.points = value;
                 break;
             case HydraPassthroughResourceRegistry::PrimvarSourceType::Primvar:
                 meshIt->second.primvars[name] = { value, interpolation };
