@@ -39,8 +39,9 @@ class HydraPassthroughRenderData :
 public:
 
     // See also HdSt resourceBinder.cpp for data we might need to add here, and
-    // to the mesh. There's more computation done there, especially around
-    // instancing and type mapping
+    // to the mesh. It's intended to handle mapping data onto the GPU, but
+    // there's more computation done there, especially around instancing and
+    // GL type mapping
     struct PrimvarData {
         PrimvarData() = default;
         PrimvarData(const VtValue& d) : data(d) {}
@@ -50,6 +51,8 @@ public:
         VtValue data;
         HdInterpolation interpolation;
 
+        // The type that would be used in glsl code.
+        //
         // Or possibly the hlsl type? We could add this for clients, but there's
         // a question in my mind about types here. For instance, if hdst would have
         // used uint for a primvar, but we provide the output data as int, the client
@@ -74,8 +77,8 @@ public:
         SdfPath id;
         SdfPath materialId;
         bool visible{true};
-        GfMatrix4f transform;
-        GfMatrix4f transformInverse;
+        GfMatrix4d transform;
+        GfMatrix4d transformInverse;
         VtValue points;
         VtValue normals;
         VtIntArray faceVertexIndices; // triangles only

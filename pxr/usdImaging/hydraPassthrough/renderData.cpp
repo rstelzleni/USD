@@ -405,11 +405,8 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
 
         const TfToken& name = source->GetName();
         if (name == HdTokens->transform) {
-            // XXX note there is no cast from GfMatrix4d to GfMatrix4f for some reason, this check may be
-            // useless. We do get GfMatrix4f here
-            // But why? This should be double from the scene delegate
-            if (value.CanCast<GfMatrix4f>()) {
-                meshIt->second.transform = value.Cast<GfMatrix4f>().Get<GfMatrix4f>();
+            if (value.CanCast<GfMatrix4d>()) {
+                meshIt->second.transform = value.Cast<GfMatrix4d>().Get<GfMatrix4d>();
             }
             else {
                 TF_RUNTIME_ERROR("Expected transform to be of type GfMatrix4d, got %s", value.GetTypeName().c_str());
@@ -417,8 +414,8 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
         else if (name == HdTokens->transformInverse) {
-            if (value.CanCast<GfMatrix4f>()) {
-                meshIt->second.transformInverse = value.Cast<GfMatrix4f>().Get<GfMatrix4f>();
+            if (value.CanCast<GfMatrix4d>()) {
+                meshIt->second.transformInverse = value.Cast<GfMatrix4d>().Get<GfMatrix4d>();
             }
             else {
                 TF_RUNTIME_ERROR("Expected transformInverse to be of type GfMatrix4d, got %s", value.GetTypeName().c_str());

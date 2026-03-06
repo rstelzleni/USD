@@ -55,13 +55,19 @@ PopulateConstantPrimvars(
         // precision here.
         bool const doublesSupported = true;
 
+        // We wrap transform in a VtValue so that the HdVtBufferSource doesn't
+        // downcast the matrix to float if the default matrix type is float.
+        // There's no reason not to preserve full precision here.
+        //
+        // Note we can also prevent the downcast with the environment variable
+        // HD_ENABLE_DOUBLEMATRIX, but in our case this is not env specific
         sources.push_back(
             std::make_shared<HdVtBufferSource>(
-                HdTokens->transform, transform, doublesSupported));
+                HdTokens->transform, VtValue(transform), doublesSupported));
 
         sources.push_back(
             std::make_shared<HdVtBufferSource>(
-                HdTokens->transformInverse, transform.GetInverse(),
+                HdTokens->transformInverse, VtValue(transform.GetInverse()),
                 doublesSupported));
 
         bool leftHanded = transform.IsLeftHanded();
