@@ -708,6 +708,124 @@ PopulateFaceVaryingPrimvars(
     }
 }
 
+void
+PopulateElementPrimvars(
+        HdRprim const* rprim,
+        SdfPath const& id,
+        HdSceneDelegate* sceneDelegate,
+        HydraPassthroughResourceRegistry *resourceRegistry,
+        HydraPassthroughMeshTopology * topology,
+        HdDrawItem *drawItem,
+        HdDirtyBits *dirtyBits,
+        bool requireFlatNormals)
+{
+    HD_TRACE_FUNCTION();
+    HF_MALLOC_TAG_FUNCTION();
+
+    HdPrimvarDescriptorVector primvars =
+        PrimUtil::GetPrimvarDescriptors(
+                rprim, sceneDelegate, HdInterpolationUniform);
+
+    // Don't early out, there can still be computations even if there are no primvars
+
+    HdBufferSourceSharedPtrVector sources;
+    sources.reserve(primvars.size());
+
+    int numFaces = topology ? topology->GetNumFaces() : 0;
+
+    // Track primvars that are skipped because they have zero elements
+    HdPrimvarDescriptorVector zeroElementPrimvars;
+
+    // we always can support doubles
+    const bool doublesSupported = true;
+
+    // XXX Member variables in the old code, see if we need these.
+    [[maybe_unused]] bool _sceneNormals = false;
+    [[maybe_unused]] HdInterpolation _sceneNormalsInterpolation = HdInterpolationCount;
+    [[maybe_unused]] bool _displayOpacity = false;
+
+    for (HdPrimvarDescriptor const& primvar: primvars) {
+        if (!HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, primvar.name))
+            continue;
+
+        VtValue value = sceneDelegate->Get(id, primvar.name);
+        if (!value.IsEmpty()) {
+            HdBufferSourceSharedPtr source =
+                std::make_shared<HdVtBufferSource>(primvar.name, value, 1,
+                                                   doublesSupported);
+
+            if (source->GetNumElements() == 0) {
+                // zero elements for primvars will be treated as if the
+                // primvar doesn't exist, so no warning is necessary
+                zeroElementPrimvars.push_back(primvar);
+                continue;
+            }
+
+            // verify primvar length
+            if ((int)source->GetNumElements() != numFaces) {
+                HF_VALIDATION_WARN(id,
+                    "# of faces mismatch (%d != %d) for uniform primvar %s",
+                    (int)source->GetNumElements(), numFaces, 
+                    primvar.name.GetText());
+                continue;
+            }
+
+            if (source->GetName() == HdTokens->normals) {
+                _sceneNormalsInterpolation = HdInterpolationUniform;
+                _sceneNormals = true;
+            } else if (source->GetName() == HdTokens->displayOpacity) {
+                _displayOpacity = true;
+            }
+            sources.push_back(source);
+        }
+    }
+
+    // remove the primvars with zero elements from further processing
+    for (HdPrimvarDescriptor const& primvar: zeroElementPrimvars) {
+        auto pos = std::find(primvars.begin(), primvars.end(), primvar);
+        if (pos != primvars.end()) {
+            primvars.erase(pos);
+        }
+    }
+
+    /*
+    HdStComputationComputeQueuePairVector computations;
+
+    TfToken generatedNormalsName;
+
+    if (requireFlatNormals && (*dirtyBits & DirtyFlatNormals))
+    {
+        *dirtyBits &= ~DirtyFlatNormals;
+        TF_VERIFY(_topology);
+
+        bool usePackedNormals = IsEnabledPackedNormals();
+        generatedNormalsName = usePackedNormals ?
+            HdStTokens->packedFlatNormals : HdStTokens->flatNormals;
+
+        if (_pointsDataType != HdTypeInvalid) {
+            // Flat normals will compute normals as the same datatype
+            // as points, unless we ask for packed normals.
+            // This is unfortunate; can we force them to be float?
+            HdStComputationSharedPtr flatNormalsComputation =
+                std::make_shared<HdSt_FlatNormalsComputationGPU>(
+                    drawItem->GetTopologyRange(),
+                    drawItem->GetVertexPrimvarRange(),
+                    numFaces,
+                    HdTokens->points,
+                    generatedNormalsName,
+                    _pointsDataType,
+                    usePackedNormals);
+            computations.emplace_back(flatNormalsComputation, _NormalsCompQueue);
+        }
+    }
+    */
+
+    if (!sources.empty()) {
+        resourceRegistry->AddPrimvarSources(
+                id, std::move(sources), HdInterpolationUniform);
+    }
+}
+
 bool
 UseQuadIndices(
     const HdRenderIndex &renderIndex,

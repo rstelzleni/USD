@@ -205,6 +205,15 @@ def create_subdivided_sphere_usd(
         UsdGeom.Tokens.vertex
     )
     color_primvar.Set(Vt.Vec3fArray(colors))
+
+    # Add a uniform primvar to test that code path. We'll just make it
+    # the face index for simplicity.
+    uniform_primvar = UsdGeom.PrimvarsAPI(mesh).CreatePrimvar(
+        "myUniform",
+        Sdf.ValueTypeNames.FloatArray,
+        UsdGeom.Tokens.uniform
+    )
+    uniform_primvar.Set(Vt.FloatArray([float(x) for x in range(len(fvc))]))
     
 
 class TestSubdivision(unittest.TestCase):
@@ -250,10 +259,18 @@ class TestSubdivision(unittest.TestCase):
         self.assertIn('st', primvar_names)
         self.assertIn('displayColor', primvar_names)
         self.assertIn('normals', primvar_names)
+        self.assertIn('myUniform', primvar_names)
         # Check that the primvars have the expected number of values
         self.assertEqual(mesh.GetPrimvar('st').data.GetArraySize(), 150) # uvs had 29 original verts
         self.assertEqual(mesh.GetPrimvar('displayColor').data.GetArraySize(), 140)
         self.assertEqual(mesh.GetPrimvar('normals').data.GetArraySize(), 140)
+        # uniform primvars are not subdivided, implemenations should index by original face index
+        self.assertEqual(mesh.GetPrimvar('myUniform').data.GetArraySize(), 32) # one value per original face
+        # check that interpolation is preserved
+        self.assertEqual(mesh.GetPrimvar('st').interpolation, UsdGeom.Tokens.faceVarying)
+        self.assertEqual(mesh.GetPrimvar('displayColor').interpolation, UsdGeom.Tokens.vertex)
+        self.assertEqual(mesh.GetPrimvar('normals').interpolation, UsdGeom.Tokens.vertex)
+        self.assertEqual(mesh.GetPrimvar('myUniform').interpolation, UsdGeom.Tokens.uniform)
 
         # Check that we got an index buffer for st, it is face varying so needs its
         # own indices in the subdivided mesh.

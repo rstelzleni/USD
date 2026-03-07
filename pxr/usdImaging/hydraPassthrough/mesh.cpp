@@ -321,10 +321,10 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
     // these reprs this way in hydra passthrough, so we will just check our
     // single desc. See HdStMesh::_UpdateRepr for relevant code.
     bool requireSmoothNormals = false;
-//    bool requireFlatNormals =  false;
+    bool requireFlatNormals =  false;
     if (desc.geomStyle != HdMeshGeomStyleInvalid) {
         if (desc.flatShadingEnabled) {
-//            requireFlatNormals = true;
+            requireFlatNormals = true;
         } else {
             requireSmoothNormals = true;
         }
@@ -389,20 +389,18 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
                 drawItem, dirtyBits);
     }
 
-//
-//    /* ELEMENT PRIMVARS */
-//    if ((requireFlatNormals && (*dirtyBits & DirtyFlatNormals)) ||
-//        HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
-//        _PopulateElementPrimvars(sceneDelegate,
-//                                 renderParam,
-//                                 repr,
-//                                 desc,
-//                                 drawItem,
-//                                 geomSubsetDescIndex,
-//                                 dirtyBits,
-//                                 requireFlatNormals);
-//    }
-//
+
+    /* ELEMENT PRIMVARS */
+    if (requireFlatNormals ||
+        HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
+        // Original code also checks
+        // && (*dirtyBits & DirtyFlatNormals)) 
+        // I'm not using that custom dirty flag, so don't check it
+        MeshUtil::PopulateElementPrimvars(
+                this, id, sceneDelegate, resourceRegistry.get(), &_topology,
+                drawItem, dirtyBits,
+                requireFlatNormals);
+    }
 
 }
 
