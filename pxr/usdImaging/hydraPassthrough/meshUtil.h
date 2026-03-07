@@ -49,6 +49,16 @@ namespace HydraPassthroughMeshUtil
         HdDrawItem *drawItem,
         HdDirtyBits *dirtyBits);
 
+    void PopulateElementPrimvars(
+        HdRprim const* rprim,
+        SdfPath const& id,
+        HdSceneDelegate* sceneDelegate,
+        HydraPassthroughResourceRegistry *resourceRegistry,
+        HydraPassthroughMeshTopology * topology,
+        HdDrawItem *drawItem,
+        HdDirtyBits *dirtyBits,
+        bool requireFlatNormals);
+
     bool UseQuadIndices(
         const HdRenderIndex &renderIndex,
         const SdfPath &materialId,
