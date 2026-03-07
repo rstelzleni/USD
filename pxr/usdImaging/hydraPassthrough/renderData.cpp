@@ -13,6 +13,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+namespace HdTypeUtil = HydraPassthroughHdTypeUtil;
+
 const HydraPassthroughRenderData::MeshData*
 HydraPassthroughRenderData::RenderData::GetMesh(const SdfPath& id) const {
     auto it = meshes.find(id);
@@ -246,7 +248,7 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
 
-        VtValue value(HydraPassthroughHdTypeUtil::CastRenderDataToCppType(source));
+        VtValue value(HdTypeUtil::CastRenderDataToCppType(source));
 
         // Special case names
         const TfToken& name = source->GetName();
@@ -291,10 +293,32 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
                     }
                     else {
                         // Not an fvar index, it should be our face indices value
+                        if (source->HasChainedBuffer()) {
+                            // The chained buffers can contain additional helpful info about the mesh
+                            // if it was subdivided
+                            HdBufferSpecVector specs;
+                            source->GetBufferSpecs(&specs);
+                            // We can expect to get 3 of these with some expected names
+                            if (specs.size() >= 3 &&
+                                specs[0].name == HdTokens->indices&&
+                                specs[1].name == HdTokens->primitiveParam &&
+                                specs[2].name == HdTokens->edgeIndices) {
+
+                                // The chained buffers will be the second and third items from specs
+                                const HdBufferSourceSharedPtrVector &chainedBuffers =
+                                    source->GetChainedBuffers();
+                                const auto &primitiveParam = chainedBuffers[0];
+                                const auto &edgeIndices = chainedBuffers[1];
+                                meshIt->second.primitiveParam = HdTypeUtil::CastRenderDataToCppType(primitiveParam);
+                                meshIt->second.edgeIndices = HdTypeUtil::CastRenderDataToCppType(edgeIndices);
+                            }
+                        }
+
+                        // We can get the indices the same way for subdivs and non-subdivs
                         if (value.IsHolding<VtArray<int>>()) {
                             meshIt->second.faceVertexIndices = value.UncheckedGet<VtArray<int>>();
                         }
-                        // An unsubdivided triangle mesh will use GfVec3i for its indices here
+                        // An unsubdivided triangle mesh can use GfVec3i for its indices
                         else if (value.IsHolding<VtArray<GfVec3i>>()) {
                             const VtArray<GfVec3i>& vecIndices = value.UncheckedGet<VtArray<GfVec3i>>();
                             VtIntArray intIndices(vecIndices.size() * 3);

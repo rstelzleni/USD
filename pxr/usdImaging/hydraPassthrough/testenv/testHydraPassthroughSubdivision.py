@@ -254,6 +254,21 @@ class TestSubdivision(unittest.TestCase):
         for idx in mesh.GetFaceVertexIndices().GetValue():
             self.assertGreaterEqual(idx, 26)
             self.assertLess(idx, 140)
+
+        # Check that we got the primitive params and edge indices
+        self.assertEqual(len(mesh.GetPrimitiveParams().GetValue()), 112) # one item per face
+        self.assertEqual(len(mesh.GetEdgeIndices().GetValue()), 112) # one item per triangle
+
+        # The first value in each primitive param entry should be the original face index,
+        # which should be in the range [0, 32)
+        #
+        # Note that each face index value in primitive params is bit-packed with other flags,
+        # so we need to shift it down to get the original face index.
+        # See HdMeshUtil::EncodeCoarseFaceParam in the Hydra codebase for details.
+        for pp in mesh.GetPrimitiveParams().GetValue():
+            self.assertGreaterEqual(pp[0] >> 2, 0)
+            self.assertLess(pp[0] >> 2, 32)
+
         # Check that primvars are present
         primvar_names = [x.name for x in mesh.GetAllPrimvars()]
         self.assertIn('st', primvar_names)
