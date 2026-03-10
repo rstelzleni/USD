@@ -1,5 +1,6 @@
 #include "resourceRegistry.h"
 #include "renderData.h"
+#include "vertexAdjacency.h"
 
 #include "pxr/base/work/loops.h"
 #include "pxr/imaging/hd/tokens.h"
@@ -10,19 +11,46 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-static void
-_CopyChainedBuffers(HdBufferSourceSharedPtr const&  src,
-                    HdBufferArrayRangeSharedPtr const& range)
+// --------------------------------------------------------------------
+// Helpers for working with HdInstanceRegistry.
+//
+// You might see a name like HdInstance and think it has to do with instancing,
+// but you'd be falling into Hydra's trap! It's actually a general-purpose cache
+// for arbitrary classes, keyed by ids the caller tracks and passes in.
+//
+// This is primarily used for deduplicating topology data.
+
+TF_DEFINE_ENV_SETTING(HYDRA_PASSTHROUGH_ENABLE_RESOURCE_INSTANCING, true,
+                  "Enable instance registry deduplication of resource data");
+
+static bool
+_IsEnabledResourceInstancing()
 {
-    if (src->HasChainedBuffer()) {
-        HdBufferSourceSharedPtrVector chainedSrcs = src->GetChainedBuffers();
-        // Traverse the tree in a depth-first fashion.
-        for(auto& c : chainedSrcs) {
-            range->CopyData(c);
-            _CopyChainedBuffers(c, range);
+    static bool isResourceInstancingEnabled =
+        TfGetEnvSetting(HYDRA_PASSTHROUGH_ENABLE_RESOURCE_INSTANCING);
+    return isResourceInstancingEnabled;
+}
+
+template <typename ID, typename T>
+HdInstance<T>
+_Register(ID id, HdInstanceRegistry<T> &registry, TfToken const &perfToken)
+{
+    if (_IsEnabledResourceInstancing()) {
+        HdInstance<T> instance = registry.GetInstance(id);
+
+        if (instance.IsFirstInstance()) {
+            HD_PERF_COUNTER_INCR(perfToken);
         }
+
+        return instance;
+    } else {
+        // Return an instance that is not managed by the registry when
+        // topology instancing is disabled.
+        return HdInstance<T>(id);
     }
 }
+
+// --------------------------------------------------------------------
 
 static size_t
 _GetChainedStagingSize(HdBufferSourceSharedPtr const& src)
@@ -222,6 +250,19 @@ HydraPassthroughResourceRegistry::_Commit()
 void
 HydraPassthroughResourceRegistry::_GarbageCollect()
 {
+    {
+        size_t count = _vertexAdjacencyBuilderRegistry.GarbageCollect();
+        HD_PERF_COUNTER_SET(HdPerfTokens->instVertexAdjacency, count);
+    }
 }
+
+HdInstance<std::shared_ptr<HydraPassthroughVertexAdjacencyBuilder>>
+HydraPassthroughResourceRegistry::RegisterVertexAdjacencyBuilder(
+        HdInstance<std::shared_ptr<HydraPassthroughVertexAdjacencyBuilder>>::ID id)
+{
+    return _Register(id, _vertexAdjacencyBuilderRegistry,
+                     HdPerfTokens->instVertexAdjacency);
+}
+
 
 PXR_NAMESPACE_CLOSE_SCOPE

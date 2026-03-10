@@ -64,6 +64,11 @@ namespace HydraPassthroughMeshUtil
         const SdfPath &materialId,
         const HydraPassthroughMeshTopology *topology);
 
+    HdTopology::ID GetTopologyHash(
+        const HdMeshTopology *topology,
+        const HydraPassthroughFvarTopologyTracker *fvarTopologyTracker,
+        bool useQuadIndices);
+
 } // namespace HydraPassthroughMeshUtil
 
 PXR_NAMESPACE_CLOSE_SCOPE

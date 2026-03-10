@@ -48,6 +48,7 @@ pxr_library(hydraPassthrough
         textureDescriptor
         triangulate
         valueDescriptor
+        vertexAdjacency
 
     PUBLIC_HEADERS
         api.h
