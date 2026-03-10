@@ -8,6 +8,7 @@
 #include "resourceRegistry.h"
 #include "subdivision.h"
 
+#include "pxr/base/arch/hash.h"
 #include "pxr/imaging/hd/sceneDelegate.h"
 #include "pxr/imaging/hd/mesh.h"
 #include "pxr/imaging/hd/vtBufferSource.h"
@@ -853,6 +854,32 @@ UseQuadIndices(
     // Fallback to the environment variable, which allows forcing of
     // quadrangulation for debugging/testing.
     return materialHasPtex || _IsEnabledForceQuadrangulate();
+}
+
+HdTopology::ID
+GetTopologyHash(
+    const HdMeshTopology *topology,
+    const HydraPassthroughFvarTopologyTracker *fvarTopologyTracker,
+    bool useQuadIndices)
+{
+    HdTopology::ID topologyId = topology->ComputeHash();
+
+    // Salt the hash with face-varying topologies
+    for (const auto& it : fvarTopologyTracker->GetTopologyToPrimvarVector()) {
+        topologyId = ArchHash64((const char*)it.first.cdata(),
+                                 sizeof(int) * it.first.size(), 
+                                 topologyId);
+        for (const TfToken& it2 : it.second) {
+            topologyId = ArchHash64(it2.GetText(), it2.size(),
+                                    topologyId);
+        }
+    }
+
+    // Salt the hash with whether we are using quad indices or not
+    topologyId = ArchHash64((const char*)&useQuadIndices, 
+                            sizeof(useQuadIndices), topologyId);
+
+    return topologyId;
 }
 
 } // namespace HydraPassthroughMeshUtil

@@ -5,6 +5,7 @@
 
 #include "pxr/imaging/hd/bufferArrayRange.h"
 #include "pxr/imaging/hd/bufferSource.h"
+#include "pxr/imaging/hd/instanceRegistry.h"
 #include "pxr/imaging/hd/perfLog.h"
 #include "pxr/imaging/hd/resourceRegistry.h"
 #include "pxr/imaging/hd/types.h"
@@ -18,6 +19,8 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 TF_DECLARE_REF_PTRS(HydraPassthroughRenderData);
+
+class HydraPassthroughVertexAdjacencyBuilder;
 
 /// \class HydraPassthroughResourceRegistry
 class HydraPassthroughResourceRegistry : public HdResourceRegistry {
@@ -58,6 +61,25 @@ public:
     /// Append a source data just to be resolved (used for cpu computations).
     void AddGenericSource(SdfPath const &id,
                           HdBufferSourceSharedPtr const &source);
+
+    // -------------------------------------------------------------------
+    // HdInstanceRegistry accessors
+    //
+    // These registries implement sharing and deduplication of data based
+    // on computed hash identifiers. Each returned HdInstance object retains
+    // a shared pointer to a data instance. When an HdInstance is registered
+    // for a previously unused ID, the data pointer will be null and it is
+    // the caller's responsibility to set its value. The instance registries
+    // are cleaned of unreferenced entries during garbage collection.
+    //
+    // Note: As entries can be registered from multiple threads, the returned
+    // object holds a lock on the instance registry. This lock is held
+    // until the returned HdInstance object is destroyed.
+
+    /// Gets a vertex adjacency builder computation for a topology id
+    HdInstance<std::shared_ptr<HydraPassthroughVertexAdjacencyBuilder>>
+    RegisterVertexAdjacencyBuilder(
+        HdInstance<std::shared_ptr<HydraPassthroughVertexAdjacencyBuilder>>::ID id);
 
 protected:
 
@@ -132,6 +154,10 @@ private:
     std::atomic_size_t    _numBufferSourcesToResolve;
 
     HydraPassthroughRenderDataRefPtr _renderData;
+
+    // HdInstanceRegistry objects (caches)
+    HdInstanceRegistry<std::shared_ptr<HydraPassthroughVertexAdjacencyBuilder>>
+        _vertexAdjacencyBuilderRegistry;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE
