@@ -347,8 +347,7 @@ PopulateVertexAndVaryingPrimvars(
         HdDrawItem *drawItem,
         int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
-        bool requireSmoothNormals,
-        HdType *outPointsDataType)
+        bool requireSmoothNormals)
 {
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
@@ -403,7 +402,6 @@ PopulateVertexAndVaryingPrimvars(
             for (HdBufferSourceSharedPtr const& source: computedSources) {
                 if (source->GetName() == HdTokens->points) {
                     isPointsComputedPrimvar = true;
-                    *outPointsDataType = source->GetTupleType().type;
                 }
                 if (source->GetName() == HdTokens->normals) {
                     _sceneNormalsInterpolation = HdInterpolationVertex;
@@ -529,7 +527,6 @@ PopulateVertexAndVaryingPrimvars(
                         "primvar. Skipping authored value.");
                     continue;
                 }
-                *outPointsDataType = source->GetTupleType().type;
             }
 
             _RefineOrQuadrangulateVertexAndVaryingPrimvar(
@@ -568,22 +565,19 @@ PopulateVertexAndVaryingPrimvars(
         TfToken generatedNormalsName = usePackedSmoothNormals ? 
             TfToken("packedSmoothNormals") : TfToken("smoothNormals");
         
-        if (*outPointsDataType != HdTypeInvalid) {
+        if (auto pointsSource = resourceRegistry->GetPointsSource(id)) {
             // Smooth normals will compute normals as the same datatype
             // as points, unless we ask for packed normals.
             auto smoothNormalsComputation =
                 std::make_shared<HydraPassthroughSmoothNormalsComputationCPU>(
                     vertexAdjacencyBuilder->GetVertexAdjacency(),
-                    resourceRegistry->GetPointsSource(id),
+                    pointsSource,
                     generatedNormalsName,
                     vertexAdjacencyBuilder->GetSharedVertexAdjacencyBuilderComputation(topology),
                     usePackedSmoothNormals);
 
             resourceRegistry->AddPrimvarSource(id, smoothNormalsComputation, HdInterpolationVertex);
 
-            // note: we can use "pointsDataType" as the normals data type
-            // because, if we decided to refine/quadrangulate, we will have
-            // forced unpacked normals.
             if (doRefine) {
                 auto computation = topology->GetOsdRefineComputation(
                         smoothNormalsComputation,
@@ -783,8 +777,7 @@ PopulateElementPrimvars(
         HydraPassthroughMeshTopology * topology,
         HdDrawItem *drawItem,
         HdDirtyBits *dirtyBits,
-        bool requireFlatNormals,
-        HdType pointsDataType)
+        bool requireFlatNormals)
 {
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
@@ -861,14 +854,13 @@ PopulateElementPrimvars(
         TfToken generatedNormalsName = usePackedNormals ?
             TfToken("packedFlatNormals") : TfToken("flatNormals");
 
-        // XXX I think points data type is actually unused aside from this check
-        if (pointsDataType != HdTypeInvalid) {
+        if (auto pointsSource = resourceRegistry->GetPointsSource(id)) {
             // Flat normals will compute normals as the same datatype
             // as points, unless we ask for packed normals.
             auto flatNormalsComputation =
                 std::make_shared<HydraPassthroughFlatNormalsComputationCPU>(
                         topology,
-                        resourceRegistry->GetPointsSource(id),
+                        pointsSource,
                         generatedNormalsName,
                         usePackedNormals);
             sources.push_back(flatNormalsComputation);

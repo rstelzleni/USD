@@ -39,8 +39,7 @@ namespace HydraPassthroughMeshUtil
         HdDrawItem *drawItem,
         int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
-        bool requireSmoothNormals,
-        HdType *outPointsDataType);
+        bool requireSmoothNormals);
 
     void PopulateFaceVaryingPrimvars(
         HdRprim const* rprim,
@@ -60,8 +59,7 @@ namespace HydraPassthroughMeshUtil
         HydraPassthroughMeshTopology * topology,
         HdDrawItem *drawItem,
         HdDirtyBits *dirtyBits,
-        bool requireFlatNormals,
-        HdType pointsDataType);
+        bool requireFlatNormals);
 
     bool UseQuadIndices(
         const HdRenderIndex &renderIndex,

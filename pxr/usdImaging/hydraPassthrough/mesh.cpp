@@ -417,8 +417,6 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
     // Get the only draw item we created
     HdDrawItem *drawItem = repr->GetDrawItem(0);
 
-    HdType pointsDataType = HdTypeInvalid;
-
     /* CONSTANT PRIMVARS, TRANSFORM, EXTENT AND PRIMID */
     if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id) ||
         HdChangeTracker::IsTransformDirty(*dirtyBits, id) ||
@@ -461,7 +459,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         MeshUtil::PopulateVertexAndVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
                 _vertexAdjacencyBuilder.get(), desc, drawItem, geomSubsetDescIndex,
-                dirtyBits, requireSmoothNormals, &pointsDataType);
+                dirtyBits, requireSmoothNormals);
     }
 
     /* FACEVARYING PRIMVARS */
@@ -478,7 +476,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         MeshUtil::PopulateElementPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
                 drawItem, dirtyBits,
-                requireFlatNormals, pointsDataType);
+                requireFlatNormals);
     }
 }
 
