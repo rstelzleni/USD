@@ -25,16 +25,31 @@ pxr_library(hydraPassthrough
         usdImaging
 
     PUBLIC_CLASSES
+        computation
+        computationInputs
+        computationUtil
+        extCompPrimvarBufferSource
+        fvarTopologyTracker
+        hdTypeUtil
         material
         materialParam
         mesh
+        meshTopology
+        meshUtil
+        normalComputations
+        primUtil
+        quadrangulate
         renderData
         renderDelegate
         renderManager
         rendererPlugin
         renderPass
+        resourceRegistry
+        subdivision
         textureDescriptor
+        triangulate
         valueDescriptor
+        vertexAdjacency
 
     PUBLIC_HEADERS
         api.h
@@ -69,6 +84,7 @@ pxr_test_scripts(
     testenv/testHydraPassthroughCameraData.py
     testenv/testHydraPassthroughMeshData.py
     testenv/testHydraPassthroughMaterialData.py
+    testenv/testHydraPassthroughSubdivision.py
 )
 
 pxr_register_test(testHydraPassthroughCameraData
@@ -93,4 +109,8 @@ pxr_register_test(testHydraPassthroughValueDescriptor
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughValueDescriptor"
 )
 
-
+pxr_register_test(testHydraPassthroughSubdivision
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughSubdivision"
+    EXPECTED_RETURN_CODE 0
+)

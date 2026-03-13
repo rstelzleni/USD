@@ -1169,6 +1169,18 @@ HydraPassthroughMaterial::Sync(HdSceneDelegate *sceneDelegate,
     *dirtyBits = Clean;
 }
 
+bool
+HydraPassthroughMaterial::HasPtex() const
+{
+    for (const auto& param : _materialParams) {
+        if (param.paramType == HydraPassthroughMaterialParam::ParamType::Texture &&
+            param.textureType == HydraPassthroughMaterialParam::TextureType::Ptex) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void
 HydraPassthroughMaterial::_AddMaterialToOutput(
     HdRenderParam   *renderParam)

@@ -3,6 +3,7 @@
 #include "mesh.h"
 #include "renderPass.h"
 #include "renderParam.h"
+#include "resourceRegistry.h"
 
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/imaging/hd/camera.h"
@@ -32,9 +33,10 @@ HydraPassthroughRenderDelegate::HydraPassthroughRenderDelegate(
 
 void HydraPassthroughRenderDelegate::_Initialize() {
     TF_STATUS("Initializing Passthrough RenderDelegate %p", this);
-    _resourceRegistry = std::make_shared<HdResourceRegistry>();
+    _resourceRegistry = std::make_shared<HydraPassthroughResourceRegistry>();
     _renderData = HydraPassthroughRenderData::New();
     _renderParam = std::make_unique<HydraPassthroughRenderParam>(_renderData);
+    std::static_pointer_cast<HydraPassthroughResourceRegistry>(_resourceRegistry)->SetRenderData(_renderData);
 }
 
 HydraPassthroughRenderDelegate::~HydraPassthroughRenderDelegate() {
@@ -59,6 +61,10 @@ HdResourceRegistrySharedPtr HydraPassthroughRenderDelegate::GetResourceRegistry(
 }
 
 void HydraPassthroughRenderDelegate::CommitResources(HdChangeTracker *tracker) {
+    
+    // Commit resources, which causes the computations to be run.
+    _resourceRegistry->Commit();
+
     for (const auto& it : _cameraMap) {
         HdCamera *cam = it.second;
         // Don't include the internal camera created by our render task.

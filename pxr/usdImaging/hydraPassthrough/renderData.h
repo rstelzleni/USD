@@ -3,10 +3,11 @@
 
 #include "pxr/pxr.h"
 
-#include "pxr/imaging/hd/enums.h"
-#include "pxr/imaging/hd/meshTopology.h"
 #include "pxr/usdImaging/hydraPassthrough/materialParam.h"
+#include "pxr/usdImaging/hydraPassthrough/meshTopology.h"
+#include "pxr/usdImaging/hydraPassthrough/resourceRegistry.h"
 #include "pxr/usdImaging/hydraPassthrough/textureDescriptor.h"
+#include "pxr/imaging/hd/enums.h"
 
 #include "pxr/usd/sdf/path.h"
 
@@ -27,6 +28,7 @@
 PXR_NAMESPACE_OPEN_SCOPE
 
 class HdCamera;
+class HydraPassthroughFvarTopologyTracker;
 
 TF_DECLARE_REF_PTRS(HydraPassthroughRenderData);
 
@@ -36,51 +38,74 @@ class HydraPassthroughRenderData :
 {
 public:
 
-    struct PrimvarSource {
-        PrimvarSource() = default;
-        PrimvarSource(const VtValue& d, HdInterpolation interp)
-            : data(d), interpolation(interp) {}
-        PrimvarSource(const VtValue& d, HdInterpolation interp, const TfToken& r)
-            : data(d), interpolation(interp), role(r) {}
-        PrimvarSource(const VtValue& d, HdInterpolation interp,
-                      const TfToken& r, const VtIntArray& i)
-            : data(d), interpolation(interp), role(r), indices(i) {}
+    // See also HdSt resourceBinder.cpp for data we might need to add here, and
+    // to the mesh. It's intended to handle mapping data onto the GPU, but
+    // there's more computation done there, especially around instancing and
+    // GL type mapping
+    struct PrimvarData {
+        PrimvarData() = default;
+        PrimvarData(const VtValue& d) : data(d) {}
+        PrimvarData(const VtValue& d, HdInterpolation interpolation) 
+            : data(d), interpolation(interpolation) {}
 
         VtValue data;
-        VtValue updatedData; // if we need to recompute for any reason (triangulation, subidivision)
         HdInterpolation interpolation;
-        TfToken role; // empty if none
-        VtIntArray indices; // for indexed primvars
+
+        // The type that would be used in glsl code.
+        //
+        // Or possibly the hlsl type? We could add this for clients, but there's
+        // a question in my mind about types here. For instance, if hdst would have
+        // used uint for a primvar, but we provide the output data as int, the client
+        // would need to do a conversion. Do we want to suggest that? And if so, is
+        // this the right way to communicate it?
+        //
+        // Also applies to things like float vs double, dmat vs mat, etc.
+        // TfToken glslType;
+    };
+
+    // Face Varying primvars may not share the topology of the mesh's
+    // faceVertexIndices. 
+    //
+    // UVs are a common example, they may be discontinuous across UV seams so
+    // they need their own indices. 
+    //
+    // To support this we have this structure for face varying channels. Each
+    // channel has its own set of indices, and a list of primvars that use that
+    // channel. For instance, if we have st and st2 primvars that both use the
+    // same topology, we would have one channel with the indices for the
+    // topology, and both st and st2 would be listed as primvars that use that
+    // channel.
+    //
+    // It would look like this:
+    //
+    //   faceVaryingChannels: [
+    //     { channel: 0, indices: [...], primvars: ["st", "st2"] }
+    //   ]
+    struct FaceVaryingChannel {
+        int channel;
+        VtValue indices;
+        std::vector<TfToken> primvars;
     };
 
     class MeshData {
     public:
         SdfPath id;
         SdfPath materialId;
-        bool visible = true;
-        GfMatrix4f transform;
+        bool visible{true};
+        GfMatrix4d transform;
+        GfMatrix4d transformInverse;
         VtValue points;
-        //VtVec3fArray normals;
+        VtValue normals;
+        VtIntArray faceVertexIndices; // triangles only
+        VtValue primitiveParam;
+        VtValue edgeIndices;
+        TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
+        std::vector<FaceVaryingChannel> faceVaryingChannels;
 
-        // uvs are available in the primvars map, and may be named differently
-        // based on what the material expects.
-        VtVec3iArray faceVertexIndices; // triangles only
-
-        // Additional data for triangulation.
-        VtIntArray triangleOriginalFaceIndices;
-
-        // edges encoded like (I believe these are the only values, due to the
-        // triangulation approach)
-        //  0        show all edges
-        //  1        hide edge [2-0]
-        //  2        hide edge [0-1]
-        //  3        hide edges [0-1] and [2-0]
-        VtIntArray triangleEdgeIndices;
-
-        // Not available in python
-        HdMeshTopology topology;
-        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvarSourceMap;
-        TfHashMap<TfToken, PrimvarSource, TfToken::HashFunctor> primvars;
+        // Not wrapped to python, valid only so long as the rprim mesh exists
+        //
+        // We need this only to populate the face varying primvar index channels
+        HydraPassthroughFvarTopologyTracker *fvarTopologyTracker;
     };
 
     class MaterialData {
@@ -183,6 +208,13 @@ public:
 
     void AddMaterial(const SdfPath& id,
                      const MaterialData& materialData);
+
+    /// Copy a potentially computed primvar source value into the render data.
+    void CopyPrimvarBufferSource(
+            const SdfPath& id,
+            HdBufferSourceSharedPtr const &source,
+            HydraPassthroughResourceRegistry::PrimvarSourceType sourceType,
+            HdInterpolation interpolation = HdInterpolation::HdInterpolationCount);
 
     /// Extract a copy of the contained RenderData.
     ///

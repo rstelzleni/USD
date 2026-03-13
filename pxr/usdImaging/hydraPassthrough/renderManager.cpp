@@ -14,7 +14,7 @@ HdPassthroughRenderManager::~HdPassthroughRenderManager() {
     Cleanup();
 }
 
-void HdPassthroughRenderManager::Initialize() {
+void HdPassthroughRenderManager::Initialize(const RenderSettings& settings) {
     // This is basically blind data for our use
     _driver = {TfToken("HdPassthroughDriver"), VtValue()};
 
@@ -22,10 +22,20 @@ void HdPassthroughRenderManager::Initialize() {
     // paths in the renderer will be preceded with this.
     _sceneDelegateId = GetSceneDelegateId();
 
+    // Instantiate our render delegate and associated render indices
     if (!_SetRendererPlugin(TfToken("HydraPassthroughRendererPlugin"))) {
         TF_CODING_ERROR("Failed to set renderer plugin.");
         return;
     }
+
+    // Set the default refine level for all prims
+    HdsiLegacyDisplayStyleOverrideSceneIndex::OptionalInt defaultRefineLevel;
+    defaultRefineLevel.hasValue = true;
+    defaultRefineLevel.value = settings.refineLevel;
+    TfDynamic_cast<HdsiLegacyDisplayStyleOverrideSceneIndexRefPtr>(
+            _sceneIndex)->SetRefineLevel(defaultRefineLevel);
+
+    // Create our render engine
     _engine = std::make_unique<HdEngine>();
 }
 
@@ -136,7 +146,7 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
         HdRendererPluginRegistry::GetInstance();
 
     // UsdImagingGLEngine does this, what is it for?
-     TF_PY_ALLOW_THREADS_IN_SCOPE();
+    TF_PY_ALLOW_THREADS_IN_SCOPE();
 
     _renderDelegate = registry.CreateRenderDelegate(id);
     if (!_renderDelegate) {

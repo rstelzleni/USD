@@ -58,6 +58,23 @@ enum class MaterialTag {
 
 namespace {
 
+    HydraPassthroughValueDescriptor _GetFaceVaryingIndices(
+        const HydraPassthroughRenderData::FaceVaryingChannel& self)
+    {
+        return HydraPassthroughValueDescriptor(self.indices);
+    }
+
+    std::vector<std::string> _GetPrimvarNames(
+        const HydraPassthroughRenderData::FaceVaryingChannel& self)
+    {
+        std::vector<std::string> result;
+        result.reserve(self.primvars.size());
+        for (const auto& primvar : self.primvars) {
+            result.push_back(primvar.GetString());
+        }
+        return result;
+    }
+
     HydraPassthroughValueDescriptor _GetMeshPoints(
         const HydraPassthroughRenderData::MeshData &self)
     {
@@ -70,16 +87,16 @@ namespace {
         return HydraPassthroughValueDescriptor(VtValue(self.faceVertexIndices));
     }
 
-    HydraPassthroughValueDescriptor _GetMeshTriangleOriginalFaceIndices(
+    HydraPassthroughValueDescriptor _GetMeshPrimitiveParams(
         const HydraPassthroughRenderData::MeshData &self)
     {
-        return HydraPassthroughValueDescriptor(VtValue(self.triangleOriginalFaceIndices));
+        return HydraPassthroughValueDescriptor(self.primitiveParam);
     }
 
-    HydraPassthroughValueDescriptor _GetMeshTriangleEdgeIndices(
+    HydraPassthroughValueDescriptor _GetMeshEdgeIndices(
         const HydraPassthroughRenderData::MeshData &self)
     {
-        return HydraPassthroughValueDescriptor(VtValue(self.triangleEdgeIndices));
+        return HydraPassthroughValueDescriptor(self.edgeIndices);
     }
 
     // Need this to be a function so that it can use TfPySequenceToList
@@ -139,21 +156,16 @@ namespace {
     class Primvar {
     public:
         Primvar(const TfToken &name,
-                const HydraPassthroughRenderData::PrimvarSource & source) :
+                const HydraPassthroughRenderData::PrimvarData & source) :
             name(name.GetString()),
             interpolation(TfEnum::GetDisplayName(source.interpolation)),
-            role(source.role.GetString()),
-            data(source.updatedData.IsEmpty() ?
-                        source.data : source.updatedData),
-            indices(source.indices)
+            data(source.data)
         {
         }
 
         std::string name;
         std::string interpolation;
-        std::string role;
         HydraPassthroughValueDescriptor data;
-        VtIntArray indices;
     };
 
     std::vector<Primvar> _GetAllPrimvars(
@@ -176,6 +188,12 @@ namespace {
             return Primvar(name, it->second);
         }
         return {};
+    }
+
+    const std::vector<HydraPassthroughRenderData::FaceVaryingChannel> &_GetFaceVaryingChannels(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return self.faceVaryingChannels;
     }
 }
 
@@ -232,25 +250,32 @@ wrapRenderData()
         .def_readonly("name", &Primvar::name)
         .def_readonly("interpolation", &Primvar::interpolation)
         .def_readonly("data", &Primvar::data)
-        .def_readonly("role", &Primvar::role)
-        .def_readonly("indices", &Primvar::indices)
         ;
     TfPyOptional::python_optional<Primvar>();
+
+    class_<This::FaceVaryingChannel>("FaceVaryingChannel", no_init)
+        .def_readonly("channel", &This::FaceVaryingChannel::channel)
+        .def("GetIndices", &_GetFaceVaryingIndices)
+        .def("GetPrimvarNames", &_GetPrimvarNames)
+        ;
 
     class_<This::MeshData>("MeshData", no_init)
         .def_readonly("id", &This::MeshData::id)
         .def_readonly("materialId", &This::MeshData::materialId)
         .def_readonly("visible", &This::MeshData::visible)
         .def_readonly("transform", &This::MeshData::transform)
+        .def_readonly("faceVaryingChannels", &This::MeshData::faceVaryingChannels)
 
         .def("GetAllPrimvars", &_GetAllPrimvars,
              return_value_policy<TfPySequenceToList>())
         .def("GetPrimvar", &_GetPrimvar,(arg("name")))
+        .def("GetFaceVaryingChannels", &_GetFaceVaryingChannels,
+             return_value_policy<TfPySequenceToList>())
 
         .def("GetPoints", ::_GetMeshPoints)
         .def("GetFaceVertexIndices", ::_GetMeshFaceVertexIndices)
-        .def("GetTriangleOriginalFaceIndices", ::_GetMeshTriangleOriginalFaceIndices)
-        .def("GetTriangleEdgeIndices", ::_GetMeshTriangleEdgeIndices)
+        .def("GetPrimitiveParams", ::_GetMeshPrimitiveParams)
+        .def("GetEdgeIndices", ::_GetMeshEdgeIndices)
         ;
 
     enum_<This::MaterialData::MaterialType>("MaterialType")
