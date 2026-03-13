@@ -112,6 +112,16 @@ private:
         HdReprSharedPtr &repr,
         HdDirtyBits     *dirtyBits);
 
+    void _PrepareNormalComputations(
+            const SdfPath &id,
+            const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry,
+            HdMeshReprDesc const &desc,
+            HdDirtyBits *dirtyBits,
+            bool *requireSmoothNormals,
+            bool *requireFlatNormals);
+
+    void _PopulateAdjacency(
+        const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry);
 
     // Fills out the mesh data for this mesh. Pulled out from Sync for
     // readability, Sync has a lot of responsibilities.
@@ -124,6 +134,7 @@ private:
 
     // Internal mesh data, not available in python
     HydraPassthroughMeshTopology _topology;
+    HdMeshTopology::ID _topologyId;
     HydraPassthroughFvarTopologyTracker _fvarTopologyTracker;
 
     bool _hasMirroredTransform{false};
@@ -131,6 +142,7 @@ private:
     bool _displayOpacity{false};
 
     HdInterpolation _sceneNormalsInterpolation{};
+    std::shared_ptr<HydraPassthroughVertexAdjacencyBuilder> _vertexAdjacencyBuilder;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

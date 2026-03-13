@@ -62,6 +62,17 @@ public:
     void AddGenericSource(SdfPath const &id,
                           HdBufferSourceSharedPtr const &source);
 
+    /// When computing normals we need to find the points source to compute
+    /// from. In the GPU version this can be done by name in the chained
+    /// GPU buffers, but for the CPU version we need to have the original
+    /// computed buffer source. Do it here, so we don't have to track it
+    /// in so many places.
+    ///
+    /// This has the disadvantage that it's a linear search, it may be worth
+    /// adding all the tracking and parameter passing to mesh and meshUtil to
+    /// avoid this.
+    HdBufferSourceSharedPtr GetPointsSource(SdfPath const &id) const;
+
     // -------------------------------------------------------------------
     // HdInstanceRegistry accessors
     //
@@ -126,7 +137,6 @@ private:
         {
         }
 
-        //HdBufferArrayRangeSharedPtr range;
         PrimvarSourceType type { PrimvarSourceType::Generic };
         HdBufferSourceSharedPtrVector sources;
         SdfPath id;

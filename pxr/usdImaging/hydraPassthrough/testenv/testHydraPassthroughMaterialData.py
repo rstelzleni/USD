@@ -221,7 +221,6 @@ class TestMaterialData(unittest.TestCase):
         self.assertTrue(primvar.data.IsArray())
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [3])
-#        self.assertEqual(primvar.role, 'color')
 
         m.Cleanup()
 

@@ -4,9 +4,11 @@
 #include "computationUtil.h"
 #include "material.h"
 #include "meshTopology.h"
+#include "normalComputations.h"
 #include "primUtil.h"
 #include "resourceRegistry.h"
 #include "subdivision.h"
+#include "vertexAdjacency.h"
 
 #include "pxr/base/arch/hash.h"
 #include "pxr/imaging/hd/sceneDelegate.h"
@@ -20,6 +22,17 @@ PXR_NAMESPACE_OPEN_SCOPE
 TF_DEFINE_ENV_SETTING(HD_ENABLE_FORCE_QUADRANGULATE, 0,
                       "Apply quadrangulation for all meshes for debug");
 
+
+// For our case I'm not sure if this should be an env var or a configuration
+// thing. Since our configs are currently pretty sparse, I'll leave it as
+// env var for now.
+//
+// Defaulting to false, because the packed normal format is 
+// GL_INT_2_10_10_10_REV, which doesn't seem supported by our target webgl
+// platform (for instance, threejs can use it but only with a custom shader)
+TF_DEFINE_ENV_SETTING(HD_ENABLE_PACKED_NORMALS, 0,
+                      "Use packed normals");
+
 namespace {
 
 namespace ComputationUtil = HydraPassthroughComputationUtil;
@@ -29,6 +42,13 @@ bool
 _IsEnabledForceQuadrangulate()
 {
     static bool enabled = (TfGetEnvSetting(HD_ENABLE_FORCE_QUADRANGULATE) == 1);
+    return enabled;
+}
+
+bool
+_IsEnabledPackedNormals()
+{
+    static bool enabled = (TfGetEnvSetting(HD_ENABLE_PACKED_NORMALS) == 1);
     return enabled;
 }
 
@@ -322,11 +342,13 @@ PopulateVertexAndVaryingPrimvars(
         HdSceneDelegate* sceneDelegate,
         HydraPassthroughResourceRegistry *resourceRegistry,
         HydraPassthroughMeshTopology * topology,
+        HydraPassthroughVertexAdjacencyBuilder *vertexAdjacencyBuilder,
         const HdMeshReprDesc &desc,
         HdDrawItem *drawItem,
         int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
-        bool requireSmoothNormals)
+        bool requireSmoothNormals,
+        HdType *outPointsDataType)
 {
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
@@ -381,6 +403,7 @@ PopulateVertexAndVaryingPrimvars(
             for (HdBufferSourceSharedPtr const& source: computedSources) {
                 if (source->GetName() == HdTokens->points) {
                     isPointsComputedPrimvar = true;
+                    *outPointsDataType = source->GetTupleType().type;
                 }
                 if (source->GetName() == HdTokens->normals) {
                     _sceneNormalsInterpolation = HdInterpolationVertex;
@@ -506,6 +529,7 @@ PopulateVertexAndVaryingPrimvars(
                         "primvar. Skipping authored value.");
                     continue;
                 }
+                *outPointsDataType = source->GetTupleType().type;
             }
 
             _RefineOrQuadrangulateVertexAndVaryingPrimvar(
@@ -514,7 +538,7 @@ PopulateVertexAndVaryingPrimvars(
                 &computations, isVarying ? 
                     HdInterpolationVarying : HdInterpolationVertex);
 
-            // If we're refining the course source has already been added.
+            // If we're refining the coarse source has already been added.
             if (!doRefine) {
                 sources.push_back(source);
             }
@@ -532,9 +556,50 @@ PopulateVertexAndVaryingPrimvars(
         }
     }
 
-    // Smooth normals could be computed here if we add the smooth normals
-    // computations. See HdSt_SmoothNormalsComputationGPU for reference.
-    // This is where we'd make use of the _sceneNormals local variable.
+    // Handle smooth normals
+    if (requireSmoothNormals) {
+        TF_VERIFY(vertexAdjacencyBuilder);
+
+        // we can't use packed normals for refined/quad,
+        // let's migrate the buffer to full precision
+        bool usePackedSmoothNormals =
+            _IsEnabledPackedNormals() && !(doRefine || doQuadrangulate);
+
+        TfToken generatedNormalsName = usePackedSmoothNormals ? 
+            TfToken("packedSmoothNormals") : TfToken("smoothNormals");
+        
+        if (*outPointsDataType != HdTypeInvalid) {
+            // Smooth normals will compute normals as the same datatype
+            // as points, unless we ask for packed normals.
+            auto smoothNormalsComputation =
+                std::make_shared<HydraPassthroughSmoothNormalsComputationCPU>(
+                    vertexAdjacencyBuilder->GetVertexAdjacency(),
+                    resourceRegistry->GetPointsSource(id),
+                    generatedNormalsName,
+                    vertexAdjacencyBuilder->GetSharedVertexAdjacencyBuilderComputation(topology),
+                    usePackedSmoothNormals);
+
+            resourceRegistry->AddPrimvarSource(id, smoothNormalsComputation, HdInterpolationVertex);
+
+            // note: we can use "pointsDataType" as the normals data type
+            // because, if we decided to refine/quadrangulate, we will have
+            // forced unpacked normals.
+            if (doRefine) {
+                auto computation = topology->GetOsdRefineComputation(
+                        smoothNormalsComputation,
+                        HdInterpolationVertex, 0);
+                if (computation) {
+                    resourceRegistry->AddPrimvarSource(id, computation, HdInterpolationVertex);
+                }
+            } else if (doQuadrangulate) {
+                auto computation = topology->GetQuadrangulateComputation(
+                        smoothNormalsComputation, id);
+                if (computation) {
+                    resourceRegistry->AddPrimvarSource(id, computation, HdInterpolationVertex);
+                }
+            }
+        }
+    }
 
     // schedule buffer sources
     if (!sources.empty()) {
@@ -718,7 +783,8 @@ PopulateElementPrimvars(
         HydraPassthroughMeshTopology * topology,
         HdDrawItem *drawItem,
         HdDirtyBits *dirtyBits,
-        bool requireFlatNormals)
+        bool requireFlatNormals,
+        HdType pointsDataType)
 {
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
@@ -789,37 +855,25 @@ PopulateElementPrimvars(
         }
     }
 
-    /*
-    HdStComputationComputeQueuePairVector computations;
-
-    TfToken generatedNormalsName;
-
-    if (requireFlatNormals && (*dirtyBits & DirtyFlatNormals))
+    if (requireFlatNormals)
     {
-        *dirtyBits &= ~DirtyFlatNormals;
-        TF_VERIFY(_topology);
+        bool usePackedNormals = _IsEnabledPackedNormals();
+        TfToken generatedNormalsName = usePackedNormals ?
+            TfToken("packedFlatNormals") : TfToken("flatNormals");
 
-        bool usePackedNormals = IsEnabledPackedNormals();
-        generatedNormalsName = usePackedNormals ?
-            HdStTokens->packedFlatNormals : HdStTokens->flatNormals;
-
-        if (_pointsDataType != HdTypeInvalid) {
+        // XXX I think points data type is actually unused aside from this check
+        if (pointsDataType != HdTypeInvalid) {
             // Flat normals will compute normals as the same datatype
             // as points, unless we ask for packed normals.
-            // This is unfortunate; can we force them to be float?
-            HdStComputationSharedPtr flatNormalsComputation =
-                std::make_shared<HdSt_FlatNormalsComputationGPU>(
-                    drawItem->GetTopologyRange(),
-                    drawItem->GetVertexPrimvarRange(),
-                    numFaces,
-                    HdTokens->points,
-                    generatedNormalsName,
-                    _pointsDataType,
-                    usePackedNormals);
-            computations.emplace_back(flatNormalsComputation, _NormalsCompQueue);
+            auto flatNormalsComputation =
+                std::make_shared<HydraPassthroughFlatNormalsComputationCPU>(
+                        topology,
+                        resourceRegistry->GetPointsSource(id),
+                        generatedNormalsName,
+                        usePackedNormals);
+            sources.push_back(flatNormalsComputation);
         }
     }
-    */
 
     if (!sources.empty()) {
         resourceRegistry->AddPrimvarSources(

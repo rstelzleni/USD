@@ -111,6 +111,24 @@ HydraPassthroughMeshTopology::RefinesToBoxSplineTrianglePatches() const
     HydraPassthroughSubdivision::RefinesToBoxSplineTrianglePatches(_topology.GetScheme()));
 }
 
+bool
+HydraPassthroughMeshTopology::CanUseSmoothNormals() const
+{
+    if (_topology.GetScheme() == PxOsdOpenSubdivTokens->none ||
+        _topology.GetScheme() == PxOsdOpenSubdivTokens->bilinear) {
+        return false;
+    }
+    return true;
+}
+
+bool
+HydraPassthroughMeshTopology::CanUseTriangulatedFlatNormals() const
+{
+    // For triangle subdivison or subdivision scheme "none" we
+    // can use triangulated flat normals. 
+    return RefinesToTriangles() ||
+           _topology.GetScheme() == PxOsdOpenSubdivTokens->none;
+}
 
 HdBufferSourceSharedPtr
 HydraPassthroughMeshTopology::GetPointsIndexBuilderComputation()
@@ -239,7 +257,7 @@ HydraPassthroughMeshTopology::GetOsdRefineComputation(
 
     if (!TF_VERIFY(_subdivision)) {
         TF_CODING_ERROR("GetOsdTopologyComputation should be called before "
-                        "GetOsdRefineComputationGPU.");
+                        "GetOsdRefineComputation.");
         return nullptr;
     }
 

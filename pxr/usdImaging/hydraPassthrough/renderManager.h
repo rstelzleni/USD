@@ -23,6 +23,15 @@ public:
     HdPassthroughRenderManager() = default;
     ~HdPassthroughRenderManager();
 
+    // We could add a repr description parameter, but we're missing some of the
+    // machinery from HdSt to make that work. Currently we are always using
+    // HdReprTokens->refined. To see what needs to be done to add more reprs,
+    // see HdRenderIndex::_ConfigureReprs() for what each repr token sets, then
+    // search in HdSt to see where these values are checked.
+    //
+    // If we want to enable flat normals, unsubdivided meshes, wireframe, points,
+    // etc. this is the place to do it.
+
     struct RenderSettings {
         RenderSettings() : refineLevel(1) {}
         int refineLevel;

@@ -36,6 +36,7 @@ pxr_library(hydraPassthrough
         mesh
         meshTopology
         meshUtil
+        normalComputations
         primUtil
         quadrangulate
         renderData
