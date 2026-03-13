@@ -167,25 +167,25 @@ HydraPassthroughResourceRegistry::_Commit()
 
     {
         HD_TRACE_SCOPE("Resolve");
-        // resolve phase:
-        // for each pending source, resolve
 
         std::atomic_size_t numBufferSourcesResolved { 0 };
         int numIterations = 0;
 
         // iterate until all buffer sources have been resolved.
         while (numBufferSourcesResolved < _numBufferSourcesToResolve) {
-            // split pending sources into batches that can be resolved in parallel
-            // First we'll do the index sources, then points, then primvars and generic.
+
+            // Reset the count to zero, we re-count all in case there are duplicates
+            // in the list of pending sources, which happens with vertex adjacency
+            // builder sources.
+            numBufferSourcesResolved = 0;
 
             // iterate over all pending sources
             WorkParallelForEach(_pendingSources.begin(), _pendingSources.end(),
                 [&numBufferSourcesResolved](_PendingSource &req) {
                     for (HdBufferSourceSharedPtr const& source: req.sources) {
-                        // execute computation.
-                        // call IsResolved first since Resolve is virtual and
-                        // could be costly.
-                        if (!source->IsResolved()) {
+                        if (source->IsResolved()) {
+                            ++numBufferSourcesResolved;
+                        } else {
                             if (source->Resolve()) {
                                 TF_VERIFY(source->IsResolved(), 
                                 "Name = %s", source->GetName().GetText());
@@ -262,6 +262,27 @@ HydraPassthroughResourceRegistry::RegisterVertexAdjacencyBuilder(
 {
     return _Register(id, _vertexAdjacencyBuilderRegistry,
                      HdPerfTokens->instVertexAdjacency);
+}
+
+
+HdBufferSourceSharedPtr
+HydraPassthroughResourceRegistry::GetPointsSource(SdfPath const &id) const
+{
+    // Look for a non-intermediate primvar source with the name "points"
+    for (auto const& pendingSource: _pendingSources) {
+        if (!pendingSource.isIntermediate &&
+            pendingSource.type == PrimvarSourceType::Primvar &&
+            pendingSource.id == id) {
+
+            for (HdBufferSourceSharedPtr const& src : pendingSource.sources) {
+                if (src->GetName() == HdTokens->points) {
+                    return src;
+                }
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 

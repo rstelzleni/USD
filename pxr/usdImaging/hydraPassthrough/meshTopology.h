@@ -78,6 +78,14 @@ public:
     /// triangle patches
     bool RefinesToBoxSplineTrianglePatches() const;
 
+    /// True if the subdivision of this mesh produces patches that can
+    /// be rendered with smooth normals (i.e., not triangulated flat normals).
+    bool CanUseSmoothNormals() const;
+
+    /// True if the subdivision of this mesh produces triangulated flat
+    /// normals, which can be rendered with flat normals.
+    bool CanUseTriangulatedFlatNormals() const;
+
     /// \name Face-varying Topologies
     /// @{
     /// Returns the face indices of faces not used in any geom subsets.

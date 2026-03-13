@@ -10,6 +10,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 class HydraPassthroughFvarTopologyTracker;
 class HydraPassthroughResourceRegistry;
+class HydraPassthroughVertexAdjacencyBuilder;
 class HdMeshReprDesc;
 class HdRenderIndex;
 
@@ -33,11 +34,13 @@ namespace HydraPassthroughMeshUtil
         HdSceneDelegate* sceneDelegate,
         HydraPassthroughResourceRegistry *resourceRegistry,
         HydraPassthroughMeshTopology *topology,
+        HydraPassthroughVertexAdjacencyBuilder *vertexAdjacencyBuilder,
         const HdMeshReprDesc &desc,
         HdDrawItem *drawItem,
         int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
-        bool requireSmoothNormals);
+        bool requireSmoothNormals,
+        HdType *outPointsDataType);
 
     void PopulateFaceVaryingPrimvars(
         HdRprim const* rprim,
@@ -57,7 +60,8 @@ namespace HydraPassthroughMeshUtil
         HydraPassthroughMeshTopology * topology,
         HdDrawItem *drawItem,
         HdDirtyBits *dirtyBits,
-        bool requireFlatNormals);
+        bool requireFlatNormals,
+        HdType pointsDataType);
 
     bool UseQuadIndices(
         const HdRenderIndex &renderIndex,

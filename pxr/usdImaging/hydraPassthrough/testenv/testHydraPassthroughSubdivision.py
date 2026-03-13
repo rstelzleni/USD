@@ -269,8 +269,21 @@ class TestSubdivision(unittest.TestCase):
             self.assertGreaterEqual(pp[0] >> 2, 0)
             self.assertLess(pp[0] >> 2, 32)
 
-        # Check that primvars are present
         primvar_names = [x.name for x in mesh.GetAllPrimvars()]
+
+        # We'd expect to get computed smooth normals, so check on those
+        self.assertIn('smoothNormals', primvar_names)
+        smooth_normals = mesh.GetPrimvar('smoothNormals')
+        self.assertEqual(smooth_normals .data.GetArraySize(), 140)
+        self.assertEqual(smooth_normals .interpolation, UsdGeom.Tokens.vertex)
+        for n in smooth_normals.data.GetValue():
+            length = Gf.Dot(n, n) ** 0.5
+            # I'm not sure why these lengths are not exactly 1, I arrived at
+            # these limits from looking at the values
+            self.assertGreater(length, 0.85)
+            self.assertLess(length, 1.001)
+
+        # Check that primvars are present
         self.assertIn('st', primvar_names)
         self.assertIn('displayColor', primvar_names)
         self.assertIn('normals', primvar_names)

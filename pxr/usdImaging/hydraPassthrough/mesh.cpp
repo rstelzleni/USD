@@ -3,6 +3,7 @@
 #include "primUtil.h"
 #include "renderParam.h"
 #include "resourceRegistry.h"
+#include "vertexAdjacency.h"
 
 #include "pxr/imaging/hd/extComputationUtils.h"
 #include "pxr/imaging/hd/meshUtil.h"
@@ -158,9 +159,6 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     _meshData.id = id;
     _meshData.fvarTopologyTracker = &_fvarTopologyTracker;
 
-    ////////////////////////////////////////////////////////////////////////
-    // 1. Pull scene data.
-
     if (*dirtyBits & HdChangeTracker::DirtyMaterialId) {
         _meshData.materialId = sceneDelegate->GetMaterialId(id);
         // Set material id for rprim in Hd
@@ -179,6 +177,14 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
             &_topology,
             &_fvarTopologyTracker);
 
+        _topologyId = MeshUtil::GetTopologyHash(
+                &_topology, 
+                &_fvarTopologyTracker,
+                MeshUtil::UseQuadIndices(
+                    sceneDelegate->GetRenderIndex(),
+                    sceneDelegate->GetMaterialId(id),
+                    &_topology));
+
         // This is an Hd level concept, I'm not sure if its required for our
         // case, but doing it since it is expected
          _sharedData.fvarTopologyToPrimvarVector = 
@@ -193,13 +199,6 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
                 repr,
                 dirtyBits);
     }
-
-    // Should be handled in constant primvars population
-    //if (HdChangeTracker::IsTransformDirty(*dirtyBits, id)) {
-        // XXX fixme, handle nested transforms
-        // Also, are transforms always floats? should I use doubles?
-        //_meshData.transform = GfMatrix4f(sceneDelegate->GetTransform(id));
-    //}
 
     if (HdChangeTracker::IsVisibilityDirty(*dirtyBits, id)) {
         // Evidently we need to trigger this on the RPrim base class
@@ -220,6 +219,92 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     // there are other dirty bits we shouldn't process in Sync.
     // See HdStMesh::Sync
     *dirtyBits &= ~HdChangeTracker::AllSceneDirtyBits;
+}
+
+void
+HydraPassthroughMesh::_PrepareNormalComputations(
+            const SdfPath &id,
+            const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry,
+            HdMeshReprDesc const &desc,
+            HdDirtyBits *dirtyBits,
+            bool *requireSmoothNormals,
+            bool *requireFlatNormals)
+{
+    // In HdStMesh they loop over all reprdescs for the current repr to 
+    // see if any require smooth or flat normals. We are not initializing
+    // these reprs this way in hydra passthrough, so we will just check our
+    // single desc. See HdStMesh::_UpdateRepr for relevant code.
+    if (desc.geomStyle != HdMeshGeomStyleInvalid) {
+        if (desc.flatShadingEnabled) {
+            *requireFlatNormals = true;
+        } else {
+            *requireSmoothNormals = true;
+        }
+    }
+
+    // If it's impossible for this mesh to use smooth normals, we can clear
+    // the dirty bit without computing them.  This is ok because the
+    // conditions that are checked (topology, display style) will forward their
+    // invalidation to smooth normals in PropagateDirtyBits.
+    if (!_topology.CanUseSmoothNormals()) {
+        *requireSmoothNormals = false;
+    }
+
+    // If the subdivision scheme can use triangle normals,
+    // disable flat normal generation.
+    if (_topology.CanUseTriangulatedFlatNormals()) {
+        *requireFlatNormals = false;
+    }
+
+    // If we're refining, we can only do smooth normals, so ignore flat
+    // normal requests.
+    if (_topology.GetRefineLevel() > 0) {
+        *requireFlatNormals = false;
+    }
+
+    // If we want smooth normals but there are no faces, we don't need normals
+    if (*requireSmoothNormals && _topology.GetNumFaces() == 0) {
+        *requireSmoothNormals = false;
+    }
+
+    if (*requireSmoothNormals && !_vertexAdjacencyBuilder) {
+        _PopulateAdjacency(resourceRegistry);
+    }
+
+    if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, HdTokens->normals)) {
+        _sceneNormals = false;
+    }
+}
+
+void
+HydraPassthroughMesh::_PopulateAdjacency(
+    const std::shared_ptr<HydraPassthroughResourceRegistry> &resourceRegistry)
+{
+    HD_TRACE_FUNCTION();
+    HF_MALLOC_TAG_FUNCTION();
+
+    // ask registry if there's a sharable vertex adjacency
+    auto vertexAdjacencyBuilderInstance =
+            resourceRegistry->RegisterVertexAdjacencyBuilder(_topologyId);
+
+    if (vertexAdjacencyBuilderInstance.IsFirstInstance()) {
+         auto vertexAdjacencyBuilder =
+             std::make_shared<HydraPassthroughVertexAdjacencyBuilder>();
+
+        // create adjacency table for smooth normals
+        HdBufferSourceSharedPtr vertexAdjacencyComputation =
+            vertexAdjacencyBuilder->
+                GetSharedVertexAdjacencyBuilderComputation(&_topology);
+        resourceRegistry->AddGenericSource(GetId(), vertexAdjacencyComputation);
+
+        // also set up a Vt buffer source to pull the data
+        HdBufferSourceSharedPtr vertexAdjacencyBufferSource =
+            vertexAdjacencyBuilder->GetVertexAdjacencyBufferSource();
+        resourceRegistry->AddGenericSource(GetId(), vertexAdjacencyBufferSource);
+
+        vertexAdjacencyBuilderInstance.SetValue(vertexAdjacencyBuilder);
+    }
+    _vertexAdjacencyBuilder = vertexAdjacencyBuilderInstance.GetValue();
 }
 
 void
@@ -313,28 +398,26 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
 
     // Now populate primvar sources and computations that we need.
 
-    // For instancing, see HdStMesh in the section called "INSTACE PRIMVARS"
+    // For instancing, see HdStMesh in the section called "INSTANCE PRIMVARS"
 
-    // XXX See also HdStMesh::_PopulateAdjacency for smooth normals
-    // In HdStMesh they loop over all reprdescs for the current repr to 
-    // see if any require smooth or flat normals. We are not initializing
-    // these reprs this way in hydra passthrough, so we will just check our
-    // single desc. See HdStMesh::_UpdateRepr for relevant code.
+    // prepare for normal computations
     bool requireSmoothNormals = false;
     bool requireFlatNormals =  false;
-    if (desc.geomStyle != HdMeshGeomStyleInvalid) {
-        if (desc.flatShadingEnabled) {
-            requireFlatNormals = true;
-        } else {
-            requireSmoothNormals = true;
-        }
-    }
+    _PrepareNormalComputations(
+            id,
+            resourceRegistry,
+            desc,
+            dirtyBits,
+            &requireSmoothNormals,
+            &requireFlatNormals);
 
     // temp, replace with real subset once supported
     const int geomSubsetDescIndex = 0;
 
     // Get the only draw item we created
     HdDrawItem *drawItem = repr->GetDrawItem(0);
+
+    HdType pointsDataType = HdTypeInvalid;
 
     /* CONSTANT PRIMVARS, TRANSFORM, EXTENT AND PRIMID */
     if (HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id) ||
@@ -377,8 +460,8 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
         MeshUtil::PopulateVertexAndVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
-                desc, drawItem, geomSubsetDescIndex, dirtyBits,
-                requireSmoothNormals);
+                _vertexAdjacencyBuilder.get(), desc, drawItem, geomSubsetDescIndex,
+                dirtyBits, requireSmoothNormals, &pointsDataType);
     }
 
     /* FACEVARYING PRIMVARS */
@@ -389,19 +472,14 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
                 drawItem, dirtyBits);
     }
 
-
     /* ELEMENT PRIMVARS */
     if (requireFlatNormals ||
         HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
-        // Original code also checks
-        // && (*dirtyBits & DirtyFlatNormals)) 
-        // I'm not using that custom dirty flag, so don't check it
         MeshUtil::PopulateElementPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
                 drawItem, dirtyBits,
-                requireFlatNormals);
+                requireFlatNormals, pointsDataType);
     }
-
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

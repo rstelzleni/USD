@@ -64,8 +64,8 @@ static inline HdTypeTypeCasterMap _MakeHdTypeTypeCasterMap() {
         { HdTypeHalfFloatVec2, [](const void* data) { return VtValue(*static_cast<const GfVec2h*>(data)); } },
         { HdTypeHalfFloatVec3, [](const void* data) { return VtValue(*static_cast<const GfVec3h*>(data)); } },
         { HdTypeHalfFloatVec4, [](const void* data) { return VtValue(*static_cast<const GfVec4h*>(data)); } },
-        // This type should be unreachable in our code
-        // { HdTypeInt32_2_10_10_10_REV, [](const void* data) { return VtValue(*static_cast<const HdVec4f_2_10_10_10_REV*>(data)); } },
+        // This type is used for packed normals if we enable them. It should be interpreted as a 32 bit int
+        { HdTypeInt32_2_10_10_10_REV, [](const void* data) { return VtValue(*static_cast<const int32_t*>(data)); } },
     };
 }
 
@@ -101,8 +101,8 @@ static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
         { HdTypeHalfFloatVec2, [](const void* data, size_t n) { auto p = static_cast<const GfVec2h*>(data); return VtValue(VtArray<GfVec2h>(p, p + n)); } },
         { HdTypeHalfFloatVec3, [](const void* data, size_t n) { auto p = static_cast<const GfVec3h*>(data); return VtValue(VtArray<GfVec3h>(p, p + n)); } },
         { HdTypeHalfFloatVec4, [](const void* data, size_t n) { auto p = static_cast<const GfVec4h*>(data); return VtValue(VtArray<GfVec4h>(p, p + n)); } },
-        // This type should be unreachable in our code
-        // { HdTypeInt32_2_10_10_10_REV, [](const void* data, size_t n) { auto p = static_cast<const HdVec4f_2_10_10_10_REV*>(data); return VtValue(VtArray<HdVec4f_2_10_10_10_REV>(p, p + n));
+        // This type is used for packed normals if we enable them. It should be interpreted as a 32 bit int
+        { HdTypeInt32_2_10_10_10_REV, [](const void* data, size_t n) { auto p = static_cast<const int32_t*>(data); return VtValue(VtArray<int32_t>(p, p + n)); } },
     };
 }
 
