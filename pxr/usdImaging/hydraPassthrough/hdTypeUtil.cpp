@@ -72,7 +72,16 @@ static inline HdTypeTypeCasterMap _MakeHdTypeTypeCasterMap() {
 using HdTypeArrayTypeCasterMap = std::unordered_map<HdType, std::function<VtValue(const void*, size_t)>>;
 static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
     return HdTypeArrayTypeCasterMap {
-        { HdTypeBool, [](const void* data, size_t n) { auto p = static_cast<const bool*>(data); return VtValue(VtArray<bool>(p, p + n)); } },
+        { HdTypeBool, [](const void* data, size_t n) {
+                // HdVtBufferSource promotes bool arrays to int32 arrays
+                auto p = static_cast<const uint32_t*>(data); 
+                VtArray<bool> boolArray(n);
+                for (size_t i = 0; i < n; ++i) {
+                    boolArray[i] = p[i] != 0;
+                }
+                return VtValue(boolArray);
+            } 
+        },
         { HdTypeInt8, [](const void* data, size_t n) { auto p = static_cast<const int8_t*>(data); return VtValue(VtArray<int8_t>(p, p + n)); } },
         { HdTypeUInt8, [](const void* data, size_t n) { auto p = static_cast<const uint8_t*>(data); return VtValue(VtArray<uint8_t>(p, p + n)); } },
         { HdTypeInt16, [](const void* data, size_t n) { auto p = static_cast<const int16_t*>(data); return VtValue(VtArray<int16_t>(p, p + n)); } },
