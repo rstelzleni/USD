@@ -72,7 +72,16 @@ static inline HdTypeTypeCasterMap _MakeHdTypeTypeCasterMap() {
 using HdTypeArrayTypeCasterMap = std::unordered_map<HdType, std::function<VtValue(const void*, size_t)>>;
 static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
     return HdTypeArrayTypeCasterMap {
-        { HdTypeBool, [](const void* data, size_t n) { auto p = static_cast<const bool*>(data); return VtValue(VtArray<bool>(p, p + n)); } },
+        { HdTypeBool, [](const void* data, size_t n) {
+                // HdVtBufferSource promotes bool arrays to int32 arrays
+                auto p = static_cast<const uint32_t*>(data); 
+                VtArray<bool> boolArray(n);
+                for (size_t i = 0; i < n; ++i) {
+                    boolArray[i] = p[i] != 0;
+                }
+                return VtValue(boolArray);
+            } 
+        },
         { HdTypeInt8, [](const void* data, size_t n) { auto p = static_cast<const int8_t*>(data); return VtValue(VtArray<int8_t>(p, p + n)); } },
         { HdTypeUInt8, [](const void* data, size_t n) { auto p = static_cast<const uint8_t*>(data); return VtValue(VtArray<uint8_t>(p, p + n)); } },
         { HdTypeInt16, [](const void* data, size_t n) { auto p = static_cast<const int16_t*>(data); return VtValue(VtArray<int16_t>(p, p + n)); } },
@@ -106,6 +115,26 @@ static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
     };
 }
 
+// If this becomes a bottleneck I think we could get rid of it entirely 
+// by deriving new buffer source types that let us access the VtValue
+// directly, instead of giving only a void*. I think there are a few
+// places where this is necessary.
+//
+// * We'd need a replacement for HdVtBufferSource that's basically a
+//   copy with a GetValue function added.
+// * We'd need to derive a new HdComputedBufferSource that's equivalent
+//   to the Hd one but adds a way to access the _result value, which is
+//   usually a HdVtBufferSource.
+// * We'd need to update all our computation scheduling code to use
+//   these new buffer source types, including for computation results
+//   in the subdivision and normals computations.
+//
+// I feel this is only worth doing if this function becomes a bottleneck,
+// because it adds a lot of code and mental complexity. The more we can
+// rely on Hd types directly the better.
+//
+// One thing we lose with Hd is Quat type information, switching back
+// to VtValue directly would let us preserve that.
 VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source)
 {
     // Use the types in HdTupleType to cast the void * into a type VtValue recognizes,
@@ -117,9 +146,28 @@ VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source)
     const auto &data = source->GetData();
     const auto &dataSize = source->GetNumElements();
     const auto &itemSize = tupleType.count;
-    if (dataSize == 1) {
+
+    if (dataSize == 1 && itemSize > 1) {
+        // In the case of an array of single elements, HdGetValueTupleType
+        // will treat this as a non-array type, like a single tuple with
+        // tupleType.count n. GetNumElements will be 1. For instance, a
+        // VtValue<VtArray<int>> {0,1,2} will result in itemSize 3 and
+        // dataSize 1 in this function.
+        //
+        // We need to treat this as an array.
+        auto arrayCasterIt = arrayTypeCasterMap.find(tupleType.type);
+        if (arrayCasterIt == arrayTypeCasterMap.end()) {
+            TF_RUNTIME_ERROR("Unsupported array HdType %d in CastRenderDataToCppType", tupleType.type);
+            return VtValue();
+        }
+        return arrayCasterIt->second(data, itemSize);
+    } else if (dataSize == 1) {
+        // This should be the true non-array case
         auto casterIt = typeCasterMap.find(tupleType.type);
         if (casterIt == typeCasterMap.end()) {
+            // If the type is unknown it might be a vt value type that doesn't have an HdType
+            // representation, like TfToken or string. These should have been handled through
+            // another code path, like The HydraPassthroughConstantVtBufferSource
             TF_RUNTIME_ERROR("Unsupported HdType %d in CastRenderDataToCppType", tupleType.type);
             return VtValue();
         }

@@ -28,6 +28,7 @@ pxr_library(hydraPassthrough
         computation
         computationInputs
         computationUtil
+        constantVtBufferSource
         extCompPrimvarBufferSource
         fvarTopologyTracker
         hdTypeUtil
