@@ -62,6 +62,12 @@ def populate_mesh(mesh):
     )
     tex_coords.Set([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
 
+    # add an arbitrary string primvar
+    primvars_api = UsdGeom.PrimvarsAPI(mesh)
+    primvar = primvars_api.CreatePrimvar(
+        "stringPrimvar", Sdf.ValueTypeNames.String, UsdGeom.Tokens.constant)
+    primvar.Set("hello world")
+
 
 def assign_material_to_mesh(material, mesh):
     UsdShade.MaterialBindingAPI.Apply(mesh.GetPrim())
@@ -180,7 +186,7 @@ class TestMaterialData(unittest.TestCase):
         # check on the bound mesh
         bound_mesh = md.GetMesh(Sdf.Path(prefix.AppendPath('Mesh')))
         self.assertEqual(bound_mesh.materialId, mat0.id)
-        self.assertEqual(len(bound_mesh.GetAllPrimvars()), 3) # displayColor, uv and points
+        self.assertEqual(len(bound_mesh.GetAllPrimvars()), 4) # displayColor, uv, stringPrimvar and points
         primvar = bound_mesh.GetPrimvar('uv')
         self.assertTrue(primvar is not None)
         self.assertEqual(primvar.name, 'uv')
@@ -221,6 +227,15 @@ class TestMaterialData(unittest.TestCase):
         self.assertTrue(primvar.data.IsArray())
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [3])
+
+        # check the constant string primvar
+        primvar = bound_mesh.GetPrimvar('stringPrimvar')
+        self.assertTrue(primvar is not None)
+        self.assertEqual(primvar.name, 'stringPrimvar')
+        self.assertEqual(primvar.interpolation, 'constant')
+        self.assertEqual(primvar.data.GetTypeName(), 'string')
+        self.assertEqual(primvar.data.GetValue(), 'hello world')
+        self.assertFalse(primvar.data.IsArray())
 
         m.Cleanup()
 

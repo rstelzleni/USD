@@ -1,5 +1,6 @@
 #include "renderData.h"
 
+#include "pxr/usdImaging/hydraPassthrough/constantVtBufferSource.h"
 #include "pxr/usdImaging/hydraPassthrough/fvarTopologyTracker.h"
 #include "pxr/usdImaging/hydraPassthrough/hdTypeUtil.h"
 #include "pxr/usdImaging/hydraPassthrough/subdivision.h"
@@ -248,10 +249,20 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
 
+        const TfToken& name = source->GetName();
+
+        // Check for our special case types that preserve VtValues as is
+        if (auto constantVtSource =
+                std::dynamic_pointer_cast<
+                HydraPassthroughConstantVtBufferSource>(source)) {
+            const VtValue& value = constantVtSource->GetValue();
+            meshIt->second.primvars[name] = { value, interpolation };
+            return;
+        }
+
         VtValue value(HdTypeUtil::CastRenderDataToCppType(source));
 
         // Special case names
-        const TfToken& name = source->GetName();
         if (name == HdTokens->transform) {
             if (value.IsHolding<GfMatrix4d>()) {
                 meshIt->second.transform = value.UncheckedGet<GfMatrix4d>();
