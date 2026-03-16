@@ -1,8 +1,15 @@
 #include "primUtil.h"
 
+#include "pxr/usdImaging/hydraPassthrough/constantVtBufferSource.h"
 #include "pxr/usdImaging/hydraPassthrough/resourceRegistry.h"
 #include "pxr/imaging/hd/bufferSource.h"
 #include "pxr/imaging/hd/vtBufferSource.h"
+
+#include "pxr/usd/sdf/assetPath.h"
+#include "pxr/usd/sdf/pathExpression.h"
+
+#include "pxr/base/gf/matrix2d.h"
+#include "pxr/base/gf/matrix2f.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -151,13 +158,45 @@ PopulateConstantPrimvars(
         for (const HdPrimvarDescriptor& pv: constantPrimvars) {
             if (HdChangeTracker::IsPrimvarDirty(*dirtyBits, id, pv.name)) {
                 VtValue value = delegate->Get(id, pv.name);
-                // We can exclude any primvar type that we don't support here.
-                //if (value.IsHolding<std::string>() ||
-                //    value.IsHolding<VtStringArray>() ||
-                //    value.IsHolding<TfToken>() ||
-                //    value.IsHolding<VtTokenArray>()) {
-                //    continue;
-                //}
+                // We have to use a special case buffer source type to preserve
+                // these types. The HdVtBufferSource can store them, but it
+                // will return nullptr when you try to access the stored data
+                // because it only supports a hard coded list of data types.
+                //
+                // We can use this local type to special case these, but this
+                // won't work for downstream computations that want to operate
+                // on a void* with a fixed element size, like subdivision. This
+                // probably requires more thought, for instance, do we need
+                // subdivision for these if they use non-constant
+                // interpolation? Figure that out before using this special
+                // casing for the other primvar interpolation types.
+                //
+                // Note that HdSt only excludes the string and token types
+                // here, but in testing it seems we also need to skip int64,
+                // uint64, and matrix2 types. You can tell what types need to
+                // be skipped by checking the conversion code in HdGetValueData
+                // (hd/types.cpp)
+                if (value.IsHolding<std::string>() ||
+                    value.IsHolding<VtStringArray>() ||
+                    value.IsHolding<TfToken>() ||
+                    value.IsHolding<VtTokenArray>() ||
+                    value.IsHolding<SdfAssetPath>() ||
+                    value.IsHolding<VtArray<SdfAssetPath>>() ||
+                    value.IsHolding<SdfPathExpression>() ||
+                    value.IsHolding<int64_t>() ||
+                    value.IsHolding<VtArray<int64_t>>() ||
+                    value.IsHolding<uint64_t>() ||
+                    value.IsHolding<VtArray<uint64_t>>() ||
+                    value.IsHolding<GfMatrix2f>() ||
+                    value.IsHolding<VtArray<GfMatrix2f>>() ||
+                    value.IsHolding<GfMatrix2d>() ||
+                    value.IsHolding<VtArray<GfMatrix2d>>()) {
+                    sources.push_back(
+                        std::make_shared<HydraPassthroughConstantVtBufferSource>(
+                            pv.name, value,
+                            value.IsArrayValued() ? value.GetArraySize() : 1));
+                    continue;
+                }
 
                 if (value.IsArrayValued() && value.GetArraySize() == 0) {
                     // A value holding an empty array does not count as an
@@ -172,9 +211,10 @@ PopulateConstantPrimvars(
                         std::make_shared<HdVtBufferSource>(pv.name, value,
                             value.IsArrayValued() ? value.GetArraySize() : 1);
 
-                    // Skip buffer source if tuple type is invalid.
-                    if (!TF_VERIFY(
-                            source->GetTupleType().type != HdTypeInvalid)) {
+                    if (source->GetTupleType().type == HdTypeInvalid) {
+                        TF_WARN("Unsupported primvar type %s for primvar %s prim %s. Skipping.",
+                                value.GetTypeName().c_str(),
+                                pv.name.GetText(), id.GetText());
                         continue;
                     }
                     if (!TF_VERIFY(source->GetTupleType().count > 0)) {
