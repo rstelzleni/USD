@@ -13,6 +13,8 @@ HydraPassthroughConstantVtBufferSource::HydraPassthroughConstantVtBufferSource(
 {
     _value = value;
 
+    _tupleType.type = HdTypeInvalid;
+
     // For the common case of a default value that is an empty
     // VtArray<T>, interpret it as one T per element rather than
     // a zero-sized tuple.
@@ -22,8 +24,18 @@ HydraPassthroughConstantVtBufferSource::HydraPassthroughConstantVtBufferSource(
         return;
     }
 
-    _tupleType.type = HdTypeInvalid;
     _tupleType.count = _value.IsArrayValued() ? _value.GetArraySize() : 1;
+
+    // Check that array size makes sense. Note that HdVtBufferSource doesn't
+    // verify this.
+    if (arraySize <= 0 || _tupleType.count % arraySize != 0) {
+        TF_CODING_ERROR("Invalid arraySize %d for value with count %zu for buffer '%s'",
+                        arraySize, _tupleType.count, _name.GetText());
+        // Set to a empty state
+        _tupleType.count = 1;
+        _numElements = 0;
+        return;
+    }
 
     // Factor the VtArray length into numElements and tuple count.
     // VtArray is a 1D array and does not have multidimensional shape,

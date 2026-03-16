@@ -109,12 +109,12 @@ static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
 // If this becomes a bottleneck I think we could get rid of it entirely 
 // by deriving new buffer source types that let us access the VtValue
 // directly, instead of giving only a void*. I think there are a few
-// places where this is necesssary.
+// places where this is necessary.
 //
 // * We'd need a replacement for HdVtBufferSource that's basically a
 //   copy with a GetValue function added.
 // * We'd need to derive a new HdComputedBufferSource that's equivalent
-//   to the Hd one but adds a way to acces the _result value, which is
+//   to the Hd one but adds a way to access the _result value, which is
 //   usually a HdVtBufferSource.
 // * We'd need to update all our computation scheduling code to use
 //   these new buffer source types, including for computation results
@@ -141,7 +141,7 @@ VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source)
     if (dataSize == 1 && itemSize > 1) {
         // In the case of an array of single elements, HdGetValueTupleType
         // will treat this as a non-array type, like a single tuple with
-        // typleType.count n. GetNumElements will be 1. For instance, a
+        // tupleType.count n. GetNumElements will be 1. For instance, a
         // VtValue<VtArray<int>> {0,1,2} will result in itemSize 3 and
         // dataSize 1 in this function.
         //
