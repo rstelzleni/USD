@@ -599,25 +599,7 @@ wrapValueDescriptor()
         .def("IsArray", &This::IsArray)
         .def("GetArrayItemDimension", &This::GetArrayItemDimension)
         .def("GetArraySize", &This::GetArraySize)
-
-        // XXX I was using these more, but ended up not needing them much on
-        // the python side. I'm keeping them for now since they work, but they
-        // could be removed
-        .def("IsFloat", &This::IsFloat)
-        .def("IsInteger", &This::IsInteger)
-        .def("IsBool", &This::IsBool)
-        .def("IsString", &This::IsString)
-        .def("IsMatrix2", &This::IsMatrix2)
-        .def("IsMatrix3", &This::IsMatrix3)
-        .def("IsMatrix4", &This::IsMatrix4)
-        .def("IsQuat", &This::IsQuat)
-        .def("IsDualQuat", &This::IsDualQuat)
-        .def("IsVec2", &This::IsVec2)
-        .def("IsVec3", &This::IsVec3)
-        .def("IsVec4", &This::IsVec4)
-        .def("IsRange2", &This::IsRange2)
-        .def("IsRange3", &This::IsRange3)
-        ;
+         ;
 
     enum_<This::ScalarType>("ScalarType")
         .value("Unknown", This::ScalarType::Unknown)

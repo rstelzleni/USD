@@ -193,8 +193,8 @@ class TestMaterialData(unittest.TestCase):
         self.assertEqual(primvar.interpolation, 'varying')
         self.assertEqual(primvar.data.GetTypeName(), 'VtArray<GfVec2f>')
         self.assertEqual(primvar.data.GetValue(), [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
-        self.assertTrue(primvar.data.IsVec2())
-        self.assertFalse(primvar.data.IsVec3())
+        self.assertEqual(primvar.data.GetElementShape(), HydraPassthrough.ValueDescriptor.ElementShape.Vec2)
+        self.assertEqual(primvar.data.GetScalarType(), HydraPassthrough.ValueDescriptor.ScalarType.Float)
         self.assertTrue(primvar.data.IsArray())
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [2])
@@ -222,8 +222,8 @@ class TestMaterialData(unittest.TestCase):
         # [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0)]
         # This is just the way hydra/storm works internally
         self.assertEqual(primvar.data.GetValue(), [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0)])
-        self.assertTrue(primvar.data.IsVec3())
-        self.assertFalse(primvar.data.IsVec2())
+        self.assertEqual(primvar.data.GetElementShape(), HydraPassthrough.ValueDescriptor.ElementShape.Vec3)
+        self.assertEqual(primvar.data.GetScalarType(), HydraPassthrough.ValueDescriptor.ScalarType.Float)
         self.assertTrue(primvar.data.IsArray())
         self.assertEqual(primvar.data.GetArraySize(), 4)
         self.assertEqual(primvar.data.GetArrayItemDimension(), [3])
