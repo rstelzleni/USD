@@ -599,7 +599,7 @@ wrapValueDescriptor()
         .def("IsArray", &This::IsArray)
         .def("GetArrayItemDimension", &This::GetArrayItemDimension)
         .def("GetArraySize", &This::GetArraySize)
-         ;
+        ;
 
     enum_<This::ScalarType>("ScalarType")
         .value("Unknown", This::ScalarType::Unknown)
