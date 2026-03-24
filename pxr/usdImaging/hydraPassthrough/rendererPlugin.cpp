@@ -24,7 +24,10 @@ void HydraPassthroughRendererPlugin::DeleteRenderDelegate(
     delete renderDelegate;
 }
 
-bool HydraPassthroughRendererPlugin::IsSupported(bool /* gpuEnabled */) const {
+bool HydraPassthroughRendererPlugin::IsSupported(
+        HdRendererCreateArgs const &rendererCreateArgs,
+        std::string *reasonWhyNot) const {
+
     // Nothing more to check for now, we assume if the plugin loads correctly
     // it is supported.
     return true;

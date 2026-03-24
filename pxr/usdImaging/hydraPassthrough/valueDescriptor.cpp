@@ -288,7 +288,7 @@ HydraPassthroughValueDescriptor::GetArrayItemDimension() const {
         if (_value.IsHolding<VtArray<VT_TYPE(elem)>>()) { \
             return _GeValueItemDimension(_value.UncheckedGet<VtArray<VT_TYPE(elem)>>()); \
         }
-TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_VALUE_TYPES)
+VT_FOR_EACH_VALUE_TYPE(PROCESS_ENTRY)
 #undef PROCESS_ENTRY
         // SdfAssetPath and SdfPathExpression can get here, but aren't in VT_VALUE_TYPES
         if (_value.IsHolding<VtArray<SdfAssetPath>>() ||

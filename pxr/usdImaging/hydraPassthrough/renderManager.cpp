@@ -62,21 +62,19 @@ void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
 
     // Set up the render tasks
     const SdfPath taskId = SdfPath("/HdPassthroughRenderManager/RenderTask");
-    _taskControllerSceneIndex = HdxTaskControllerSceneIndex::New(
-        taskId,
-        _renderDelegate.GetPluginId(),
+
+    _taskControllerSceneIndex = HdxTaskControllerSceneIndex::New({
+        taskId, // prefix
         [](const TfToken &name) {
-            //if (name == HdAovTokens->color) {
-                // There seems to be no way to do this without allocating a buffer,
-                // so aim for a small one. This might be worth investigating further.
-                //
-                // Note this could also include a clear color, and a settings map.
-            //    return HdAovDescriptor(HdFormatUNorm8, /*multisample*/false, {});
-            //}
+            // Just stub this out for our usage. If we add aov support
+            // this is one place we'll need an update. Note that this
+            // can be something like 
+            // AovDescriptorCallback(HdRenderDelegate::GetDefaultAovDescriptor)
             return HdAovDescriptor();
         },
-        false // gpuEnabled
-    );
+        false, // isForStorm
+        false  // gpuEnabled
+        });
     if (!_taskControllerSceneIndex) {
         TF_CODING_ERROR("Failed to create task controller scene index.");
         return;

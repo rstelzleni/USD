@@ -105,11 +105,12 @@ HydraPassthroughTriangulateFaceVaryingComputation::Resolve()
 
     VtValue result;
     HdMeshUtil meshUtil(_topology, _id);
-    if(meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
-            _source->GetData(),
-            _source->GetNumElements(),
-            _source->GetTupleType().type,
-            &result)) {
+    if(HdMeshComputationResult::Error !=
+            meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
+                _source->GetData(),
+                _source->GetNumElements(),
+                _source->GetTupleType().type,
+                &result)) {
         _SetResult(std::make_shared<HdVtBufferSource>(
                         _source->GetName(),
                         result));

@@ -11,7 +11,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 class HydraPassthroughFvarTopologyTracker;
 class HydraPassthroughResourceRegistry;
 class HydraPassthroughVertexAdjacencyBuilder;
-class HdMeshReprDesc;
+struct HdMeshReprDesc;
 class HdRenderIndex;
 
 /// \class HydraPassthroughMeshUtil
