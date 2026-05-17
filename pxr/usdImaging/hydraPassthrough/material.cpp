@@ -1136,9 +1136,6 @@ HydraPassthroughMaterial::Sync(HdSceneDelegate *sceneDelegate,
         return;
     }
 
-    TF_STATUS("HydraPassthroughMaterial::Sync called for id=%s",
-                GetId().GetText());
-
     HydraPassthroughRenderParam *rp =
         dynamic_cast<HydraPassthroughRenderParam*>(renderParam);
     if (!rp) {

@@ -68,8 +68,6 @@ void HydraPassthroughMesh::Sync(HdSceneDelegate *sceneDelegate,
                       HdRenderParam *renderParam, HdDirtyBits *dirtyBits,
                       TfToken const &reprToken)
 {
-    TF_STATUS("HydraPassthroughMesh::Sync called for id=%s, reprToken=%s",
-                GetId().GetText(), reprToken.GetText());
     auto reprIt = std::find_if(_reprs.begin(), _reprs.end(),
             _ReprComparator(reprToken));
     if (reprIt == _reprs.end()) {
