@@ -102,7 +102,10 @@ _QuadrangulateFaceVaryingPrimvar(
     HdBufferSourceSharedPtr quadSource =
         topology->GetQuadrangulateFaceVaryingComputation(source, id);
 
-    resourceRegistry->AddPrimvarSource(id, source, HdInterpolationFaceVarying);
+    // The coarse source is registered only so it resolves for the
+    // quadrangulation computation; the computation's output replaces it.
+    resourceRegistry->AddPrimvarSource(id, source, HdInterpolationFaceVarying,
+                                       /*isIntermediate=*/true);
 
     return quadSource;
 }
@@ -116,7 +119,10 @@ _TriangulateFaceVaryingPrimvar(HdBufferSourceSharedPtr const &source,
     HdBufferSourceSharedPtr triSource =
         topology->GetTriangulateFaceVaryingComputation(source, id);
 
-    resourceRegistry->AddPrimvarSource(id, source, HdInterpolationFaceVarying);
+    // The coarse source is registered only so it resolves for the
+    // triangulation computation; the computation's output replaces it.
+    resourceRegistry->AddPrimvarSource(id, source, HdInterpolationFaceVarying,
+                                       /*isIntermediate=*/true);
 
     return triSource;
 }
@@ -323,8 +329,12 @@ void PopulateMeshTopology(
     TfToken fvarLinearInterpRule =
         finalTopology->GetSubdivTags().GetFaceVaryingInterpolationRule();
 
-    if ((refineLevel > 0) && 
-        (fvarLinearInterpRule != PxOsdOpenSubdivTokens->all) && 
+    // Face-varying channels and their index buffers only exist for refined
+    // (subdivided) meshes. For refineLevel 0 the face-varying primvars are
+    // triangulated into flattened per-corner buffers instead, and need no
+    // topology tracking. This matches HdStMesh::_PopulateTopology.
+    if ((refineLevel > 0) &&
+        (fvarLinearInterpRule != PxOsdOpenSubdivTokens->all) &&
         updatePrimvars) {
 
         _GatherFaceVaryingTopologies(
@@ -598,12 +608,22 @@ PopulateVertexAndVaryingPrimvars(
     // schedule buffer sources
     if (!sources.empty()) {
         // add sources to update queue
+        //
+        // Note that sources also holds ext computation sources and skips
+        // primvars that were not dirty, so the partition index can exceed
+        // what actually landed in sources; clamp so the split stays valid.
+        const size_t splitPos =
+            std::min(sources.size(), size_t(vertexPartitionIndex) + 1);
         HdBufferSourceSharedPtrVector vertexSources(
-            sources.begin(), sources.begin() + vertexPartitionIndex + 1);
+            sources.begin(), sources.begin() + splitPos);
         HdBufferSourceSharedPtrVector varyingSources(
-            sources.begin() + vertexPartitionIndex + 1, sources.end());
-        resourceRegistry->AddPrimvarSources(id, std::move(vertexSources), HdInterpolationVertex);
-        resourceRegistry->AddPrimvarSources(id, std::move(varyingSources), HdInterpolationVarying);
+            sources.begin() + splitPos, sources.end());
+        if (!vertexSources.empty()) {
+            resourceRegistry->AddPrimvarSources(id, std::move(vertexSources), HdInterpolationVertex);
+        }
+        if (!varyingSources.empty()) {
+            resourceRegistry->AddPrimvarSources(id, std::move(varyingSources), HdInterpolationVarying);
+        }
     }
 
     // Can't currently schedule computations

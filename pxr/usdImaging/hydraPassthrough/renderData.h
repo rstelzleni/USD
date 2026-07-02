@@ -224,6 +224,22 @@ public:
     /// manager has performed its cleanup.
     RenderData ExtractRenderDataCopy() const;
 
+    /// Extract a copy of the contained RenderData with all mesh primvars
+    /// de-indexed into per-corner (face-varying) buffers.
+    ///
+    /// Renderers that support only a single index buffer per mesh (e.g.
+    /// three.js) cannot combine vertex-indexed positions with separately
+    /// indexed face-varying primvars like uvs. In this copy every
+    /// non-constant primvar of each mesh, along with the points, holds
+    /// one value per corner of faceVertexIndices, in corner order.
+    /// Expanded primvars report faceVarying interpolation, the
+    /// faceVaryingChannels are consumed (cleared), and faceVertexIndices
+    /// becomes the identity, so the geometry can be used non-indexed.
+    ///
+    /// For refined (subdivided) buffers this also drops the unused coarse
+    /// values that OpenSubdiv keeps at the start of each buffer.
+    RenderData ExtractDeindexedRenderDataCopy() const;
+
     // Duplicate some api from RenderData. This is for the contained
     // instance of render data, and is protected by the mutexes.
     size_t GetMeshCount() const;
