@@ -390,6 +390,15 @@ HydraPassthroughRenderData::ExtractDeindexedRenderDataCopy() const {
     return renderData;
 }
 
+HydraPassthroughRenderData::RenderData
+HydraPassthroughRenderData::ExtractWeldedRenderDataCopy() const {
+    RenderData renderData = ExtractRenderDataCopy();
+    for (auto& meshEntry : renderData.meshes) {
+        PackagingUtil::WeldMesh(&meshEntry.second);
+    }
+    return renderData;
+}
+
 size_t
 HydraPassthroughRenderData::GetMeshCount() const
 {

@@ -16,6 +16,26 @@ namespace HydraPassthroughMeshPackagingUtil
     void
     DeindexMesh(HydraPassthroughRenderData::MeshData* meshData);
 
+    /// Rewrites the mesh into a single-index layout: every non-constant
+    /// primvar, along with the points, holds one value per output vertex,
+    /// all addressed by the shared faceVertexIndices buffer.
+    ///
+    /// Corners weld into one output vertex only where all of their
+    /// attributes agree: positions and vertex/varying primvars by vertex
+    /// index, refined face-varying primvars by their channel indices,
+    /// unrefined face-varying primvars by exact bitwise value equality
+    /// (no epsilon), and uniform primvars by source face. Vertices
+    /// therefore stay shared everywhere except across genuine seams.
+    ///
+    /// This produces the same renderer-facing contract as DeindexMesh
+    /// (single index buffer, expanded primvars parallel to points) but
+    /// with the minimal vertex count; DeindexMesh is its worst case and
+    /// is kept as the simple reference implementation. Expanded primvars
+    /// report vertex interpolation, since they are indexed alongside the
+    /// points.
+    void
+    WeldMesh(HydraPassthroughRenderData::MeshData* meshData);
+
 } // namespace HydraPassthroughMeshPackagingUtil
 
 PXR_NAMESPACE_CLOSE_SCOPE

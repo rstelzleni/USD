@@ -207,6 +207,106 @@ class TestMeshData(unittest.TestCase):
         # The channels are consumed by de-indexing
         self.assertEqual(mesh.GetFaceVaryingChannels(), [])
 
+    def test_WeldedExtraction(self):
+        # ExtractWeldedRenderDataCopy produces the same single-index
+        # contract as de-indexing, but shares vertices wherever all
+        # attributes agree, splitting only across seams.
+        stage = Usd.Stage.CreateInMemory()
+        points, st = create_two_quad_plane_usd(stage)
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            data_copy = m.GetRenderData().ExtractWeldedRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mesh = data_copy.GetMesh(Sdf.Path(prefix.AppendPath('Plane')))
+        self.assertIsNotNone(mesh)
+
+        # 12 corners weld into 8 vertices: within each quad the two
+        # triangles share their diagonal corners, but the seam in st (and
+        # the uniform primvar) splits the two vertices shared between the
+        # quads. Output vertices are numbered in order of first use, so
+        # the welded index buffer is deterministic.
+        expected_indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]
+        # Source vertex and st element feeding each welded vertex
+        welded_verts = [0, 1, 2, 3, 1, 4, 5, 2]
+        welded_sts = [0, 1, 2, 3, 4, 5, 6, 7]
+
+        self.assertEqual(list(mesh.GetFaceVertexIndices().GetValue()),
+                         expected_indices)
+
+        self.assertEqual(list(mesh.GetPoints().GetValue()),
+                         [Gf.Vec3f(*points[i]) for i in welded_verts])
+
+        # All welded primvars are parallel to points and report vertex
+        # interpolation
+        st_primvar = mesh.GetPrimvar('st')
+        self.assertEqual(st_primvar.interpolation, UsdGeom.Tokens.vertex)
+        self.assertEqual(list(st_primvar.data.GetValue()),
+                         [Gf.Vec2f(*st[i]) for i in welded_sts])
+
+        color_primvar = mesh.GetPrimvar('displayColor')
+        self.assertEqual(color_primvar.interpolation, UsdGeom.Tokens.vertex)
+        self.assertEqual(
+            list(color_primvar.data.GetValue()),
+            [Gf.Vec3f(i / 10.0, 0.0, 0.0) for i in welded_verts])
+
+        uniform_primvar = mesh.GetPrimvar('myUniform')
+        self.assertEqual(uniform_primvar.interpolation,
+                         UsdGeom.Tokens.vertex)
+        self.assertEqual(list(uniform_primvar.data.GetValue()),
+                         [10.0] * 4 + [20.0] * 4)
+
+        # The channels are consumed by welding
+        self.assertEqual(mesh.GetFaceVaryingChannels(), [])
+
+    def test_WeldedExtractionContinuousUvs(self):
+        # When the face-varying data has no seams, welding recovers plain
+        # vertex sharing: no splits, uv array length matches points.
+        stage = Usd.Stage.CreateInMemory()
+        points, _ = create_two_quad_plane_usd(stage)
+
+        # Overwrite st with values that are continuous across the shared
+        # edge (one distinct value per vertex of each corner)
+        mesh_prim = UsdGeom.Mesh(stage.GetPrimAtPath('/Plane'))
+        vertex_indices = [0, 1, 2, 3, 1, 4, 5, 2]
+        vertex_uvs = [(0.0, 0.0), (0.4, 0.0), (0.4, 1.0), (0.0, 1.0),
+                      (1.0, 0.0), (1.0, 1.0)]
+        continuous_st = [vertex_uvs[i] for i in vertex_indices]
+        st_primvar = UsdGeom.PrimvarsAPI(mesh_prim).GetPrimvar('st')
+        st_primvar.Set(Vt.Vec2fArray(continuous_st))
+
+        # Drop the uniform primvar so nothing else forces splits
+        UsdGeom.PrimvarsAPI(mesh_prim).RemovePrimvar('myUniform')
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            data_copy = m.GetRenderData().ExtractWeldedRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mesh = data_copy.GetMesh(Sdf.Path(prefix.AppendPath('Plane')))
+        self.assertIsNotNone(mesh)
+
+        # Six vertices in, six vertices out: continuous uvs cost nothing.
+        # Welded vertices are numbered in order of first use by the
+        # triangulated corners [0,1,2, 0,2,3, 1,4,5, 1,5,2].
+        self.assertEqual(len(mesh.GetPoints().GetValue()), len(points))
+        self.assertEqual(list(mesh.GetFaceVertexIndices().GetValue()),
+                         [0, 1, 2, 0, 2, 3, 1, 4, 5, 1, 5, 2])
+
+        st_welded = mesh.GetPrimvar('st')
+        self.assertEqual(st_welded.interpolation, UsdGeom.Tokens.vertex)
+        self.assertEqual(list(st_welded.data.GetValue()),
+                         [Gf.Vec2f(*vertex_uvs[i]) for i in range(6)])
+
 
 if __name__ == "__main__":
     unittest.main()
