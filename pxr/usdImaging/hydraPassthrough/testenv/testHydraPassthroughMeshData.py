@@ -307,6 +307,96 @@ class TestMeshData(unittest.TestCase):
         self.assertEqual(list(st_welded.data.GetValue()),
                          [Gf.Vec2f(*vertex_uvs[i]) for i in range(6)])
 
+    def test_TriangleMeshFaceVarying(self):
+        # A mesh that is already all triangles: HdMeshUtil reports the
+        # face-varying triangulation as "Unchanged" and the source buffer
+        # must be passed through rather than dropped. This is the common
+        # case for usdz assets, which are typically pre-triangulated.
+        stage = Usd.Stage.CreateInMemory()
+        mesh_prim = UsdGeom.Mesh.Define(stage, '/Tris')
+        mesh_prim.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+        points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+        mesh_prim.CreatePointsAttr(Vt.Vec3fArray(points))
+        mesh_prim.CreateFaceVertexCountsAttr(Vt.IntArray([3, 3]))
+        mesh_prim.CreateFaceVertexIndicesAttr(
+            Vt.IntArray([0, 1, 2, 0, 2, 3]))
+
+        # Indexed st, like typical pre-triangulated exports
+        compact_uvs = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+        st_indices = [0, 1, 2, 0, 2, 3]
+        st_primvar = UsdGeom.PrimvarsAPI(mesh_prim).CreatePrimvar(
+            'st', Sdf.ValueTypeNames.TexCoord2fArray,
+            UsdGeom.Tokens.faceVarying)
+        st_primvar.Set(Vt.Vec2fArray(compact_uvs))
+        st_primvar.SetIndices(Vt.IntArray(st_indices))
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            data_copy = m.GetRenderData().ExtractRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mesh = data_copy.GetMesh(Sdf.Path(prefix.AppendPath('Tris')))
+        self.assertIsNotNone(mesh)
+
+        # The topology passes through untriangulated
+        self.assertEqual(list(mesh.GetFaceVertexIndices().GetValue()),
+                         [0, 1, 2, 0, 2, 3])
+
+        # st must be present: the flattened source is already per corner
+        st_out = mesh.GetPrimvar('st')
+        self.assertIsNotNone(st_out)
+        self.assertEqual(st_out.interpolation, UsdGeom.Tokens.faceVarying)
+        self.assertEqual(list(st_out.data.GetValue()),
+                         [Gf.Vec2f(*compact_uvs[i]) for i in st_indices])
+
+    def test_WeldedExtractionIndexedUvs(self):
+        # An indexed face-varying primvar on an unrefined mesh: the scene
+        # delegate hands the pipeline the flattened value, so authored
+        # indices are invisible downstream and welding behaves exactly as
+        # for a non-indexed primvar with the same effective values.
+        stage = Usd.Stage.CreateInMemory()
+        points, _ = create_two_quad_plane_usd(stage)
+
+        # Author st as a compact value array plus indices, continuous
+        # across the shared edge (corners of both faces reference the same
+        # elements there)
+        mesh_prim = UsdGeom.Mesh(stage.GetPrimAtPath('/Plane'))
+        compact_uvs = [(0.0, 0.0), (0.5, 0.0), (0.5, 1.0), (0.0, 1.0),
+                       (1.0, 0.0), (1.0, 1.0)]
+        st_primvar = UsdGeom.PrimvarsAPI(mesh_prim).GetPrimvar('st')
+        st_primvar.Set(Vt.Vec2fArray(compact_uvs))
+        st_primvar.SetIndices(Vt.IntArray([0, 1, 2, 3, 1, 4, 5, 2]))
+
+        # Drop the uniform primvar so nothing else forces splits
+        UsdGeom.PrimvarsAPI(mesh_prim).RemovePrimvar('myUniform')
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            data_copy = m.GetRenderData().ExtractWeldedRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mesh = data_copy.GetMesh(Sdf.Path(prefix.AppendPath('Plane')))
+        self.assertIsNotNone(mesh)
+
+        # The uvs are continuous, so welding recovers full vertex sharing
+        self.assertEqual(len(mesh.GetPoints().GetValue()), len(points))
+        self.assertEqual(list(mesh.GetFaceVertexIndices().GetValue()),
+                         [0, 1, 2, 0, 2, 3, 1, 4, 5, 1, 5, 2])
+
+        st_welded = mesh.GetPrimvar('st')
+        self.assertIsNotNone(st_welded)
+        self.assertEqual(st_welded.interpolation, UsdGeom.Tokens.vertex)
+        self.assertEqual(list(st_welded.data.GetValue()),
+                         [Gf.Vec2f(*compact_uvs[i]) for i in range(6)])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -105,17 +105,29 @@ HydraPassthroughTriangulateFaceVaryingComputation::Resolve()
 
     VtValue result;
     HdMeshUtil meshUtil(_topology, _id);
-    if(HdMeshComputationResult::Error !=
-            meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
-                _source->GetData(),
-                _source->GetNumElements(),
-                _source->GetTupleType().type,
-                &result)) {
-        _SetResult(std::make_shared<HdVtBufferSource>(
-                        _source->GetName(),
-                        result));
-    } else {
-        _SetResult(_source);
+    const HdMeshComputationResult computationResult =
+        meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
+            _source->GetData(),
+            _source->GetNumElements(),
+            _source->GetTupleType().type,
+            &result);
+    switch (computationResult) {
+        case HdMeshComputationResult::Success:
+            _SetResult(std::make_shared<HdVtBufferSource>(
+                            _source->GetName(),
+                            result));
+            break;
+        case HdMeshComputationResult::Unchanged:
+            // The topology is already all triangles, so the source is
+            // already one value per corner and `result` was left empty.
+            // Wrapping the empty result would produce a zero-length buffer
+            // that is discarded downstream; pass the source through
+            // instead, as HdSt_TriangulateFaceVaryingComputation does.
+            _SetResult(_source);
+            break;
+        case HdMeshComputationResult::Error:
+            _SetResult(_source);
+            break;
     }
 
     _SetResolved();
