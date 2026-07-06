@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "instancer.h"
 #include "meshUtil.h"
 #include "primUtil.h"
 #include "renderParam.h"
@@ -37,7 +38,7 @@ HdDirtyBits HydraPassthroughMesh::GetInitialDirtyBitsMask() const {
         | HdChangeTracker::DirtyPrimvar
         | HdChangeTracker::DirtyNormals
         | HdChangeTracker::DirtyMaterialId
-//        | HdChangeTracker::DirtyInstancer // no instancer support yet
+        | HdChangeTracker::DirtyInstancer
         ;
 
 }
@@ -156,6 +157,30 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     SdfPath const& id = GetId();
     _meshData.id = id;
     _meshData.fvarTopologyTracker = &_fvarTopologyTracker;
+
+    // Update our cached instancer binding, then make sure the instancer and
+    // any parent instancers have synced before we read from them. Hydra
+    // serializes the instancer syncs behind a lock; rprims sync in parallel.
+    _UpdateInstancer(sceneDelegate, dirtyBits);
+    HdInstancer::_SyncInstancerAndParents(
+        sceneDelegate->GetRenderIndex(), GetInstancerId());
+
+    _meshData.instancerId = GetInstancerId();
+
+    if (HdChangeTracker::IsInstancerDirty(*dirtyBits, id) ||
+        HdChangeTracker::IsInstanceIndexDirty(*dirtyBits, id)) {
+        if (GetInstancerId().IsEmpty()) {
+            _meshData.instanceTransforms = VtMatrix4dArray();
+        } else {
+            HdInstancer *instancer =
+                sceneDelegate->GetRenderIndex().GetInstancer(GetInstancerId());
+            if (TF_VERIFY(instancer)) {
+                _meshData.instanceTransforms =
+                    static_cast<HydraPassthroughInstancer*>(instancer)->
+                        ComputeInstanceTransforms(GetId());
+            }
+        }
+    }
 
     if (*dirtyBits & HdChangeTracker::DirtyMaterialId) {
         _meshData.materialId = sceneDelegate->GetMaterialId(id);

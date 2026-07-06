@@ -19,6 +19,7 @@
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/hashmap.h"
 #include "pxr/base/vt/array.h"
+#include "pxr/base/vt/types.h"
 #include "pxr/base/vt/dictionary.h"
 #include "pxr/base/vt/value.h"
 
@@ -94,6 +95,24 @@ public:
         bool visible{true};
         GfMatrix4d transform;
         GfMatrix4d transformInverse;
+
+        // Instancing. If instancerId is non-empty this mesh is an instancing
+        // prototype and should be drawn once per entry in instanceTransforms.
+        // The full local-to-world for instance i is, in Gf's row-vector
+        // convention:
+        //
+        //   world = transform * instanceTransforms[i]
+        //
+        // i.e. the mesh's own transform applies first, then the instance
+        // transform. Column-vector clients (e.g. threejs) use the transposed
+        // matrices multiplied in the reverse order.
+        //
+        // An instanced mesh whose instances are all hidden (or masked out)
+        // has a non-empty instancerId and an empty instanceTransforms, and
+        // should not be drawn. Nested instancing arrives here already
+        // flattened, ordered outer-major.
+        SdfPath instancerId;
+        VtMatrix4dArray instanceTransforms;
         VtValue points;
         VtValue normals;
         VtIntArray faceVertexIndices; // triangles only

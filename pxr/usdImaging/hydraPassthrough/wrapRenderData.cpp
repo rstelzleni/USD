@@ -99,6 +99,12 @@ namespace {
         return HydraPassthroughValueDescriptor(self.edgeIndices);
     }
 
+    HydraPassthroughValueDescriptor _GetMeshInstanceTransforms(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.instanceTransforms));
+    }
+
     // Need this to be a function so that it can use TfPySequenceToList
     // return_value_policy.
     const std::vector<GfVec4d> &_GetClippingPlanes(
@@ -280,6 +286,9 @@ wrapRenderData()
         .def("GetFaceVertexIndices", ::_GetMeshFaceVertexIndices)
         .def("GetPrimitiveParams", ::_GetMeshPrimitiveParams)
         .def("GetEdgeIndices", ::_GetMeshEdgeIndices)
+
+        .def_readonly("instancerId", &This::MeshData::instancerId)
+        .def("GetInstanceTransforms", ::_GetMeshInstanceTransforms)
         ;
 
     enum_<This::MaterialData::MaterialType>("MaterialType")
