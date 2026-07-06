@@ -224,6 +224,37 @@ public:
     /// manager has performed its cleanup.
     RenderData ExtractRenderDataCopy() const;
 
+    /// Extract a copy of the contained RenderData with all mesh primvars
+    /// de-indexed into per-corner (face-varying) buffers.
+    ///
+    /// Renderers that support only a single index buffer per mesh (e.g.
+    /// three.js) cannot combine vertex-indexed positions with separately
+    /// indexed face-varying primvars like uvs. In this copy every
+    /// non-constant primvar of each mesh, along with the points, holds
+    /// one value per corner of faceVertexIndices, in corner order.
+    /// Expanded primvars report faceVarying interpolation, the
+    /// faceVaryingChannels are consumed (cleared), and faceVertexIndices
+    /// becomes the identity, so the geometry can be used non-indexed.
+    ///
+    /// For refined (subdivided) buffers this also drops the unused coarse
+    /// values that OpenSubdiv keeps at the start of each buffer.
+    RenderData ExtractDeindexedRenderDataCopy() const;
+
+    /// Extract a copy of the contained RenderData with each mesh welded
+    /// into a single-index layout.
+    ///
+    /// This produces the same renderer-facing contract as
+    /// ExtractDeindexedRenderDataCopy — one shared index buffer, all
+    /// non-constant primvars parallel to points — but with the minimal
+    /// vertex count: corners share an output vertex unless one of their
+    /// attributes genuinely differs (a uv seam, a uniform value change),
+    /// so buffer sizes stay close to plain indexed geometry instead of
+    /// tripling. Face-varying data welds by channel indices where they
+    /// exist (refined meshes) and by exact bitwise value equality
+    /// otherwise; there is no epsilon. Expanded primvars report vertex
+    /// interpolation.
+    RenderData ExtractWeldedRenderDataCopy() const;
+
     // Duplicate some api from RenderData. This is for the contained
     // instance of render data, and is protected by the mutexes.
     size_t GetMeshCount() const;

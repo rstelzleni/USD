@@ -89,9 +89,11 @@ void HydraPassthroughResourceRegistry::AddIndexSources(
 void HydraPassthroughResourceRegistry::AddPrimvarSource(
         SdfPath const &id,
         HdBufferSourceSharedPtr const &source,
-        HdInterpolation interpolation)
+        HdInterpolation interpolation,
+        bool isIntermediate)
 {
-    _AddSource(source, id, PrimvarSourceType::Primvar, interpolation);
+    _AddSource(source, id, PrimvarSourceType::Primvar, interpolation,
+               isIntermediate);
 }
 
 void HydraPassthroughResourceRegistry::AddPrimvarSources(

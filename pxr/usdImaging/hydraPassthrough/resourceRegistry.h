@@ -49,9 +49,16 @@ public:
                          HdBufferSourceSharedPtrVector &&sources);
 
     // Append a computation for a Primvar
+    //
+    // Sources marked intermediate are resolved (so computations that
+    // depend on them can run) but are not copied into the render data.
+    // Use this for coarse inputs that a triangulation/quadrangulation/
+    // refinement computation will replace with a final buffer of the
+    // same name.
     void AddPrimvarSource(SdfPath const &id,
                           HdBufferSourceSharedPtr const &source,
-                          HdInterpolation interpolation);
+                          HdInterpolation interpolation,
+                          bool isIntermediate = false);
 
     /// Append a list of primvar computations
     void AddPrimvarSources(SdfPath const &id,

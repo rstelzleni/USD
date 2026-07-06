@@ -223,6 +223,10 @@ wrapRenderData()
              return_internal_reference())
 
         .def("ExtractRenderDataCopy", &This::ExtractRenderDataCopy)
+        .def("ExtractDeindexedRenderDataCopy",
+             &This::ExtractDeindexedRenderDataCopy)
+        .def("ExtractWeldedRenderDataCopy",
+             &This::ExtractWeldedRenderDataCopy)
         ;
 
     class_<This::RenderData>("RenderDataStruct", no_init)

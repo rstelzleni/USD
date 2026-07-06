@@ -35,6 +35,7 @@ pxr_library(hydraPassthrough
         material
         materialParam
         mesh
+        meshPackagingUtil
         meshTopology
         meshUtil
         normalComputations

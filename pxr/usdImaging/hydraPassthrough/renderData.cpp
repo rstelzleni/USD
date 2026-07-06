@@ -3,6 +3,7 @@
 #include "pxr/usdImaging/hydraPassthrough/constantVtBufferSource.h"
 #include "pxr/usdImaging/hydraPassthrough/fvarTopologyTracker.h"
 #include "pxr/usdImaging/hydraPassthrough/hdTypeUtil.h"
+#include "pxr/usdImaging/hydraPassthrough/meshPackagingUtil.h"
 #include "pxr/usdImaging/hydraPassthrough/subdivision.h"
 
 #include "pxr/base/tf/diagnosticLite.h"
@@ -11,10 +12,13 @@
 
 #include "pxr/base/vt/value.h"
 
+#include <numeric>
+
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 namespace HdTypeUtil = HydraPassthroughHdTypeUtil;
+namespace PackagingUtil = HydraPassthroughMeshPackagingUtil;
 
 const HydraPassthroughRenderData::MeshData*
 HydraPassthroughRenderData::RenderData::GetMesh(const SdfPath& id) const {
@@ -189,7 +193,10 @@ static void _UpdateFaceVaryingChannels(HydraPassthroughRenderData::MeshData& mes
     // Find the channel for this primvar
     int channel = meshData.fvarTopologyTracker->GetChannelFromPrimvar(primvarName);
     if (channel < 0) {
-        TF_RUNTIME_ERROR("Primvar %s is marked as face varying but has no associated channel in the fvar topology tracker", primvarName.GetText());
+        // Face-varying channels only exist for refined (subdivided) meshes.
+        // For unrefined meshes the primvar buffer has already been
+        // triangulated into one value per corner of faceVertexIndices, in
+        // triangle order, so it needs no channel or index buffer.
         return;
     }
 
@@ -199,7 +206,8 @@ static void _UpdateFaceVaryingChannels(HydraPassthroughRenderData::MeshData& mes
     if (it == meshData.faceVaryingChannels.end()) {
         // Create new channel
         meshData.faceVaryingChannels.push_back({channel, {}, {primvarName}});
-    } else {
+    } else if (std::find(it->primvars.begin(), it->primvars.end(),
+                         primvarName) == it->primvars.end()) {
         // Add primvar to existing channel
         it->primvars.push_back(primvarName);
     }
@@ -371,6 +379,24 @@ HydraPassthroughRenderData::ExtractRenderDataCopy() const {
     const std::lock_guard<std::mutex> lock2(_cameraMutex);
     const std::lock_guard<std::mutex> lock3(_materialMutex);
     return _renderData;
+}
+
+HydraPassthroughRenderData::RenderData
+HydraPassthroughRenderData::ExtractDeindexedRenderDataCopy() const {
+    RenderData renderData = ExtractRenderDataCopy();
+    for (auto& meshEntry : renderData.meshes) {
+        PackagingUtil::DeindexMesh(&meshEntry.second);
+    }
+    return renderData;
+}
+
+HydraPassthroughRenderData::RenderData
+HydraPassthroughRenderData::ExtractWeldedRenderDataCopy() const {
+    RenderData renderData = ExtractRenderDataCopy();
+    for (auto& meshEntry : renderData.meshes) {
+        PackagingUtil::WeldMesh(&meshEntry.second);
+    }
+    return renderData;
 }
 
 size_t
