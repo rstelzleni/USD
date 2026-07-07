@@ -64,14 +64,15 @@ public:
     };
 
     /// Compute the flattened instance data for each instance of prototypeId
-    /// drawn by this instancer.
+    /// drawn by this instancer, replacing the contents of instanceData.
     ///
     /// Nested instancing is flattened here by recursing into the parent
     /// instancer. The result is ordered outer-major: all instances for the
     /// first parent instance, then all instances for the second, and so on.
     ///
-    /// Returns empty data if the instancer is invisible.
-    InstanceData ComputeInstanceData(SdfPath const &prototypeId);
+    /// Produces empty data if the instancer is invisible.
+    void ComputeInstanceData(SdfPath const &prototypeId,
+                             InstanceData *instanceData);
 
 private:
     void _SyncPrimvars(HdSceneDelegate *sceneDelegate, HdDirtyBits dirtyBits);

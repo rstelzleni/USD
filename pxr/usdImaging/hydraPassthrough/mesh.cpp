@@ -181,9 +181,9 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
             HdInstancer *instancer =
                 sceneDelegate->GetRenderIndex().GetInstancer(GetInstancerId());
             if (TF_VERIFY(instancer)) {
-                HydraPassthroughInstancer::InstanceData instanceData =
-                    static_cast<HydraPassthroughInstancer*>(instancer)->
-                        ComputeInstanceData(GetId());
+                HydraPassthroughInstancer::InstanceData instanceData;
+                static_cast<HydraPassthroughInstancer*>(instancer)->
+                    ComputeInstanceData(GetId(), &instanceData);
                 _meshData.instanceTransforms =
                     std::move(instanceData.transforms);
                 _meshData.instanceIndices =

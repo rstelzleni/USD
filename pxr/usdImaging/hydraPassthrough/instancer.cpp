@@ -246,14 +246,24 @@ HydraPassthroughInstancer::_SyncPrimvars(HdSceneDelegate *sceneDelegate,
     }
 }
 
-HydraPassthroughInstancer::InstanceData
+void
 HydraPassthroughInstancer::ComputeInstanceData(
-    SdfPath const &prototypeId)
+    SdfPath const &prototypeId,
+    InstanceData *instanceData)
 {
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
 
-    InstanceData result;
+    if (!TF_VERIFY(instanceData)) {
+        return;
+    }
+
+    // Start from empty output, which is also the result for an invisible
+    // instancer.
+    InstanceData &result = *instanceData;
+    result.transforms.clear();
+    result.instanceIndices.clear();
+    result.primvars.clear();
 
     // The transforms for this level of instancer are computed by:
     // foreach(index : indices) {
@@ -266,7 +276,7 @@ HydraPassthroughInstancer::ComputeInstanceData(
     // If any transform isn't provided, it's assumed to be the identity.
 
     if (!_visible) {
-        return result;
+        return;
     }
 
     const GfMatrix4d instancerTransform =
@@ -335,7 +345,7 @@ HydraPassthroughInstancer::ComputeInstanceData(
     }
 
     if (GetParentId().IsEmpty()) {
-        return result;
+        return;
     }
 
     // Nested instancing: this whole instancer is itself instanced by its
@@ -344,12 +354,12 @@ HydraPassthroughInstancer::ComputeInstanceData(
     HdInstancer *parentInstancer =
         GetDelegate()->GetRenderIndex().GetInstancer(GetParentId());
     if (!TF_VERIFY(parentInstancer)) {
-        return result;
+        return;
     }
 
-    const InstanceData parent =
-        static_cast<HydraPassthroughInstancer*>(parentInstancer)->
-            ComputeInstanceData(GetId());
+    InstanceData parent;
+    static_cast<HydraPassthroughInstancer*>(parentInstancer)->
+        ComputeInstanceData(GetId(), &parent);
 
     const size_t numLocal = result.transforms.size();
     const size_t numParent = parent.transforms.size();
@@ -390,7 +400,7 @@ HydraPassthroughInstancer::ComputeInstanceData(
         }
     }
 
-    return flattened;
+    result = std::move(flattened);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
