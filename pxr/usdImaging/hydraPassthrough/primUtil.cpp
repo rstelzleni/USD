@@ -78,7 +78,7 @@ PopulateConstantPrimvars(
 
         // Note that instancer transforms are not handled here. They are
         // folded into the per-instance transforms computed by
-        // HydraPassthroughInstancer::ComputeInstanceTransforms.
+        // HydraPassthroughInstancer::ComputeInstanceData.
         bool leftHanded = transform.IsLeftHanded();
 
         if (hasMirroredTransform) {
