@@ -1,8 +1,14 @@
 #include "instancer.h"
 
+#include "renderData.h"
+
 #include "pxr/imaging/hd/changeTracker.h"
+#include "pxr/imaging/hd/instanceSchema.h"
+#include "pxr/imaging/hd/instancerTopologySchema.h"
 #include "pxr/imaging/hd/renderIndex.h"
 #include "pxr/imaging/hd/sceneDelegate.h"
+#include "pxr/imaging/hd/sceneIndex.h"
+#include "pxr/imaging/hd/sceneIndexPrimView.h"
 #include "pxr/imaging/hd/tokens.h"
 
 #include "pxr/base/gf/matrix4d.h"
@@ -15,8 +21,6 @@
 #include "pxr/base/gf/vec4d.h"
 #include "pxr/base/gf/vec4f.h"
 #include "pxr/base/tf/stl.h"
-// The gather/expand visitors below instantiate over every VtArray element
-// type, which requires the complete type of each element.
 #include "pxr/base/vt/typeHeaders.h"
 #include "pxr/base/vt/visitValue.h"
 
@@ -401,6 +405,92 @@ HydraPassthroughInstancer::ComputeInstanceData(
     }
 
     result = std::move(flattened);
+}
+
+/* static */
+void
+HydraPassthroughInstancer::PopulateInstancerOrigins(
+    HdSceneIndexBaseRefPtr const &sceneIndex,
+    HydraPassthroughRenderDataRefPtr const &renderData,
+    SdfPath const &sceneDelegateId)
+{
+    if (!sceneIndex || !renderData) {
+        return;
+    }
+
+    // When native instances are aggregated into an instancer, the
+    // aggregation scene index leaves an "instance" data source at each
+    // original instance prim's location, pointing at the instancer that
+    // absorbed it. Collect those into a per-instancer map from instance
+    // index to origin prim path.
+    //
+    // We traverse our scene index rather than the render index's view of
+    // it, so the origin paths come out unprefixed, matching the source
+    // scene. The instancer ids get the scene delegate prefix added so they
+    // match the instancerId the prototype meshes report.
+    TfHashMap<SdfPath, HydraPassthroughRenderData::SceneGraphInstancerData, TfHash>
+        instancers;
+
+    for (const SdfPath &primPath : HdSceneIndexPrimView(sceneIndex)) {
+        const HdSceneIndexPrim prim = sceneIndex->GetPrim(primPath);
+        const HdInstanceSchema instanceSchema =
+            HdInstanceSchema::GetFromParent(prim.dataSource);
+        if (!instanceSchema.IsDefined()) {
+            continue;
+        }
+
+        HdPathDataSourceHandle const instancerDs =
+            instanceSchema.GetInstancer();
+        HdIntDataSourceHandle const instanceIndexDs =
+            instanceSchema.GetInstanceIndex();
+        if (!instancerDs || !instanceIndexDs) {
+            continue;
+        }
+
+        const SdfPath instancerPath = instancerDs->GetTypedValue(0.0f);
+        const int slot = instanceIndexDs->GetTypedValue(0.0f);
+        if (instancerPath.IsEmpty() || slot < 0) {
+            continue;
+        }
+        int prototypeIndex = 0;
+        if (HdIntDataSourceHandle const prototypeIndexDs =
+                instanceSchema.GetPrototypeIndex()) {
+            prototypeIndex = prototypeIndexDs->GetTypedValue(0.0f);
+        }
+
+        // The schema's instanceIndex is a position within the instancer
+        // topology's per-prototype index array. Resolve it to the instance
+        // index value there, which is what the prototype meshes report in
+        // their instanceIndices. (For instancers created by native instance
+        // aggregation these are the same today, but the schema doesn't
+        // promise that.)
+        int instanceIndex = slot;
+        const HdSceneIndexPrim instancerPrim =
+            sceneIndex->GetPrim(instancerPath);
+        if (const HdInstancerTopologySchema topologySchema =
+                HdInstancerTopologySchema::GetFromParent(
+                    instancerPrim.dataSource)) {
+            if (HdIntArrayDataSourceHandle const indicesDs =
+                    topologySchema.GetInstanceIndices().GetElement(
+                        prototypeIndex)) {
+                const VtIntArray indices = indicesDs->GetTypedValue(0.0f);
+                if (static_cast<size_t>(slot) < indices.size()) {
+                    instanceIndex = indices[slot];
+                }
+            }
+        }
+
+        const SdfPath prefixedInstancerId = instancerPath.ReplacePrefix(
+            SdfPath::AbsoluteRootPath(), sceneDelegateId);
+        HydraPassthroughRenderData::SceneGraphInstancerData &instancerData =
+            instancers[prefixedInstancerId];
+        instancerData.id = prefixedInstancerId;
+        instancerData.instanceOriginPaths[instanceIndex] = primPath;
+    }
+
+    for (const auto &entry : instancers) {
+        renderData->AddSceneGraphInstancer(entry.first, entry.second);
+    }
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

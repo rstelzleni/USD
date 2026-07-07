@@ -23,6 +23,7 @@
 #include "pxr/base/vt/dictionary.h"
 #include "pxr/base/vt/value.h"
 
+#include <map>
 #include <mutex>
 #include <string>
 
@@ -145,6 +146,32 @@ public:
         HydraPassthroughFvarTopologyTracker *fvarTopologyTracker;
     };
 
+    /// Data describing a scene graph instancer
+    ///
+    /// This exists to map drawn instances of native (scene graph) instancing
+    /// back to the scene prims that authored them, primarily for picking in
+    /// debug renders. Point instancers do not appear here; for those,
+    /// MeshData::instanceIndices already identifies the authored point on the
+    /// point instancer prim (the mesh's instancerId).
+    ///
+    /// Clients should check to see if a picked mesh has a
+    /// SceneGraphInstancerData object, and if so, use this to map to the
+    /// picked source prim.
+    class SceneGraphInstancerData {
+    public:
+        SdfPath id;
+
+        // For each instance index (the values reported in the prototype
+        // meshes' instanceIndices), the stage path of the original
+        // instanceable prim that was aggregated into that instance. So for
+        // drawn instance k of a prototype mesh m:
+        //
+        //   instanceOriginPaths.at(m.instanceIndices[k])
+        //
+        // is the scene prim that instance came from.
+        std::map<int, SdfPath> instanceOriginPaths;
+    };
+
     class MaterialData {
     public:
         SdfPath id;
@@ -220,6 +247,7 @@ public:
         TfHashMap<SdfPath, MeshData, TfHash> meshes;
         TfHashMap<SdfPath, CameraData, TfHash> cameras;
         TfHashMap<SdfPath, MaterialData, TfHash> materials;
+        TfHashMap<SdfPath, SceneGraphInstancerData, TfHash> sceneGraphInstancers;
 
         const MeshData* GetMesh(const SdfPath& id) const;
         size_t GetMeshCount() const;
@@ -230,6 +258,9 @@ public:
         const MaterialData* GetMaterial(const SdfPath& id) const;
         size_t GetMaterialCount() const;
         const MaterialData* GetMaterialByIndex(size_t index) const;
+        const SceneGraphInstancerData* GetSceneGraphInstancer(const SdfPath& id) const;
+        size_t GetSceneGraphInstancerCount() const;
+        const SceneGraphInstancerData* GetSceneGraphInstancerByIndex(size_t index) const;
     };
 
     static HydraPassthroughRenderDataRefPtr New() {
@@ -245,6 +276,9 @@ public:
 
     void AddMaterial(const SdfPath& id,
                      const MaterialData& materialData);
+
+    void AddSceneGraphInstancer(const SdfPath& id,
+                                const SceneGraphInstancerData& instancerData);
 
     /// Copy a potentially computed primvar source value into the render data.
     void CopyPrimvarBufferSource(
@@ -303,6 +337,9 @@ public:
     const MaterialData* GetMaterial(const SdfPath& id) const;
     size_t GetMaterialCount() const;
     const MaterialData* GetMaterialByIndex(size_t index) const;
+    const SceneGraphInstancerData* GetSceneGraphInstancer(const SdfPath& id) const;
+    size_t GetSceneGraphInstancerCount() const;
+    const SceneGraphInstancerData* GetSceneGraphInstancerByIndex(size_t index) const;
     // End duplicate api
 
 private:
@@ -315,6 +352,7 @@ private:
     mutable std::mutex _meshMutex;
     mutable std::mutex _cameraMutex;
     mutable std::mutex _materialMutex;
+    mutable std::mutex _instancerMutex;
 
     // The actual contained data.
     RenderData _renderData;

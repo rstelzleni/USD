@@ -5,6 +5,7 @@
 
 #include "pxr/imaging/hd/instancer.h"
 
+#include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/hashmap.h"
 #include "pxr/base/tf/token.h"
 #include "pxr/base/vt/array.h"
@@ -12,6 +13,9 @@
 #include "pxr/base/vt/value.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
+
+TF_DECLARE_REF_PTRS(HydraPassthroughRenderData);
+TF_DECLARE_REF_PTRS(HdSceneIndexBase);
 
 /// \class HydraPassthroughInstancer
 ///
@@ -73,6 +77,18 @@ public:
     /// Produces empty data if the instancer is invisible.
     void ComputeInstanceData(SdfPath const &prototypeId,
                              InstanceData *instanceData);
+
+    /// Collects the origin scene prim of every native (scene graph) instance
+    /// from the scene index into the render data, for pick mapping.
+    ///
+    /// Should be called after the render, when the scene index is fully
+    /// populated.
+    ///
+    /// Output is placed directly into the renderData.
+    static void PopulateInstancerOrigins(
+        HdSceneIndexBaseRefPtr const &sceneIndex,
+        HydraPassthroughRenderDataRefPtr const &renderData,
+        SdfPath const &sceneDelegateId);
 
 private:
     void _SyncPrimvars(HdSceneDelegate *sceneDelegate, HdDirtyBits dirtyBits);

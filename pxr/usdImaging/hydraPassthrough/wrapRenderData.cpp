@@ -229,6 +229,12 @@ namespace {
     {
         return self.faceVaryingChannels;
     }
+
+    const std::map<int, SdfPath> &_GetInstanceOriginPaths(
+        const HydraPassthroughRenderData::SceneGraphInstancerData &self)
+    {
+        return self.instanceOriginPaths;
+    }
 }
 
 void
@@ -253,6 +259,13 @@ wrapRenderData()
              return_internal_reference())
         .def("GetMaterialCount", &This::GetMaterialCount)
         .def("GetMaterialByIndex", &This::GetMaterialByIndex,
+             (arg("index")),
+             return_internal_reference())
+        .def("GetSceneGraphInstancer", &This::GetSceneGraphInstancer,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetSceneGraphInstancerCount", &This::GetSceneGraphInstancerCount)
+        .def("GetSceneGraphInstancerByIndex", &This::GetSceneGraphInstancerByIndex,
              (arg("index")),
              return_internal_reference())
 
@@ -282,6 +295,21 @@ wrapRenderData()
         .def("GetMaterialByIndex", &This::RenderData::GetMaterialByIndex,
              (arg("index")),
              return_internal_reference())
+        .def("GetSceneGraphInstancer", &This::RenderData::GetSceneGraphInstancer,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetSceneGraphInstancerCount",
+             &This::RenderData::GetSceneGraphInstancerCount)
+        .def("GetSceneGraphInstancerByIndex",
+             &This::RenderData::GetSceneGraphInstancerByIndex,
+             (arg("index")),
+             return_internal_reference())
+        ;
+
+    class_<This::SceneGraphInstancerData>("SceneGraphInstancerData", no_init)
+        .def_readonly("id", &This::SceneGraphInstancerData::id)
+        .def("GetInstanceOriginPaths", ::_GetInstanceOriginPaths,
+             return_value_policy<TfPyMapToDictionary>())
         ;
 
     class_<Primvar>("Primvar", no_init)

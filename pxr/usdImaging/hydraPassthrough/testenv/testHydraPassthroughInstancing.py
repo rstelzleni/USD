@@ -172,6 +172,11 @@ class TestInstancing(unittest.TestCase):
         self.assertEqual(list(color_out.data.GetValue()),
                          [Gf.Vec3f(*colors[0]), Gf.Vec3f(*colors[2])])
 
+        # Point instancers have no aggregated instance origins; their
+        # pick mapping is the instance indices themselves
+        self.assertEqual(data.GetSceneGraphInstancerCount(), 0)
+        self.assertIsNone(data.GetSceneGraphInstancer(mesh.instancerId))
+
     def test_InstancePrimvars(self):
         # Primvars authored on a point instancer (other than the transform
         # builders) pass through as instance primvars, gathered per drawn
@@ -251,6 +256,23 @@ class TestInstancing(unittest.TestCase):
         # instance primvars (their transforms are the only instance data)
         self.assertEqual(sorted(mesh.GetInstanceIndices().GetValue()), [0, 1])
         self.assertEqual(mesh.GetAllInstancePrimvars(), [])
+
+        # Each drawn instance maps back to the instanceable prim that
+        # authored it: instancer origins are keyed by the values in
+        # instanceIndices, and the mapped prim's authored offset must match
+        # the drawn transform.
+        self.assertEqual(data.GetSceneGraphInstancerCount(), 1)
+        instancer = data.GetSceneGraphInstancer(mesh.instancerId)
+        self.assertIsNotNone(instancer)
+        origins = instancer.GetInstanceOriginPaths()
+        self.assertEqual(sorted(str(p) for p in origins.values()),
+                         ['/Instance0', '/Instance1'])
+        indices = list(mesh.GetInstanceIndices().GetValue())
+        for k, xform in enumerate(xforms):
+            origin = origins[indices[k]]
+            authored = offsets[int(str(origin).replace('/Instance', ''))]
+            got = tuple(round(c, 3) for c in xform.ExtractTranslation())
+            self.assertEqual(got, authored)
 
     def test_NestedPointInstancers(self):
         # A point instancer whose prototype contains another point
