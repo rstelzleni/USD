@@ -95,6 +95,13 @@ public:
         bool visible{true};
         GfMatrix4d transform;
         GfMatrix4d transformInverse;
+        VtValue points;
+        VtValue normals;
+        VtIntArray faceVertexIndices; // triangles only
+        VtValue primitiveParam;
+        VtValue edgeIndices;
+        TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
+        std::vector<FaceVaryingChannel> faceVaryingChannels;
 
         // Instancing. If instancerId is non-empty this mesh is an instancing
         // prototype and should be drawn once per entry in instanceTransforms.
@@ -113,13 +120,6 @@ public:
         // flattened, ordered outer-major.
         SdfPath instancerId;
         VtMatrix4dArray instanceTransforms;
-        VtValue points;
-        VtValue normals;
-        VtIntArray faceVertexIndices; // triangles only
-        VtValue primitiveParam;
-        VtValue edgeIndices;
-        TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
-        std::vector<FaceVaryingChannel> faceVaryingChannels;
 
         // Not wrapped to python, valid only so long as the rprim mesh exists
         //

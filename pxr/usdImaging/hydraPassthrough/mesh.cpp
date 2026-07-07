@@ -159,8 +159,12 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     _meshData.fvarTopologyTracker = &_fvarTopologyTracker;
 
     // Update our cached instancer binding, then make sure the instancer and
-    // any parent instancers have synced before we read from them. Hydra
-    // serializes the instancer syncs behind a lock; rprims sync in parallel.
+    // any parent instancers have synced before we read from them. Rprims
+    // sync in parallel, so many meshes can request the same instancer's
+    // sync concurrently; _SyncInstancerAndParents serializes those requests
+    // with a mutex internal to HdInstancer and only the caller that finds
+    // dirty bits does the work. Once it returns the instancer's data is
+    // stable until the next frame, so reading it below needs no lock.
     _UpdateInstancer(sceneDelegate, dirtyBits);
     HdInstancer::_SyncInstancerAndParents(
         sceneDelegate->GetRenderIndex(), GetInstancerId());

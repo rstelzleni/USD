@@ -147,10 +147,32 @@ HydraPassthroughInstancer::_SyncPrimvars(HdSceneDelegate *sceneDelegate,
     HdPrimvarDescriptorVector primvars =
         sceneDelegate->GetPrimvarDescriptors(id, HdInterpolationInstance);
 
+    // Drop cached values for primvars that no longer exist. A removal
+    // arrives as a primvar-dirty notification, and the removed name simply
+    // stops being listed in the descriptors.
+    TfTokenVector removedNames;
+    for (const auto &entry : _primvarMap) {
+        bool stillExists = false;
+        for (const HdPrimvarDescriptor &pv : primvars) {
+            if (pv.name == entry.first) {
+                stillExists = true;
+                break;
+            }
+        }
+        if (!stillExists) {
+            removedNames.push_back(entry.first);
+        }
+    }
+    for (const TfToken &name : removedNames) {
+        _primvarMap.erase(name);
+    }
+
     for (const HdPrimvarDescriptor &pv : primvars) {
         if (HdChangeTracker::IsPrimvarDirty(dirtyBits, id, pv.name)) {
             VtValue value = sceneDelegate->Get(id, pv.name);
-            if (!value.IsEmpty()) {
+            if (value.IsEmpty()) {
+                _primvarMap.erase(pv.name);
+            } else {
                 _primvarMap[pv.name] = value;
             }
         }
