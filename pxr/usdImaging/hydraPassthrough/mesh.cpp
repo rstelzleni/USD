@@ -175,13 +175,25 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
         HdChangeTracker::IsInstanceIndexDirty(*dirtyBits, id)) {
         if (GetInstancerId().IsEmpty()) {
             _meshData.instanceTransforms = VtMatrix4dArray();
+            _meshData.instanceIndices = VtIntArray();
+            _meshData.instancePrimvars.clear();
         } else {
             HdInstancer *instancer =
                 sceneDelegate->GetRenderIndex().GetInstancer(GetInstancerId());
             if (TF_VERIFY(instancer)) {
-                _meshData.instanceTransforms =
+                HydraPassthroughInstancer::InstanceData instanceData =
                     static_cast<HydraPassthroughInstancer*>(instancer)->
-                        ComputeInstanceTransforms(GetId());
+                        ComputeInstanceData(GetId());
+                _meshData.instanceTransforms =
+                    std::move(instanceData.transforms);
+                _meshData.instanceIndices =
+                    std::move(instanceData.instanceIndices);
+                _meshData.instancePrimvars.clear();
+                for (const auto &pv : instanceData.primvars) {
+                    _meshData.instancePrimvars[pv.first] =
+                        HydraPassthroughRenderData::PrimvarData(
+                            pv.second, HdInterpolationInstance);
+                }
             }
         }
     }

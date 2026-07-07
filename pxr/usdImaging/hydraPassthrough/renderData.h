@@ -121,6 +121,24 @@ public:
         SdfPath instancerId;
         VtMatrix4dArray instanceTransforms;
 
+        // For each entry in instanceTransforms, the instance index at the
+        // instancer level closest to the prototype. For a point instancer
+        // prototype this is the index into the authored point arrays
+        // (masked/invisible instances are omitted without renumbering), so
+        // a drawn instance can be mapped back to a specific point for
+        // picking or debugging. With nested instancers only the innermost
+        // level is identified.
+        VtIntArray instanceIndices;
+
+        // Instance-interpolation primvars (e.g. a displayColor authored on
+        // a point instancer), with values gathered per drawn instance so
+        // each array is parallel to instanceTransforms. The
+        // transform-building primvars (hydra:instanceTranslations/
+        // Rotations/Scales/Transforms) are excluded because they are
+        // already baked into instanceTransforms. When nested instancers
+        // author the same primvar, the level closest to the prototype wins.
+        TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> instancePrimvars;
+
         // Not wrapped to python, valid only so long as the rprim mesh exists
         //
         // We need this only to populate the face varying primvar index channels

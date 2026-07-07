@@ -15,6 +15,12 @@
 #include "pxr/base/gf/vec4d.h"
 #include "pxr/base/gf/vec4f.h"
 #include "pxr/base/tf/stl.h"
+// The gather/expand visitors below instantiate over every VtArray element
+// type, which requires the complete type of each element.
+#include "pxr/base/vt/typeHeaders.h"
+#include "pxr/base/vt/visitValue.h"
+
+#include <algorithm>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -109,6 +115,67 @@ _SampleMatrix(const VtValue &value, int index, GfMatrix4d *out)
     return false;
 }
 
+// Gathers elements of an array-holding VtValue by index:
+// out[k] = in[indices[k]]. Out-of-range indices produce default-constructed
+// elements. Returns an empty VtValue for non-array values.
+struct _GatherVisitor {
+    const VtIntArray &indices;
+
+    template <class T>
+    VtValue operator()(const VtArray<T> &array) const {
+        VtArray<T> result(indices.size());
+        for (size_t i = 0; i < indices.size(); ++i) {
+            const size_t index = static_cast<size_t>(indices[i]);
+            if (index < array.size()) {
+                result[i] = array[index];
+            }
+        }
+        return VtValue(result);
+    }
+
+    VtValue operator()(const VtValue &value) const {
+        return VtValue();
+    }
+};
+
+// Expands an array-holding VtValue for nested-instancing flattening: each
+// element is repeated repeatEach times consecutively, then the whole result
+// is tiled `tile` times:
+// out[t * (n * repeatEach) + i * repeatEach + r] = in[i]
+struct _ExpandVisitor {
+    size_t repeatEach;
+    size_t tile;
+
+    template <class T>
+    VtValue operator()(const VtArray<T> &array) const {
+        VtArray<T> result(array.size() * repeatEach * tile);
+        size_t k = 0;
+        for (size_t t = 0; t < tile; ++t) {
+            for (size_t i = 0; i < array.size(); ++i) {
+                for (size_t r = 0; r < repeatEach; ++r) {
+                    result[k++] = array[i];
+                }
+            }
+        }
+        return VtValue(result);
+    }
+
+    VtValue operator()(const VtValue &value) const {
+        return VtValue();
+    }
+};
+
+// The primvars that ComputeInstanceData bakes into the instance transforms,
+// and therefore excludes from the passed-through instance primvars.
+bool
+_IsTransformPrimvar(const TfToken &name)
+{
+    return name == HdInstancerTokens->instanceTranslations ||
+           name == HdInstancerTokens->instanceRotations ||
+           name == HdInstancerTokens->instanceScales ||
+           name == HdInstancerTokens->instanceTransforms;
+}
+
 } // anonymous namespace
 
 HydraPassthroughInstancer::HydraPassthroughInstancer(
@@ -179,12 +246,14 @@ HydraPassthroughInstancer::_SyncPrimvars(HdSceneDelegate *sceneDelegate,
     }
 }
 
-VtMatrix4dArray
-HydraPassthroughInstancer::ComputeInstanceTransforms(
+HydraPassthroughInstancer::InstanceData
+HydraPassthroughInstancer::ComputeInstanceData(
     SdfPath const &prototypeId)
 {
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
+
+    InstanceData result;
 
     // The transforms for this level of instancer are computed by:
     // foreach(index : indices) {
@@ -197,7 +266,7 @@ HydraPassthroughInstancer::ComputeInstanceTransforms(
     // If any transform isn't provided, it's assumed to be the identity.
 
     if (!_visible) {
-        return VtMatrix4dArray();
+        return result;
     }
 
     const GfMatrix4d instancerTransform =
@@ -249,31 +318,79 @@ HydraPassthroughInstancer::ComputeInstanceTransforms(
         transforms[i] = transform;
     }
 
+    result.transforms = std::move(transforms);
+    result.instanceIndices = instanceIndices;
+
+    // Gather the non-transform instance primvars by instance index so each
+    // is parallel to the transforms.
+    for (const auto &entry : _primvarMap) {
+        if (_IsTransformPrimvar(entry.first)) {
+            continue;
+        }
+        VtValue gathered =
+            VtVisitValue(entry.second, _GatherVisitor{instanceIndices});
+        if (!gathered.IsEmpty()) {
+            result.primvars[entry.first] = std::move(gathered);
+        }
+    }
+
     if (GetParentId().IsEmpty()) {
-        return transforms;
+        return result;
     }
 
     // Nested instancing: this whole instancer is itself instanced by its
-    // parent, so multiply every local transform by every parent transform,
+    // parent, so combine every local instance with every parent instance,
     // flattening outer-major.
     HdInstancer *parentInstancer =
         GetDelegate()->GetRenderIndex().GetInstancer(GetParentId());
     if (!TF_VERIFY(parentInstancer)) {
-        return transforms;
+        return result;
     }
 
-    const VtMatrix4dArray parentTransforms =
+    const InstanceData parent =
         static_cast<HydraPassthroughInstancer*>(parentInstancer)->
-            ComputeInstanceTransforms(GetId());
+            ComputeInstanceData(GetId());
 
-    VtMatrix4dArray final(parentTransforms.size() * transforms.size());
-    for (size_t i = 0; i < parentTransforms.size(); ++i) {
-        for (size_t j = 0; j < transforms.size(); ++j) {
-            final[i * transforms.size() + j] =
-                transforms[j] * parentTransforms[i];
+    const size_t numLocal = result.transforms.size();
+    const size_t numParent = parent.transforms.size();
+
+    InstanceData flattened;
+
+    flattened.transforms = VtMatrix4dArray(numParent * numLocal);
+    flattened.instanceIndices = VtIntArray(numParent * numLocal);
+    for (size_t i = 0; i < numParent; ++i) {
+        for (size_t j = 0; j < numLocal; ++j) {
+            flattened.transforms[i * numLocal + j] =
+                result.transforms[j] * parent.transforms[i];
+            // Instance indices identify the level closest to the prototype,
+            // so the local indices just repeat for each parent instance.
+            flattened.instanceIndices[i * numLocal + j] =
+                result.instanceIndices[j];
         }
     }
-    return final;
+
+    // Local primvar values repeat for each parent instance; parent primvar
+    // values expand so each covers that parent's block of local instances.
+    // On a name collision the local (closest to the prototype) value wins.
+    for (const auto &entry : result.primvars) {
+        VtValue expanded = VtVisitValue(
+            entry.second, _ExpandVisitor{1 /* repeatEach */, numParent});
+        if (!expanded.IsEmpty()) {
+            flattened.primvars[entry.first] = std::move(expanded);
+        }
+    }
+    for (const auto &entry : parent.primvars) {
+        if (flattened.primvars.count(entry.first) > 0) {
+            continue;
+        }
+        VtValue expanded = VtVisitValue(
+            entry.second, _ExpandVisitor{numLocal, 1 /* tile */});
+        if (!expanded.IsEmpty()) {
+            flattened.primvars[entry.first] = std::move(expanded);
+        }
+    }
+
+    return flattened;
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

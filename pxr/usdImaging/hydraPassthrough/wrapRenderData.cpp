@@ -105,6 +105,12 @@ namespace {
         return HydraPassthroughValueDescriptor(VtValue(self.instanceTransforms));
     }
 
+    HydraPassthroughValueDescriptor _GetMeshInstanceIndices(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.instanceIndices));
+    }
+
     // Need this to be a function so that it can use TfPySequenceToList
     // return_value_policy.
     const std::vector<GfVec4d> &_GetClippingPlanes(
@@ -191,6 +197,28 @@ namespace {
     {
         auto it = self.primvars.find(name);
         if (it != self.primvars.end()) {
+            return Primvar(name, it->second);
+        }
+        return {};
+    }
+
+    std::vector<Primvar> _GetAllInstancePrimvars(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        std::vector<Primvar> result;
+        result.reserve(self.instancePrimvars.size());
+        for (const auto &it : self.instancePrimvars) {
+            result.emplace_back(it.first, it.second);
+        }
+        return result;
+    }
+
+    std::optional<Primvar> _GetInstancePrimvar(
+        const HydraPassthroughRenderData::MeshData &self,
+        const TfToken &name)
+    {
+        auto it = self.instancePrimvars.find(name);
+        if (it != self.instancePrimvars.end()) {
             return Primvar(name, it->second);
         }
         return {};
@@ -289,6 +317,10 @@ wrapRenderData()
 
         .def_readonly("instancerId", &This::MeshData::instancerId)
         .def("GetInstanceTransforms", ::_GetMeshInstanceTransforms)
+        .def("GetInstanceIndices", ::_GetMeshInstanceIndices)
+        .def("GetAllInstancePrimvars", &_GetAllInstancePrimvars,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetInstancePrimvar", &_GetInstancePrimvar, (arg("name")))
         ;
 
     enum_<This::MaterialData::MaterialType>("MaterialType")
