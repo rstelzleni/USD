@@ -720,6 +720,13 @@ _OsdRefineComputationCPU::Resolve()
 
     if (!_TryLock()) return false;
 
+    // An errored source (e.g. an ext computation whose invocation produced
+    // no outputs) has a null data pointer; propagate rather than read it.
+    if (_source && _source->HasResolveError()) {
+        _SetResolveError();
+        return true;
+    }
+
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
 

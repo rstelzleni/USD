@@ -147,6 +147,16 @@ VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source)
     const auto &dataSize = source->GetNumElements();
     const auto &itemSize = tupleType.count;
 
+    // A source can report a valid tuple type and element count but hold no
+    // data, e.g. one that had a resolve error. Callers should filter those
+    // out, but never read through a null pointer.
+    if (!data && dataSize > 0) {
+        TF_RUNTIME_ERROR("Null data in buffer source '%s' with %zu elements "
+                         "in CastRenderDataToCppType",
+                         source->GetName().GetText(), dataSize);
+        return VtValue();
+    }
+
     if (dataSize == 1 && itemSize > 1) {
         // In the case of an array of single elements, HdGetValueTupleType
         // will treat this as a non-array type, like a single tuple with
