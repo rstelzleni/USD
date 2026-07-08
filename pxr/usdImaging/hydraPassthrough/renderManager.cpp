@@ -1,5 +1,7 @@
 #include "renderManager.h"
 
+#include "instancer.h"
+
 #include "pxr/usdImaging/hydraPassthrough/renderDelegate.h"
 #include "pxr/usdImaging/usdImaging/stageSceneIndex.h"
 
@@ -113,6 +115,11 @@ void HdPassthroughRenderManager::Render(const UsdStageRefPtr& stage) {
 
     // Render the frame using the engine
     _engine->Execute(_renderIndex.get(), _taskControllerSceneIndex->GetRenderingTaskPaths());
+
+    // Native instance origins are not visible to the render delegate (they
+    // are not rprims), so gather them from the scene index here.
+    HydraPassthroughInstancer::PopulateInstancerOrigins(
+            _sceneIndex, GetRenderData(), _sceneDelegateId);
 }
 
 void HdPassthroughRenderManager::Cleanup()

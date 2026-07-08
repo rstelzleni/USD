@@ -32,6 +32,7 @@ pxr_library(hydraPassthrough
         extCompPrimvarBufferSource
         fvarTopologyTracker
         hdTypeUtil
+        instancer
         material
         materialParam
         mesh
@@ -84,6 +85,7 @@ pxr_build_test(testHydraPassthroughValueDescriptor
 
 pxr_test_scripts(
     testenv/testHydraPassthroughCameraData.py
+    testenv/testHydraPassthroughInstancing.py
     testenv/testHydraPassthroughMeshData.py
     testenv/testHydraPassthroughMaterialData.py
     testenv/testHydraPassthroughSubdivision.py
@@ -114,5 +116,11 @@ pxr_register_test(testHydraPassthroughValueDescriptor
 pxr_register_test(testHydraPassthroughSubdivision
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughSubdivision"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testHydraPassthroughInstancing
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughInstancing"
     EXPECTED_RETURN_CODE 0
 )

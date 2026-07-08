@@ -99,6 +99,18 @@ namespace {
         return HydraPassthroughValueDescriptor(self.edgeIndices);
     }
 
+    HydraPassthroughValueDescriptor _GetMeshInstanceTransforms(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.instanceTransforms));
+    }
+
+    HydraPassthroughValueDescriptor _GetMeshInstanceIndices(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.instanceIndices));
+    }
+
     // Need this to be a function so that it can use TfPySequenceToList
     // return_value_policy.
     const std::vector<GfVec4d> &_GetClippingPlanes(
@@ -190,10 +202,38 @@ namespace {
         return {};
     }
 
+    std::vector<Primvar> _GetAllInstancePrimvars(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        std::vector<Primvar> result;
+        result.reserve(self.instancePrimvars.size());
+        for (const auto &it : self.instancePrimvars) {
+            result.emplace_back(it.first, it.second);
+        }
+        return result;
+    }
+
+    std::optional<Primvar> _GetInstancePrimvar(
+        const HydraPassthroughRenderData::MeshData &self,
+        const TfToken &name)
+    {
+        auto it = self.instancePrimvars.find(name);
+        if (it != self.instancePrimvars.end()) {
+            return Primvar(name, it->second);
+        }
+        return {};
+    }
+
     const std::vector<HydraPassthroughRenderData::FaceVaryingChannel> &_GetFaceVaryingChannels(
         const HydraPassthroughRenderData::MeshData &self)
     {
         return self.faceVaryingChannels;
+    }
+
+    const std::map<int, SdfPath> &_GetInstanceOriginPaths(
+        const HydraPassthroughRenderData::SceneGraphInstancerData &self)
+    {
+        return self.instanceOriginPaths;
     }
 }
 
@@ -219,6 +259,13 @@ wrapRenderData()
              return_internal_reference())
         .def("GetMaterialCount", &This::GetMaterialCount)
         .def("GetMaterialByIndex", &This::GetMaterialByIndex,
+             (arg("index")),
+             return_internal_reference())
+        .def("GetSceneGraphInstancer", &This::GetSceneGraphInstancer,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetSceneGraphInstancerCount", &This::GetSceneGraphInstancerCount)
+        .def("GetSceneGraphInstancerByIndex", &This::GetSceneGraphInstancerByIndex,
              (arg("index")),
              return_internal_reference())
 
@@ -248,6 +295,21 @@ wrapRenderData()
         .def("GetMaterialByIndex", &This::RenderData::GetMaterialByIndex,
              (arg("index")),
              return_internal_reference())
+        .def("GetSceneGraphInstancer", &This::RenderData::GetSceneGraphInstancer,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetSceneGraphInstancerCount",
+             &This::RenderData::GetSceneGraphInstancerCount)
+        .def("GetSceneGraphInstancerByIndex",
+             &This::RenderData::GetSceneGraphInstancerByIndex,
+             (arg("index")),
+             return_internal_reference())
+        ;
+
+    class_<This::SceneGraphInstancerData>("SceneGraphInstancerData", no_init)
+        .def_readonly("id", &This::SceneGraphInstancerData::id)
+        .def("GetInstanceOriginPaths", ::_GetInstanceOriginPaths,
+             return_value_policy<TfPyMapToDictionary>())
         ;
 
     class_<Primvar>("Primvar", no_init)
@@ -280,6 +342,13 @@ wrapRenderData()
         .def("GetFaceVertexIndices", ::_GetMeshFaceVertexIndices)
         .def("GetPrimitiveParams", ::_GetMeshPrimitiveParams)
         .def("GetEdgeIndices", ::_GetMeshEdgeIndices)
+
+        .def_readonly("instancerId", &This::MeshData::instancerId)
+        .def("GetInstanceTransforms", ::_GetMeshInstanceTransforms)
+        .def("GetInstanceIndices", ::_GetMeshInstanceIndices)
+        .def("GetAllInstancePrimvars", &_GetAllInstancePrimvars,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetInstancePrimvar", &_GetInstancePrimvar, (arg("name")))
         ;
 
     enum_<This::MaterialData::MaterialType>("MaterialType")

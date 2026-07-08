@@ -1,4 +1,5 @@
 #include "renderDelegate.h"
+#include "instancer.h"
 #include "material.h"
 #include "mesh.h"
 #include "renderPass.h"
@@ -157,12 +158,11 @@ void HydraPassthroughRenderDelegate::DestroyBprim(HdBprim *bPrim) {
 
 HdInstancer *HydraPassthroughRenderDelegate::CreateInstancer(HdSceneDelegate *delegate,
         SdfPath const &id) {
-    TF_CODING_ERROR("Creating Instancer not supported id=%s", id.GetText());
-    return nullptr;
+    return new HydraPassthroughInstancer(delegate, id);
 }
 
 void HydraPassthroughRenderDelegate::DestroyInstancer(HdInstancer *instancer) {
-    TF_CODING_ERROR("Destroy instancer not supported");
+    delete instancer;
 }
 
 HdRenderParam *HydraPassthroughRenderDelegate::GetRenderParam() const

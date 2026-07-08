@@ -88,7 +88,7 @@ HydraPassthroughRenderData::RenderData::GetMaterialCount() const {
     return materials.size();
 }
 
-const HydraPassthroughRenderData::MaterialData* 
+const HydraPassthroughRenderData::MaterialData*
 HydraPassthroughRenderData::RenderData::GetMaterialByIndex(size_t index) const {
     if (index >= materials.size()) {
         TF_RUNTIME_ERROR("Material index %zu out of range [0,%zu)",
@@ -97,6 +97,33 @@ HydraPassthroughRenderData::RenderData::GetMaterialByIndex(size_t index) const {
     }
 
     auto it = materials.begin();
+    std::advance(it, index);
+    return &(it->second);
+}
+
+const HydraPassthroughRenderData::SceneGraphInstancerData*
+HydraPassthroughRenderData::RenderData::GetSceneGraphInstancer(const SdfPath& id) const {
+    auto it = sceneGraphInstancers.find(id);
+    if (it != sceneGraphInstancers.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+size_t
+HydraPassthroughRenderData::RenderData::GetSceneGraphInstancerCount() const {
+    return sceneGraphInstancers.size();
+}
+
+const HydraPassthroughRenderData::SceneGraphInstancerData*
+HydraPassthroughRenderData::RenderData::GetSceneGraphInstancerByIndex(size_t index) const {
+    if (index >= sceneGraphInstancers.size()) {
+        TF_RUNTIME_ERROR("Instancer index %zu out of range [0,%zu)",
+            index, sceneGraphInstancers.size());
+        return nullptr;
+    }
+
+    auto it = sceneGraphInstancers.begin();
     std::advance(it, index);
     return &(it->second);
 }
@@ -180,13 +207,22 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
 }
 
 void
-HydraPassthroughRenderData::AddMaterial(const SdfPath& id, 
+HydraPassthroughRenderData::AddMaterial(const SdfPath& id,
                                         const MaterialData& matData) {
     const std::lock_guard<std::mutex> lock(_materialMutex);
     _renderData.materials[id] = matData;
 }
 
-static void _UpdateFaceVaryingChannels(HydraPassthroughRenderData::MeshData& meshData, const TfToken& primvarName) {
+void
+HydraPassthroughRenderData::AddSceneGraphInstancer(
+                            const SdfPath& id,
+                            const SceneGraphInstancerData& instancerData) {
+    const std::lock_guard<std::mutex> lock(_instancerMutex);
+    _renderData.sceneGraphInstancers[id] = instancerData;
+}
+
+static void _UpdateFaceVaryingChannels(HydraPassthroughRenderData::MeshData& meshData,
+                                       const TfToken& primvarName) {
     // If this is a face varying primvar, we need to add it to the appropriate
     // channel in faceVaryingChannels
 
@@ -378,6 +414,7 @@ HydraPassthroughRenderData::ExtractRenderDataCopy() const {
     const std::lock_guard<std::mutex> lock1(_meshMutex);
     const std::lock_guard<std::mutex> lock2(_cameraMutex);
     const std::lock_guard<std::mutex> lock3(_materialMutex);
+    const std::lock_guard<std::mutex> lock4(_instancerMutex);
     return _renderData;
 }
 
@@ -460,6 +497,27 @@ HydraPassthroughRenderData::GetMaterialByIndex(size_t index) const
 {
     const std::lock_guard<std::mutex> lock(_materialMutex);
     return _renderData.GetMaterialByIndex(index);
+}
+
+const HydraPassthroughRenderData::SceneGraphInstancerData*
+HydraPassthroughRenderData::GetSceneGraphInstancer(const SdfPath& id) const
+{
+    const std::lock_guard<std::mutex> lock(_instancerMutex);
+    return _renderData.GetSceneGraphInstancer(id);
+}
+
+size_t
+HydraPassthroughRenderData::GetSceneGraphInstancerCount() const
+{
+    const std::lock_guard<std::mutex> lock(_instancerMutex);
+    return _renderData.GetSceneGraphInstancerCount();
+}
+
+const HydraPassthroughRenderData::SceneGraphInstancerData*
+HydraPassthroughRenderData::GetSceneGraphInstancerByIndex(size_t index) const
+{
+    const std::lock_guard<std::mutex> lock(_instancerMutex);
+    return _renderData.GetSceneGraphInstancerByIndex(index);
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE

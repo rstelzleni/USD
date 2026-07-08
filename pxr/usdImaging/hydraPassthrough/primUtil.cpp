@@ -49,7 +49,6 @@ PopulateConstantPrimvars(
     HF_MALLOC_TAG_FUNCTION();
 
     SdfPath const& id = prim->GetId();
-    SdfPath const& instancerId = prim->GetInstancerId();
 
     HdBufferSourceSharedPtrVector sources;
 
@@ -77,42 +76,10 @@ PopulateConstantPrimvars(
                 HdTokens->transformInverse, VtValue(transform.GetInverse()),
                 doublesSupported));
 
+        // Note that instancer transforms are not handled here. They are
+        // folded into the per-instance transforms computed by
+        // HydraPassthroughInstancer::ComputeInstanceData.
         bool leftHanded = transform.IsLeftHanded();
-
-        // If this is a prototype (has instancer),
-        // also push the instancer transform separately.
-        if (!instancerId.IsEmpty()) {
-            // Gather all instancer transforms in the instancing hierarchy
-            const VtMatrix4dArray rootTransforms = 
-                prim->GetInstancerTransforms(delegate);
-            VtMatrix4dArray rootInverseTransforms(rootTransforms.size());
-            for (size_t i = 0; i < rootTransforms.size(); ++i) {
-                rootInverseTransforms[i] = rootTransforms[i].GetInverse();
-                // Flip the handedness if necessary
-                leftHanded ^= rootTransforms[i].IsLeftHanded();
-            }
-
-            sources.push_back(
-                std::make_shared<HdVtBufferSource>(
-                    HdInstancerTokens->instancerTransform,
-                    rootTransforms,
-                    rootTransforms.size(),
-                    doublesSupported));
-            sources.push_back(
-                std::make_shared<HdVtBufferSource>(
-                    HdInstancerTokens->instancerTransformInverse,
-                    rootInverseTransforms,
-                    rootInverseTransforms.size(),
-                    doublesSupported));
-
-            // This seems to just be for shader optimization purposes,
-            // we might not need it, but would need to verify that in
-            // downstream computations.
-            sources.push_back(
-                std::make_shared<HdVtBufferSource>(
-                    HdTokens->isFlipped,
-                    VtValue(int(leftHanded))));
-        }
 
         if (hasMirroredTransform) {
             *hasMirroredTransform = leftHanded;

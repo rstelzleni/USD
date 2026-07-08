@@ -19,9 +19,11 @@
 #include "pxr/base/tf/declarePtrs.h"
 #include "pxr/base/tf/hashmap.h"
 #include "pxr/base/vt/array.h"
+#include "pxr/base/vt/types.h"
 #include "pxr/base/vt/dictionary.h"
 #include "pxr/base/vt/value.h"
 
+#include <map>
 #include <mutex>
 #include <string>
 
@@ -102,10 +104,72 @@ public:
         TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
         std::vector<FaceVaryingChannel> faceVaryingChannels;
 
+        // Instancing. If instancerId is non-empty this mesh is an instancing
+        // prototype and should be drawn once per entry in instanceTransforms.
+        // The full local-to-world for instance i is, in Gf's row-vector
+        // convention:
+        //
+        //   world = transform * instanceTransforms[i]
+        //
+        // i.e. the mesh's own transform applies first, then the instance
+        // transform. Column-vector clients (e.g. threejs) use the transposed
+        // matrices multiplied in the reverse order.
+        //
+        // An instanced mesh whose instances are all hidden (or masked out)
+        // has a non-empty instancerId and an empty instanceTransforms, and
+        // should not be drawn. Nested instancing arrives here already
+        // flattened, ordered outer-major.
+        SdfPath instancerId;
+        VtMatrix4dArray instanceTransforms;
+
+        // For each entry in instanceTransforms, the instance index at the
+        // instancer level closest to the prototype. For a point instancer
+        // prototype this is the index into the authored point arrays
+        // (masked/invisible instances are omitted without renumbering), so
+        // a drawn instance can be mapped back to a specific point for
+        // picking or debugging. With nested instancers only the innermost
+        // level is identified.
+        VtIntArray instanceIndices;
+
+        // Instance-interpolation primvars (e.g. a displayColor authored on
+        // a point instancer), with values gathered per drawn instance so
+        // each array is parallel to instanceTransforms. The
+        // transform-building primvars (hydra:instanceTranslations/
+        // Rotations/Scales/Transforms) are excluded because they are
+        // already baked into instanceTransforms. When nested instancers
+        // author the same primvar, the level closest to the prototype wins.
+        TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> instancePrimvars;
+
         // Not wrapped to python, valid only so long as the rprim mesh exists
         //
         // We need this only to populate the face varying primvar index channels
         HydraPassthroughFvarTopologyTracker *fvarTopologyTracker;
+    };
+
+    /// Data describing a scene graph instancer
+    ///
+    /// This exists to map drawn instances of native (scene graph) instancing
+    /// back to the scene prims that authored them, primarily for picking in
+    /// debug renders. Point instancers do not appear here; for those,
+    /// MeshData::instanceIndices already identifies the authored point on the
+    /// point instancer prim (the mesh's instancerId).
+    ///
+    /// Clients should check to see if a picked mesh has a
+    /// SceneGraphInstancerData object, and if so, use this to map to the
+    /// picked source prim.
+    class SceneGraphInstancerData {
+    public:
+        SdfPath id;
+
+        // For each instance index (the values reported in the prototype
+        // meshes' instanceIndices), the stage path of the original
+        // instanceable prim that was aggregated into that instance. So for
+        // drawn instance k of a prototype mesh m:
+        //
+        //   instanceOriginPaths.at(m.instanceIndices[k])
+        //
+        // is the scene prim that instance came from.
+        std::map<int, SdfPath> instanceOriginPaths;
     };
 
     class MaterialData {
@@ -183,6 +247,7 @@ public:
         TfHashMap<SdfPath, MeshData, TfHash> meshes;
         TfHashMap<SdfPath, CameraData, TfHash> cameras;
         TfHashMap<SdfPath, MaterialData, TfHash> materials;
+        TfHashMap<SdfPath, SceneGraphInstancerData, TfHash> sceneGraphInstancers;
 
         const MeshData* GetMesh(const SdfPath& id) const;
         size_t GetMeshCount() const;
@@ -193,6 +258,9 @@ public:
         const MaterialData* GetMaterial(const SdfPath& id) const;
         size_t GetMaterialCount() const;
         const MaterialData* GetMaterialByIndex(size_t index) const;
+        const SceneGraphInstancerData* GetSceneGraphInstancer(const SdfPath& id) const;
+        size_t GetSceneGraphInstancerCount() const;
+        const SceneGraphInstancerData* GetSceneGraphInstancerByIndex(size_t index) const;
     };
 
     static HydraPassthroughRenderDataRefPtr New() {
@@ -208,6 +276,9 @@ public:
 
     void AddMaterial(const SdfPath& id,
                      const MaterialData& materialData);
+
+    void AddSceneGraphInstancer(const SdfPath& id,
+                                const SceneGraphInstancerData& instancerData);
 
     /// Copy a potentially computed primvar source value into the render data.
     void CopyPrimvarBufferSource(
@@ -266,6 +337,9 @@ public:
     const MaterialData* GetMaterial(const SdfPath& id) const;
     size_t GetMaterialCount() const;
     const MaterialData* GetMaterialByIndex(size_t index) const;
+    const SceneGraphInstancerData* GetSceneGraphInstancer(const SdfPath& id) const;
+    size_t GetSceneGraphInstancerCount() const;
+    const SceneGraphInstancerData* GetSceneGraphInstancerByIndex(size_t index) const;
     // End duplicate api
 
 private:
@@ -278,6 +352,7 @@ private:
     mutable std::mutex _meshMutex;
     mutable std::mutex _cameraMutex;
     mutable std::mutex _materialMutex;
+    mutable std::mutex _instancerMutex;
 
     // The actual contained data.
     RenderData _renderData;
