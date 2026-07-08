@@ -88,6 +88,7 @@ pxr_test_scripts(
     testenv/testHydraPassthroughInstancing.py
     testenv/testHydraPassthroughMeshData.py
     testenv/testHydraPassthroughMaterialData.py
+    testenv/testHydraPassthroughSkinning.py
     testenv/testHydraPassthroughSubdivision.py
 )
 
@@ -111,6 +112,12 @@ pxr_register_test(testHydraPassthroughMaterialData
 
 pxr_register_test(testHydraPassthroughValueDescriptor
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughValueDescriptor"
+)
+
+pxr_register_test(testHydraPassthroughSkinning
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughSkinning"
+    EXPECTED_RETURN_CODE 0
 )
 
 pxr_register_test(testHydraPassthroughSubdivision

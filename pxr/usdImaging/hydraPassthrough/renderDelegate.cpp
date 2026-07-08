@@ -8,6 +8,7 @@
 
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/imaging/hd/camera.h"
+#include "pxr/imaging/hd/extComputation.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -18,6 +19,7 @@ const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_RPRIM_TYPES = {
 const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_SPRIM_TYPES = {
     HdPrimTypeTokens->camera,
     HdPrimTypeTokens->material,
+    HdPrimTypeTokens->extComputation,
 };
 
 const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_BPRIM_TYPES = {};
@@ -109,6 +111,11 @@ HdSprim *HydraPassthroughRenderDelegate::CreateSprim(TfToken const &typeId,
     else if (typeId == HdPrimTypeTokens->material) {
         return new HydraPassthroughMaterial(sprimId);
     }
+    else if (typeId == HdPrimTypeTokens->extComputation) {
+        // The stock HdExtComputation syncs all the computation metadata we
+        // need; the CPU evaluation happens in HydraPassthroughExtCompCpuComputation.
+        return new HdExtComputation(sprimId);
+    }
 
     // Should be unreachable
     TF_CODING_ERROR("Unknown Sprim type=%s id=%s", typeId.GetText(),
@@ -122,6 +129,9 @@ HdSprim *HydraPassthroughRenderDelegate::CreateFallbackSprim(TfToken const &type
     }
     else if (typeId == HdPrimTypeTokens->material) {
         return new HydraPassthroughMaterial(SdfPath::EmptyPath());
+    }
+    else if (typeId == HdPrimTypeTokens->extComputation) {
+        return new HdExtComputation(SdfPath::EmptyPath());
     }
 
     // Should be unreachable

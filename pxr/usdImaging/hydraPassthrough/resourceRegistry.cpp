@@ -230,6 +230,17 @@ HydraPassthroughResourceRegistry::_Commit()
 
             // Now extract the computed data
             for (HdBufferSourceSharedPtr const& src : pendingSource.sources) {
+                // A source that failed to resolve (e.g. an ext computation
+                // with no CPU callback) has no data to publish; its data
+                // pointer may be null even though its declared tuple type
+                // and element count look valid.
+                if (src->HasResolveError()) {
+                    TF_WARN("Skipping unresolved buffer source '%s' on <%s>",
+                            src->GetName().GetText(),
+                            pendingSource.id.GetText());
+                    continue;
+                }
+
                 _renderData->CopyPrimvarBufferSource(
                         pendingSource.id,
                         src,

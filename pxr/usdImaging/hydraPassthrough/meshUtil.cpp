@@ -633,9 +633,12 @@ PopulateVertexAndVaryingPrimvars(
                 (int)computations.size());
     }
 
+    // Computation sources (the CPU ext computations and their scene inputs)
+    // only need to be resolved so the primvar sources that read their outputs
+    // can complete; they hold no primvar data to copy into the render data.
     if (!separateComputationSources.empty()) {
         for (auto const& src : separateComputationSources) {
-            resourceRegistry->AddPrimvarSource(id, src, HdInterpolationVertex);
+            resourceRegistry->AddGenericSource(id, src);
         }
     }
 }

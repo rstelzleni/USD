@@ -54,6 +54,14 @@ HydraPassthroughFlatNormalsComputationCPU::Resolve()
     if (!_points->IsResolved()) { return false; }
     if (!_TryLock()) { return false; }
 
+    // An errored points source (e.g. a skinning ext computation whose
+    // invocation produced no outputs) has a null data pointer; propagate
+    // rather than read it.
+    if (_points->HasResolveError()) {
+        _SetResolveError();
+        return true;
+    }
+
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();
 
@@ -143,6 +151,14 @@ HydraPassthroughSmoothNormalsComputationCPU::Resolve()
     }
     if (!_points->IsResolved()) return false;
     if (!_TryLock()) return false;
+
+    // An errored points source (e.g. a skinning ext computation whose
+    // invocation produced no outputs) has a null data pointer; propagate
+    // rather than read it.
+    if (_points->HasResolveError()) {
+        _SetResolveError();
+        return true;
+    }
 
     HD_TRACE_FUNCTION();
     HF_MALLOC_TAG_FUNCTION();

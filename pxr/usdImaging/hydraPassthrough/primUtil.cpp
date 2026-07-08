@@ -10,6 +10,9 @@
 
 #include "pxr/base/gf/matrix2d.h"
 #include "pxr/base/gf/matrix2f.h"
+#include "pxr/base/tf/stringUtils.h"
+
+#include <algorithm>
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -17,11 +20,15 @@ namespace HydraPassthroughPrimUtil
 {
 
 
-// This function does almost nothing. Keeping it because HdSt uses it to filter
-// primvars based on what's required to render. If we decide to do that, we can
-// flesh this function out to match the HdSt/primUtils.cpp version.
-// In particular, see _IsEnabledPrimvarFiltering, which requires the HdSt draw
-// item's knowledge of its shader network.
+// Unlike HdSt, we don't filter primvars down to what the shader network
+// requires (see _IsEnabledPrimvarFiltering in HdSt/primUtils.cpp) -- the
+// client gets everything. The exception is UsdSkel binding primvars
+// (skel:jointIndices, skel:jointWeights, skel:geomBindTransform, ...):
+// they are inputs to the skinning ext computations, which have already
+// been applied to the points by the time primvars are packaged, so
+// clients have no use for them. They also can't be represented
+// faithfully here; the legacy primvar descriptor drops elementSize, so
+// the per-influence arrays look like malformed vertex primvars.
 HdPrimvarDescriptorVector
 GetPrimvarDescriptors(
     HdRprim const * prim,
@@ -30,6 +37,13 @@ GetPrimvarDescriptors(
 {
     HdPrimvarDescriptorVector primvars =
         prim->GetPrimvarDescriptors(delegate, interpolation);
+
+    primvars.erase(
+        std::remove_if(primvars.begin(), primvars.end(),
+            [](HdPrimvarDescriptor const &pv) {
+                return TfStringStartsWith(pv.name.GetString(), "skel:");
+            }),
+        primvars.end());
 
     return primvars;
 }

@@ -159,6 +159,13 @@ HydraPassthroughQuadrangulateComputation::Resolve()
 
     if (!_TryLock()) return false;
 
+    // An errored source (e.g. an ext computation whose invocation produced
+    // no outputs) has a null data pointer; propagate rather than read it.
+    if (_source->HasResolveError()) {
+        _SetResolveError();
+        return true;
+    }
+
     HD_TRACE_FUNCTION();
 
     HD_PERF_COUNTER_INCR(HdPerfTokens->quadrangulateCPU);
@@ -247,6 +254,11 @@ HydraPassthroughQuadrangulateFaceVaryingComputation::Resolve()
     if (!_source->IsResolved()) return false;
 
     if (!_TryLock()) return false;
+
+    if (_source->HasResolveError()) {
+        _SetResolveError();
+        return true;
+    }
 
     HD_TRACE_FUNCTION();
     HD_PERF_COUNTER_INCR(HdPerfTokens->quadrangulateFaceVarying);
