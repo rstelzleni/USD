@@ -249,10 +249,11 @@ HydraPassthroughMesh::_PopulateMeshValues(HdSceneDelegate* sceneDelegate,
     if (HdChangeTracker::IsCullStyleDirty(*dirtyBits, id)) {
         _cullStyle = GetCullStyle(sceneDelegate);
     }
-    if (HdChangeTracker::IsDoubleSidedDirty(*dirtyBits, id)) {
-        _doubleSided = IsDoubleSided(sceneDelegate);
-    }
     */
+
+    if (HdChangeTracker::IsDoubleSidedDirty(*dirtyBits, id)) {
+        _meshData.doubleSided = IsDoubleSided(sceneDelegate);
+    }
 
     // It seems like you should only clear the "Scene" dirty bits because
     // there are other dirty bits we shouldn't process in Sync.

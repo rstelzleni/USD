@@ -329,6 +329,7 @@ wrapRenderData()
         .def_readonly("id", &This::MeshData::id)
         .def_readonly("materialId", &This::MeshData::materialId)
         .def_readonly("visible", &This::MeshData::visible)
+        .def_readonly("doubleSided", &This::MeshData::doubleSided)
         .def_readonly("transform", &This::MeshData::transform)
         .def_readonly("faceVaryingChannels", &This::MeshData::faceVaryingChannels)
 

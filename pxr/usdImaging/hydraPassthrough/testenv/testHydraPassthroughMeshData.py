@@ -59,6 +59,8 @@ class TestMeshData(unittest.TestCase):
         # Make sure all the getters work and translate to python
         x = mesh0.visible
         self.assertEqual(x, True)
+        x = mesh0.doubleSided
+        self.assertEqual(x, False)
         x = mesh0.transform
         self.assertEqual(x, Gf.Matrix4d(1))
         x = mesh0.GetPoints()
@@ -396,6 +398,26 @@ class TestMeshData(unittest.TestCase):
         self.assertEqual(st_welded.interpolation, UsdGeom.Tokens.vertex)
         self.assertEqual(list(st_welded.data.GetValue()),
                          [Gf.Vec2f(*compact_uvs[i]) for i in range(6)])
+
+    def test_DoubleSidedMeshes(self):
+        # Test that double-sided meshes are correctly reported in the render data.
+        stage = Usd.Stage.CreateInMemory()
+        mesh_prim = UsdGeom.Mesh.Define(stage, '/DoubleSidedMesh')
+        mesh_prim.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+        mesh_prim.CreateDoubleSidedAttr(True)
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            data_copy = m.GetRenderData().ExtractRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mesh = data_copy.GetMesh(Sdf.Path(prefix.AppendPath('DoubleSidedMesh')))
+        self.assertIsNotNone(mesh)
+        self.assertTrue(mesh.doubleSided)
 
 
 if __name__ == "__main__":
