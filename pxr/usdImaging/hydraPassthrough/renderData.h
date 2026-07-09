@@ -94,6 +94,7 @@ public:
         SdfPath id;
         SdfPath materialId;
         bool visible{true};
+        bool doubleSided{false};
         GfMatrix4d transform;
         GfMatrix4d transformInverse;
         VtValue points;
