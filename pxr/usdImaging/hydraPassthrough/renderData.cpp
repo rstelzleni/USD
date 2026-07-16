@@ -180,7 +180,6 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
     camData.lensDistortionAsym = camera->GetLensDistortionAsym();
     camData.lensDistortionScale = camera->GetLensDistortionScale();
     camData.lensDistortionIor = camera->GetLensDistortionIor();
-    camData.linearExposureScale = camera->GetLinearExposureScale();
 
     switch (camera->GetWindowPolicy()) {
         case CameraUtilMatchVertically:

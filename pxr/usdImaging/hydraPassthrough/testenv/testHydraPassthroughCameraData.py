@@ -94,5 +94,26 @@ class TestCameraData(unittest.TestCase):
 
         m.Cleanup()
 
+    def test_CameraUnderRenderTaskScope(self):
+        # Scene cameras are identified by the scene path prefix, so a
+        # camera under a prim that happens to be named RenderTask must
+        # still come through (it used to be dropped by a substring match
+        # meant for the internal render task camera).
+        stage = Usd.Stage.CreateInMemory()
+        UsdGeom.Camera.Define(stage, '/RenderTask/Camera')
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        m.Render(stage)
+
+        md = m.GetRenderData()
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+
+        self.assertEqual(md.GetCameraCount(), 1)
+        cam = md.GetCameraByIndex(0)
+        self.assertEqual(cam.id,
+                         Sdf.Path(prefix.AppendPath('RenderTask/Camera')))
+
+        m.Cleanup()
+
 if __name__ == "__main__":
     unittest.main()

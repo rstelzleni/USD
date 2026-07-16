@@ -12,6 +12,9 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+TF_DEFINE_PUBLIC_TOKENS(HydraPassthroughRenderSettingsTokens,
+                        HYDRA_PASSTHROUGH_RENDER_SETTINGS_TOKENS);
+
 const TfTokenVector HydraPassthroughRenderDelegate::SUPPORTED_RPRIM_TYPES = {
     HdPrimTypeTokens->mesh,
 };
@@ -68,10 +71,15 @@ void HydraPassthroughRenderDelegate::CommitResources(HdChangeTracker *tracker) {
     // Commit resources, which causes the computations to be run.
     _resourceRegistry->Commit();
 
+    // Scene prims are inserted under the scene path prefix, while prims
+    // created internally (e.g. the task controller's free camera) are
+    // not, so anything outside the prefix is excluded from the output.
+    const SdfPath scenePrefix = GetRenderSetting<SdfPath>(
+        HydraPassthroughRenderSettingsTokens->scenePathPrefix, SdfPath());
+
     for (const auto& it : _cameraMap) {
         HdCamera *cam = it.second;
-        // Don't include the internal camera created by our render task.
-        if (cam->GetId().GetString().find("/RenderTask/") != std::string::npos) {
+        if (!scenePrefix.IsEmpty() && !cam->GetId().HasPrefix(scenePrefix)) {
             continue;
         }
         _renderData->AddCamera(cam);
