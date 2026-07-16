@@ -208,7 +208,6 @@ void
 _GatherFaceVaryingTopologies(
         HdRprim const *rprim,
         HdSceneDelegate *sceneDelegate,
-        int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
         const SdfPath &id,
         HydraPassthroughMeshTopology *topology,
@@ -319,13 +318,14 @@ void PopulateMeshTopology(
         std::move(HydraPassthroughMeshTopology(meshTopology, refineLevel, refineMode,
             HydraPassthroughMeshTopology::QuadsTriangulated));
     
-    // HdSt creates draw items for geom subsets here
+    // HdSt creates draw items for geom subsets here. We never create
+    // subset draw items; geom subsets are exported as draw groups over
+    // the shared index buffer instead (see HydraPassthroughMesh sync).
 
     if (refineLevel > 0) {
         finalTopology->SetSubdivTags(sceneDelegate->GetSubdivTags(id));
     }
 
-    const int geomSubsetDescIndex = 0; // temp, replace with real subset once supported
     TfToken fvarLinearInterpRule =
         finalTopology->GetSubdivTags().GetFaceVaryingInterpolationRule();
 
@@ -338,8 +338,8 @@ void PopulateMeshTopology(
         updatePrimvars) {
 
         _GatherFaceVaryingTopologies(
-            rprim, sceneDelegate, geomSubsetDescIndex, 
-                dirtyBits, id, finalTopology, fvarTopologyTracker);
+            rprim, sceneDelegate, dirtyBits, id, finalTopology,
+            fvarTopologyTracker);
         finalTopology->SetFvarTopologies(
             fvarTopologyTracker->GetFvarTopologies());
     }
@@ -355,7 +355,6 @@ PopulateVertexAndVaryingPrimvars(
         HydraPassthroughVertexAdjacencyBuilder *vertexAdjacencyBuilder,
         const HdMeshReprDesc &desc,
         HdDrawItem *drawItem,
-        int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
         bool requireSmoothNormals)
 {
