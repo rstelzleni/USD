@@ -230,6 +230,24 @@ namespace {
         return self.faceVaryingChannels;
     }
 
+    HydraPassthroughValueDescriptor _GetGeomSubsetFaceIndices(
+        const HydraPassthroughRenderData::GeomSubsetData &self)
+    {
+        return HydraPassthroughValueDescriptor(VtValue(self.faceIndices));
+    }
+
+    const std::vector<HydraPassthroughRenderData::GeomSubsetData> &_GetGeomSubsets(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return self.geomSubsets;
+    }
+
+    const std::vector<HydraPassthroughRenderData::DrawGroup> &_GetDrawGroups(
+        const HydraPassthroughRenderData::MeshData &self)
+    {
+        return self.drawGroups;
+    }
+
     const std::map<int, SdfPath> &_GetInstanceOriginPaths(
         const HydraPassthroughRenderData::SceneGraphInstancerData &self)
     {
@@ -325,6 +343,18 @@ wrapRenderData()
         .def("GetPrimvarNames", &_GetPrimvarNames)
         ;
 
+    class_<This::GeomSubsetData>("GeomSubsetData", no_init)
+        .def_readonly("id", &This::GeomSubsetData::id)
+        .def_readonly("materialId", &This::GeomSubsetData::materialId)
+        .def("GetFaceIndices", ::_GetGeomSubsetFaceIndices)
+        ;
+
+    class_<This::DrawGroup>("DrawGroup", no_init)
+        .def_readonly("materialId", &This::DrawGroup::materialId)
+        .def_readonly("start", &This::DrawGroup::start)
+        .def_readonly("count", &This::DrawGroup::count)
+        ;
+
     class_<This::MeshData>("MeshData", no_init)
         .def_readonly("id", &This::MeshData::id)
         .def_readonly("materialId", &This::MeshData::materialId)
@@ -337,6 +367,10 @@ wrapRenderData()
              return_value_policy<TfPySequenceToList>())
         .def("GetPrimvar", &_GetPrimvar,(arg("name")))
         .def("GetFaceVaryingChannels", &_GetFaceVaryingChannels,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetGeomSubsets", &_GetGeomSubsets,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetDrawGroups", &_GetDrawGroups,
              return_value_policy<TfPySequenceToList>())
 
         .def("GetPoints", ::_GetMeshPoints)

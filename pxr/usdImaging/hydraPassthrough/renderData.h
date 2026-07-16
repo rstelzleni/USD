@@ -333,6 +333,11 @@ public:
     /// data at a point in time. It is useful for extracting python
     /// copies that will exist and be cachable even after the render
     /// manager has performed its cleanup.
+    ///
+    /// In this and the other extracted copies, meshes with geom subsets
+    /// have their primitives reordered so each subset is a contiguous
+    /// range of the index buffer, published as per-material drawGroups;
+    /// see MeshData::drawGroups. Meshes without subsets are unchanged.
     RenderData ExtractRenderDataCopy() const;
 
     /// Extract a copy of the contained RenderData with all mesh primvars

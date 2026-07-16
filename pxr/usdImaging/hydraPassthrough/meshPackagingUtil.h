@@ -9,6 +9,18 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 namespace HydraPassthroughMeshPackagingUtil
 {
+    /// Converts the mesh's geom subsets into draw groups: reorders the
+    /// fine primitives (and everything parallel to them) so each subset
+    /// occupies a contiguous range of faceVertexIndices, then populates
+    /// drawGroups with one entry per non-empty subset plus a trailing
+    /// group, bound to the mesh's own material, for faces in no subset.
+    ///
+    /// No-op for meshes without geom subsets. Run this before DeindexMesh
+    /// or WeldMesh; both preserve corner order, so the groups stay valid
+    /// across them.
+    void
+    BuildDrawGroups(HydraPassthroughRenderData::MeshData* meshData);
+
     /// Rewrites the mesh so that every non-constant primvar holds one value per
     /// corner of faceVertexIndices, in corner order, and faceVertexIndices
     /// becomes the identity. The result needs only a single (trivial) index
