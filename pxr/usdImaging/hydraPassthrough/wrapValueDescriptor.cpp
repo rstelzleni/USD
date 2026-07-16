@@ -12,6 +12,14 @@ using namespace pxr_boost::python;
 
 namespace {
 
+    // The _Convert* helpers below return object() (Python None) to signal
+    // "value is not of this type". Callers must test that with is_none(),
+    // never with the object's truthiness: a successfully converted value can
+    // be falsy in Python (0, 0.0, false, an empty array), and a truthiness
+    // test misreads it as no-match, falling through to the TfStringify
+    // fallback — which turned e.g. an authored roughness of 0.0 into the
+    // string "0" in the JSON output.
+
     template <typename T>
     list _CreatePyList(const VtArray<T>& arr, const T defaultValue = T())
     {
@@ -86,16 +94,16 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertVec2Arrays(const VtValue& value) {
-        if (object result = _ConvertVec2Array<GfVec2h>(value)) {
+        if (object result = _ConvertVec2Array<GfVec2h>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec2Array<GfVec2f>(value)) {
+        if (object result = _ConvertVec2Array<GfVec2f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec2Array<GfVec2d>(value)) {
+        if (object result = _ConvertVec2Array<GfVec2d>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec2Array<GfVec2i>(value)) {
+        if (object result = _ConvertVec2Array<GfVec2i>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -138,16 +146,16 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertVec3Arrays(const VtValue& value) {
-        if (object result = _ConvertVec3Array<GfVec3h>(value)) {
+        if (object result = _ConvertVec3Array<GfVec3h>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec3Array<GfVec3f>(value)) {
+        if (object result = _ConvertVec3Array<GfVec3f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec3Array<GfVec3d>(value)) {
+        if (object result = _ConvertVec3Array<GfVec3d>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec3Array<GfVec3i>(value)) {
+        if (object result = _ConvertVec3Array<GfVec3i>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -190,16 +198,16 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertVec4Arrays(const VtValue& value) {
-        if (object result = _ConvertVec4Array<GfVec4h>(value)) {
+        if (object result = _ConvertVec4Array<GfVec4h>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec4Array<GfVec4f>(value)) {
+        if (object result = _ConvertVec4Array<GfVec4f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec4Array<GfVec4d>(value)) {
+        if (object result = _ConvertVec4Array<GfVec4d>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertVec4Array<GfVec4i>(value)) {
+        if (object result = _ConvertVec4Array<GfVec4i>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -256,22 +264,22 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertMatrixArrays(const VtValue& value) {
-        if (object result = _ConvertMatrixArray<GfMatrix2f>(value)) {
+        if (object result = _ConvertMatrixArray<GfMatrix2f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertMatrixArray<GfMatrix3f>(value)) {
+        if (object result = _ConvertMatrixArray<GfMatrix3f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertMatrixArray<GfMatrix4f>(value)) {
+        if (object result = _ConvertMatrixArray<GfMatrix4f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertMatrixArray<GfMatrix2d>(value)) {
+        if (object result = _ConvertMatrixArray<GfMatrix2d>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertMatrixArray<GfMatrix3d>(value)) {
+        if (object result = _ConvertMatrixArray<GfMatrix3d>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertMatrixArray<GfMatrix4d>(value)) {
+        if (object result = _ConvertMatrixArray<GfMatrix4d>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -344,16 +352,16 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertRangeArrays(const VtValue& value) {
-        if (object result = _ConvertRange2Array<GfRange2f>(value)) {
+        if (object result = _ConvertRange2Array<GfRange2f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertRange2Array<GfRange2d>(value)) {
+        if (object result = _ConvertRange2Array<GfRange2d>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertRange3Array<GfRange3f>(value)) {
+        if (object result = _ConvertRange3Array<GfRange3f>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertRange3Array<GfRange3d>(value)) {
+        if (object result = _ConvertRange3Array<GfRange3d>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -396,13 +404,13 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertQuatArrays(const VtValue& value) {
-        if (object result = _ConvertQuatArray<GfQuath>(value)) {
+        if (object result = _ConvertQuatArray<GfQuath>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertQuatArray<GfQuatf>(value)) {
+        if (object result = _ConvertQuatArray<GfQuatf>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertQuatArray<GfQuatd>(value)) {
+        if (object result = _ConvertQuatArray<GfQuatd>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -453,13 +461,13 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
     }
 
     object _ConvertDualQuatArrays(const VtValue& value) {
-        if (object result = _ConvertDualQuatArray<GfDualQuath>(value)) {
+        if (object result = _ConvertDualQuatArray<GfDualQuath>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertDualQuatArray<GfDualQuatf>(value)) {
+        if (object result = _ConvertDualQuatArray<GfDualQuatf>(value); !result.is_none()) {
             return result;
         }
-        if (object result = _ConvertDualQuatArray<GfDualQuatd>(value)) {
+        if (object result = _ConvertDualQuatArray<GfDualQuatd>(value); !result.is_none()) {
             return result;
         }
         return object(); // Indicate no match
@@ -503,28 +511,28 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
         //
 
         if (desc.IsArray()) {
-            if (const object &vec2Array = _ConvertVec2Arrays(value)) {
+            if (const object &vec2Array = _ConvertVec2Arrays(value); !vec2Array.is_none()) {
                 return vec2Array;
             }
-            if (const object &vec3Array = _ConvertVec3Arrays(value)) {
+            if (const object &vec3Array = _ConvertVec3Arrays(value); !vec3Array.is_none()) {
                 return vec3Array;
             }
-            if (const object &vec4Array = _ConvertVec4Arrays(value)) {
+            if (const object &vec4Array = _ConvertVec4Arrays(value); !vec4Array.is_none()) {
                 return vec4Array;
             }
-            if (const object &matrixArray = _ConvertMatrixArrays(value)) {
+            if (const object &matrixArray = _ConvertMatrixArrays(value); !matrixArray.is_none()) {
                 return matrixArray;
             }
-            if (const object &rangeArray = _ConvertRangeArrays(value)) {
+            if (const object &rangeArray = _ConvertRangeArrays(value); !rangeArray.is_none()) {
                 return rangeArray;
             }
-            if (const object &quatArray = _ConvertQuatArrays(value)) {
+            if (const object &quatArray = _ConvertQuatArrays(value); !quatArray.is_none()) {
                 return quatArray;
             }
-            if (const object &dualQuatArray = _ConvertDualQuatArrays(value)) {
+            if (const object &dualQuatArray = _ConvertDualQuatArrays(value); !dualQuatArray.is_none()) {
                 return dualQuatArray;
             }
-            if (const object &podArray = _ConvertPODArrays(value)) {
+            if (const object &podArray = _ConvertPODArrays(value); !podArray.is_none()) {
                 return podArray;
             }
             if (value.IsHolding<VtArray<std::string>>()) {
@@ -543,31 +551,31 @@ TF_PP_SEQ_FOR_EACH(PROCESS_ENTRY, ~, VT_INTEGRAL_BUILTIN_VALUE_TYPES)
         }
         // Handle single value types
         else {
-            if (const object &vec2 = _ConvertVec2s(value)) {
+            if (const object &vec2 = _ConvertVec2s(value); !vec2.is_none()) {
                 return vec2;
             }
-            if (const object &vec3 = _ConvertVec3s(value)) {
+            if (const object &vec3 = _ConvertVec3s(value); !vec3.is_none()) {
                 return vec3;
             }
-            if (const object &vec4 = _ConvertVec4s(value)) {
+            if (const object &vec4 = _ConvertVec4s(value); !vec4.is_none()) {
                 return vec4;
             }
-            if (const object &matrix = _ConvertMatrices(value)) {
+            if (const object &matrix = _ConvertMatrices(value); !matrix.is_none()) {
                 return matrix;
             }
-            if (const object &range2 = _ConvertRange2s(value)) {
+            if (const object &range2 = _ConvertRange2s(value); !range2.is_none()) {
                 return range2;
             }
-            if (const object &range3 = _ConvertRange3s(value)) {
+            if (const object &range3 = _ConvertRange3s(value); !range3.is_none()) {
                 return range3;
             }
-            if (const object &quat = _ConvertQuats(value)) {
+            if (const object &quat = _ConvertQuats(value); !quat.is_none()) {
                 return quat;
             }
-            if (const object &dualQuat = _ConvertDualQuats(value)) {
+            if (const object &dualQuat = _ConvertDualQuats(value); !dualQuat.is_none()) {
                 return dualQuat;
             }
-            if (const object &pod = _ConvertPOD(value)) {
+            if (const object &pod = _ConvertPOD(value); !pod.is_none()) {
                 return pod;
             }
             if (value.IsHolding<std::string>()) {
