@@ -248,9 +248,13 @@ BuildDrawGroups(HydraPassthroughRenderData::MeshData* meshData)
     const size_t numPrims = primFaceIndices.size();
     const size_t cornersPerPrim = numCorners / numPrims;
 
-    // Assign each authored face to the subset that lists it (sanitizing
-    // already removed duplicates between subsets). Faces in no subset form
-    // the trailing remainder group, drawn with the mesh's own material.
+    // Assign each authored face to the subset that lists it. Sanitizing
+    // warns about faces repeated between subsets but keeps them, so
+    // collisions are possible here: the first subset listing a face wins
+    // (emplace keeps the existing entry). We don't warn again; sync
+    // already did, and extraction can run many times per render. Faces in
+    // no subset form the trailing remainder group, drawn with the mesh's
+    // own material.
     const size_t numSubsets = meshData->geomSubsets.size();
     const size_t remainderGroup = numSubsets;
     const size_t numGroups = numSubsets + 1;
@@ -328,11 +332,10 @@ BuildDrawGroups(HydraPassthroughRenderData::MeshData* meshData)
         // Refined face-varying channels hold one index entry per patch.
         // Their compact value buffers are addressed through these indices
         // and stay put.
-        std::vector<TfToken> channelPrimvars;
+        TfToken::HashSet channelPrimvars;
         for (HydraPassthroughRenderData::FaceVaryingChannel& channel :
                 meshData->faceVaryingChannels) {
-            channelPrimvars.insert(channelPrimvars.end(),
-                                   channel.primvars.begin(),
+            channelPrimvars.insert(channel.primvars.begin(),
                                    channel.primvars.end());
             if (channel.indices.GetArraySize() == numPrims) {
                 channel.indices = _GatherElements(channel.indices, primOrder);
@@ -350,8 +353,7 @@ BuildDrawGroups(HydraPassthroughRenderData::MeshData* meshData)
             HydraPassthroughRenderData::PrimvarData& primvar =
                 primvarEntry.second;
             if (primvar.interpolation != HdInterpolationFaceVarying ||
-                std::find(channelPrimvars.begin(), channelPrimvars.end(),
-                          primvarEntry.first) != channelPrimvars.end()) {
+                channelPrimvars.count(primvarEntry.first)) {
                 continue;
             }
             if (primvar.data.GetArraySize() != numCorners) {

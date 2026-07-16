@@ -85,6 +85,7 @@ pxr_build_test(testHydraPassthroughValueDescriptor
 
 pxr_test_scripts(
     testenv/testHydraPassthroughCameraData.py
+    testenv/testHydraPassthroughGeomSubsets.py
     testenv/testHydraPassthroughInstancing.py
     testenv/testHydraPassthroughMeshData.py
     testenv/testHydraPassthroughMaterialData.py
@@ -123,6 +124,12 @@ pxr_register_test(testHydraPassthroughSkinning
 pxr_register_test(testHydraPassthroughSubdivision
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughSubdivision"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testHydraPassthroughGeomSubsets
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughGeomSubsets"
     EXPECTED_RETURN_CODE 0
 )
 

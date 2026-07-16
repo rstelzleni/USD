@@ -128,7 +128,13 @@ public:
         GfMatrix4d transformInverse;
         VtValue points;
         VtValue normals;
-        VtIntArray faceVertexIndices; // triangles only
+        // Triangulated indices, three per triangle, always. Note though
+        // that primitiveParam and edgeIndices hold one entry per fine
+        // *primitive*, which is not always one triangle: quads (from
+        // quadrangulation or catmark/bilinear refinement) are split into
+        // two consecutive triangles here (HdMeshTriQuadBuilder order), so
+        // each of their entries covers six indices instead of three.
+        VtIntArray faceVertexIndices;
         VtValue primitiveParam;
         VtValue edgeIndices;
         TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
