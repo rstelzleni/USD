@@ -382,11 +382,28 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         resourceRegistry->AddGenericSource(id, quadInfoBuilder);
     }
 
-    const HdGeomSubsets &geomSubsets = _topology.GetGeomSubsets();
+    // Record geom subsets for the output data. Unlike HdSt, which builds a
+    // separate draw item and index buffer per subset, we build the single
+    // index buffer below regardless of subsets. Our primitiveParam always
+    // decodes to the authored coarse face (for the triangulated,
+    // quadrangulated, and refined paths alike), so packaging can map fine
+    // primitives back to subsets when building per-material draw groups.
+    //
+    // Subset changes, including material rebinds on the subset prim, reach
+    // us as DirtyTopology (see HdSceneIndexAdapterSceneDelegate, which marks
+    // the parent rprim's topology dirty for any dirtied geomSubset prim), so
+    // refreshing here keeps these current. The points geom style draws the
+    // coarse points and ignores subsets, as HdSt does.
+    _meshData.geomSubsets.clear();
+    if (desc.geomStyle != HdMeshGeomStylePoints) {
+        for (const HdGeomSubset &geomSubset : _topology.GetGeomSubsets()) {
+            _meshData.geomSubsets.push_back(
+                {geomSubset.id, geomSubset.materialId, geomSubset.indices});
+        }
+    }
 
-    // Normal case
-    if (geomSubsets.empty() || desc.geomStyle == HdMeshGeomStylePoints) {
-
+    // Create index buffer source for the current representation.
+    {
         HdBufferSourceSharedPtrVector sources;
         HdBufferSourceSharedPtr source;
 
@@ -406,10 +423,10 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
             // Add computations for face varying primvar indices
             if (_topology.GetSubdivTags().GetFaceVaryingInterpolationRule() !=
                     PxOsdOpenSubdivTokens->all) {
-                for (size_t i = 0; 
-                        i < _fvarTopologyTracker.GetNumTopologies(); 
+                for (size_t i = 0;
+                        i < _fvarTopologyTracker.GetNumTopologies();
                         ++i) {
-                    HdBufferSourceSharedPtr fvarIndicesSource = 
+                    HdBufferSourceSharedPtr fvarIndicesSource =
                         _topology.GetOsdFvarIndexBuilderComputation(i);
                     sources.push_back(fvarIndicesSource);
                 }
@@ -422,18 +439,10 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         } else {
             // create triangle indices, primitiveParam and edgeIndices
             source = _topology.GetTriangleIndexBuilderComputation(id);
-            sources.push_back(source);  
+            sources.push_back(source);
         }
 
         resourceRegistry->AddIndexSources(id, std::move(sources));
-
-    } else {
-        // XXX will handle later, need test data
-        // Geom subsets case
-        // See HdStMesh::Sync for the similar if/else to this block, we can base
-        // the implementation on that, but using local implementations
-        // It will likely require updating our output format as well.
-        HF_VALIDATION_WARN(id, "Geom subsets not supported yet");
     }
 
     // Now populate primvar sources and computations that we need.
@@ -450,9 +459,6 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
             dirtyBits,
             &requireSmoothNormals,
             &requireFlatNormals);
-
-    // temp, replace with real subset once supported
-    const int geomSubsetDescIndex = 0;
 
     // Get the only draw item we created
     HdDrawItem *drawItem = repr->GetDrawItem(0);
@@ -498,7 +504,7 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         HdChangeTracker::IsAnyPrimvarDirty(*dirtyBits, id)) {
         MeshUtil::PopulateVertexAndVaryingPrimvars(
                 this, id, sceneDelegate, resourceRegistry.get(), &_topology,
-                _vertexAdjacencyBuilder.get(), desc, drawItem, geomSubsetDescIndex,
+                _vertexAdjacencyBuilder.get(), desc, drawItem,
                 dirtyBits, requireSmoothNormals);
     }
 

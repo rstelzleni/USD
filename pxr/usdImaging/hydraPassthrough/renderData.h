@@ -89,6 +89,35 @@ public:
         std::vector<TfToken> primvars;
     };
 
+    // A geom subset binds a material to a subset of a mesh's faces. This
+    // holds one subset as recorded at sync time: the authored (coarse) face
+    // indices it covers, already sanitized by
+    // HydraPassthroughMeshTopology::SanitizeGeomSubsets (out-of-range and
+    // duplicate faces removed, empty subsets dropped). Faces not covered by
+    // any subset are drawn with the mesh's own materialId.
+    struct GeomSubsetData {
+        SdfPath id;
+        SdfPath materialId;
+        VtIntArray faceIndices;
+    };
+
+    // A partial material binding in renderer terms: draw the contiguous
+    // range of the mesh's index buffer [start, start + count) with
+    // materialId. start and count are in index elements (three values per
+    // triangle), matching three.js geometry group conventions.
+    //
+    // Draw groups are only populated in extracted copies (see
+    // ExtractRenderDataCopy and friends), which reorder the mesh's
+    // primitives so that each geom subset occupies a contiguous range.
+    // Every group has a concrete materialId; faces in no subset get a
+    // group with the mesh's materialId. An empty drawGroups means the
+    // whole mesh is drawn with the mesh's materialId.
+    struct DrawGroup {
+        SdfPath materialId;
+        int start;
+        int count;
+    };
+
     class MeshData {
     public:
         SdfPath id;
@@ -99,11 +128,27 @@ public:
         GfMatrix4d transformInverse;
         VtValue points;
         VtValue normals;
-        VtIntArray faceVertexIndices; // triangles only
+        // Triangulated indices, three per triangle, always. Note though
+        // that primitiveParam and edgeIndices hold one entry per fine
+        // *primitive*, which is not always one triangle: quads (from
+        // quadrangulation or catmark/bilinear refinement) are split into
+        // two consecutive triangles here (HdMeshTriQuadBuilder order), so
+        // each of their entries covers six indices instead of three.
+        VtIntArray faceVertexIndices;
         VtValue primitiveParam;
         VtValue edgeIndices;
         TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> primvars;
         std::vector<FaceVaryingChannel> faceVaryingChannels;
+
+        // Geom subsets recorded at sync time, in authored face indices.
+        // Extraction converts these into drawGroups; clients should use
+        // drawGroups for material binding and can treat these as
+        // provenance (e.g. mapping a draw group back to the subset prim).
+        std::vector<GeomSubsetData> geomSubsets;
+
+        // Per-material index buffer ranges; see DrawGroup. Populated only
+        // in extracted copies, and only for meshes with geom subsets.
+        std::vector<DrawGroup> drawGroups;
 
         // Instancing. If instancerId is non-empty this mesh is an instancing
         // prototype and should be drawn once per entry in instanceTransforms.
@@ -294,6 +339,11 @@ public:
     /// data at a point in time. It is useful for extracting python
     /// copies that will exist and be cachable even after the render
     /// manager has performed its cleanup.
+    ///
+    /// In this and the other extracted copies, meshes with geom subsets
+    /// have their primitives reordered so each subset is a contiguous
+    /// range of the index buffer, published as per-material drawGroups;
+    /// see MeshData::drawGroups. Meshes without subsets are unchanged.
     RenderData ExtractRenderDataCopy() const;
 
     /// Extract a copy of the contained RenderData with all mesh primvars

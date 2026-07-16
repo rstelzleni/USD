@@ -411,11 +411,23 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
 
 HydraPassthroughRenderData::RenderData
 HydraPassthroughRenderData::ExtractRenderDataCopy() const {
-    const std::lock_guard<std::mutex> lock1(_meshMutex);
-    const std::lock_guard<std::mutex> lock2(_cameraMutex);
-    const std::lock_guard<std::mutex> lock3(_materialMutex);
-    const std::lock_guard<std::mutex> lock4(_instancerMutex);
-    return _renderData;
+    RenderData renderData;
+    {
+        const std::lock_guard<std::mutex> lock1(_meshMutex);
+        const std::lock_guard<std::mutex> lock2(_cameraMutex);
+        const std::lock_guard<std::mutex> lock3(_materialMutex);
+        const std::lock_guard<std::mutex> lock4(_instancerMutex);
+        renderData = _renderData;
+    }
+
+    // Geom subsets become per-material draw groups in every extracted
+    // copy. This reorders each mesh's primitives so a subset is a
+    // contiguous range of the index buffer; the deindexed and welded
+    // copies below inherit the groups since both preserve corner order.
+    for (auto& meshEntry : renderData.meshes) {
+        PackagingUtil::BuildDrawGroups(&meshEntry.second);
+    }
+    return renderData;
 }
 
 HydraPassthroughRenderData::RenderData

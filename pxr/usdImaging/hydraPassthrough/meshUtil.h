@@ -37,7 +37,6 @@ namespace HydraPassthroughMeshUtil
         HydraPassthroughVertexAdjacencyBuilder *vertexAdjacencyBuilder,
         const HdMeshReprDesc &desc,
         HdDrawItem *drawItem,
-        int geomSubsetDescIndex,
         HdDirtyBits *dirtyBits,
         bool requireSmoothNormals);
 

@@ -100,17 +100,14 @@ _FlattenFvarIndices(
     return false;
 }
 
-// Builds one coarse-face index per corner so uniform (per-face) primvars
-// can be expanded. primitiveParam has one entry per triangle for unrefined
+// Decodes primitiveParam into one authored (coarse) face index per fine
+// primitive. primitiveParam has one entry per triangle for unrefined
 // meshes (int) and one entry per patch for refined meshes (GfVec3i with
-// the encoded param in element [0]). The number of corners per entry
-// (3 for triangles, 6 for triangulated quads) falls out of the buffer
-// sizes.
+// the encoded param in element [0]).
 bool
-_BuildUniformCornerIndices(
+_DecodePrimitiveFaceIndices(
     const VtValue& primitiveParam,
-    size_t numCorners,
-    VtIntArray* cornerIndices)
+    VtIntArray* faceIndices)
 {
     VtIntArray encodedParams;
     if (primitiveParam.IsHolding<VtIntArray>()) {
@@ -126,19 +123,39 @@ _BuildUniformCornerIndices(
         return false;
     }
 
-    if (encodedParams.empty() || numCorners % encodedParams.size() != 0) {
+    faceIndices->resize(encodedParams.size());
+    int* dst = faceIndices->data();
+    for (const int encodedParam : encodedParams) {
+        *dst++ = HdMeshUtil::DecodeFaceIndexFromCoarseFaceParam(encodedParam);
+    }
+    return true;
+}
+
+// Builds one coarse-face index per corner so uniform (per-face) primvars
+// can be expanded. The number of corners per primitive (3 for triangles,
+// 6 for triangulated quads) falls out of the buffer sizes.
+bool
+_BuildUniformCornerIndices(
+    const VtValue& primitiveParam,
+    size_t numCorners,
+    VtIntArray* cornerIndices)
+{
+    VtIntArray faceIndices;
+    if (!_DecodePrimitiveFaceIndices(primitiveParam, &faceIndices)) {
         return false;
     }
-    const size_t cornersPerEntry = numCorners / encodedParams.size();
+
+    if (faceIndices.empty() || numCorners % faceIndices.size() != 0) {
+        return false;
+    }
+    const size_t cornersPerEntry = numCorners / faceIndices.size();
     if (cornersPerEntry != 3 && cornersPerEntry != 6) {
         return false;
     }
 
     cornerIndices->resize(numCorners);
     int* dst = cornerIndices->data();
-    for (const int encodedParam : encodedParams) {
-        const int faceIndex =
-            HdMeshUtil::DecodeFaceIndexFromCoarseFaceParam(encodedParam);
+    for (const int faceIndex : faceIndices) {
         for (size_t corner = 0; corner < cornersPerEntry; ++corner) {
             *dst++ = faceIndex;
         }
@@ -202,6 +219,170 @@ struct _CornerKeyHash {
 
 namespace HydraPassthroughMeshPackagingUtil
 {
+
+void
+BuildDrawGroups(HydraPassthroughRenderData::MeshData* meshData)
+{
+    meshData->drawGroups.clear();
+    if (meshData->geomSubsets.empty()) {
+        return;
+    }
+
+    // Every fine primitive maps back to the authored face it came from
+    // through primitiveParam, and geom subsets are lists of authored
+    // faces, so decoding primitiveParam assigns each primitive to its
+    // subset. Holes are handled implicitly: no primitive decodes to a
+    // hole face.
+    const size_t numCorners = meshData->faceVertexIndices.size();
+    VtIntArray primFaceIndices;
+    if (numCorners == 0 ||
+        !_DecodePrimitiveFaceIndices(meshData->primitiveParam,
+                                     &primFaceIndices) ||
+        primFaceIndices.empty() ||
+        numCorners % primFaceIndices.size() != 0) {
+        TF_WARN("Could not map primitives to faces for %s; geom subsets "
+                "will not be exported as draw groups",
+                meshData->id.GetText());
+        return;
+    }
+    const size_t numPrims = primFaceIndices.size();
+    const size_t cornersPerPrim = numCorners / numPrims;
+
+    // Assign each authored face to the subset that lists it. Sanitizing
+    // warns about faces repeated between subsets but keeps them, so
+    // collisions are possible here: the first subset listing a face wins
+    // (emplace keeps the existing entry). We don't warn again; sync
+    // already did, and extraction can run many times per render. Faces in
+    // no subset form the trailing remainder group, drawn with the mesh's
+    // own material.
+    const size_t numSubsets = meshData->geomSubsets.size();
+    const size_t remainderGroup = numSubsets;
+    const size_t numGroups = numSubsets + 1;
+    std::unordered_map<int, size_t> faceToGroup;
+    for (size_t subset = 0; subset < numSubsets; ++subset) {
+        for (const int face : meshData->geomSubsets[subset].faceIndices) {
+            faceToGroup.emplace(face, subset);
+        }
+    }
+
+    std::vector<size_t> primGroups(numPrims);
+    std::vector<size_t> groupCounts(numGroups, 0);
+    for (size_t prim = 0; prim < numPrims; ++prim) {
+        const auto groupIt = faceToGroup.find(primFaceIndices[prim]);
+        primGroups[prim] =
+            groupIt == faceToGroup.end() ? remainderGroup : groupIt->second;
+        groupCounts[primGroups[prim]]++;
+    }
+
+    std::vector<size_t> groupOffsets(numGroups, 0);
+    for (size_t group = 1; group < numGroups; ++group) {
+        groupOffsets[group] = groupOffsets[group - 1] + groupCounts[group - 1];
+    }
+
+    // Order the primitives by group, stably: primOrder[newPrim] = oldPrim.
+    VtIntArray primOrder(numPrims);
+    bool identity = true;
+    {
+        std::vector<size_t> next = groupOffsets;
+        for (size_t prim = 0; prim < numPrims; ++prim) {
+            const size_t pos = next[primGroups[prim]]++;
+            primOrder[pos] = (int)prim;
+            identity = identity && (pos == prim);
+        }
+    }
+
+    if (!identity) {
+        // Reorder everything that is parallel to the primitives (one entry
+        // per primitive) or to their corners. Data addressed through the
+        // reordered buffers stays put: points and vertex/varying primvars
+        // are indexed by the values of faceVertexIndices, and uniform
+        // primvars stay in authored face order, addressed by decoding the
+        // reordered primitiveParam.
+        VtIntArray cornerOrder(numCorners);
+        for (size_t prim = 0; prim < numPrims; ++prim) {
+            const size_t oldFirstCorner = primOrder[prim] * cornersPerPrim;
+            for (size_t corner = 0; corner < cornersPerPrim; ++corner) {
+                cornerOrder[prim * cornersPerPrim + corner] =
+                    (int)(oldFirstCorner + corner);
+            }
+        }
+
+        VtIntArray sortedIndices(numCorners);
+        const int* srcIndices = meshData->faceVertexIndices.cdata();
+        for (size_t corner = 0; corner < numCorners; ++corner) {
+            sortedIndices[corner] = srcIndices[cornerOrder[corner]];
+        }
+        meshData->faceVertexIndices = sortedIndices;
+
+        meshData->primitiveParam =
+            _GatherElements(meshData->primitiveParam, primOrder);
+
+        if (!meshData->edgeIndices.IsEmpty()) {
+            if (meshData->edgeIndices.GetArraySize() == numPrims) {
+                meshData->edgeIndices =
+                    _GatherElements(meshData->edgeIndices, primOrder);
+            } else {
+                TF_WARN("Edge indices of %s are not per-primitive; dropping "
+                        "them from the draw-grouped copy",
+                        meshData->id.GetText());
+                meshData->edgeIndices = VtValue();
+            }
+        }
+
+        // Refined face-varying channels hold one index entry per patch.
+        // Their compact value buffers are addressed through these indices
+        // and stay put.
+        TfToken::HashSet channelPrimvars;
+        for (HydraPassthroughRenderData::FaceVaryingChannel& channel :
+                meshData->faceVaryingChannels) {
+            channelPrimvars.insert(channel.primvars.begin(),
+                                   channel.primvars.end());
+            if (channel.indices.GetArraySize() == numPrims) {
+                channel.indices = _GatherElements(channel.indices, primOrder);
+            } else {
+                TF_WARN("Face-varying channel %d of %s has indices that "
+                        "don't match the mesh's primitives; its primvars "
+                        "will misalign with the draw groups",
+                        channel.channel, meshData->id.GetText());
+            }
+        }
+
+        // Unrefined face-varying primvars have no channel and are already
+        // per-corner, so their values move with the corners.
+        for (auto& primvarEntry : meshData->primvars) {
+            HydraPassthroughRenderData::PrimvarData& primvar =
+                primvarEntry.second;
+            if (primvar.interpolation != HdInterpolationFaceVarying ||
+                channelPrimvars.count(primvarEntry.first)) {
+                continue;
+            }
+            if (primvar.data.GetArraySize() != numCorners) {
+                TF_WARN("Face-varying primvar %s of %s has %zu values, "
+                        "expected %zu; it will misalign with the draw "
+                        "groups",
+                        primvarEntry.first.GetText(),
+                        meshData->id.GetText(),
+                        primvar.data.GetArraySize(), numCorners);
+                continue;
+            }
+            primvar.data = _GatherElements(primvar.data, cornerOrder);
+        }
+    }
+
+    // Emit the groups in index elements. Subsets that ended up with no
+    // primitives (e.g. all their faces are holes) produce no group.
+    for (size_t group = 0; group < numGroups; ++group) {
+        if (groupCounts[group] == 0) {
+            continue;
+        }
+        meshData->drawGroups.push_back(
+            {group == remainderGroup
+                 ? meshData->materialId
+                 : meshData->geomSubsets[group].materialId,
+             (int)(groupOffsets[group] * cornersPerPrim),
+             (int)(groupCounts[group] * cornersPerPrim)});
+    }
+}
 
 void
 DeindexMesh(HydraPassthroughRenderData::MeshData* meshData)
