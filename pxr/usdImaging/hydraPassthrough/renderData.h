@@ -286,12 +286,82 @@ public:
         WindowPolicy windowPolicy = WindowPolicy::Fit;
     };
 
+    /// Data for a single UsdLux light, captured at sync time.
+    ///
+    /// The transform is the light's full local-to-world matrix. Lights
+    /// follow UsdLux orientation conventions: rect, disk, and distant
+    /// lights emit down the local -Z axis (so a distant light's world
+    /// direction is the transformed -Z), cylinder lights run along the
+    /// local X axis, and sphere lights are omnidirectional.
+    ///
+    /// Parameter semantics are passed through, not interpreted. Clients
+    /// are expected to combine them per UsdLux: the overall scale is
+    /// intensity * 2^exposure, color is tinted by the blackbody
+    /// temperature only when enableColorTemperature is set, and normalize
+    /// divides emitted power by the light's surface area. Fields only
+    /// meaningful for some light types are noted below; for other types
+    /// they hold their schema defaults and should be ignored.
+    class LightData {
+    public:
+        SdfPath id;
+        enum class Type {
+            Unknown,
+            Cylinder,
+            Disk,
+            Distant,
+            Dome,
+            Rect,
+            Sphere
+        };
+        Type type = Type::Unknown;
+        bool visible = true;
+        GfMatrix4d transform = GfMatrix4d(1.0);
+
+        // Common light parameters
+        float intensity = 1.0f;
+        float exposure = 0.0f;
+        GfVec3f color = GfVec3f(1.0f);
+        bool enableColorTemperature = false;
+        float colorTemperature = 6500.0f; // in kelvin
+        bool normalize = false;
+        float diffuse = 1.0f;
+        float specular = 1.0f;
+
+        // Shape parameters
+        float radius = 0.5f;       // sphere, disk, cylinder; in world units
+        float length = 1.0f;       // cylinder; in world units
+        float width = 1.0f;        // rect; in world units
+        float height = 1.0f;       // rect; in world units
+        float angle = 0.53f;       // distant; angular diameter in degrees
+        bool treatAsPoint = false; // sphere
+        bool treatAsLine = false;  // cylinder
+        std::string textureFile;   // dome, rect; resolved asset path
+        TfToken textureFormat;     // dome; e.g. "latlong"
+
+        // Shaping parameters (UsdLux ShapingAPI)
+        float shapingFocus = 0.0f;
+        GfVec3f shapingFocusTint = GfVec3f(0.0f);
+        float shapingConeAngle = 90.0f;   // in degrees, 90 = no cone
+        float shapingConeSoftness = 0.0f;
+        std::string shapingIesFile;       // resolved asset path
+        float shapingIesAngleScale = 0.0f;
+        bool shapingIesNormalize = false;
+
+        // Shadow parameters (UsdLux ShadowAPI)
+        bool shadowEnable = true;
+        GfVec3f shadowColor = GfVec3f(0.0f);
+        float shadowDistance = -1.0f;
+        float shadowFalloff = -1.0f;
+        float shadowFalloffGamma = 1.0f;
+    };
+
     /// The main render contents, as a type that is copyable in c++
     /// and python.
     class RenderData {
     public:
         TfHashMap<SdfPath, MeshData, TfHash> meshes;
         TfHashMap<SdfPath, CameraData, TfHash> cameras;
+        TfHashMap<SdfPath, LightData, TfHash> lights;
         TfHashMap<SdfPath, MaterialData, TfHash> materials;
         TfHashMap<SdfPath, SceneGraphInstancerData, TfHash> sceneGraphInstancers;
 
@@ -301,6 +371,9 @@ public:
         const CameraData* GetCamera(const SdfPath& id) const;
         size_t GetCameraCount() const;
         const CameraData* GetCameraByIndex(size_t index) const;
+        const LightData* GetLight(const SdfPath& id) const;
+        size_t GetLightCount() const;
+        const LightData* GetLightByIndex(size_t index) const;
         const MaterialData* GetMaterial(const SdfPath& id) const;
         size_t GetMaterialCount() const;
         const MaterialData* GetMaterialByIndex(size_t index) const;
@@ -319,6 +392,9 @@ public:
                  const MeshData& meshData);
 
     void AddCamera(const HdCamera* camera);
+
+    void AddLight(const SdfPath& id,
+                  const LightData& lightData);
 
     void AddMaterial(const SdfPath& id,
                      const MaterialData& materialData);
@@ -385,6 +461,9 @@ public:
     const CameraData* GetCamera(const SdfPath& id) const;
     size_t GetCameraCount() const;
     const CameraData* GetCameraByIndex(size_t index) const;
+    const LightData* GetLight(const SdfPath& id) const;
+    size_t GetLightCount() const;
+    const LightData* GetLightByIndex(size_t index) const;
     const MaterialData* GetMaterial(const SdfPath& id) const;
     size_t GetMaterialCount() const;
     const MaterialData* GetMaterialByIndex(size_t index) const;
@@ -402,6 +481,7 @@ private:
     // data structures.
     mutable std::mutex _meshMutex;
     mutable std::mutex _cameraMutex;
+    mutable std::mutex _lightMutex;
     mutable std::mutex _materialMutex;
     mutable std::mutex _instancerMutex;
 
