@@ -327,11 +327,13 @@ public:
         float diffuse = 1.0f;
         float specular = 1.0f;
 
-        // Shape parameters
-        float radius = 0.5f;       // sphere, disk, cylinder; in world units
-        float length = 1.0f;       // cylinder; in world units
-        float width = 1.0f;        // rect; in world units
-        float height = 1.0f;       // rect; in world units
+        // Shape parameters. Sizes are as authored, in the light's local
+        // space; apply the light's transform (including any scale) to get
+        // world-space dimensions.
+        float radius = 0.5f;       // sphere, disk, cylinder
+        float length = 1.0f;       // cylinder
+        float width = 1.0f;        // rect
+        float height = 1.0f;       // rect
         float angle = 0.53f;       // distant; angular diameter in degrees
         bool treatAsPoint = false; // sphere
         bool treatAsLine = false;  // cylinder
