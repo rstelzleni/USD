@@ -62,8 +62,11 @@ private:
     std::unique_ptr<HdRenderIndex> _renderIndex;
     HdPluginRenderDelegateUniqueHandle _renderDelegate;
 
-    // There should typically only be one engine in the app, I think, unless
-    // some extra precautions are taken. Need to research this.
+    // There is one engine per render manager. Engines hold no shared state.
+    // The only constraint I can see with multiple engines is that only one can
+    // Execute() against a single render index at a time. Since each manager
+    // has its own render index and delegate, this does not need any locking
+    // and clients don't need to be careful about multiple render managers 
     std::unique_ptr<HdEngine> _engine;
 };
 
