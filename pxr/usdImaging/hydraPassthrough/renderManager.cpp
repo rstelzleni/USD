@@ -158,6 +158,13 @@ bool HdPassthroughRenderManager::_SetRendererPlugin(const TfToken& id) {
         return false;
     }
 
+    // Scene prims are inserted under _sceneDelegateId; the delegate uses
+    // this prefix to exclude internal prims (like the render task's
+    // camera) from its output.
+    _renderDelegate->SetRenderSetting(
+        HydraPassthroughRenderSettingsTokens->scenePathPrefix,
+        VtValue(_sceneDelegateId));
+
     // If a delegate exists already we need to destroy hydra memory here
 
     // Need a unique id string

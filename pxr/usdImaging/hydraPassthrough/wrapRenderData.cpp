@@ -125,6 +125,12 @@ namespace {
         return self.lensDistortionType.GetString();
     }
 
+    const std::string _GetLightTextureFormat(
+        const HydraPassthroughRenderData::LightData &self)
+    {
+        return self.textureFormat.GetString();
+    }
+
     const MaterialTag _GetMaterialTag(
         const HydraPassthroughRenderData::MaterialData &self)
     {
@@ -272,6 +278,13 @@ wrapRenderData()
         .def("GetCameraByIndex", &This::GetCameraByIndex,
              (arg("index")),
              return_internal_reference())
+        .def("GetLight", &This::GetLight,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetLightCount", &This::GetLightCount)
+        .def("GetLightByIndex", &This::GetLightByIndex,
+             (arg("index")),
+             return_internal_reference())
         .def("GetMaterial", &This::GetMaterial,
              (arg("id")),
              return_internal_reference())
@@ -304,6 +317,13 @@ wrapRenderData()
              return_internal_reference())
         .def("GetCameraCount", &This::RenderData::GetCameraCount)
         .def("GetCameraByIndex", &This::RenderData::GetCameraByIndex,
+             (arg("index")),
+             return_internal_reference())
+        .def("GetLight", &This::RenderData::GetLight,
+             (arg("id")),
+             return_internal_reference())
+        .def("GetLightCount", &This::RenderData::GetLightCount)
+        .def("GetLightByIndex", &This::RenderData::GetLightByIndex,
              (arg("index")),
              return_internal_reference())
         .def("GetMaterial", &This::RenderData::GetMaterial,
@@ -414,6 +434,52 @@ wrapRenderData()
                       return_value_policy<TfPySequenceToList>())
         .def("GetTextureDescriptors", ::_GetTextureDescriptors,
                       return_value_policy<TfPySequenceToList>())
+        ;
+
+    enum_<This::LightData::Type>("LightType")
+        .value("Unknown", This::LightData::Type::Unknown)
+        .value("Cylinder", This::LightData::Type::Cylinder)
+        .value("Disk", This::LightData::Type::Disk)
+        .value("Distant", This::LightData::Type::Distant)
+        .value("Dome", This::LightData::Type::Dome)
+        .value("Rect", This::LightData::Type::Rect)
+        .value("Sphere", This::LightData::Type::Sphere)
+        ;
+
+    class_<This::LightData>("LightData", no_init)
+        .def_readonly("id", &This::LightData::id)
+        .def_readonly("type", &This::LightData::type)
+        .def_readonly("visible", &This::LightData::visible)
+        .def_readonly("transform", &This::LightData::transform)
+        .def_readonly("intensity", &This::LightData::intensity)
+        .def_readonly("exposure", &This::LightData::exposure)
+        .def_readonly("color", &This::LightData::color)
+        .def_readonly("enableColorTemperature", &This::LightData::enableColorTemperature)
+        .def_readonly("colorTemperature", &This::LightData::colorTemperature)
+        .def_readonly("normalize", &This::LightData::normalize)
+        .def_readonly("diffuse", &This::LightData::diffuse)
+        .def_readonly("specular", &This::LightData::specular)
+        .def_readonly("radius", &This::LightData::radius)
+        .def_readonly("length", &This::LightData::length)
+        .def_readonly("width", &This::LightData::width)
+        .def_readonly("height", &This::LightData::height)
+        .def_readonly("angle", &This::LightData::angle)
+        .def_readonly("treatAsPoint", &This::LightData::treatAsPoint)
+        .def_readonly("treatAsLine", &This::LightData::treatAsLine)
+        .def_readonly("textureFile", &This::LightData::textureFile)
+        .def("GetTextureFormat", ::_GetLightTextureFormat)
+        .def_readonly("shapingFocus", &This::LightData::shapingFocus)
+        .def_readonly("shapingFocusTint", &This::LightData::shapingFocusTint)
+        .def_readonly("shapingConeAngle", &This::LightData::shapingConeAngle)
+        .def_readonly("shapingConeSoftness", &This::LightData::shapingConeSoftness)
+        .def_readonly("shapingIesFile", &This::LightData::shapingIesFile)
+        .def_readonly("shapingIesAngleScale", &This::LightData::shapingIesAngleScale)
+        .def_readonly("shapingIesNormalize", &This::LightData::shapingIesNormalize)
+        .def_readonly("shadowEnable", &This::LightData::shadowEnable)
+        .def_readonly("shadowColor", &This::LightData::shadowColor)
+        .def_readonly("shadowDistance", &This::LightData::shadowDistance)
+        .def_readonly("shadowFalloff", &This::LightData::shadowFalloff)
+        .def_readonly("shadowFalloffGamma", &This::LightData::shadowFalloffGamma)
         ;
 
     enum_<This::CameraData::Projection>("Projection")

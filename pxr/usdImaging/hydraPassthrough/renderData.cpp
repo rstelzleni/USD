@@ -74,7 +74,34 @@ HydraPassthroughRenderData::RenderData::GetCameraByIndex(size_t index) const {
     return &(it->second);
 }
 
-const HydraPassthroughRenderData::MaterialData* 
+const HydraPassthroughRenderData::LightData*
+HydraPassthroughRenderData::RenderData::GetLight(const SdfPath& id) const {
+    auto it = lights.find(id);
+    if (it != lights.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+size_t
+HydraPassthroughRenderData::RenderData::GetLightCount() const {
+    return lights.size();
+}
+
+const HydraPassthroughRenderData::LightData*
+HydraPassthroughRenderData::RenderData::GetLightByIndex(size_t index) const {
+    if (index >= lights.size()) {
+        TF_RUNTIME_ERROR("Light index %zu out of range [0,%zu)",
+            index, lights.size());
+        return nullptr;
+    }
+
+    auto it = lights.begin();
+    std::advance(it, index);
+    return &(it->second);
+}
+
+const HydraPassthroughRenderData::MaterialData*
 HydraPassthroughRenderData::RenderData::GetMaterial(const SdfPath& id) const {
     auto it = materials.find(id);
     if (it != materials.end()) {
@@ -180,7 +207,6 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
     camData.lensDistortionAsym = camera->GetLensDistortionAsym();
     camData.lensDistortionScale = camera->GetLensDistortionScale();
     camData.lensDistortionIor = camera->GetLensDistortionIor();
-    camData.linearExposureScale = camera->GetLinearExposureScale();
 
     switch (camera->GetWindowPolicy()) {
         case CameraUtilMatchVertically:
@@ -204,6 +230,13 @@ HydraPassthroughRenderData::AddCamera(const HdCamera* camera) {
         const std::lock_guard<std::mutex> lock(_cameraMutex);
         _renderData.cameras[camData.id] = camData;
     }
+}
+
+void
+HydraPassthroughRenderData::AddLight(const SdfPath& id,
+                                     const LightData& lightData) {
+    const std::lock_guard<std::mutex> lock(_lightMutex);
+    _renderData.lights[id] = lightData;
 }
 
 void
@@ -415,8 +448,9 @@ HydraPassthroughRenderData::ExtractRenderDataCopy() const {
     {
         const std::lock_guard<std::mutex> lock1(_meshMutex);
         const std::lock_guard<std::mutex> lock2(_cameraMutex);
-        const std::lock_guard<std::mutex> lock3(_materialMutex);
-        const std::lock_guard<std::mutex> lock4(_instancerMutex);
+        const std::lock_guard<std::mutex> lock3(_lightMutex);
+        const std::lock_guard<std::mutex> lock4(_materialMutex);
+        const std::lock_guard<std::mutex> lock5(_instancerMutex);
         renderData = _renderData;
     }
 
@@ -488,6 +522,27 @@ HydraPassthroughRenderData::GetCameraByIndex(size_t index) const
 {
     const std::lock_guard<std::mutex> lock(_cameraMutex);
     return _renderData.GetCameraByIndex(index);
+}
+
+const HydraPassthroughRenderData::LightData*
+HydraPassthroughRenderData::GetLight(const SdfPath& id) const
+{
+    const std::lock_guard<std::mutex> lock(_lightMutex);
+    return _renderData.GetLight(id);
+}
+
+size_t
+HydraPassthroughRenderData::GetLightCount() const
+{
+    const std::lock_guard<std::mutex> lock(_lightMutex);
+    return _renderData.GetLightCount();
+}
+
+const HydraPassthroughRenderData::LightData*
+HydraPassthroughRenderData::GetLightByIndex(size_t index) const
+{
+    const std::lock_guard<std::mutex> lock(_lightMutex);
+    return _renderData.GetLightByIndex(index);
 }
 
 const HydraPassthroughRenderData::MaterialData*

@@ -6,12 +6,27 @@
 #include "pxr/imaging/hd/renderDelegate.h"
 #include "pxr/imaging/hd/resourceRegistry.h"
 
+#include "pxr/usdImaging/hydraPassthrough/api.h"
 #include "pxr/usdImaging/hydraPassthrough/renderData.h"
 
 
 PXR_NAMESPACE_OPEN_SCOPE
 
 class HdCamera;
+
+/// Render settings understood by HydraPassthroughRenderDelegate.
+///
+/// scenePathPrefix: an SdfPath prefix identifying where scene prims live in
+/// the render index. Prims outside this prefix are internal (e.g. the task
+/// controller's free camera) and are excluded from the render data output.
+/// The render manager sets this to its scene delegate id; if unset, all
+/// prims are passed through.
+#define HYDRA_PASSTHROUGH_RENDER_SETTINGS_TOKENS \
+    ((scenePathPrefix, "hydraPassthrough:scenePathPrefix"))
+
+TF_DECLARE_PUBLIC_TOKENS(HydraPassthroughRenderSettingsTokens,
+                         HYDRA_PASSTHROUGH_API,
+                         HYDRA_PASSTHROUGH_RENDER_SETTINGS_TOKENS);
 
 ///
 /// \class HydraPassthroughRenderDelegate
