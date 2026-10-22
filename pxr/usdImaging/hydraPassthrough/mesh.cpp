@@ -447,8 +447,6 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
 
     // Now populate primvar sources and computations that we need.
 
-    // For instancing, see HdStMesh in the section called "INSTANCE PRIMVARS"
-
     // prepare for normal computations
     bool requireSmoothNormals = false;
     bool requireFlatNormals =  false;
