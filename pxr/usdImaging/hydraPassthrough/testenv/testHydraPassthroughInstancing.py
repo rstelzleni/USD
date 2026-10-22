@@ -227,6 +227,40 @@ class TestInstancing(unittest.TestCase):
         self.assertIsNone(mesh.GetInstancePrimvar('hydra:instanceScales'))
         self.assertIsNone(mesh.GetInstancePrimvar('myConstant'))
 
+    def test_PrototypePrimvarShadowsInstancePrimvar(self):
+        # When the prototype mesh and the point instancer both author a
+        # primvar, the prototype's value wins, as in HdSt. Instance
+        # primvars the prototype doesn't author still pass through.
+        stage = Usd.Stage.CreateInMemory()
+        pi = UsdGeom.PointInstancer.Define(stage, '/PI')
+        quad = create_quad(stage, '/PI/Protos/Quad')
+        quad.CreateDisplayColorPrimvar(UsdGeom.Tokens.constant).Set(
+            Vt.Vec3fArray([(1, 1, 0)]))
+        pi.CreatePrototypesRel().SetTargets([Sdf.Path('/PI/Protos/Quad')])
+        pi.CreateProtoIndicesAttr(Vt.IntArray([0, 0]))
+        pi.CreatePositionsAttr(Vt.Vec3fArray([(0, 0, 0), (5, 0, 0)]))
+
+        primvars = UsdGeom.PrimvarsAPI(pi)
+        primvars.CreatePrimvar(
+            'displayColor', Sdf.ValueTypeNames.Color3fArray,
+            UsdGeom.Tokens.varying).Set(
+                Vt.Vec3fArray([(1, 0, 0), (0, 1, 0)]))
+        primvars.CreatePrimvar(
+            'myFloat', Sdf.ValueTypeNames.FloatArray,
+            UsdGeom.Tokens.varying).Set(Vt.FloatArray([1.5, 2.5]))
+
+        data = render_extract(stage)
+        meshes = get_meshes(data)
+        self.assertEqual(len(meshes), 1)
+        mesh = meshes[0]
+
+        names = sorted(pv.name for pv in mesh.GetAllInstancePrimvars())
+        self.assertEqual(names, ['myFloat'])
+
+        color = mesh.GetPrimvar('displayColor')
+        self.assertIsNotNone(color)
+        self.assertEqual(color.data.GetValue(), Gf.Vec3f(1, 1, 0))
+
     def test_NativeInstancing(self):
         # Two instanceable references to one prototype aggregate into a
         # single mesh with two instance transforms.

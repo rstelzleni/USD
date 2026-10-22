@@ -184,6 +184,12 @@ public:
         // Rotations/Scales/Transforms) are excluded because they are
         // already baked into instanceTransforms. When nested instancers
         // author the same primvar, the level closest to the prototype wins.
+        //
+        // As in HdSt, a primvar on the mesh itself (any interpolation,
+        // including generated ones such as computed normals) takes
+        // precedence over an instance primvar of the same name. Extracted
+        // copies omit those shadowed instance primvars, so clients can
+        // apply every entry here without checking primvars for conflicts.
         TfHashMap<TfToken, PrimvarData, TfToken::HashFunctor> instancePrimvars;
 
         // Not wrapped to python, valid only so long as the rprim mesh exists
