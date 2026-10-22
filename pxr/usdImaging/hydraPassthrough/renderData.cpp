@@ -461,6 +461,25 @@ HydraPassthroughRenderData::ExtractRenderDataCopy() const {
     for (auto& meshEntry : renderData.meshes) {
         PackagingUtil::BuildDrawGroups(&meshEntry.second);
     }
+
+    // A primvar on the prototype mesh itself takes precedence over an
+    // instance primvar of the same name, matching HdSt (see
+    // HdSt_CodeGen::_GenerateInstancePrimvar, which only emits the instance
+    // accessor when the rprim doesn't define the primvar). We resolve this
+    // here rather than at sync because the mesh's own primvars only arrive
+    // when the resource registry commits, after the mesh has synced.
+    for (auto& meshEntry : renderData.meshes) {
+        MeshData& meshData = meshEntry.second;
+        TfTokenVector shadowedNames;
+        for (const auto& entry : meshData.instancePrimvars) {
+            if (meshData.primvars.count(entry.first) > 0) {
+                shadowedNames.push_back(entry.first);
+            }
+        }
+        for (const TfToken& name : shadowedNames) {
+            meshData.instancePrimvars.erase(name);
+        }
+    }
     return renderData;
 }
 
