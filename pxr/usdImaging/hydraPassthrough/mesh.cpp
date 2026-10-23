@@ -468,8 +468,8 @@ HydraPassthroughMesh::_UpdateTopologyDependentComputations(
         HdChangeTracker::IsPrimIdDirty(*dirtyBits, id)) {
 
         HdPrimvarDescriptorVector constantPrimvars =
-            PrimUtil::GetPrimvarDescriptors(
-                    this, sceneDelegate, HdInterpolationConstant);
+            MeshUtil::GetMeshPrimvarDescriptors(
+                    this, sceneDelegate, HdInterpolationConstant, &_topology);
         
         // XXX we need this draw item to get bounds
         bool hasMirroredTransform = _hasMirroredTransform;

@@ -286,18 +286,18 @@ class TestSubdivision(unittest.TestCase):
         # Check that primvars are present
         self.assertIn('st', primvar_names)
         self.assertIn('displayColor', primvar_names)
-        self.assertIn('normals', primvar_names)
         self.assertIn('myUniform', primvar_names)
+        # Authored normals are ignored on subdivision surfaces in favor of
+        # the generated smoothNormals, so they aren't exported
+        self.assertNotIn('normals', primvar_names)
         # Check that the primvars have the expected number of values
         self.assertEqual(mesh.GetPrimvar('st').data.GetArraySize(), 150) # uvs had 29 original verts
         self.assertEqual(mesh.GetPrimvar('displayColor').data.GetArraySize(), 140)
-        self.assertEqual(mesh.GetPrimvar('normals').data.GetArraySize(), 140)
         # uniform primvars are not subdivided, implemenations should index by original face index
         self.assertEqual(mesh.GetPrimvar('myUniform').data.GetArraySize(), 32) # one value per original face
         # check that interpolation is preserved
         self.assertEqual(mesh.GetPrimvar('st').interpolation, UsdGeom.Tokens.faceVarying)
         self.assertEqual(mesh.GetPrimvar('displayColor').interpolation, UsdGeom.Tokens.vertex)
-        self.assertEqual(mesh.GetPrimvar('normals').interpolation, UsdGeom.Tokens.vertex)
         self.assertEqual(mesh.GetPrimvar('myUniform').interpolation, UsdGeom.Tokens.uniform)
 
         # Check that we got an index buffer for st, it is face varying so needs its
@@ -358,6 +358,48 @@ class TestSubdivision(unittest.TestCase):
         self.assertIsNotNone(smooth_normals)
         self.assertEqual(smooth_normals.data.GetArraySize(),
                          len(mesh.GetPoints().GetValue()))
+
+
+    def test_AuthoredNormalsBySchema(self):
+        # Authored normals are only exported where Storm would use them:
+        # for the none and bilinear schemes, not for subdivision surfaces.
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        for scheme, expect_normals in [('catmullClark', False),
+                                       ('loop', False),
+                                       ('bilinear', True),
+                                       ('none', True)]:
+            stage = Usd.Stage.CreateInMemory()
+            create_subdivided_sphere_usd(
+                stage, subdivision_scheme=scheme,
+                num_latitude=4, num_longitude=8)
+            if scheme == 'loop':
+                # loop requires an all-triangle mesh
+                mesh = UsdGeom.Mesh(stage.GetPrimAtPath('/World/Sphere'))
+                mesh.GetFaceVertexCountsAttr().Set(Vt.IntArray([3]))
+                mesh.GetFaceVertexIndicesAttr().Set(Vt.IntArray([0, 1, 2]))
+                mesh.GetPointsAttr().Set(Vt.Vec3fArray(
+                    [(0, 0, 0), (1, 0, 0), (0, 1, 0)]))
+                mesh.GetNormalsAttr().Set(Vt.Vec3fArray([(0, 0, 1)] * 3))
+                UsdGeom.PrimvarsAPI(mesh).RemovePrimvar('st')
+                UsdGeom.PrimvarsAPI(mesh).RemovePrimvar('displayColor')
+                UsdGeom.PrimvarsAPI(mesh).RemovePrimvar('myUniform')
+
+            render_settings = HydraPassthrough.RenderSettings()
+            render_settings.refineLevel = 1
+            m = HydraPassthrough.RenderManager()
+            m.Initialize(render_settings)
+            try:
+                m.Render(stage)
+                md = m.GetRenderData().ExtractRenderDataCopy()
+            finally:
+                m.Cleanup()
+
+            mesh = md.GetMesh(Sdf.Path(prefix.AppendPath('World/Sphere')))
+            names = [x.name for x in mesh.GetAllPrimvars()]
+            self.assertEqual('normals' in names, expect_normals, scheme)
+            self.assertEqual('smoothNormals' in names, not expect_normals,
+                             scheme)
+
 
 if __name__ == "__main__":
     unittest.main()
