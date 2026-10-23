@@ -5,6 +5,7 @@
 #include "pxr/imaging/hd/sceneDelegate.h"
 #include "pxr/imaging/hd/tokens.h"
 #include "pxr/imaging/hio/glslfx.h"
+#include "pxr/usd/sdf/schema.h"
 #include "pxr/usd/sdr/registry.h"
 #include "pxr/usd/sdr/shaderNode.h"
 #include "pxr/base/tf/staticTokens.h"
@@ -21,7 +22,6 @@ TF_DEFINE_PRIVATE_TOKENS(
     (opacity)                   \
     (opacityMode)               \
     (opacityThreshold)          \
-    (sourceColorSpace)          \
     ((colorSpaceAuto, "auto"))  \
     (masked)                    \
     (translucent)               \
@@ -646,17 +646,8 @@ _MakeMaterialParamsForTexture(
     }
     texParam.isPremultiplied = premultiplyTexture;
 
-    // Get texture's sourceColorSpace hint 
-    //
-    // Should be a token, but also check for string to support older files
-    TfToken sourceColorSpace = _ResolveParameter(
-        node, sdrNode, _tokens->sourceColorSpace, TfToken());
-    if (sourceColorSpace.IsEmpty()) {
-        const std::string sourceColorSpaceStr = _ResolveParameter(
-            node, sdrNode, _tokens->sourceColorSpace, 
-            _tokens->colorSpaceAuto.GetString());
-        sourceColorSpace = TfToken(sourceColorSpaceStr);
-    }
+    // Resolved from the file input's color space below
+    TfToken sourceColorSpace = _tokens->colorSpaceAuto;
 
     // Extract texture file path
     // Note that HdSt uses a TextureIdentifier type that can also identify
@@ -684,6 +675,17 @@ _MakeMaterialParamsForTexture(
         //        }
         //    }
         //}
+
+        // UsdImaging doesn't pass UsdUVTexture's inputs:sourceColorSpace
+        // through as a parameter. It folds it into the color space of the
+        // file input, which arrives as a "colorSpace:<fileProp>" parameter,
+        // along with color spaces authored via metadata or UsdColorSpaceAPI.
+        // See UsdImagingDataSourceAttributeColorSpace. HdSt reads it from
+        // the same place and treats anything other than sRGB or raw as auto.
+        const TfToken colorSpaceParamName(SdfPath::JoinIdentifier(
+            SdfFieldKeys->ColorSpace, fileProp));
+        sourceColorSpace = _ResolveParameter(
+            node, sdrNode, colorSpaceParamName, _tokens->colorSpaceAuto);
 
         auto const& it = node.parameters.find(fileProp);
         if (it != node.parameters.end()){
