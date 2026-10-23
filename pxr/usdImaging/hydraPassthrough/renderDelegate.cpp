@@ -10,6 +10,7 @@
 #include "pxr/base/tf/diagnosticLite.h"
 #include "pxr/imaging/hd/camera.h"
 #include "pxr/imaging/hd/extComputation.h"
+#include "pxr/imaging/hio/glslfx.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 
@@ -210,8 +211,15 @@ void HydraPassthroughRenderDelegate::DestroyInstancer(HdInstancer *instancer) {
     delete instancer;
 }
 
+TfTokenVector HydraPassthroughRenderDelegate::GetMaterialRenderContexts() const
+{
+    // Matches HdSt without MaterialX support. HdMaterialSchema falls back
+    // to the universal network when there is no glslfx-specific one.
+    return {HioGlslfxTokens->glslfx};
+}
+
 HdRenderParam *HydraPassthroughRenderDelegate::GetRenderParam() const
-{ 
+{
     return _renderParam.get();
 }
 
