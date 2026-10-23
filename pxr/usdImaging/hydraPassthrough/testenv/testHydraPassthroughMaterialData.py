@@ -77,9 +77,11 @@ def assign_material_to_mesh(material, mesh):
 class TestMaterialData(unittest.TestCase):
     def test_Basic(self):
         stage = Usd.Stage.CreateInMemory()
-        mat = UsdShade.Material.Define(stage, '/Material0')
-        mat = UsdShade.Material.Define(stage, '/Material1')
-        mat = UsdShade.Material.Define(stage, '/Material2')
+        # Unbound materials are pruned, so bind each one to a mesh
+        for i in range(3):
+            mat = UsdShade.Material.Define(stage, f'/Material{i}')
+            mesh = UsdGeom.Mesh.Define(stage, f'/Mesh{i}')
+            assign_material_to_mesh(mat, mesh)
         m = HydraPassthrough.RenderManager()
         m.Initialize()
         m.Render(stage)
@@ -332,6 +334,45 @@ class TestMaterialData(unittest.TestCase):
         self.assertFalse(primvar.data.IsArray())
 
         m.Cleanup()
+
+    def test_UnboundMaterialsPruned(self):
+        # Like Storm, only materials bound with the preview or allPurpose
+        # purpose are synced. Subset bindings count.
+        stage = Usd.Stage.CreateInMemory()
+        bound = UsdShade.Material.Define(stage, '/Mats/Bound')
+        subset_bound = UsdShade.Material.Define(stage, '/Mats/SubsetBound')
+        UsdShade.Material.Define(stage, '/Mats/Unbound')
+        full_only = UsdShade.Material.Define(stage, '/Mats/FullOnly')
+
+        mesh = UsdGeom.Mesh.Define(stage, '/Mesh')
+        populate_mesh(mesh)
+        assign_material_to_mesh(bound, mesh)
+        subset = UsdGeom.Subset.Define(stage, '/Mesh/Subset')
+        subset.CreateElementTypeAttr(UsdGeom.Tokens.face)
+        subset.CreateIndicesAttr([0])
+        subset.CreateFamilyNameAttr(UsdShade.Tokens.materialBind)
+        UsdShade.MaterialBindingAPI.Apply(subset.GetPrim()).Bind(subset_bound)
+
+        other = UsdGeom.Mesh.Define(stage, '/Other')
+        populate_mesh(other)
+        UsdShade.MaterialBindingAPI.Apply(other.GetPrim()).Bind(
+            full_only, materialPurpose=UsdShade.Tokens.full)
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            md = m.GetRenderData().ExtractRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        ids = sorted(md.GetMaterialByIndex(i).id
+                     for i in range(md.GetMaterialCount()))
+        self.assertEqual(ids, [
+            prefix.AppendPath('Mats/Bound'),
+            prefix.AppendPath('Mats/SubsetBound'),
+        ])
 
 if __name__ == "__main__":
     unittest.main()
