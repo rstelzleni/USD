@@ -420,5 +420,42 @@ class TestMeshData(unittest.TestCase):
         self.assertTrue(mesh.doubleSided)
 
 
+    def test_Ids(self):
+        # The Get*Ids functions list every item in ByIndex order, and each
+        # id can be looked up directly.
+        from pxr import UsdLux, UsdShade
+        stage = Usd.Stage.CreateInMemory()
+        for i in range(3):
+            UsdGeom.Mesh.Define(stage, f'/Mesh{i}')
+        UsdGeom.Camera.Define(stage, '/Cam')
+        UsdLux.SphereLight.Define(stage, '/Light')
+        material = UsdShade.Material.Define(stage, '/Mat')
+        UsdShade.MaterialBindingAPI.Apply(
+            stage.GetPrimAtPath('/Mesh0')).Bind(material)
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            live = m.GetRenderData()
+            copy = live.ExtractRenderDataCopy()
+            for data in (live, copy):
+                for kind in ('Mesh', 'Camera', 'Light', 'Material',
+                             'SceneGraphInstancer'):
+                    ids = getattr(data, f'Get{kind}Ids')()
+                    count = getattr(data, f'Get{kind}Count')()
+                    by_index = getattr(data, f'Get{kind}ByIndex')
+                    get = getattr(data, f'Get{kind}')
+                    self.assertEqual(len(ids), count, kind)
+                    for i, item_id in enumerate(ids):
+                        self.assertEqual(by_index(i).id, item_id)
+                        self.assertEqual(get(item_id).id, item_id)
+                self.assertEqual(len(data.GetMeshIds()), 3)
+                self.assertEqual(len(data.GetCameraIds()), 1)
+                self.assertEqual(len(data.GetLightIds()), 1)
+                self.assertEqual(len(data.GetMaterialIds()), 1)
+        finally:
+            m.Cleanup()
+
 if __name__ == "__main__":
     unittest.main()

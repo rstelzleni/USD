@@ -274,6 +274,9 @@ wrapRenderData()
         .def("GetMeshByIndex", &This::GetMeshByIndex,
              (arg("index")),
              return_internal_reference())
+        .def("GetCamera", &This::GetCamera,
+             (arg("id")),
+             return_internal_reference())
         .def("GetCameraCount", &This::GetCameraCount)
         .def("GetCameraByIndex", &This::GetCameraByIndex,
              (arg("index")),
@@ -299,6 +302,16 @@ wrapRenderData()
         .def("GetSceneGraphInstancerByIndex", &This::GetSceneGraphInstancerByIndex,
              (arg("index")),
              return_internal_reference())
+        .def("GetMeshIds", &This::GetMeshIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetCameraIds", &This::GetCameraIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetLightIds", &This::GetLightIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetMaterialIds", &This::GetMaterialIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetSceneGraphInstancerIds", &This::GetSceneGraphInstancerIds,
+             return_value_policy<TfPySequenceToList>())
 
         .def("ExtractRenderDataCopy", &This::ExtractRenderDataCopy)
         .def("ExtractDeindexedRenderDataCopy",
@@ -314,6 +327,9 @@ wrapRenderData()
              return_internal_reference())
         .def("GetMeshByIndex", &This::RenderData::GetMeshByIndex,
              (arg("index")),
+             return_internal_reference())
+        .def("GetCamera", &This::RenderData::GetCamera,
+             (arg("id")),
              return_internal_reference())
         .def("GetCameraCount", &This::RenderData::GetCameraCount)
         .def("GetCameraByIndex", &This::RenderData::GetCameraByIndex,
@@ -342,6 +358,16 @@ wrapRenderData()
              &This::RenderData::GetSceneGraphInstancerByIndex,
              (arg("index")),
              return_internal_reference())
+        .def("GetMeshIds", &This::RenderData::GetMeshIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetCameraIds", &This::RenderData::GetCameraIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetLightIds", &This::RenderData::GetLightIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetMaterialIds", &This::RenderData::GetMaterialIds,
+             return_value_policy<TfPySequenceToList>())
+        .def("GetSceneGraphInstancerIds", &This::RenderData::GetSceneGraphInstancerIds,
+             return_value_policy<TfPySequenceToList>())
         ;
 
     class_<This::SceneGraphInstancerData>("SceneGraphInstancerData", no_init)

@@ -20,6 +20,17 @@ PXR_NAMESPACE_OPEN_SCOPE
 namespace HdTypeUtil = HydraPassthroughHdTypeUtil;
 namespace PackagingUtil = HydraPassthroughMeshPackagingUtil;
 
+template <class Map>
+static SdfPathVector
+_GetIds(const Map& map) {
+    SdfPathVector ids;
+    ids.reserve(map.size());
+    for (const auto& it : map) {
+        ids.push_back(it.first);
+    }
+    return ids;
+}
+
 const HydraPassthroughRenderData::MeshData*
 HydraPassthroughRenderData::RenderData::GetMesh(const SdfPath& id) const {
     auto it = meshes.find(id);
@@ -501,6 +512,31 @@ HydraPassthroughRenderData::ExtractWeldedRenderDataCopy() const {
     return renderData;
 }
 
+SdfPathVector
+HydraPassthroughRenderData::RenderData::GetMeshIds() const {
+    return _GetIds(meshes);
+}
+
+SdfPathVector
+HydraPassthroughRenderData::RenderData::GetCameraIds() const {
+    return _GetIds(cameras);
+}
+
+SdfPathVector
+HydraPassthroughRenderData::RenderData::GetLightIds() const {
+    return _GetIds(lights);
+}
+
+SdfPathVector
+HydraPassthroughRenderData::RenderData::GetMaterialIds() const {
+    return _GetIds(materials);
+}
+
+SdfPathVector
+HydraPassthroughRenderData::RenderData::GetSceneGraphInstancerIds() const {
+    return _GetIds(sceneGraphInstancers);
+}
+
 size_t
 HydraPassthroughRenderData::GetMeshCount() const
 {
@@ -604,6 +640,41 @@ HydraPassthroughRenderData::GetSceneGraphInstancerByIndex(size_t index) const
 {
     const std::lock_guard<std::mutex> lock(_instancerMutex);
     return _renderData.GetSceneGraphInstancerByIndex(index);
+}
+
+SdfPathVector
+HydraPassthroughRenderData::GetMeshIds() const
+{
+    const std::lock_guard<std::mutex> lock(_meshMutex);
+    return _renderData.GetMeshIds();
+}
+
+SdfPathVector
+HydraPassthroughRenderData::GetCameraIds() const
+{
+    const std::lock_guard<std::mutex> lock(_cameraMutex);
+    return _renderData.GetCameraIds();
+}
+
+SdfPathVector
+HydraPassthroughRenderData::GetLightIds() const
+{
+    const std::lock_guard<std::mutex> lock(_lightMutex);
+    return _renderData.GetLightIds();
+}
+
+SdfPathVector
+HydraPassthroughRenderData::GetMaterialIds() const
+{
+    const std::lock_guard<std::mutex> lock(_materialMutex);
+    return _renderData.GetMaterialIds();
+}
+
+SdfPathVector
+HydraPassthroughRenderData::GetSceneGraphInstancerIds() const
+{
+    const std::lock_guard<std::mutex> lock(_instancerMutex);
+    return _renderData.GetSceneGraphInstancerIds();
 }
 
 PXR_NAMESPACE_CLOSE_SCOPE
