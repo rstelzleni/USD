@@ -86,6 +86,7 @@ pxr_build_test(testHydraPassthroughValueDescriptor
 
 pxr_test_scripts(
     testenv/testHydraPassthroughCameraData.py
+    testenv/testHydraPassthroughForceQuadrangulate.py
     testenv/testHydraPassthroughGeomSubsets.py
     testenv/testHydraPassthroughInstancing.py
     testenv/testHydraPassthroughLightData.py
@@ -98,6 +99,14 @@ pxr_test_scripts(
 pxr_register_test(testHydraPassthroughCameraData
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughCameraData"
+    EXPECTED_RETURN_CODE 0
+)
+
+pxr_register_test(testHydraPassthroughForceQuadrangulate
+    PYTHON
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testHydraPassthroughForceQuadrangulate"
+    ENV
+        HD_ENABLE_FORCE_QUADRANGULATE=1
     EXPECTED_RETURN_CODE 0
 )
 

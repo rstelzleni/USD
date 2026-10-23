@@ -18,11 +18,6 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
-// for debugging
-TF_DEFINE_ENV_SETTING(HD_ENABLE_FORCE_QUADRANGULATE, 0,
-                      "Apply quadrangulation for all meshes for debug");
-
-
 // For our case I'm not sure if this should be an env var or a configuration
 // thing. Since our configs are currently pretty sparse, I'll leave it as
 // env var for now.
@@ -39,29 +34,10 @@ namespace ComputationUtil = HydraPassthroughComputationUtil;
 namespace PrimUtil = HydraPassthroughPrimUtil;
 
 bool
-_IsEnabledForceQuadrangulate()
-{
-    static bool enabled = (TfGetEnvSetting(HD_ENABLE_FORCE_QUADRANGULATE) == 1);
-    return enabled;
-}
-
-bool
 _IsEnabledPackedNormals()
 {
     static bool enabled = (TfGetEnvSetting(HD_ENABLE_PACKED_NORMALS) == 1);
     return enabled;
-}
-
-bool
-_MaterialHasPtex(
-    const HdRenderIndex &renderIndex, 
-    const SdfPath &materialId)
-{
-    const HydraPassthroughMaterial *material = 
-        static_cast<const HydraPassthroughMaterial *>(
-        renderIndex.GetSprim(HdPrimTypeTokens->material, materialId));
-
-    return (material && material->HasPtex());
 }
 
 //-------------------------------------------------
@@ -901,27 +877,11 @@ UseQuadIndices(
     const SdfPath &materialId,
     const HydraPassthroughMeshTopology *topology)
 {
-    // We should never quadrangulate for subdivision schemes
-    // which refine to triangles (like Loop)
-    if (topology->RefinesToTriangles()) {
-        return false;
-    }
-
-    // Return true if any bound materials use ptex
-    bool materialHasPtex = false;
-
-    materialHasPtex = materialHasPtex ||
-        _MaterialHasPtex(renderIndex, materialId);
-
-    const HdGeomSubsets &geomSubsets = topology->GetGeomSubsets();
-    for (const HdGeomSubset &geomSubset : geomSubsets) {
-        materialHasPtex = materialHasPtex ||
-            _MaterialHasPtex(renderIndex, geomSubset.materialId);
-    }
-
-    // Fallback to the environment variable, which allows forcing of
-    // quadrangulation for debugging/testing.
-    return materialHasPtex || _IsEnabledForceQuadrangulate();
+    // Storm quadrangulates for ptex materials (and when forced with
+    // HD_ENABLE_FORCE_QUADRANGULATE). Our clients can't use ptex or quad
+    // indices, and the quadrangulation path here produces mismatched
+    // points and indices for non-quad faces, so always triangulate.
+    return false;
 }
 
 HdTopology::ID
