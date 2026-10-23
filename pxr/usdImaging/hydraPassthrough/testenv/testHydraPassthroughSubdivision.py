@@ -323,5 +323,41 @@ class TestSubdivision(unittest.TestCase):
         self.assertTrue(found, "Expected to find face-varying indices for 'st' primvar")
 
 
+    def test_UnrefinedSmoothNormals(self):
+        # The default refine level is 0, matching Storm. Catmull-Clark
+        # meshes are then drawn unrefined but still get generated smooth
+        # normals, one per coarse point.
+        stage = Usd.Stage.CreateInMemory()
+        create_subdivided_sphere_usd(stage, num_latitude=4, num_longitude=8)
+
+        self.assertEqual(HydraPassthrough.RenderSettings().refineLevel, 0)
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            plain = m.GetRenderData().ExtractRenderDataCopy()
+            welded = m.GetRenderData().ExtractWeldedRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        path = Sdf.Path(prefix.AppendPath('World/Sphere'))
+
+        mesh = plain.GetMesh(path)
+        self.assertEqual(len(mesh.GetPoints().GetValue()), 26)
+        smooth_normals = mesh.GetPrimvar('smoothNormals')
+        self.assertIsNotNone(smooth_normals)
+        self.assertEqual(smooth_normals.data.GetArraySize(), 26)
+        self.assertEqual(smooth_normals.interpolation, UsdGeom.Tokens.vertex)
+        for n in smooth_normals.data.GetValue():
+            self.assertAlmostEqual(Gf.Dot(n, n) ** 0.5, 1.0, places=4)
+
+        mesh = welded.GetMesh(path)
+        smooth_normals = mesh.GetPrimvar('smoothNormals')
+        self.assertIsNotNone(smooth_normals)
+        self.assertEqual(smooth_normals.data.GetArraySize(),
+                         len(mesh.GetPoints().GetValue()))
+
 if __name__ == "__main__":
     unittest.main()
