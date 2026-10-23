@@ -101,6 +101,58 @@ class TestMaterialData(unittest.TestCase):
 
         m.Cleanup()
 
+    def test_TextureSourceColorSpace(self):
+        # UsdUVTexture's inputs:sourceColorSpace reaches hydra as the color
+        # space of the file input, not as its own parameter. The same file
+        # may be read with different color spaces by different nodes.
+        stage = Usd.Stage.CreateInMemory()
+        mat = UsdShade.Material.Define(stage, '/Material')
+        surface = UsdShade.Shader.Define(
+            stage, mat.GetPath().AppendPath('SurfaceShader'))
+        surface.CreateIdAttr('UsdPreviewSurface')
+        mat.CreateSurfaceOutput().ConnectToSource(
+            surface.ConnectableAPI(), 'surface')
+
+        def add_texture(name, file, color_space, param, output, type_name):
+            tex = UsdShade.Shader.Define(
+                stage, mat.GetPath().AppendPath(name))
+            tex.CreateIdAttr('UsdUVTexture')
+            tex.CreateInput('file', Sdf.ValueTypeNames.Asset).Set(file)
+            if color_space:
+                tex.CreateInput(
+                    'sourceColorSpace',
+                    Sdf.ValueTypeNames.Token).Set(color_space)
+            surface.CreateInput(param, type_name).ConnectToSource(
+                tex.ConnectableAPI(), output)
+
+        add_texture('ColorTex', 'shared.png', 'sRGB',
+                    'diffuseColor', 'rgb', Sdf.ValueTypeNames.Color3f)
+        add_texture('OpacityTex', 'shared.png', 'raw',
+                    'opacity', 'a', Sdf.ValueTypeNames.Float)
+        add_texture('RoughnessTex', 'rough.png', None,
+                    'roughness', 'r', Sdf.ValueTypeNames.Float)
+
+        mesh = UsdGeom.Mesh.Define(stage, '/Mesh')
+        populate_mesh(mesh)
+        assign_material_to_mesh(mat, mesh)
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        m.Render(stage)
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mat0 = m.GetRenderData().GetMaterial(
+            Sdf.Path(prefix.AppendPath('Material')))
+        color_spaces = {t.name: t.sourceColorSpace
+                        for t in mat0.GetTextureDescriptors()}
+        self.assertEqual(color_spaces, {
+            'diffuseColor': 'sRGB',
+            'opacity': 'raw',
+            'roughness': 'auto',
+        })
+
+        m.Cleanup()
+
     def test_Billboard(self):
         stage = Usd.Stage.CreateInMemory()
         mat = UsdShade.Material.Define(stage, '/Material')
