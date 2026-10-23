@@ -9,6 +9,14 @@
                         ],
                         "displayName": "Hydra Passthrough Renderer Plugin",
                         "priority": 99
+                    },
+                    "HydraPassthrough_ImplicitSurfaceSceneIndexPlugin": {
+                        "bases": [
+                            "HdSceneIndexPlugin"
+                        ],
+                        "loadWithRenderer": "Hydra Passthrough Renderer Plugin",
+                        "priority": 0,
+                        "displayName": "Scene Index to turn implicit surfaces into meshes for HydraPassthrough"
                     }
                 }
             },

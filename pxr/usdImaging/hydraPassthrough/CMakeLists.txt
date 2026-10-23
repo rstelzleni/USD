@@ -32,6 +32,7 @@ pxr_library(hydraPassthrough
         extCompPrimvarBufferSource
         fvarTopologyTracker
         hdTypeUtil
+        implicitSurfaceSceneIndexPlugin
         instancer
         light
         material
