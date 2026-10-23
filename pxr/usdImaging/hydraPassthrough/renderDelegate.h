@@ -58,6 +58,12 @@ public:
     // Basic value to return from the RD
     HdResourceRegistrySharedPtr GetResourceRegistry() const override;
 
+    /// Material networks to prefer, in priority order, when a material
+    /// authors outputs for more than one render context. Only UsdPreviewSurface
+    /// is supported, so this is just glslfx; materials without a glslfx
+    /// network fall back to the universal render context.
+    TfTokenVector GetMaterialRenderContexts() const override;
+
     // Prims
     HdRenderPassSharedPtr CreateRenderPass(
             HdRenderIndex *index,

@@ -153,6 +153,48 @@ class TestMaterialData(unittest.TestCase):
 
         m.Cleanup()
 
+    def test_PreviewSurfaceRenderContext(self):
+        # When a material authors both MaterialX and UsdPreviewSurface
+        # networks, the preview surface is selected whether it is on the
+        # universal output or the glslfx-specific one.
+        def build(preview_context, mtlx_context):
+            stage = Usd.Stage.CreateInMemory()
+            mat = UsdShade.Material.Define(stage, '/Material')
+            preview = UsdShade.Shader.Define(
+                stage, mat.GetPath().AppendPath('Preview'))
+            preview.CreateIdAttr('UsdPreviewSurface')
+            preview.CreateInput(
+                'diffuseColor', Sdf.ValueTypeNames.Color3f).Set((1, 0, 0))
+            mtlx = UsdShade.Shader.Define(
+                stage, mat.GetPath().AppendPath('Mtlx'))
+            mtlx.CreateIdAttr('ND_standard_surface_surfaceshader')
+            mtlx.CreateInput(
+                'base_color', Sdf.ValueTypeNames.Color3f).Set((0, 1, 0))
+            mat.CreateSurfaceOutput(preview_context).ConnectToSource(
+                preview.ConnectableAPI(), 'surface')
+            mat.CreateSurfaceOutput(mtlx_context).ConnectToSource(
+                mtlx.ConnectableAPI(), 'out')
+
+            mesh = UsdGeom.Mesh.Define(stage, '/Mesh')
+            populate_mesh(mesh)
+            assign_material_to_mesh(mat, mesh)
+            return stage
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        for preview_context, mtlx_context in [('', 'mtlx'),
+                                              ('glslfx', ''),
+                                              ('glslfx', 'mtlx')]:
+            m = HydraPassthrough.RenderManager()
+            m.Initialize()
+            m.Render(build(preview_context, mtlx_context))
+            mat0 = m.GetRenderData().GetMaterial(
+                Sdf.Path(prefix.AppendPath('Material')))
+            self.assertEqual(
+                mat0.type,
+                HydraPassthrough.RenderData.MaterialType.PreviewSurface,
+                msg='preview=%r mtlx=%r' % (preview_context, mtlx_context))
+            m.Cleanup()
+
     def test_Billboard(self):
         stage = Usd.Stage.CreateInMemory()
         mat = UsdShade.Material.Define(stage, '/Material')
