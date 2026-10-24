@@ -189,8 +189,9 @@ _GatherFaceVaryingTopologies(
         HydraPassthroughMeshTopology *topology,
         HydraPassthroughFvarTopologyTracker *fvarTopologyTracker)
 {
-    HdPrimvarDescriptorVector primvars = PrimUtil::GetPrimvarDescriptors(
-                rprim, sceneDelegate, HdInterpolationFaceVarying);
+    HdPrimvarDescriptorVector primvars =
+        HydraPassthroughMeshUtil::GetMeshPrimvarDescriptors(
+            rprim, sceneDelegate, HdInterpolationFaceVarying, topology);
 
     if (!primvars.empty()) {
         for (HdPrimvarDescriptor const& primvar: primvars) {
@@ -338,16 +339,16 @@ PopulateVertexAndVaryingPrimvars(
     HF_MALLOC_TAG_FUNCTION();
 
     // The "points" attribute is expected to be in this list.
-    HdPrimvarDescriptorVector primvars = PrimUtil::GetPrimvarDescriptors(
-            rprim, sceneDelegate, HdInterpolationVertex);
+    HdPrimvarDescriptorVector primvars = GetMeshPrimvarDescriptors(
+            rprim, sceneDelegate, HdInterpolationVertex, topology);
 
     // Track the last vertex index to distinguish between vertex and varying
     // while processing.
     auto vertexPartitionIndex = primvars.size()-1;
 
     // Add varying primvars so we can process them all together, below.
-    HdPrimvarDescriptorVector varyingPvs = PrimUtil::GetPrimvarDescriptors(
-            rprim, sceneDelegate, HdInterpolationVarying);
+    HdPrimvarDescriptorVector varyingPvs = GetMeshPrimvarDescriptors(
+            rprim, sceneDelegate, HdInterpolationVarying, topology);
     primvars.insert(primvars.end(), varyingPvs.begin(), varyingPvs.end());
 
     HdExtComputationPrimvarDescriptorVector compPrimvars =
@@ -647,8 +648,8 @@ PopulateFaceVaryingPrimvars(
     HF_MALLOC_TAG_FUNCTION();
 
     HdPrimvarDescriptorVector primvars =
-        PrimUtil::GetPrimvarDescriptors(
-            rprim, sceneDelegate, HdInterpolationFaceVarying);
+        GetMeshPrimvarDescriptors(
+            rprim, sceneDelegate, HdInterpolationFaceVarying, topology);
 
     if (primvars.empty()) {
         return;
@@ -795,8 +796,8 @@ PopulateElementPrimvars(
     HF_MALLOC_TAG_FUNCTION();
 
     HdPrimvarDescriptorVector primvars =
-        PrimUtil::GetPrimvarDescriptors(
-                rprim, sceneDelegate, HdInterpolationUniform);
+        GetMeshPrimvarDescriptors(
+                rprim, sceneDelegate, HdInterpolationUniform, topology);
 
     // Don't early out, there can still be computations even if there are no primvars
 
@@ -883,6 +884,28 @@ PopulateElementPrimvars(
         resourceRegistry->AddPrimvarSources(
                 id, std::move(sources), HdInterpolationUniform);
     }
+}
+
+HdPrimvarDescriptorVector
+GetMeshPrimvarDescriptors(
+    HdRprim const* rprim,
+    HdSceneDelegate* sceneDelegate,
+    HdInterpolation interpolation,
+    const HydraPassthroughMeshTopology* topology)
+{
+    HdPrimvarDescriptorVector primvars =
+        PrimUtil::GetPrimvarDescriptors(rprim, sceneDelegate, interpolation);
+
+    if (topology && topology->CanUseSmoothNormals()) {
+        primvars.erase(
+            std::remove_if(primvars.begin(), primvars.end(),
+                [](HdPrimvarDescriptor const &pv) {
+                    return pv.name == HdTokens->normals;
+                }),
+            primvars.end());
+    }
+
+    return primvars;
 }
 
 bool

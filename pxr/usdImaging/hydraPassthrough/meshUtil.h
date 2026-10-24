@@ -60,6 +60,16 @@ namespace HydraPassthroughMeshUtil
         HdDirtyBits *dirtyBits,
         bool requireFlatNormals);
 
+    /// Like PrimUtil::GetPrimvarDescriptors, but leaves out authored
+    /// normals when the topology generates smooth normals. USD ignores
+    /// authored normals on subdivision surfaces and Storm draws them with
+    /// generated smooth normals, so only those are exported.
+    HdPrimvarDescriptorVector GetMeshPrimvarDescriptors(
+        HdRprim const* rprim,
+        HdSceneDelegate* sceneDelegate,
+        HdInterpolation interpolation,
+        const HydraPassthroughMeshTopology* topology);
+
     bool UseQuadIndices(
         const HdRenderIndex &renderIndex,
         const SdfPath &materialId,
