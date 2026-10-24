@@ -337,7 +337,14 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
             return;
         }
 
-        VtValue value(HdTypeUtil::CastRenderDataToCppType(source));
+        // Index buffers and non-constant primvars are always arrays, even
+        // when they hold a single element. Only constant primvars (and
+        // generic sources, which have no interpolation) can be scalars.
+        const bool isArray =
+            sourceType == HydraPassthroughResourceRegistry::PrimvarSourceType::Index ||
+            (interpolation != HdInterpolationConstant &&
+             interpolation != HdInterpolationCount);
+        VtValue value(HdTypeUtil::CastRenderDataToCppType(source, isArray));
 
         // Special case names
         if (name == HdTokens->transform) {
@@ -397,8 +404,8 @@ HydraPassthroughRenderData::CopyPrimvarBufferSource(
                                     source->GetChainedBuffers();
                                 const auto &primitiveParam = chainedBuffers[0];
                                 const auto &edgeIndices = chainedBuffers[1];
-                                meshIt->second.primitiveParam = HdTypeUtil::CastRenderDataToCppType(primitiveParam);
-                                meshIt->second.edgeIndices = HdTypeUtil::CastRenderDataToCppType(edgeIndices);
+                                meshIt->second.primitiveParam = HdTypeUtil::CastRenderDataToCppType(primitiveParam, /*forceArray=*/true);
+                                meshIt->second.edgeIndices = HdTypeUtil::CastRenderDataToCppType(edgeIndices, /*forceArray=*/true);
                             }
                         }
 

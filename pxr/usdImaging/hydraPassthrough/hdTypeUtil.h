@@ -19,7 +19,13 @@ namespace HydraPassthroughHdTypeUtil
     /// but takes a HdBufferSourceSharedPtr for ease of use with the resource
     /// registry. Calling this with a different buffer source type will give
     /// incorrect results.
-    VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source);
+    ///
+    /// A buffer holding a single element looks the same as a non-array
+    /// value, so by default it is returned as a scalar. Pass forceArray
+    /// when the caller knows the data is an array (index buffers, or
+    /// non-constant primvars) to get a one-element VtArray instead.
+    VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source,
+                                    bool forceArray = false);
 
 } // namespace HydraPassthroughHdTypeUtil
 

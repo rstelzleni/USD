@@ -135,7 +135,8 @@ static inline HdTypeArrayTypeCasterMap _MakeHdArrayTypeCasterMap() {
 //
 // One thing we lose with Hd is Quat type information, switching back
 // to VtValue directly would let us preserve that.
-VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source)
+VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source,
+                                bool forceArray)
 {
     // Use the types in HdTupleType to cast the void * into a type VtValue recognizes,
     // then return the VtValue.
@@ -171,6 +172,16 @@ VtValue CastRenderDataToCppType(HdBufferSourceSharedPtr const &source)
             return VtValue();
         }
         return arrayCasterIt->second(data, itemSize);
+    } else if (dataSize == 1 && forceArray) {
+        // A one-element array, e.g. the GfVec3i indices of a mesh with a
+        // single triangle. The buffer can't tell us this, but the caller
+        // can.
+        auto arrayCasterIt = arrayTypeCasterMap.find(tupleType.type);
+        if (arrayCasterIt == arrayTypeCasterMap.end()) {
+            TF_RUNTIME_ERROR("Unsupported array HdType %d in CastRenderDataToCppType", tupleType.type);
+            return VtValue();
+        }
+        return arrayCasterIt->second(data, 1);
     } else if (dataSize == 1) {
         // This should be the true non-array case
         auto casterIt = typeCasterMap.find(tupleType.type);

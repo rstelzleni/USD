@@ -419,6 +419,37 @@ class TestMeshData(unittest.TestCase):
         self.assertIsNotNone(mesh)
         self.assertTrue(mesh.doubleSided)
 
+    def test_SingleElementArrays(self):
+        # A one-triangle mesh has a single GfVec3i index and one uniform
+        # value. Both must come back as arrays, not scalars.
+        stage = Usd.Stage.CreateInMemory()
+        mesh = UsdGeom.Mesh.Define(stage, '/Triangle')
+        mesh.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+        mesh.CreatePointsAttr(Vt.Vec3fArray([(0, 0, 0), (1, 0, 0), (0, 1, 0)]))
+        mesh.CreateFaceVertexCountsAttr(Vt.IntArray([3]))
+        mesh.CreateFaceVertexIndicesAttr(Vt.IntArray([0, 1, 2]))
+        primvars = UsdGeom.PrimvarsAPI(mesh)
+        primvars.CreatePrimvar(
+            'myUniform', Sdf.ValueTypeNames.FloatArray,
+            UsdGeom.Tokens.uniform).Set(Vt.FloatArray([7.0]))
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            data_copy = m.GetRenderData().ExtractRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        mesh = data_copy.GetMesh(Sdf.Path(prefix.AppendPath('Triangle')))
+        self.assertIsNotNone(mesh)
+        self.assertEqual(list(mesh.GetFaceVertexIndices().GetValue()),
+                         [0, 1, 2])
+        uniform = mesh.GetPrimvar('myUniform')
+        self.assertTrue(uniform.data.IsArray())
+        self.assertEqual(list(uniform.data.GetValue()), [7.0])
+
 
 if __name__ == "__main__":
     unittest.main()
