@@ -388,6 +388,16 @@ public:
         const SceneGraphInstancerData* GetSceneGraphInstancer(const SdfPath& id) const;
         size_t GetSceneGraphInstancerCount() const;
         const SceneGraphInstancerData* GetSceneGraphInstancerByIndex(size_t index) const;
+
+        // Ids of all items, in the same order as the ByIndex getters.
+        // Prefer iterating these and looking items up by id: each ByIndex
+        // call walks the hash map from the start, so iterating with them
+        // is quadratic.
+        SdfPathVector GetMeshIds() const;
+        SdfPathVector GetCameraIds() const;
+        SdfPathVector GetLightIds() const;
+        SdfPathVector GetMaterialIds() const;
+        SdfPathVector GetSceneGraphInstancerIds() const;
     };
 
     static HydraPassthroughRenderDataRefPtr New() {
@@ -478,6 +488,11 @@ public:
     const SceneGraphInstancerData* GetSceneGraphInstancer(const SdfPath& id) const;
     size_t GetSceneGraphInstancerCount() const;
     const SceneGraphInstancerData* GetSceneGraphInstancerByIndex(size_t index) const;
+    SdfPathVector GetMeshIds() const;
+    SdfPathVector GetCameraIds() const;
+    SdfPathVector GetLightIds() const;
+    SdfPathVector GetMaterialIds() const;
+    SdfPathVector GetSceneGraphInstancerIds() const;
     // End duplicate api
 
 private:
