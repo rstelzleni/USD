@@ -488,5 +488,43 @@ class TestMeshData(unittest.TestCase):
         finally:
             m.Cleanup()
 
+    def test_ImplicitSurfaces(self):
+        # Implicit surfaces are converted to meshes by a scene index plugin.
+        stage = Usd.Stage.CreateInMemory()
+        UsdGeom.Cube.Define(stage, '/Cube').CreateSizeAttr(4.0)
+        UsdGeom.Sphere.Define(stage, '/Sphere')
+        UsdGeom.Cylinder.Define(stage, '/Cylinder')
+        UsdGeom.Cone.Define(stage, '/Cone')
+        UsdGeom.Capsule.Define(stage, '/Capsule')
+        UsdGeom.Plane.Define(stage, '/Plane')
+
+        m = HydraPassthrough.RenderManager()
+        m.Initialize()
+        try:
+            m.Render(stage)
+            plain = m.GetRenderData().ExtractRenderDataCopy()
+            welded = m.GetRenderData().ExtractWeldedRenderDataCopy()
+        finally:
+            m.Cleanup()
+
+        prefix = HydraPassthrough.RenderManager.GetSceneDelegateId()
+        names = ['Cube', 'Sphere', 'Cylinder', 'Cone', 'Capsule', 'Plane']
+        self.assertEqual(plain.GetMeshCount(), len(names))
+        for data in (plain, welded):
+            for name in names:
+                mesh = data.GetMesh(Sdf.Path(prefix.AppendPath(name)))
+                self.assertIsNotNone(mesh, name)
+                points = mesh.GetPoints().GetValue()
+                indices = mesh.GetFaceVertexIndices().GetValue()
+                self.assertGreater(len(points), 0, name)
+                self.assertGreater(len(indices), 0, name)
+                self.assertEqual(len(indices) % 3, 0, name)
+                self.assertTrue(all(0 <= i < len(points) for i in indices))
+
+        # The cube's size is baked into its points
+        cube = plain.GetMesh(Sdf.Path(prefix.AppendPath('Cube')))
+        extent = max(abs(c) for p in cube.GetPoints().GetValue() for c in p)
+        self.assertAlmostEqual(extent, 2.0)
+
 if __name__ == "__main__":
     unittest.main()
