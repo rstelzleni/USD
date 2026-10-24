@@ -33,7 +33,7 @@ public:
     // etc. this is the place to do it.
 
     struct RenderSettings {
-        RenderSettings() : refineLevel(1) {}
+        RenderSettings() : refineLevel(0) {}
         int refineLevel;
     };
 

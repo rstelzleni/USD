@@ -550,7 +550,21 @@ PopulateVertexAndVaryingPrimvars(
         TfToken generatedNormalsName = usePackedSmoothNormals ? 
             TfToken("packedSmoothNormals") : TfToken("smoothNormals");
         
-        if (auto pointsSource = resourceRegistry->GetPointsSource(id)) {
+        // Unrefined points haven't been handed to the registry yet (that
+        // happens below), so look in our own sources first. Refined meshes
+        // already added their coarse points while setting up refinement.
+        HdBufferSourceSharedPtr pointsSource;
+        for (HdBufferSourceSharedPtr const &source : sources) {
+            if (source->GetName() == HdTokens->points) {
+                pointsSource = source;
+                break;
+            }
+        }
+        if (!pointsSource) {
+            pointsSource = resourceRegistry->GetPointsSource(id);
+        }
+
+        if (pointsSource) {
             // Smooth normals will compute normals as the same datatype
             // as points, unless we ask for packed normals.
             auto smoothNormalsComputation =
