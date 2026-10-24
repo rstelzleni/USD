@@ -53,6 +53,7 @@ pxr_library(hydraPassthrough
         subdivision
         textureDescriptor
         triangulate
+        unboundMaterialPruningSceneIndexPlugin
         valueDescriptor
         vertexAdjacency
 

@@ -17,6 +17,14 @@
                         "loadWithRenderer": "Hydra Passthrough Renderer Plugin",
                         "priority": 0,
                         "displayName": "Scene Index to turn implicit surfaces into meshes for HydraPassthrough"
+                    },
+                    "HydraPassthrough_UnboundMaterialPruningSceneIndexPlugin": {
+                        "bases": [
+                            "HdSceneIndexPlugin"
+                        ],
+                        "loadWithRenderer": "Hydra Passthrough Renderer Plugin",
+                        "priority": 0,
+                        "displayName": "Scene Index to prune unbound materials for HydraPassthrough"
                     }
                 }
             },
